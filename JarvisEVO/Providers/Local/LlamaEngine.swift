@@ -79,9 +79,12 @@ actor LlamaEngine {
         guard let vocabulary = llama_model_get_vocab(model) else { throw LocalModelError.loadFailed }
         llama_memory_clear(llama_get_memory(context), true)
         defer { llama_memory_clear(llama_get_memory(context), true) }
-        let messages = try LocalPromptBuilder.trimToFit(LocalPromptBuilder.messages(from: request.messages), maxTokens: request.maxTokens, contextSize: Int(contextSize)) { entries in
-            let rendered = try format(entries, systemPrompt: request.systemPrompt, model: model)
-            return try tokenCount(rendered, vocabulary: vocabulary)
+        // Capture the resource owner, not task-local raw-pointer aliases. The
+        // synchronous callback obtains its pointers within this actor's isolation.
+        let messages = try LocalPromptBuilder.trimToFit(LocalPromptBuilder.messages(from: request.messages), maxTokens: request.maxTokens, contextSize: Int(contextSize)) { [owned] entries in
+            guard let promptVocabulary = llama_model_get_vocab(owned.model) else { throw LocalModelError.loadFailed }
+            let rendered = try format(entries, systemPrompt: request.systemPrompt, model: owned.model)
+            return try tokenCount(rendered, vocabulary: promptVocabulary)
         }
         let prompt = try format(messages, systemPrompt: request.systemPrompt, model: model)
         let tokens = try tokenize(prompt, vocabulary: vocabulary)
