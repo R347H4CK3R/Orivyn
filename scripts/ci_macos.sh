@@ -27,15 +27,15 @@ PY
 )
 echo "$SIMULATOR_ID" > "$ARTIFACTS/simulator-id.txt"
 xcrun simctl bootstatus "$SIMULATOR_ID" -b
-xcodebuild -project JarvisEVO.xcodeproj -scheme JarvisEVO -destination "platform=iOS Simulator,id=$SIMULATOR_ID" -destination-timeout 120 -parallel-testing-enabled NO -test-timeouts-enabled YES -default-test-execution-time-allowance 120 -maximum-test-execution-time-allowance 240 -resultBundlePath "$ARTIFACTS/Tests.xcresult" CODE_SIGNING_ALLOWED=NO JARVIS_REQUIRE_REAL_INFERENCE=1 test 2>&1 | tee "$ARTIFACTS/native-tests.log"
-xcrun xcresulttool export attachments --path "$ARTIFACTS/Tests.xcresult" --output-path "$ARTIFACTS/screenshots" || true
+bash scripts/run_native_tests.sh "$ARTIFACTS" xcodebuild -project JarvisEVO.xcodeproj -scheme JarvisEVO -destination "platform=iOS Simulator,id=$SIMULATOR_ID" -destination-timeout 120 -parallel-testing-enabled NO -test-timeouts-enabled YES -default-test-execution-time-allowance 120 -maximum-test-execution-time-allowance 240 -resultBundlePath "$ARTIFACTS/Tests.xcresult" CODE_SIGNING_ALLOWED=NO JARVIS_REQUIRE_REAL_INFERENCE=1 test
 xcodebuild -project JarvisEVO.xcodeproj -scheme JarvisEVO -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build 2>&1 | tee "$ARTIFACTS/device-build.log"
 APP=build/Build/Products/Release-iphoneos/JarvisEVO.app
 test -x "$APP/JarvisEVO"
 mkdir -p "$PACKAGE/Payload"
 cp -R "$APP" "$PACKAGE/Payload/"
-IPA_PATH="$PWD/$ARTIFACTS/Jarvis-EVO-0.1.0-unsigned.ipa"
+IPA_NAME=$(python3 scripts/ipa_filename.py "$APP/Info.plist")
+IPA_PATH="$PWD/$ARTIFACTS/$IPA_NAME"
 (cd "$PACKAGE" && zip -qr "$IPA_PATH" Payload)
 python3 scripts/verify_ipa.py "$IPA_PATH" --output "$ARTIFACTS/ipa-verification.json"
-(cd "$ARTIFACTS" && shasum -a 256 Jarvis-EVO-0.1.0-unsigned.ipa > SHA256SUMS)
+(cd "$ARTIFACTS" && shasum -a 256 "$IPA_NAME" > SHA256SUMS)
 echo 'Build and package checks completed. Model/device/fidelity acceptance gates remain independent.'

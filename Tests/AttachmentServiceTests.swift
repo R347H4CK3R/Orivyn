@@ -288,3 +288,41 @@ final class AttachmentAppFlowTests: XCTestCase {
         return (AppModel(store: store, attachmentService: attachments, modelStore: models, defaults: defaults), store)
     }
 }
+
+final class AttachmentAnalysisIntegrationTests: XCTestCase {
+    /// Genuine local inference on an imported file. This is a narrow fact-retrieval
+    /// fixture, not a quality benchmark or proof of physical-device offline behavior.
+    func testRealLocalModelAnswersFromImportedTextAttachment() async throws {
+        let configured = ProcessInfo.processInfo.environment["JARVIS_TEST_GGUF"]
+        let bundled = Bundle(for: AttachmentAnalysisIntegrationTests.self).url(forResource: "qwen2.5-0.5b-instruct-q4_k_m", withExtension: "gguf")?.path
+        guard let modelPath = configured.flatMap({ $0.isEmpty ? nil : $0 }) ?? bundled else {
+            if ProcessInfo.processInfo.environment["JARVIS_REQUIRE_REAL_INFERENCE"] == "1" {
+                XCTFail("Attachment analysis requires the real GGUF fixture, but it is missing.")
+                return
+            }
+            throw XCTSkip("Real GGUF weights are required for file-analysis integration.")
+        }
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let attachments = try AttachmentService(directory: root.appendingPathComponent("Attachments"))
+        let source = root.appendingPathComponent("orchard.txt")
+        try Data("The orchard sold 42 apples on Tuesday. It sold 17 pears on Wednesday.".utf8).write(to: source)
+        let attachment = try attachments.importFile(at: source)
+        let store = try LocalModelStore(root: root.appendingPathComponent("Models"))
+        let descriptor = try await store.importModel(from: URL(fileURLWithPath: modelPath))
+        let provider = LocalAIProvider(store: store, model: descriptor)
+        let request = GenerationRequest(
+            messages: [ChatMessage(role: .user, content: "According to the attached document, how many apples were sold on Tuesday? Answer with only the number.", attachments: [attachment])],
+            systemPrompt: "Answer the user's question using the attached document.", maxTokens: 32, temperature: 0
+        )
+        var answer = ""
+        do {
+            for try await piece in try await provider.stream(request) { answer += piece }
+        } catch {
+            await provider.unload()
+            throw error
+        }
+        await provider.unload()
+        XCTAssertTrue(answer.contains("42"), "The real model did not retrieve the fixture's apple count. Response: \(answer)")
+    }
+}

@@ -9,7 +9,8 @@ final class VoiceService: NSObject {
     private var recordingID: UUID?
     private(set) var isSpeaking = false
     private(set) var transcript = ""
-    private let recognizer = SFSpeechRecognizer()
+    private let recognizer: SFSpeechRecognizer?
+    private let permissions: VoicePermissions
     private let engine = AVAudioEngine()
     private let synthesizer = AVSpeechSynthesizer()
     private var request: SFSpeechAudioBufferRecognitionRequest?
@@ -18,7 +19,9 @@ final class VoiceService: NSObject {
     var onTranscript: ((String) -> Void)?
     var onError: ((String) -> Void)?
 
-    override init() {
+    init(permissions: VoicePermissions = .system, recognizer: SFSpeechRecognizer? = SFSpeechRecognizer()) {
+        self.permissions = permissions
+        self.recognizer = recognizer
         super.init()
         synthesizer.delegate = self
         NotificationCenter.default.addObserver(self, selector: #selector(audioInterrupted), name: AVAudioSession.interruptionNotification, object: nil)
@@ -51,12 +54,10 @@ final class VoiceService: NSObject {
         isStarting = true
         defer { if recordingID == attempt { isStarting = false } }
         stopSpeaking()
-        let authorization = await withCheckedContinuation { continuation in
-            SFSpeechRecognizer.requestAuthorization { @Sendable status in continuation.resume(returning: status) }
-        }
+        let authorization = await permissions.requestSpeech()
         guard recordingID == attempt else { return }
         guard authorization == .authorized else { throw VoiceError.speechPermission }
-        let microphone = await AVAudioApplication.requestRecordPermission()
+        let microphone = await permissions.requestMicrophone()
         guard recordingID == attempt else { return }
         guard microphone else { throw VoiceError.microphonePermission }
         guard let recognizer, recognizer.isAvailable, recognizer.supportsOnDeviceRecognition else { throw VoiceError.unavailable }
@@ -157,4 +158,21 @@ private final class RecognitionAudioSink: @unchecked Sendable {
     private let request: SFSpeechAudioBufferRecognitionRequest
     init(request: SFSpeechAudioBufferRecognitionRequest) { self.request = request }
     func append(_ buffer: AVAudioPCMBuffer) { request.append(buffer) }
+}
+
+/// OS permission requests are the only substituted boundary in permission tests.
+/// The app's default always invokes the real system dialogs and authorization APIs.
+@MainActor
+struct VoicePermissions {
+    var requestSpeech: @MainActor () async -> SFSpeechRecognizerAuthorizationStatus
+    var requestMicrophone: @MainActor () async -> Bool
+
+    static let system = VoicePermissions(
+        requestSpeech: {
+            await withCheckedContinuation { continuation in
+                SFSpeechRecognizer.requestAuthorization { @Sendable status in continuation.resume(returning: status) }
+            }
+        },
+        requestMicrophone: { await AVAudioApplication.requestRecordPermission() }
+    )
 }

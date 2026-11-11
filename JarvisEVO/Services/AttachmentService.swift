@@ -60,8 +60,13 @@ struct AttachmentService {
         // Validate even imported metadata before offering any attachment to the OS.
         guard !attachment.relativePath.isEmpty, attachment.relativePath == URL(fileURLWithPath: attachment.relativePath).lastPathComponent,
               !attachment.relativePath.contains(".."), !attachment.relativePath.contains("\\") else { return nil }
-        let url = directory.appendingPathComponent(attachment.relativePath)
-        return FileManager.default.fileExists(atPath: url.path) ? url : nil
+        let url = directory.appendingPathComponent(attachment.relativePath, isDirectory: false)
+        guard let values = try? url.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey]),
+              values.isRegularFile == true, values.isSymbolicLink == false else { return nil }
+        let root = directory.resolvingSymlinksInPath().standardizedFileURL
+        let resolved = url.resolvingSymlinksInPath().standardizedFileURL
+        guard resolved.deletingLastPathComponent().path == root.path else { return nil }
+        return url
     }
 
     func removeUnreferenced(keeping names: Set<String>) throws {
