@@ -26,7 +26,7 @@ Weights are excluded from iCloud backup and use iOS file protection. All bytes a
 
 **MLX Swift / MLX Swift LM** are MIT-licensed Apple-silicon-native options with iOS support and convenient Swift model APIs. They remain a viable additional provider. This first implementation favors llama.cpp's single replaceable GGUF artifact, official Apple runtime, and explicit download/integrity policy. MLX requires coordinated tokenizer/config/weight assets and its current package has a broader dependency surface. Neither stack removes iOS memory limits or proves a model's A18 performance without testing.
 
-**Apple Foundation Models** is an optional source-implemented, unverified provider where supported, but the default does not rely on Apple Intelligence being enabled or a system model being available.
+**Apple Foundation Models** is an optional source-implemented provider that compiles but still requires runtime verification on eligible hardware. The default does not rely on Apple Intelligence being enabled or a system model being available.
 
 ## Tests and CI
 
@@ -40,7 +40,7 @@ For the real-model job:
 4. Run the `LocalInferenceTests/testRealModelProducesOfflineTextWhenWeightsAreProvided` XCTest. A missing path with the required flag fails the test; an inaccessible file fails during import. The smoke test loads actual weights and asserts nonempty generated text.
 5. Run the full unit/UI suite and perform physical iPhone airplane-mode tests. Stop/retry, memory-pressure handling, temperature, background transitions, and downloaded/imported-model swapping need device QA.
 
-**Verification boundary:** This executor has no Swift compiler, Xcode, iOS SDK or iPhone. Swift/XCTest and iPhone inference are not verified here. The bootstrap shell script was run with the actual official artifact and a bad-checksum negative case. Do not mark this app's local inference as tested until the Xcode/real-model job and device checks run successfully.
+**Verification boundary:** [Codemagic attempt 2](https://codemagic.io/app/6af4edea52f6da2271c62b79/build/6af4f3b60f2c5fc818ff6d6c) compiled source `3628cf57c49a57d116140780d3973761e8a1c336` and passed 41 native tests plus seven UI tests on the iPhone 16 Plus / iOS 26.0 simulator. The real-model smoke test passed, not skipped, in 13.492 seconds using actual Qwen weights and the CPU path. That duration includes import/load/generation/cleanup; it is not a physical iPhone benchmark. The host network was not disabled. Physical-device offline behavior, Metal performance, cancellation and memory pressure remain unverified. See [QA.md](QA.md) for exact build, runtime/model hashes and remaining gates.
 
 ## Official sources
 
@@ -54,4 +54,4 @@ For the real-model job:
 
 License copies are in `ThirdPartyNotices/`. Preserve upstream notices when distributing the app. Downloaded model weights are not included in the source deliverable.
 
-The standard `ci_macos.sh` now downloads the pinned model before project generation and adds it only to the test bundle, not to the shipping application. `JARVIS_REQUIRE_REAL_INFERENCE=1` is passed through the scheme. The real-model test finds bundled weights when no explicit path is supplied, so this CI path must fail rather than skip missing weights. This configuration itself still needs its first native run.
+The standard `ci_macos.sh` downloads the pinned model before project generation and adds it only to the test bundle, not to the shipping application. `JARVIS_REQUIRE_REAL_INFERENCE=1` is passed through the scheme. The real-model test finds bundled weights when no explicit path is supplied, so this CI path must fail rather than skip missing weights. This path passed in the recorded native run; users still download or import weights separately in the app.
