@@ -323,6 +323,6 @@ final class AttachmentAnalysisIntegrationTests: XCTestCase {
             throw error
         }
         await provider.unload()
-        XCTAssertTrue(answer.contains("42"), "The real model did not retrieve the fixture's apple count. Response: \(answer)")
+        XCTAssertNotNil(answer.range(of: #"\b42\b"#, options: .regularExpression), "The real model did not retrieve the fixture's apple count. Response: \(answer)")
     }
 }
