@@ -85,4 +85,38 @@ final class JarvisEVOUITests: XCTestCase {
             throw XCTSkip("A provider is available; unavailable-provider fixture does not apply.")
         }
     }
+
+    // Cancelling the real Files picker repeatedly must not discard or disable the draft.
+    func testAttachmentPickerCancellationPreservesDraftAfterReopening() {
+        let composer = app.textViews["composer.input"]
+        composer.tap()
+        composer.typeText("Attach a document later")
+        for _ in 0..<2 {
+            app.buttons["composer.attach"].tap()
+            let cancel = app.buttons["Cancel"].firstMatch
+            XCTAssertTrue(cancel.waitForExistence(timeout: 10))
+            cancel.tap()
+            XCTAssertTrue(composer.waitForExistence(timeout: 5))
+            XCTAssertEqual(composer.value as? String, "Attach a document later")
+            XCTAssertTrue(app.buttons["composer.send"].isEnabled)
+        }
+    }
+
+    func testHistoryImportCancellationReturnsToSettingsAndPreservesComposer() {
+        let composer = app.textViews["composer.input"]
+        composer.tap()
+        composer.typeText("Keep this draft during import")
+        app.buttons["settings.open"].tap()
+        let importButton = app.buttons["Import conversation backup"]
+        XCTAssertTrue(importButton.waitForExistence(timeout: 5))
+        importButton.tap()
+        let cancel = app.buttons["Cancel"].firstMatch
+        XCTAssertTrue(cancel.waitForExistence(timeout: 10))
+        cancel.tap()
+        XCTAssertTrue(app.buttons["settings.done"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.alerts["Backup exported"].exists)
+        app.buttons["settings.done"].tap()
+        XCTAssertEqual(composer.value as? String, "Keep this draft during import")
+    }
+
 }
