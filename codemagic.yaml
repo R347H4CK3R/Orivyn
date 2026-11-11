@@ -1,0 +1,14 @@
+workflows:
+  jarvis-evo-candidate:
+    name: Jarvis-EVO iOS candidate verification
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    environment:
+      xcode: 26.0
+    scripts:
+      - name: Test and package unsigned iPhone candidate
+        script: bash scripts/ci_macos.sh
+    artifacts:
+      - artifacts/**
+# No automatic triggers or publication. Run only after private repository access
+# and remaining free build capacity are authorized and verified.

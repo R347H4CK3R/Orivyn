@@ -1,0 +1,14 @@
+.DS_Store
+.build/
+build/
+DerivedData/
+*.xcodeproj/
+*.xcresult/
+*.ipa
+*.gguf
+*.log
+__pycache__/
+.env
+Packages/LlamaRuntime/Frameworks/
+.cache/
+artifacts/
