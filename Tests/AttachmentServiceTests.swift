@@ -60,7 +60,7 @@ final class AttachmentServiceTests: XCTestCase {
 
     func testEncryptedPDFIsRejectedWithoutLeavingCopy() throws {
         let document = try XCTUnwrap(PDFDocument(data: pdf(pages: ["Private PDF"])))
-        let locked = try XCTUnwrap(document.dataRepresentation(options: [.ownerPasswordOption: "owner-test-only", .userPasswordOption: "reader-test-only"]))
+        let locked = try XCTUnwrap(document.dataRepresentation(options: [PDFDocumentWriteOption.ownerPasswordOption: "owner-test-only", PDFDocumentWriteOption.userPasswordOption: "reader-test-only"]))
         XCTAssertTrue(try XCTUnwrap(PDFDocument(data: locked)).isLocked, "The fixture must actually require a password")
         let source = try write(locked, named: "encrypted.pdf")
         assertRejected(source, as: .unreadablePDF)
