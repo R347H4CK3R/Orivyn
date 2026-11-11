@@ -61,8 +61,17 @@ struct JarvisEVOApp: App {
 }
 
 extension Color {
-    static let evoAccent = Color(red: 0.12, green: 0.46, blue: 0.39)
-    static let evoSurface = Color(uiColor: .secondarySystemBackground)
+    static let evoAccent = Color.primary
+    static let evoSurface = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark ? UIColor(white: 0.15, alpha: 1) : UIColor(white: 0.96, alpha: 1)
+    })
+    static let evoSidebar = Color(uiColor: .systemBackground)
+    static let evoUserBubble = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark ? UIColor(red: 0.10, green: 0.19, blue: 0.29, alpha: 1) : UIColor(red: 0.91, green: 0.95, blue: 0.99, alpha: 1)
+    })
+    static let evoUserText = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark ? UIColor(red: 0.75, green: 0.86, blue: 1, alpha: 1) : UIColor(red: 0.16, green: 0.35, blue: 0.57, alpha: 1)
+    })
 }
 
 struct EvoMark: View {

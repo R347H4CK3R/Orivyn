@@ -26,7 +26,10 @@ struct ModelManagerView: View {
                                 Spacer()
                                 if model.selectedProviderID == option.id { Image(systemName: "checkmark.circle.fill").foregroundStyle(Color.evoAccent) }
                             }.padding(.vertical, 5)
-                        }.disabled(!option.isAvailable || model.isGenerating)
+                        }
+                        .accessibilityIdentifier("model.provider.\(option.id)")
+                        .accessibilityValue(model.selectedProviderID == option.id ? "Selected" : "")
+                        .disabled(!option.isAvailable || model.isGenerating)
                     }
                 } header: { Text("Choose a model") } footer: {
                     Text("Local models run on this iPhone. Remote models send your messages, attachment text, and saved memory to the endpoint you configure.")
@@ -42,6 +45,7 @@ struct ModelManagerView: View {
                                 Spacer()
                                 if model.installedModels.contains(where: { $0.id == descriptor.id }) {
                                     Label("Installed", systemImage: "checkmark.circle.fill").font(.caption).foregroundStyle(Color.evoAccent)
+                                        .accessibilityIdentifier("model.installed.\(descriptor.id)")
                                 }
                             }
                             if model.downloadingModelID == descriptor.id {
@@ -53,6 +57,7 @@ struct ModelManagerView: View {
                                 }
                             } else if !model.installedModels.contains(where: { $0.id == descriptor.id }) {
                                 Button { model.downloadModel(descriptor) } label: { Label("Download model", systemImage: "arrow.down.circle") }
+                                    .accessibilityIdentifier("model.download.\(descriptor.id)")
                                     .disabled(model.downloadingModelID != nil || importingBusy)
                             }
                             if let url = descriptor.sourceURL { Link("Model details & license", destination: url).font(.caption) }

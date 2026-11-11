@@ -16,27 +16,26 @@ struct MessageRow: View {
         VStack(alignment: .leading, spacing: 12) {
             if message.role == .user {
                 HStack {
-                    Spacer(minLength: 32)
+                    Spacer(minLength: 58)
                     VStack(alignment: .leading, spacing: 8) {
                         if !message.content.isEmpty { Text(message.content).textSelection(.enabled) }
                         attachments
                     }
-                    .padding(.horizontal, 17).padding(.vertical, 13)
-                    .background(Color.evoSurface, in: RoundedRectangle(cornerRadius: 23))
+                    .padding(.horizontal, 16).padding(.vertical, 12)
+                    .foregroundStyle(Color.evoUserText)
+                    .background(Color.evoUserBubble, in: RoundedRectangle(cornerRadius: 24))
                     .contextMenu { actions }
                 }
             } else {
-                HStack(spacing: 8) {
-                    EvoMark(size: 26)
-                    Text("Jarvis-EVO").font(.caption.weight(.semibold))
-                    if message.state == .streaming { ProgressView().controlSize(.mini).accessibilityLabel("Generating response") }
-                }
                 if !message.content.isEmpty {
                     MarkdownContent(text: message.content)
                         .accessibilityIdentifier("assistant.response")
                         .contextMenu { actions }
                 } else if message.state == .streaming {
-                    Text("Thinking…").font(.subheadline).foregroundStyle(.secondary)
+                    HStack(spacing: 8) {
+                        ProgressView().controlSize(.mini)
+                        Text("Thinking…").font(.subheadline).foregroundStyle(.secondary)
+                    }.accessibilityLabel("Generating response")
                 }
                 attachments
                 if message.state == .interrupted || message.state == .failed {
@@ -44,14 +43,15 @@ struct MessageRow: View {
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 if message.state != .streaming {
-                    HStack(spacing: 20) {
+                    HStack(spacing: 18) {
                         Button(action: onCopy) { Image(systemName: "doc.on.doc") }.accessibilityLabel("Copy response")
                             .disabled(message.content.isEmpty)
                         Button(action: onReadAloud) { Image(systemName: isSpeaking ? "speaker.slash" : "speaker.wave.2") }
                             .accessibilityLabel(isSpeaking ? "Stop reading aloud" : "Read response aloud").disabled(message.content.isEmpty)
                         Button(action: onRegenerate) { Image(systemName: "arrow.clockwise") }.accessibilityLabel("Regenerate in new branch").disabled(isGenerating)
+                        ShareLink(item: message.content) { Image(systemName: "square.and.arrow.up") }.accessibilityLabel("Share response").disabled(message.content.isEmpty)
                         Menu { actions } label: { Image(systemName: "ellipsis") }.accessibilityLabel("More message actions")
-                    }.font(.system(size: 14)).foregroundStyle(.secondary).buttonStyle(.plain).padding(.top, 2)
+                    }.font(.system(size: 15)).foregroundStyle(.secondary).buttonStyle(.plain).padding(.top, 2)
                 }
             }
         }

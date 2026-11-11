@@ -48,6 +48,7 @@ final class JarvisEVOUITests: XCTestCase {
 
     // Regression: settings dismissal must return to a usable composer, not an orphaned sheet.
     func testSettingsDismissalRestoresComposer() {
+        app.buttons["toolbar.more"].tap()
         app.buttons["settings.open"].tap()
         XCTAssertTrue(app.segmentedControls["settings.appearance"].waitForExistence(timeout: 5))
         app.buttons["settings.done"].tap()
@@ -106,6 +107,7 @@ final class JarvisEVOUITests: XCTestCase {
         let composer = app.textViews["composer.input"]
         composer.tap()
         composer.typeText("Keep this draft during import")
+        app.buttons["toolbar.more"].tap()
         app.buttons["settings.open"].tap()
         let importButton = app.buttons["Import conversation backup"]
         XCTAssertTrue(importButton.waitForExistence(timeout: 5))
