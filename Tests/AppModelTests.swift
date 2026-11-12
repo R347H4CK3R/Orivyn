@@ -142,6 +142,7 @@ final class AppModelTests: XCTestCase {
         model.draft = "Test preferences"; model.send()
         try await waitFor { await source.hasSubscriber }
         let request = await source.lastRequest
+        XCTAssertTrue(request?.systemPrompt.contains("You are Jarvis, the assistant in Orivyn.") == true)
         XCTAssertTrue(request?.systemPrompt.contains("Use concise explanations.") == true)
         XCTAssertTrue(request?.systemPrompt.contains("Style: Efficient") == true)
         XCTAssertTrue(request?.systemPrompt.contains("Do not claim to browse, run code") == true)
