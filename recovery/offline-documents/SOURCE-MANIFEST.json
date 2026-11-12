@@ -1,0 +1,376 @@
+{
+  "purpose": "Independent bounded offline Office reader proposal; not native compiled/tested or integrated",
+  "dependency": {
+    "name": "ZIPFoundation",
+    "version": "0.9.20",
+    "commit": "22787ffb59de99e5dc1fbfe80b19c97a904ad48d",
+    "license": "MIT"
+  },
+  "frozen_base_sources": {
+    "JarvisEVO/Services/AttachmentService.swift": "c58511aa971a62a9f96ea9c60dd49ba758576f2d85a378fa6801bbf44f32d8c1",
+    "JarvisEVO/UI/AttachmentViews.swift": "045ddc88919eb330cdd36c18708ecc04d33b0fcf0707bab71b5ca31ef00e807f",
+    "project.yml": "6245506686b0823ba1acfaa1e48c181a26c12f5d0fecb7862999278c9528450e"
+  },
+  "files": [
+    {
+      "path": "DESIGN-AND-TESTING.md",
+      "bytes": 9947,
+      "sha256": "a54acb823bdc3e05064ade2e87df39e565b956f5daa7824a8de0c205eddf34be"
+    },
+    {
+      "path": "INTEGRATION.md",
+      "bytes": 4603,
+      "sha256": "61df4947a0078d262fb542a615ea080bac0aa233e4c2f186ca864966cf549294"
+    },
+    {
+      "path": "JarvisEVO/Services/BoundedOfficeXML.swift",
+      "bytes": 7219,
+      "sha256": "aea609f8256c8adb987fe4b635a3c9409d7bbdb775593abe848709230b79e568"
+    },
+    {
+      "path": "JarvisEVO/Services/DelimitedDocumentReader.swift",
+      "bytes": 4268,
+      "sha256": "2ac58e2817b22eddba5e11a71a1d21a3a32a8885831351ad7a4693dac9ea02e7"
+    },
+    {
+      "path": "JarvisEVO/Services/OfficeTextExtractor.swift",
+      "bytes": 24570,
+      "sha256": "9a04d5f1960c977bf0afa697fd4c46c0a0cbc80c6f676456ce0f3efb9e811483"
+    },
+    {
+      "path": "JarvisEVO/Services/OfficeZIPContainer.swift",
+      "bytes": 10304,
+      "sha256": "3e8bc7cb2d94df1bb645cd952d1dd9943f6dacc998a9dd300e1e97ed6c886115"
+    },
+    {
+      "path": "JarvisEVO/Services/OfflineDocumentReader.swift",
+      "bytes": 8555,
+      "sha256": "d576c6cbbca8532d383d06b7ea95f94b2f02e6848fe01eaea403320440e8a2a0"
+    },
+    {
+      "path": "README.md",
+      "bytes": 1933,
+      "sha256": "0b0e3ba181f5623ac478b3831245e67374427e58327d670ff7f8d7fe9cec01a3"
+    },
+    {
+      "path": "Tests/OfficeAttachmentIntegrationTests.swift",
+      "bytes": 3508,
+      "sha256": "de60cc76f61107395b2d65e904cbf88b424e81833545cb4c08951ed57f1b0a52"
+    },
+    {
+      "path": "Tests/OfficeFixtures/absolute.docx",
+      "bytes": 976,
+      "sha256": "db86966d2d62565f567e699337e8fa27cb0fb44c5eff4465742b34b48017956c"
+    },
+    {
+      "path": "Tests/OfficeFixtures/backslash.docx",
+      "bytes": 972,
+      "sha256": "58f3d0430799d98dcaf33fa6827c8624184c0cb1a85d40e47599841b06d1dea3"
+    },
+    {
+      "path": "Tests/OfficeFixtures/bad-coordinate.xlsx",
+      "bytes": 2139,
+      "sha256": "5f47ba8db4bc38ac7e6f9144a2d583875072f45bba4c72a8c70b6018212f9174"
+    },
+    {
+      "path": "Tests/OfficeFixtures/bad-crc.docx",
+      "bytes": 872,
+      "sha256": "203e4a7c77be36f83b57f812bfbe11bf8bb8ac419494518bf9832baeca2b52a4"
+    },
+    {
+      "path": "Tests/OfficeFixtures/bad-date.xlsx",
+      "bytes": 2147,
+      "sha256": "bfb3544596fc7eb732e30a7ce3b4e09463128e9fe8b9cf2a1224dfcbc430449a"
+    },
+    {
+      "path": "Tests/OfficeFixtures/bad-shared-index.xlsx",
+      "bytes": 2141,
+      "sha256": "9ce9a7866a0667635b7aee190e5d5918c97e4e6be5435b686df34d9001de8328"
+    },
+    {
+      "path": "Tests/OfficeFixtures/bad.csv",
+      "bytes": 16,
+      "sha256": "ff599f4ada05922e094eadd29f6ad6f9a5ee40eecd798152996e96942a789f64"
+    },
+    {
+      "path": "Tests/OfficeFixtures/bomb.docx",
+      "bytes": 6079,
+      "sha256": "47a1bf9a450ce20c9d9d5f1d9041b2eb842070ed55602e0dda512183b8c79733"
+    },
+    {
+      "path": "Tests/OfficeFixtures/cache-types.xlsx",
+      "bytes": 2252,
+      "sha256": "dcb7852bf87c42e652fd588967a37d0bff2d0ca9504d2e02bd4cf93f73d4d88b"
+    },
+    {
+      "path": "Tests/OfficeFixtures/case-collision.docx",
+      "bytes": 990,
+      "sha256": "4d1f2cc3563cba33279da19ead5582436013e58caf5837d8212370715f13b831"
+    },
+    {
+      "path": "Tests/OfficeFixtures/date1904.xlsx",
+      "bytes": 2253,
+      "sha256": "136c4fd025343c71d89b4f0aa47403d94757fb8997ad7b0e5235fdb1e36e6a89"
+    },
+    {
+      "path": "Tests/OfficeFixtures/default-style.xlsx",
+      "bytes": 1872,
+      "sha256": "5683f44476f56abc379f649c0ac317dc269632c952c5385a8c4977a8c3a34fd7"
+    },
+    {
+      "path": "Tests/OfficeFixtures/depth.docx",
+      "bytes": 751,
+      "sha256": "71d5e27163d1d29897eb314a2059d3dae64684df02258e6e196d6abc154d2fa8"
+    },
+    {
+      "path": "Tests/OfficeFixtures/duplicate-relationship.xlsx",
+      "bytes": 2245,
+      "sha256": "e7a911c47a7333dbd591cd90f2cfc2b018d86ec9557e88a626045fffd2a78991"
+    },
+    {
+      "path": "Tests/OfficeFixtures/duplicate-row.xlsx",
+      "bytes": 2142,
+      "sha256": "3c6f3f29fb184daa9320645584c48b2096d813802f84df973dcd08b0bb37c0eb"
+    },
+    {
+      "path": "Tests/OfficeFixtures/duplicate.docx",
+      "bytes": 990,
+      "sha256": "b1e7f02ac9b0fadea8de62f718cad79b447dba4c3dff6d4e146d6251d94fb89c"
+    },
+    {
+      "path": "Tests/OfficeFixtures/empty.docx",
+      "bytes": 735,
+      "sha256": "65a9415ea86a4d1dc680f00269b7cf00d9fda85255edd3387ee66d68e77a621d"
+    },
+    {
+      "path": "Tests/OfficeFixtures/encrypted.docx",
+      "bytes": 872,
+      "sha256": "986667a0c3cb57f92ee15647656ef1ee4c03750432cd1030fd83571803608153"
+    },
+    {
+      "path": "Tests/OfficeFixtures/entity.docx",
+      "bytes": 802,
+      "sha256": "a4019a43d31694221e54a767c3c9910ee8661d83244e4354b89efe243ad4a74d"
+    },
+    {
+      "path": "Tests/OfficeFixtures/escaped-strings.xlsx",
+      "bytes": 2264,
+      "sha256": "6270f76e88daf78c2243d906d60f9a96de1f9cf09a70a40207f12fd45d6297ab"
+    },
+    {
+      "path": "Tests/OfficeFixtures/external-worksheet.xlsx",
+      "bytes": 2260,
+      "sha256": "890d9f71fff14d6870c9e06ddde97a681375e0797d43e5ee2f3e1a2bff142cfd"
+    },
+    {
+      "path": "Tests/OfficeFixtures/forged-small-size.docx",
+      "bytes": 872,
+      "sha256": "fad39b02fe404b9a81ec3ff0519c5f1b34bf73f7e6bcadaf9ca0a51e91a97079"
+    },
+    {
+      "path": "Tests/OfficeFixtures/header-mismatch.docx",
+      "bytes": 872,
+      "sha256": "26d1258c8f321b561714a370ed8b1ca02d3c280d29d2f9adc70159eecd9dc519"
+    },
+    {
+      "path": "Tests/OfficeFixtures/invalid-surrogate.xlsx",
+      "bytes": 2240,
+      "sha256": "1af60aa1f31a91a3f12ab83437d712daff8ce2e4f5e6688a4f14f43ab3f4508c"
+    },
+    {
+      "path": "Tests/OfficeFixtures/junk-after-quote.csv",
+      "bytes": 7,
+      "sha256": "55497b882baf8eb26a9ed3efcc17aae4100cb26fcb127bc8d584cfa12e4228a7"
+    },
+    {
+      "path": "Tests/OfficeFixtures/long-string.docx",
+      "bytes": 825,
+      "sha256": "e9ae08fca5164331bb6647ea4ff2061cb32c601ffa9b9af13c703cb1a2bb20fe"
+    },
+    {
+      "path": "Tests/OfficeFixtures/macro.docx",
+      "bytes": 996,
+      "sha256": "72dfe643021042b4eb30b32e98fe438a95a729d865677110ee2474fba52b324c"
+    },
+    {
+      "path": "Tests/OfficeFixtures/malformed-xml.docx",
+      "bytes": 652,
+      "sha256": "0571f9e64b524b45a3f6123f788433d5dc0c188b1908436ab1e369f5e75f60fb"
+    },
+    {
+      "path": "Tests/OfficeFixtures/manifest.json",
+      "bytes": 6302,
+      "sha256": "9e4ed4224f330512f188d2e6e838093a0fbff2b2c9251e1b1513f88626e16787"
+    },
+    {
+      "path": "Tests/OfficeFixtures/namespace-alias.xlsx",
+      "bytes": 2248,
+      "sha256": "cbace9419394b66d6133daddfd33ab84895ad7e745ac37f70f194a33e153e000"
+    },
+    {
+      "path": "Tests/OfficeFixtures/namespace-spoof.xlsx",
+      "bytes": 2246,
+      "sha256": "9ddb193665af7bd3b34ccd7aa6bf9bc9686f63c7c40e38a670b0171d3b6f54eb"
+    },
+    {
+      "path": "Tests/OfficeFixtures/nonfinite.xlsx",
+      "bytes": 2139,
+      "sha256": "c1cf6bfefe93b772abee735c86470bb7cd2d819c0c2df6dd6ccadab517b808e9"
+    },
+    {
+      "path": "Tests/OfficeFixtures/not-utf8.csv",
+      "bytes": 8,
+      "sha256": "2e5f40a69753d970e8530f5107aae76efa2de330506f8e3f100690b20eb6a70c"
+    },
+    {
+      "path": "Tests/OfficeFixtures/overlap.docx",
+      "bytes": 872,
+      "sha256": "644b3fa98ce93475ba8b848a41c93dd0808b32d48e94b4c261f14fd3af304f5a"
+    },
+    {
+      "path": "Tests/OfficeFixtures/paragraphs-tables.docx",
+      "bytes": 872,
+      "sha256": "c7979300002df4daf75f2edba7beeb5907121078118b470b321bbbb99ec2d075"
+    },
+    {
+      "path": "Tests/OfficeFixtures/percent.docx",
+      "bytes": 986,
+      "sha256": "7eabe9c421d7acf64ea9e1e36b48afb766145e7741d89406194fb142b10a2203"
+    },
+    {
+      "path": "Tests/OfficeFixtures/quote-in-bare.csv",
+      "bytes": 6,
+      "sha256": "748bef41da40296ba8e71bb44293eb2aaf4eaa4a3851b512904d6f64375f5b2a"
+    },
+    {
+      "path": "Tests/OfficeFixtures/relationship-traversal.xlsx",
+      "bytes": 2240,
+      "sha256": "45bd3ff002e8c0c6239ddfe7d8df395bb7af4c32b2b90bd1cf17e2dd5c3f5175"
+    },
+    {
+      "path": "Tests/OfficeFixtures/rooted-target.xlsx",
+      "bytes": 2278,
+      "sha256": "5c0ebfdceb734e56dbdb2fa2d6b22572829fab30d513318c8af24e24a2b0f0cd"
+    },
+    {
+      "path": "Tests/OfficeFixtures/signed-descriptors.docx",
+      "bytes": 920,
+      "sha256": "b9a65eb3f73d2fa4c50564c3bf0a84917afec3b883d248fd8de2eb93480917ce"
+    },
+    {
+      "path": "Tests/OfficeFixtures/structured.csv",
+      "bytes": 73,
+      "sha256": "afa9bd8611d98a99e1e7943f3a99796d50813f6df62aed206f12b54616584025"
+    },
+    {
+      "path": "Tests/OfficeFixtures/structured.tsv",
+      "bytes": 18,
+      "sha256": "228a4bff9c91e5e838129bd74709c370313c48a627c9fea469207f823df0c558"
+    },
+    {
+      "path": "Tests/OfficeFixtures/symlink.docx",
+      "bytes": 872,
+      "sha256": "cafb0c5199ffa6e391db7140807526886779ad03f9a14f450efa77f124a61b44"
+    },
+    {
+      "path": "Tests/OfficeFixtures/traversal.docx",
+      "bytes": 972,
+      "sha256": "78514d8fefdebf73391b293054c46b928ccf3c9d424e4c2528f51359ddffea5b"
+    },
+    {
+      "path": "Tests/OfficeFixtures/truncated.docx",
+      "bytes": 867,
+      "sha256": "4081787fe23fcf38d9faa4b7ba9030e2d314ed9941a68a12215ef6d7d1ca7bea"
+    },
+    {
+      "path": "Tests/OfficeFixtures/types-and-formulas.xlsx",
+      "bytes": 2278,
+      "sha256": "4623f0f42d36e5d476e7ff6e5aafba344e4f69c70bea116f877d6e99d74f50b4"
+    },
+    {
+      "path": "Tests/OfficeFixtures/unknown-cell.xlsx",
+      "bytes": 2144,
+      "sha256": "ef50ded0962b11d77b83e9f9563bb7d3caecab87535f3d0f9deb1da89c1a63b2"
+    },
+    {
+      "path": "Tests/OfficeFixtures/unsupported-method.docx",
+      "bytes": 872,
+      "sha256": "68cc3a342b5a8ea5c978676024185f0ea6558410b2e1d21ab5a645a85cc82cc3"
+    },
+    {
+      "path": "Tests/OfficeFixtures/utf16-xml.docx",
+      "bytes": 802,
+      "sha256": "5fcd18fb490a1862169d9fd82897e796af51b5719e5b3db9e9b5fb68299330a4"
+    },
+    {
+      "path": "Tests/OfficeFixtures/zip64.docx",
+      "bytes": 872,
+      "sha256": "a17ac05813d20d7e247dea2a3d6b24c5f8598c9c5078770064e9a8d2a2d02d28"
+    },
+    {
+      "path": "Tests/OfflineDocumentReaderTests.swift",
+      "bytes": 7465,
+      "sha256": "d8df7c8886cf02216b4715aa66f05e636959ce5824778be6320748d004f11cfd"
+    },
+    {
+      "path": "proposed/base-source-sha256.json",
+      "bytes": 312,
+      "sha256": "96af16596577f65ca8ad2b1e3371a843ed2999cb1660223f596bcaae12c35a14"
+    },
+    {
+      "path": "proposed/office-integration.diff",
+      "bytes": 5981,
+      "sha256": "6503bc2996fe031b54221b694e4f56b8ef3b3115d7c680cdd46841fcf00d0f8e"
+    },
+    {
+      "path": "provenance/ZIPFoundation-Archive-API.txt",
+      "bytes": 18790,
+      "sha256": "a36fb6c28dc61665003d0de996eeeccf3ddd829c1c5a3ff0a375ec86a302e912"
+    },
+    {
+      "path": "provenance/ZIPFoundation-Compression-API.txt",
+      "bytes": 18324,
+      "sha256": "88c2b802cc903d48987cd3808cd9212226e889948c76f0790a01572bdaab1d2d"
+    },
+    {
+      "path": "provenance/ZIPFoundation-LICENSE.txt",
+      "bytes": 1105,
+      "sha256": "93a5b6f4c4fcfbca71aaf17f5758d249cf205d5d1c237becc37f14e43af09f6b"
+    },
+    {
+      "path": "provenance/ZIPFoundation-Reading-API.txt",
+      "bytes": 6726,
+      "sha256": "14f4c1c9ffbe45fb4618625be15105507010110680e7e4a90c9061e222ec8b03"
+    },
+    {
+      "path": "provenance/ZIPFoundation-provenance.json",
+      "bytes": 1995,
+      "sha256": "cb5b973b14db1da7f9ada6889c316ce91b27584697d4137fa5e396009376d63f"
+    },
+    {
+      "path": "python-fixture-checks.log",
+      "bytes": 1573,
+      "sha256": "e74721c6135fa2f5af3580108afe73c6dce71756ead939271e7507349fe45c28"
+    },
+    {
+      "path": "scripts/check_office_delivery.py",
+      "bytes": 11575,
+      "sha256": "ba9bb3f3d2adc7e085c406be79e59450bb620e1c0f47020a73c47016ab3c12b7"
+    },
+    {
+      "path": "scripts/create_integration_patch.py",
+      "bytes": 4315,
+      "sha256": "dc51648826e9f78e84fe92936f42cf001e159c3f0384f93b74842c71b8b49e80"
+    },
+    {
+      "path": "scripts/generate_fixtures.py",
+      "bytes": 11955,
+      "sha256": "fccbb90ede77f6be649c2b115e3583b9afe9f7051f6c7c2425542fdf68a623d6"
+    },
+    {
+      "path": "verification-summary.json",
+      "bytes": 346,
+      "sha256": "034978c84fd02eccd7cd0d2db7f34deed3d7acb538a02ad506da906addb068b4"
+    }
+  ]
+}

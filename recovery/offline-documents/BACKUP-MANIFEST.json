@@ -1,0 +1,532 @@
+{
+  "schema_version": 1,
+  "repository": "R347H4CK3R/Jarvis-EVO",
+  "branch": "recovery/evo-offline-documents",
+  "base_commit": "074ab757a239e3ae57294cf0e7a9ce97a2e66db8",
+  "base_tree": "203e3da66a4330e494ea65947ccaf296a42bf5f4",
+  "artifact_directory": "recovery/offline-documents",
+  "purpose": "Private recovery backup of the isolated, unverified offline Office reader proposal.",
+  "native_tests_executed": false,
+  "production_integrated": false,
+  "proposed_patch_applied": false,
+  "source_manifest_path": "recovery/offline-documents/SOURCE-MANIFEST.json",
+  "source_manifest_sha256": "d48312328b6f352127db98a0c3b3f7e92f0e08f74e0258f4b901fc3d0b3cd373",
+  "source_manifest_file_count": 72,
+  "preserved_source_file_count": 73,
+  "preserved_source_byte_count": 251427,
+  "binary_preserved_file_count": 44,
+  "verification": "All 72 listed source files were verified against SOURCE-MANIFEST.json before upload; the source manifest itself was separately hashed. Each entry records the expected Git blob ID, SHA-256, byte count and Git mode for remote verification. This manifest excludes its own hash to avoid self-reference.",
+  "files": [
+    {
+      "path": "recovery/offline-documents/DESIGN-AND-TESTING.md",
+      "git_mode": "100644",
+      "git_blob_sha1": "afa145914a5f5753338c3654b1f3cb2e81e9c996",
+      "sha256": "a54acb823bdc3e05064ade2e87df39e565b956f5daa7824a8de0c205eddf34be",
+      "bytes": 9947
+    },
+    {
+      "path": "recovery/offline-documents/INTEGRATION.md",
+      "git_mode": "100644",
+      "git_blob_sha1": "c719cbf000d12e11a2146362f905d82c621e83ee",
+      "sha256": "61df4947a0078d262fb542a615ea080bac0aa233e4c2f186ca864966cf549294",
+      "bytes": 4603
+    },
+    {
+      "path": "recovery/offline-documents/JarvisEVO/Services/BoundedOfficeXML.swift",
+      "git_mode": "100644",
+      "git_blob_sha1": "141a8c681a5bee36b4e848db3e7c2bac3b94358a",
+      "sha256": "aea609f8256c8adb987fe4b635a3c9409d7bbdb775593abe848709230b79e568",
+      "bytes": 7219
+    },
+    {
+      "path": "recovery/offline-documents/JarvisEVO/Services/DelimitedDocumentReader.swift",
+      "git_mode": "100644",
+      "git_blob_sha1": "df961fcf2222cd768ed07844261735ace66c0084",
+      "sha256": "2ac58e2817b22eddba5e11a71a1d21a3a32a8885831351ad7a4693dac9ea02e7",
+      "bytes": 4268
+    },
+    {
+      "path": "recovery/offline-documents/JarvisEVO/Services/OfficeTextExtractor.swift",
+      "git_mode": "100644",
+      "git_blob_sha1": "18421b6993b6788136e7909412f35385ba0cb2dd",
+      "sha256": "9a04d5f1960c977bf0afa697fd4c46c0a0cbc80c6f676456ce0f3efb9e811483",
+      "bytes": 24570
+    },
+    {
+      "path": "recovery/offline-documents/JarvisEVO/Services/OfficeZIPContainer.swift",
+      "git_mode": "100644",
+      "git_blob_sha1": "413b7cc5721648695a3e161aeb96b076024ddc6c",
+      "sha256": "3e8bc7cb2d94df1bb645cd952d1dd9943f6dacc998a9dd300e1e97ed6c886115",
+      "bytes": 10304
+    },
+    {
+      "path": "recovery/offline-documents/JarvisEVO/Services/OfflineDocumentReader.swift",
+      "git_mode": "100644",
+      "git_blob_sha1": "b8b34f72a80759e0200bbac869872ca673463e63",
+      "sha256": "d576c6cbbca8532d383d06b7ea95f94b2f02e6848fe01eaea403320440e8a2a0",
+      "bytes": 8555
+    },
+    {
+      "path": "recovery/offline-documents/README.md",
+      "git_mode": "100644",
+      "git_blob_sha1": "cebb1f15920119432099740858817aeb3260f556",
+      "sha256": "0b0e3ba181f5623ac478b3831245e67374427e58327d670ff7f8d7fe9cec01a3",
+      "bytes": 1933
+    },
+    {
+      "path": "recovery/offline-documents/SOURCE-MANIFEST.json",
+      "git_mode": "100644",
+      "git_blob_sha1": "c8cbc6138394034cec5328ca19de43655de292c2",
+      "sha256": "d48312328b6f352127db98a0c3b3f7e92f0e08f74e0258f4b901fc3d0b3cd373",
+      "bytes": 12937
+    },
+    {
+      "path": "recovery/offline-documents/Tests/OfficeAttachmentIntegrationTests.swift",
+      "git_mode": "100644",
+      "git_blob_sha1": "e8b3d17f5e569b14a7df400e2ca7149d59d0afa6",
+      "sha256": "de60cc76f61107395b2d65e904cbf88b424e81833545cb4c08951ed57f1b0a52",
+      "bytes": 3508
+    },
+    {
+      "path": "recovery/offline-documents/Tests/OfficeFixtures/absolute.docx",
+      "git_mode": "100644",
+      "git_blob_sha1": "f164077a6128631e105b69e21aac27d4fd575f27",
+      "sha256": "db86966d2d62565f567e699337e8fa27cb0fb44c5eff4465742b34b48017956c",
+      "bytes": 976
+    },
+    {
+      "path": "recovery/offline-documents/Tests/OfficeFixtures/backslash.docx",
+      "git_mode": "100644",
+      "git_blob_sha1": "5baf117bbd9e261fef3b01b57ab33bbc3aaefa42",
+      "sha256": "58f3d0430799d98dcaf33fa6827c8624184c0cb1a85d40e47599841b06d1dea3",
+      "bytes": 972
+    },
+    {
+      "path": "recovery/offline-documents/Tests/OfficeFixtures/bad-coordinate.xlsx",
+      "git_mode": "100644",
+      "git_blob_sha1": "4d20a37ca02da2d7f8c1827eaba43d7c22ee2a05",
+      "sha256": "5f47ba8db4bc38ac7e6f9144a2d583875072f45bba4c72a8c70b6018212f9174",
+      "bytes": 2139
+    },
+    {
+      "path": "recovery/offline-documents/Tests/OfficeFixtures/bad-crc.docx",
+      "git_mode": "100644",
+      "git_blob_sha1": "fd59ff7b0eff5703ec516e204f02025a52402797",
+      "sha256": "203e4a7c77be36f83b57f812bfbe11bf8bb8ac419494518bf9832baeca2b52a4",
+      "bytes": 872
+    },
+    {
+      "path": "recovery/offline-documents/Tests/OfficeFixtures/bad-date.xlsx",
+      "git_mode": "100644",
+      "git_blob_sha1": "83704bcc55863a24fe96b409f992dec93eb351de",
+      "sha256": "bfb3544596fc7eb732e30a7ce3b4e09463128e9fe8b9cf2a1224dfcbc430449a",
+      "bytes": 2147
+    },
+    {
+      "path": "recovery/offline-documents/Tests/OfficeFixtures/bad-shared-index.xlsx",
+      "git_mode": "100644",
+      "git_blob_sha1": "f73024fac573d90eed17684337739b3efb4e61d3",
+      "sha256": "9ce9a7866a0667635b7aee190e5d5918c97e4e6be5435b686df34d9001de8328",
+      "bytes": 2141
+    },
+    {
+      "path": "recovery/offline-documents/Tests/OfficeFixtures/bad.csv",
+      "git_mode": "100644",
+      "git_blob_sha1": "d4cb97394650163efb7a3ab03bb47822d2bcd42d",
+      "sha256": "ff599f4ada05922e094eadd29f6ad6f9a5ee40eecd798152996e96942a789f64",
+      "bytes": 16
+    },
+    {
+      "path": "recovery/offline-documents/Tests/OfficeFixtures/bomb.docx",
+      "git_mode": "100644",
+      "git_blob_sha1": "02057fee327203490e6b09a9c539eeffc4a480f8",
+      "sha256": "47a1bf9a450ce20c9d9d5f1d9041b2eb842070ed55602e0dda512183b8c79733",
+      "bytes": 6079
+    },
+    {
+      "path": "recovery/offline-documents/Tests/OfficeFixtures/cache-types.xlsx",
+      "git_mode": "100644",
+      "git_blob_sha1": "f2928194a1980c3f3bbf7eef72a6b329053c0c48",
+      "sha256": "dcb7852bf87c42e652fd588967a37d0bff2d0ca9504d2e02bd4cf93f73d4d88b",
+      "bytes": 2252
+    },
+    {
+      "path": "recovery/offline-documents/Tests/OfficeFixtures/case-collision.docx",
+      "git_mode": "100644",
+      "git_blob_sha1": "fd935c1330ea7a4dfce83292aa1185e69338e263",
+      "sha256": "4d1f2cc3563cba33279da19ead5582436013e58caf5837d8212370715f13b831",
+      "bytes": 990
+    },
+    {
+      "path": "recovery/offline-documents/Tests/OfficeFixtures/date1904.xlsx",
+      "git_mode": "100644",
+      "git_blob_sha1": "ed0393b71ffaf111a56605ddb1dc3f4f2b3f4367",
+      "sha256": "136c4fd025343c71d89b4f0aa47403d94757fb8997ad7b0e5235fdb1e36e6a89",
+      "bytes": 2253
+    },
+    {
+      "path": "recovery/offline-documents/Tests/OfficeFixtures/default-style.xlsx",
+      "git_mode": "100644",
+      "git_blob_sha1": "9630688cb7411454f3f0439acbae56d830996cad",
+      "sha256": "5683f44476f56abc379f649c0ac317dc269632c952c5385a8c4977a8c3a34fd7",
+      "bytes": 1872
+    },
+    {
+      "path": "recovery/offline-documents/Tests/OfficeFixtures/depth.docx",
+      "git_mode": "100644",
+      "git_blob_sha1": "827a30e0a1452396435e0b75ed2d2380a6d6653f",
+      "sha256": "71d5e27163d1d29897eb314a2059d3dae64684df02258e6e196d6abc154d2fa8",
+      "bytes": 751
+    },
+    {
+      "path": "recovery/offline-documents/Tests/OfficeFixtures/duplicate-relationship.xlsx",
+      "git_mode": "100644",
+      "git_blob_sha1": "43feae8c6960d0e27f2f1429f646f9fff1ca913d",
+      "sha256": "e7a911c47a7333dbd591cd90f2cfc2b018d86ec9557e88a626045fffd2a78991",
+      "bytes": 2245
+    },
+    {
+      "path": "recovery/offline-documents/Tests/OfficeFixtures/duplicate-row.xlsx",
+      "git_mode": "100644",
+      "git_blob_sha1": "5edda69163e8261c55010bc8f5678ecf94b3dc5d",
+      "sha256": "3c6f3f29fb184daa9320645584c48b2096d813802f84df973dcd08b0bb37c0eb",
+      "bytes": 2142
+    },
+    {
+      "path": "recovery/offline-documents/Tests/OfficeFixtures/duplicate.docx",
+      "git_mode": "100644",
+      "git_blob_sha1": "9c760fca584b08c28a48a0d9ffe0bb00b9441048",
+      "sha256": "b1e7f02ac9b0fadea8de62f718cad79b447dba4c3dff6d4e146d6251d94fb89c",
+      "bytes": 990
+    },
+    {
+      "path": "recovery/offline-documents/Tests/OfficeFixtures/empty.docx",
+      "git_mode": "100644",
+      "git_blob_sha1": "e1cbcab5f4531c6447ebb1ffa20051881cdeac01",
+      "sha256": "65a9415ea86a4d1dc680f00269b7cf00d9fda85255edd3387ee66d68e77a621d",
+      "bytes": 735
+    },
+    {
+      "path": "recovery/offline-documents/Tests/OfficeFixtures/encrypted.docx",
+      "git_mode": "100644",
+      "git_blob_sha1": "03db6cc54fc9d19f50a8bfde941da9a9addbb258",
+      "sha256": "986667a0c3cb57f92ee15647656ef1ee4c03750432cd1030fd83571803608153",
+      "bytes": 872
+    },
+    {
+      "path": "recovery/offline-documents/Tests/OfficeFixtures/entity.docx",
+      "git_mode": "100644",
+      "git_blob_sha1": "7064fb9f3adfe3b02c72c61014b8818ce142062e",
+      "sha256": "a4019a43d31694221e54a767c3c9910ee8661d83244e4354b89efe243ad4a74d",
+      "bytes": 802
+    },
+    {
+      "path": "recovery/offline-documents/Tests/OfficeFixtures/escaped-strings.xlsx",
+      "git_mode": "100644",
+      "git_blob_sha1": "645ce02c33ca4b909b8885d368757914196be79e",
+      "sha256": "6270f76e88daf78c2243d906d60f9a96de1f9cf09a70a40207f12fd45d6297ab",
+      "bytes": 2264
+    },
+    {
+      "path": "recovery/offline-documents/Tests/OfficeFixtures/external-worksheet.xlsx",
+      "git_mode": "100644",
+      "git_blob_sha1": "5309af252668f8c6c040fd6a293b044e6e4a1810",
+      "sha256": "890d9f71fff14d6870c9e06ddde97a681375e0797d43e5ee2f3e1a2bff142cfd",
+      "bytes": 2260
+    },
+    {
+      "path": "recovery/offline-documents/Tests/OfficeFixtures/forged-small-size.docx",
+      "git_mode": "100644",
+      "git_blob_sha1": "e68a53a12347a95927eddbae19d2d575ac2e6184",
+      "sha256": "fad39b02fe404b9a81ec3ff0519c5f1b34bf73f7e6bcadaf9ca0a51e91a97079",
+      "bytes": 872
+    },
+    {
+      "path": "recovery/offline-documents/Tests/OfficeFixtures/header-mismatch.docx",
+      "git_mode": "100644",
+      "git_blob_sha1": "38a23418bf43f5292bc5770d984f5ac0e3d9fe40",
+      "sha256": "26d1258c8f321b561714a370ed8b1ca02d3c280d29d2f9adc70159eecd9dc519",
+      "bytes": 872
+    },
+    {
+      "path": "recovery/offline-documents/Tests/OfficeFixtures/invalid-surrogate.xlsx",
+      "git_mode": "100644",
+      "git_blob_sha1": "ff868cd97ceb8faf617a84df7bfeaf3f4c17dae5",
+      "sha256": "1af60aa1f31a91a3f12ab83437d712daff8ce2e4f5e6688a4f14f43ab3f4508c",
+      "bytes": 2240
+    },
+    {
+      "path": "recovery/offline-documents/Tests/OfficeFixtures/junk-after-quote.csv",
+      "git_mode": "100644",
+      "git_blob_sha1": "899e1768ed188c8530e1b45881021d6feaab1b57",
+      "sha256": "55497b882baf8eb26a9ed3efcc17aae4100cb26fcb127bc8d584cfa12e4228a7",
+      "bytes": 7
+    },
+    {
+      "path": "recovery/offline-documents/Tests/OfficeFixtures/long-string.docx",
+      "git_mode": "100644",
+      "git_blob_sha1": "d55c40fefbbd70f5a5b9756b0226870c8245bad8",
+      "sha256": "e9ae08fca5164331bb6647ea4ff2061cb32c601ffa9b9af13c703cb1a2bb20fe",
+      "bytes": 825
+    },
+    {
+      "path": "recovery/offline-documents/Tests/OfficeFixtures/macro.docx",
+      "git_mode": "100644",
+      "git_blob_sha1": "e94ef768a2b1e897352edf412e6647c7789979bb",
+      "sha256": "72dfe643021042b4eb30b32e98fe438a95a729d865677110ee2474fba52b324c",
+      "bytes": 996
+    },
+    {
+      "path": "recovery/offline-documents/Tests/OfficeFixtures/malformed-xml.docx",
+      "git_mode": "100644",
+      "git_blob_sha1": "573e154f3e161bbf3ef0136e69338a377c43edbc",
+      "sha256": "0571f9e64b524b45a3f6123f788433d5dc0c188b1908436ab1e369f5e75f60fb",
+      "bytes": 652
+    },
+    {
+      "path": "recovery/offline-documents/Tests/OfficeFixtures/manifest.json",
+      "git_mode": "100644",
+      "git_blob_sha1": "34364808e428187e9e2066d34780e9a68a625eb0",
+      "sha256": "9e4ed4224f330512f188d2e6e838093a0fbff2b2c9251e1b1513f88626e16787",
+      "bytes": 6302
+    },
+    {
+      "path": "recovery/offline-documents/Tests/OfficeFixtures/namespace-alias.xlsx",
+      "git_mode": "100644",
+      "git_blob_sha1": "c80fab4cf1b0d2ffbe32722049dab4f85012ef50",
+      "sha256": "cbace9419394b66d6133daddfd33ab84895ad7e745ac37f70f194a33e153e000",
+      "bytes": 2248
+    },
+    {
+      "path": "recovery/offline-documents/Tests/OfficeFixtures/namespace-spoof.xlsx",
+      "git_mode": "100644",
+      "git_blob_sha1": "3b689c937426b848728b3bcafcdca2fecf568569",
+      "sha256": "9ddb193665af7bd3b34ccd7aa6bf9bc9686f63c7c40e38a670b0171d3b6f54eb",
+      "bytes": 2246
+    },
+    {
+      "path": "recovery/offline-documents/Tests/OfficeFixtures/nonfinite.xlsx",
+      "git_mode": "100644",
+      "git_blob_sha1": "41c0b01cc1c2b2cbe20cfc5e6475739a1c623fff",
+      "sha256": "c1cf6bfefe93b772abee735c86470bb7cd2d819c0c2df6dd6ccadab517b808e9",
+      "bytes": 2139
+    },
+    {
+      "path": "recovery/offline-documents/Tests/OfficeFixtures/not-utf8.csv",
+      "git_mode": "100644",
+      "git_blob_sha1": "b79e206cc6d63055d8bbbbb99f88166ef9788335",
+      "sha256": "2e5f40a69753d970e8530f5107aae76efa2de330506f8e3f100690b20eb6a70c",
+      "bytes": 8
+    },
+    {
+      "path": "recovery/offline-documents/Tests/OfficeFixtures/overlap.docx",
+      "git_mode": "100644",
+      "git_blob_sha1": "145e98072cbeab7aaa5a69c43ae27d9a9a36ece0",
+      "sha256": "644b3fa98ce93475ba8b848a41c93dd0808b32d48e94b4c261f14fd3af304f5a",
+      "bytes": 872
+    },
+    {
+      "path": "recovery/offline-documents/Tests/OfficeFixtures/paragraphs-tables.docx",
+      "git_mode": "100644",
+      "git_blob_sha1": "0a87e6293d6e3ae37ee74727f7b52af82d44f9bf",
+      "sha256": "c7979300002df4daf75f2edba7beeb5907121078118b470b321bbbb99ec2d075",
+      "bytes": 872
+    },
+    {
+      "path": "recovery/offline-documents/Tests/OfficeFixtures/percent.docx",
+      "git_mode": "100644",
+      "git_blob_sha1": "3b89058d7e039b0fc3df92e1b626d9d9a531ee8a",
+      "sha256": "7eabe9c421d7acf64ea9e1e36b48afb766145e7741d89406194fb142b10a2203",
+      "bytes": 986
+    },
+    {
+      "path": "recovery/offline-documents/Tests/OfficeFixtures/quote-in-bare.csv",
+      "git_mode": "100644",
+      "git_blob_sha1": "6cc6c3f5706c37f0ab8273dcf201891946d31c49",
+      "sha256": "748bef41da40296ba8e71bb44293eb2aaf4eaa4a3851b512904d6f64375f5b2a",
+      "bytes": 6
+    },
+    {
+      "path": "recovery/offline-documents/Tests/OfficeFixtures/relationship-traversal.xlsx",
+      "git_mode": "100644",
+      "git_blob_sha1": "58e26a8e4d71a7bd3be856feff1c617abfd02d11",
+      "sha256": "45bd3ff002e8c0c6239ddfe7d8df395bb7af4c32b2b90bd1cf17e2dd5c3f5175",
+      "bytes": 2240
+    },
+    {
+      "path": "recovery/offline-documents/Tests/OfficeFixtures/rooted-target.xlsx",
+      "git_mode": "100644",
+      "git_blob_sha1": "4c634e882426f67f69d61b74f2890dca62e686a5",
+      "sha256": "5c0ebfdceb734e56dbdb2fa2d6b22572829fab30d513318c8af24e24a2b0f0cd",
+      "bytes": 2278
+    },
+    {
+      "path": "recovery/offline-documents/Tests/OfficeFixtures/signed-descriptors.docx",
+      "git_mode": "100644",
+      "git_blob_sha1": "b20d006e77bb73147692cda8940afc8baf0e8843",
+      "sha256": "b9a65eb3f73d2fa4c50564c3bf0a84917afec3b883d248fd8de2eb93480917ce",
+      "bytes": 920
+    },
+    {
+      "path": "recovery/offline-documents/Tests/OfficeFixtures/structured.csv",
+      "git_mode": "100644",
+      "git_blob_sha1": "a2b97b9778d813671d657851903e2b29cb3ef07f",
+      "sha256": "afa9bd8611d98a99e1e7943f3a99796d50813f6df62aed206f12b54616584025",
+      "bytes": 73
+    },
+    {
+      "path": "recovery/offline-documents/Tests/OfficeFixtures/structured.tsv",
+      "git_mode": "100644",
+      "git_blob_sha1": "25d11a82bf1c8a7e20ae064a70ea9418727f1483",
+      "sha256": "228a4bff9c91e5e838129bd74709c370313c48a627c9fea469207f823df0c558",
+      "bytes": 18
+    },
+    {
+      "path": "recovery/offline-documents/Tests/OfficeFixtures/symlink.docx",
+      "git_mode": "100644",
+      "git_blob_sha1": "a624bc4bedeaf4db8a1d4fdef842af065669b18d",
+      "sha256": "cafb0c5199ffa6e391db7140807526886779ad03f9a14f450efa77f124a61b44",
+      "bytes": 872
+    },
+    {
+      "path": "recovery/offline-documents/Tests/OfficeFixtures/traversal.docx",
+      "git_mode": "100644",
+      "git_blob_sha1": "e90954ea93b462c2c22522bd03405c9b320e056c",
+      "sha256": "78514d8fefdebf73391b293054c46b928ccf3c9d424e4c2528f51359ddffea5b",
+      "bytes": 972
+    },
+    {
+      "path": "recovery/offline-documents/Tests/OfficeFixtures/truncated.docx",
+      "git_mode": "100644",
+      "git_blob_sha1": "0603bcc4661ffd4cf222ee919adfdc9448d53d02",
+      "sha256": "4081787fe23fcf38d9faa4b7ba9030e2d314ed9941a68a12215ef6d7d1ca7bea",
+      "bytes": 867
+    },
+    {
+      "path": "recovery/offline-documents/Tests/OfficeFixtures/types-and-formulas.xlsx",
+      "git_mode": "100644",
+      "git_blob_sha1": "69edaa6f62fbb235567289ffa7baf6eba9aae3e6",
+      "sha256": "4623f0f42d36e5d476e7ff6e5aafba344e4f69c70bea116f877d6e99d74f50b4",
+      "bytes": 2278
+    },
+    {
+      "path": "recovery/offline-documents/Tests/OfficeFixtures/unknown-cell.xlsx",
+      "git_mode": "100644",
+      "git_blob_sha1": "287c33092471bd586ea10c61267a1a2a73f9ee0d",
+      "sha256": "ef50ded0962b11d77b83e9f9563bb7d3caecab87535f3d0f9deb1da89c1a63b2",
+      "bytes": 2144
+    },
+    {
+      "path": "recovery/offline-documents/Tests/OfficeFixtures/unsupported-method.docx",
+      "git_mode": "100644",
+      "git_blob_sha1": "8bbf9499ed740cb306dbcc139b898dfdad32d98f",
+      "sha256": "68cc3a342b5a8ea5c978676024185f0ea6558410b2e1d21ab5a645a85cc82cc3",
+      "bytes": 872
+    },
+    {
+      "path": "recovery/offline-documents/Tests/OfficeFixtures/utf16-xml.docx",
+      "git_mode": "100644",
+      "git_blob_sha1": "ded233c0a91cd7fb1b6e22c34ca30e26d75b54bd",
+      "sha256": "5fcd18fb490a1862169d9fd82897e796af51b5719e5b3db9e9b5fb68299330a4",
+      "bytes": 802
+    },
+    {
+      "path": "recovery/offline-documents/Tests/OfficeFixtures/zip64.docx",
+      "git_mode": "100644",
+      "git_blob_sha1": "b92286f218f2df085fa9fb8f27edd0fe8b83749f",
+      "sha256": "a17ac05813d20d7e247dea2a3d6b24c5f8598c9c5078770064e9a8d2a2d02d28",
+      "bytes": 872
+    },
+    {
+      "path": "recovery/offline-documents/Tests/OfflineDocumentReaderTests.swift",
+      "git_mode": "100644",
+      "git_blob_sha1": "693054ed4701477c961f23340466b7b1320f8788",
+      "sha256": "d8df7c8886cf02216b4715aa66f05e636959ce5824778be6320748d004f11cfd",
+      "bytes": 7465
+    },
+    {
+      "path": "recovery/offline-documents/proposed/base-source-sha256.json",
+      "git_mode": "100644",
+      "git_blob_sha1": "640f2a660367fcf548c29703af783110dcde9afd",
+      "sha256": "96af16596577f65ca8ad2b1e3371a843ed2999cb1660223f596bcaae12c35a14",
+      "bytes": 312
+    },
+    {
+      "path": "recovery/offline-documents/proposed/office-integration.diff",
+      "git_mode": "100644",
+      "git_blob_sha1": "ef195d22c62ce4e773fe27d2b31781ca777467f6",
+      "sha256": "6503bc2996fe031b54221b694e4f56b8ef3b3115d7c680cdd46841fcf00d0f8e",
+      "bytes": 5981
+    },
+    {
+      "path": "recovery/offline-documents/provenance/ZIPFoundation-Archive-API.txt",
+      "git_mode": "100644",
+      "git_blob_sha1": "5fc11d2add62d2ea49aae52941dc7e23a873bbb0",
+      "sha256": "a36fb6c28dc61665003d0de996eeeccf3ddd829c1c5a3ff0a375ec86a302e912",
+      "bytes": 18790
+    },
+    {
+      "path": "recovery/offline-documents/provenance/ZIPFoundation-Compression-API.txt",
+      "git_mode": "100644",
+      "git_blob_sha1": "900233cf75b18b5b1fb55414808c519af92a7037",
+      "sha256": "88c2b802cc903d48987cd3808cd9212226e889948c76f0790a01572bdaab1d2d",
+      "bytes": 18324
+    },
+    {
+      "path": "recovery/offline-documents/provenance/ZIPFoundation-LICENSE.txt",
+      "git_mode": "100644",
+      "git_blob_sha1": "07362ff83b449ee7e78129b28a030e2d5902c13d",
+      "sha256": "93a5b6f4c4fcfbca71aaf17f5758d249cf205d5d1c237becc37f14e43af09f6b",
+      "bytes": 1105
+    },
+    {
+      "path": "recovery/offline-documents/provenance/ZIPFoundation-Reading-API.txt",
+      "git_mode": "100644",
+      "git_blob_sha1": "8423bd986713b689da8992e4b223ed25ef3f39de",
+      "sha256": "14f4c1c9ffbe45fb4618625be15105507010110680e7e4a90c9061e222ec8b03",
+      "bytes": 6726
+    },
+    {
+      "path": "recovery/offline-documents/provenance/ZIPFoundation-provenance.json",
+      "git_mode": "100644",
+      "git_blob_sha1": "b4d6787d1e54f14592db7f7c4adffcea860d5698",
+      "sha256": "cb5b973b14db1da7f9ada6889c316ce91b27584697d4137fa5e396009376d63f",
+      "bytes": 1995
+    },
+    {
+      "path": "recovery/offline-documents/python-fixture-checks.log",
+      "git_mode": "100644",
+      "git_blob_sha1": "3dee642aa70bf8b0b1bd7489ad4c83efa353feb7",
+      "sha256": "e74721c6135fa2f5af3580108afe73c6dce71756ead939271e7507349fe45c28",
+      "bytes": 1573
+    },
+    {
+      "path": "recovery/offline-documents/scripts/check_office_delivery.py",
+      "git_mode": "100644",
+      "git_blob_sha1": "78aae6abe1761764d93d9b636a378192e1281c65",
+      "sha256": "ba9bb3f3d2adc7e085c406be79e59450bb620e1c0f47020a73c47016ab3c12b7",
+      "bytes": 11575
+    },
+    {
+      "path": "recovery/offline-documents/scripts/create_integration_patch.py",
+      "git_mode": "100644",
+      "git_blob_sha1": "e3866808cf27ba9bfdfe1883223b3e7fd3b54e00",
+      "sha256": "dc51648826e9f78e84fe92936f42cf001e159c3f0384f93b74842c71b8b49e80",
+      "bytes": 4315
+    },
+    {
+      "path": "recovery/offline-documents/scripts/generate_fixtures.py",
+      "git_mode": "100644",
+      "git_blob_sha1": "26cdd8bca65a69eeb59862fceb084002368ad34e",
+      "sha256": "fccbb90ede77f6be649c2b115e3583b9afe9f7051f6c7c2425542fdf68a623d6",
+      "bytes": 11955
+    },
+    {
+      "path": "recovery/offline-documents/verification-summary.json",
+      "git_mode": "100644",
+      "git_blob_sha1": "645245d58f6ce6565da5388bd4b70cac4b427157",
+      "sha256": "034978c84fd02eccd7cd0d2db7f34deed3d7acb538a02ad506da906addb068b4",
+      "bytes": 346
+    }
+  ]
+}

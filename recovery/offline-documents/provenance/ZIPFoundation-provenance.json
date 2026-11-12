@@ -1,0 +1,39 @@
+{
+  "dependency": "ZIPFoundation",
+  "repository": "https://github.com/weichsel/ZIPFoundation",
+  "version": "0.9.20",
+  "commit": "22787ffb59de99e5dc1fbfe80b19c97a904ad48d",
+  "license": "MIT",
+  "verified_via": "Read-only GitHub connector fetch_commit for tag 0.9.20, plus official tagged source files. No installed package or native build was run.",
+  "commit_url": "https://github.com/weichsel/ZIPFoundation/commit/22787ffb59de99e5dc1fbfe80b19c97a904ad48d",
+  "files": {
+    "Sources/ZIPFoundation/Archive+Reading.swift": {
+      "git_blob_sha": "8423bd986713b689da8992e4b223ed25ef3f39de",
+      "url": "https://github.com/weichsel/ZIPFoundation/blob/0.9.20/Sources/ZIPFoundation/Archive%2BReading.swift"
+    },
+    "Sources/ZIPFoundation/Archive+MemoryFile.swift": {
+      "git_blob_sha": "72786090814c157f92197d085024f244fbb6ba0d",
+      "url": "https://github.com/weichsel/ZIPFoundation/blob/0.9.20/Sources/ZIPFoundation/Archive%2BMemoryFile.swift"
+    },
+    "Package.swift": {
+      "git_blob_sha": "26c76d064603d2674bd4357e91d739e7876c7c81",
+      "url": "https://github.com/weichsel/ZIPFoundation/blob/0.9.20/Package.swift"
+    },
+    "LICENSE": {
+      "git_blob_sha": "07362ff83b449ee7e78129b28a030e2d5902c13d",
+      "url": "https://github.com/weichsel/ZIPFoundation/blob/0.9.20/LICENSE"
+    }
+  },
+  "api": [
+    "try Archive(data: Data, accessMode: .read)",
+    "for entry in archive",
+    "Entry.path, type, compressedSize, uncompressedSize, checksum",
+    "try archive.extract(entry, bufferSize: 16_384, skipCRC32: false, consumer: throwing (Data) -> Void) -> CRC32"
+  ],
+  "notes": [
+    "Entry encryption flag is not public, and encrypted entries may be omitted by iteration; preflight checks flags/count before constructing Archive.",
+    "extract returns calculated CRC; the caller must compare it to validated metadata.",
+    "Never call extraction-to-filesystem APIs.",
+    "Only the iOS/Apple Compression runtime path is intended; Linux does not run this reader."
+  ]
+}
