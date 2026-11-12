@@ -181,16 +181,27 @@ final class ImageAttachmentServiceTests: XCTestCase {
         XCTAssertTrue(try storedFiles().isEmpty)
     }
 
-    // Forged dimensions are inspected before decompression, so a tiny compressed file is not a bypass.
+    // Updating IHDR and its CRC does not expand the 2x2 IDAT payload. ImageIO rejects this
+    // malformed image before exposing dimensions; it cannot establish the pixel-limit branch.
     func testPixelBombHeaderIsRejectedBeforeDecodingOrCopying() throws {
         let png = try XCTUnwrap(render(size: CGSize(width: 2, height: 2)).pngData())
-        assertRejected(replacingPNGDimensions(png, width: 10_000, height: 10_000), as: .pixelLimitExceeded)
+        assertRejected(replacingPNGDimensions(png, width: 10_000, height: 10_000), as: .invalidImage)
+        XCTAssertTrue(try storedFiles().isEmpty)
+    }
+
+    func testValidImageExceedingTotalPixelCapIsRejectedWithoutCopying() throws {
+        // 40,008,000 pixels exceeds the 40 MP limit while both sides remain below 16,384.
+        // The complete 1-bit source plane is only 5,001,000 bytes, not a 160 MB RGBA bitmap.
+        let png = try monochromePNG(width: 8_000, height: 5_001)
+        try assertReadablePNG(png, width: 8_000, height: 5_001)
+        assertRejected(png, as: .pixelLimitExceeded)
         XCTAssertTrue(try storedFiles().isEmpty)
     }
 
     func testExtremeSingleDimensionIsRejectedEvenBelowTotalPixelCap() throws {
-        let png = try XCTUnwrap(render(size: CGSize(width: 2, height: 2)).pngData())
-        assertRejected(replacingPNGDimensions(png, width: 16_385, height: 1), as: .pixelLimitExceeded)
+        let png = try monochromePNG(width: 16_385, height: 1)
+        try assertReadablePNG(png, width: 16_385, height: 1)
+        assertRejected(png, as: .pixelLimitExceeded)
         XCTAssertTrue(try storedFiles().isEmpty)
     }
 
@@ -304,5 +315,53 @@ final class ImageAttachmentServiceTests: XCTestCase {
         }
         put(crc ^ 0xFFFF_FFFF, at: 29)
         return Data(bytes)
+    }
+
+    private func monochromePNG(width: Int, height: Int) throws -> Data {
+        let boundedWidth = try XCTUnwrap((1...16_385).contains(width) ? width : nil)
+        let boundedHeight = try XCTUnwrap((1...5_001).contains(height) ? height : nil)
+        let bytesPerRow = (boundedWidth + 7) / 8
+        let byteCount = bytesPerRow * boundedHeight
+        let allocation = try XCTUnwrap(byteCount <= 5_100_000 ? byteCount : nil, "Keep fixture allocations bounded")
+        var pixels = Data(count: allocation)
+        pixels.withUnsafeMutableBytes { (buffer: UnsafeMutableRawBufferPointer) in
+            // Deterministic noise avoids depending on an image decoder accepting an extreme
+            // compression ratio. All rows contain real pixels matching the encoded dimensions.
+            var state: UInt32 = 0x1357_9BDF
+            for index in 0..<buffer.count {
+                state ^= state << 13
+                state ^= state >> 17
+                state ^= state << 5
+                buffer[index] = UInt8(truncatingIfNeeded: state)
+            }
+        }
+        let provider = try XCTUnwrap(CGDataProvider(data: pixels as CFData))
+        let image = try XCTUnwrap(CGImage(width: boundedWidth, height: boundedHeight,
+            bitsPerComponent: 1, bitsPerPixel: 1, bytesPerRow: bytesPerRow,
+            space: CGColorSpaceCreateDeviceGray(), bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.none.rawValue),
+            provider: provider, decode: nil, shouldInterpolate: false, intent: .defaultIntent))
+        return try encode(image, type: .png)
+    }
+
+    private func assertReadablePNG(_ bytes: Data, width: Int, height: Int) throws {
+        XCTAssertLessThanOrEqual(bytes.count, 10 * 1024 * 1024, "Exercise dimensions, not the encoded-size limit")
+        let source = try XCTUnwrap(CGImageSourceCreateWithData(bytes as CFData, [kCGImageSourceShouldCache: false] as CFDictionary))
+        XCTAssertEqual(CGImageSourceGetType(source) as String?, UTType.png.identifier)
+        XCTAssertEqual(CGImageSourceGetCount(source), 1)
+        let values = try XCTUnwrap(CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any])
+        XCTAssertEqual((values[kCGImagePropertyPixelWidth] as? NSNumber)?.intValue, width)
+        XCTAssertEqual((values[kCGImagePropertyPixelHeight] as? NSNumber)?.intValue, height)
+        XCTAssertEqual(CGImageSourceGetStatus(source), .statusComplete)
+        // Check an actual decode before testing the service, without asking for a full-size bitmap.
+        let preview = try XCTUnwrap(CGImageSourceCreateThumbnailAtIndex(source, 0, [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceThumbnailMaxPixelSize: 64,
+            kCGImageSourceShouldCacheImmediately: true
+        ] as CFDictionary))
+        XCTAssertGreaterThan(preview.width, 0)
+        XCTAssertGreaterThan(preview.height, 0)
+        XCTAssertLessThanOrEqual(preview.width, 64)
+        XCTAssertLessThanOrEqual(preview.height, 64)
+        XCTAssertEqual(CGImageSourceGetStatusAtIndex(source, 0), .statusComplete)
     }
 }

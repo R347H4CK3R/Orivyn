@@ -31,14 +31,28 @@ final class JarvisEVOAttachmentUITests: XCTestCase {
     func testRealPhotoImportShowsRecognizedTextAndSafeSharingChoices() {
         app.buttons["composer.attach"].tap()
         app.buttons["attachment.photos"].tap()
-        let photo = app.buttons.matching(NSPredicate(format: "label BEGINSWITH[c] 'Photo,' OR label BEGINSWITH[c] 'Photo ' OR label BEGINSWITH[c] 'Screenshot' ")).firstMatch
-        XCTAssertTrue(photo.waitForExistence(timeout: 10), "The known fixture must exist in the real simulator photo library.")
+        // Run8's real Photos AX tree exposes the seeded asset as an Image,
+        // not a Button, and uses Done to confirm its native multi-selection.
+        let photo = app.images.matching(identifier: "PXGGridLayout-Info")
+            .matching(NSPredicate(format: "label BEGINSWITH[c] 'Photo,'")).firstMatch
+        let foundPhoto = photo.waitForExistence(timeout: 10)
+        captureEvidence("Native Photos picker before selecting the seeded fixture")
+        XCTAssertTrue(foundPhoto, "The known fixture must exist in the real simulator photo library.")
+        XCTAssertTrue(photo.isHittable)
         photo.tap()
-        let addButton = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Add'")).firstMatch
-        XCTAssertTrue(addButton.waitForExistence(timeout: 5)); addButton.tap()
+        let done = app.buttons["Done"].firstMatch
+        let foundDone = done.waitForExistence(timeout: 5)
+        captureEvidence("Native Photos picker after selecting the seeded fixture")
+        XCTAssertTrue(foundDone)
+        let selectionReady = XCTNSPredicateExpectation(predicate: NSPredicate(format: "enabled == true"), object: done)
+        XCTAssertEqual(XCTWaiter.wait(for: [selectionReady], timeout: 5), .completed, "Photos must enable Done after real asset selection.")
+        done.tap()
         let preview = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'attachment.preview.'")).firstMatch
-        XCTAssertTrue(preview.waitForExistence(timeout: 30))
+        let imported = preview.waitForExistence(timeout: 30)
+        if !imported { captureEvidence("Real Photos import failed before preview") }
+        XCTAssertTrue(imported)
         preview.tap()
+        captureEvidence("Real image preview before OCR and sharing assertions")
         XCTAssertTrue(app.images["attachment.image"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["attachment.ocr.notice"].exists)
         XCTAssertTrue(app.staticTexts["attachment.ocr.text"].label.contains("JARVIS 42"), "This assertion uses real on-device Vision OCR.")
@@ -54,4 +68,13 @@ final class JarvisEVOAttachmentUITests: XCTestCase {
         XCTAssertFalse(preview.exists)
         XCTAssertTrue(app.buttons["composer.voice"].exists)
     }
+
+    private func captureEvidence(_ name: String) {
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = name; screenshot.lifetime = .keepAlways; add(screenshot)
+        let hierarchy = XCTAttachment(string: app.debugDescription)
+        hierarchy.name = name + " - accessibility hierarchy"
+        hierarchy.lifetime = .keepAlways; add(hierarchy)
+    }
+
 }
