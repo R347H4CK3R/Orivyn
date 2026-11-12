@@ -87,10 +87,10 @@ class IPAValidationTests(unittest.TestCase):
         with self.assertRaises(ValueError): self.load().verify(path)
 
 
-    def candidate3_resources(self, path, *, missing=None, corrupt=None):
+    def candidate3_resources(self, path, *, missing=None, corrupt=None, runtime_notice=False):
         resources = Path(__file__).resolve().parents[2] / 'JarvisEVO' / 'Resources'
         with zipfile.ZipFile(path, 'a') as archive:
-            for name in ('katex-0.19.1.min.js', 'KaTeX-0.19.1-LICENSE.txt'):
+            for name in ('katex-0.19.1.min.js', 'KaTeX-0.19.1-LICENSE.txt') + (('llama.cpp-LICENSE.txt',) if runtime_notice else ()):
                 if name != missing:
                     data = (resources / name).read_bytes()
                     archive.writestr('Payload/JarvisEVO.app/' + name, data + (b'changed' if name == corrupt else b''))
@@ -129,8 +129,8 @@ class IPAValidationTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, 'Bundled resource SHA-256 mismatch'):
                     self.load().verify(self.candidate3_resources(self.make(build='3'), corrupt=name))
 
-    def test_build_three_and_later_verify_actual_pinned_resource_bytes(self):
-        for build in ('3', '3.1', '12'):
+    def test_build_three_and_four_verify_actual_pinned_resource_bytes(self):
+        for build in ('3', '3.1', '4'):
             with self.subTest(build=build):
                 result = self.load().verify(self.candidate3_resources(self.make(build=build)))
                 self.assertTrue(result.get('candidate3_resources_required'))
@@ -138,6 +138,24 @@ class IPAValidationTests(unittest.TestCase):
                 self.assertEqual(result.get('bundled_resources'), {
                     'katex-0.19.1.min.js': 'fa140498b8cfc8302cbe5e7cb1bdbc1f952bc38b3fa258ede09e73edbf9a74bc',
                     'KaTeX-0.19.1-LICENSE.txt': '766ccc1f306c885aa45542a9846bbd0a505b27a0374f146778171c2254ce18e3'})
+
+    def test_build_five_requires_bundled_llama_license(self):
+        with self.assertRaisesRegex(ValueError, 'Missing required bundled resource: llama.cpp-LICENSE.txt'):
+            self.load().verify(self.candidate3_resources(self.make(build='5')))
+
+    def test_build_five_verifies_exact_llama_license_and_rejects_changes(self):
+        notice = (Path(__file__).resolve().parents[2] / 'ThirdPartyNotices/llama.cpp-LICENSE.txt').read_bytes()
+        for build, suffix in (('5', b''), ('5', b'changed'), ('12', b''), ('12', b'changed')):
+            path = self.candidate3_resources(self.make(build=build))
+            with zipfile.ZipFile(path, 'a') as archive:
+                archive.writestr('Payload/JarvisEVO.app/llama.cpp-LICENSE.txt', notice + suffix)
+            if suffix:
+                with self.assertRaisesRegex(ValueError, 'Bundled resource SHA-256 mismatch'):
+                    self.load().verify(path)
+            else:
+                result = self.load().verify(path)
+                self.assertEqual(result['bundled_resources'].get('llama.cpp-LICENSE.txt'),
+                                 '94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d')
 
     def test_invalid_build_cannot_bypass_resource_requirement(self):
         for build in ('3-beta', 'three', 3, '３'):
@@ -180,5 +198,5 @@ class IPAValidationTests(unittest.TestCase):
                 self.assertIs(result['candidate3_resources_required'], False)
         for build in ('3', '3.1', '3.0.0', '9999.99.99'):
             with self.subTest(build=build):
-                result = self.load().verify(self.candidate3_resources(self.make(build=build)))
+                result = self.load().verify(self.candidate3_resources(self.make(build=build), runtime_notice=True))
                 self.assertIs(result['candidate3_resources_required'], True)

@@ -166,6 +166,43 @@ final class AppModelTests: XCTestCase {
         XCTAssertEqual(reloaded.count, 2); XCTAssertTrue(reloaded.allSatisfy { $0.engine === engine })
     }
 
+    func testAcceptedIncomingTextKeepsAttachmentsAndDoesNotSubmit() async throws {
+        let (model, _, source) = try await fixture()
+        let file = root.appendingPathComponent("incoming-attachment.txt")
+        try Data("Keep this attachment".utf8).write(to: file)
+        let attachment = try model.attachmentService.importFile(at: file)
+        model.pendingAttachments = [attachment]
+        model.draft = "Existing draft"
+        let selectedProviderID = model.selectedProviderID
+        try model.acceptIncomingText("Shared text")
+        XCTAssertEqual(model.draft, "Existing draft\n\nShared text")
+        XCTAssertEqual(model.pendingAttachments, [attachment])
+        XCTAssertEqual(model.selectedProviderID, selectedProviderID)
+        XCTAssertTrue(model.conversations.isEmpty)
+        XCTAssertFalse(model.isGenerating)
+        let subscribed = await source.hasSubscriber
+        XCTAssertFalse(subscribed)
+    }
+
+    func testIncomingAcceptanceIsBlockedDuringGenerationAndPreservesDraft() async throws {
+        let (model, _, source) = try await fixture()
+        model.draft = "Generate"; model.send()
+        try await waitFor { await source.hasSubscriber }
+        model.draft = "Next draft"
+        XCTAssertFalse(model.canAcceptIncomingText)
+        XCTAssertThrowsError(try model.acceptIncomingText("Incoming"))
+        XCTAssertEqual(model.draft, "Next draft")
+        model.stop(); try await waitFor { !model.isGenerating }
+    }
+
+    func testInvalidIncomingAcceptanceCannotChangeExistingDraft() async throws {
+        let (model, _, _) = try await fixture()
+        model.draft = String(repeating: "x", count: 32_768)
+        XCTAssertThrowsError(try model.acceptIncomingText("Incoming"))
+        XCTAssertEqual(model.draft, String(repeating: "x", count: 32_768))
+        XCTAssertFalse(model.isGenerating)
+    }
+
     private func fixture() async throws -> (AppModel, SQLiteConversationStore, ControlledTokenSource) {
         let store = try SQLiteConversationStore(url: root.appendingPathComponent("test.sqlite"))
         let attachmentService = try AttachmentService(directory: root.appendingPathComponent("Attachments"))

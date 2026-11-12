@@ -1,4 +1,5 @@
 import SwiftUI
+import AppIntents
 
 @main
 struct JarvisEVOApp: App {
@@ -18,6 +19,7 @@ struct JarvisEVOApp: App {
                 startupContent
                 #endif
             }
+            .onOpenURL { IncomingTextInbox.shared.receive($0) }
             .tint(.evoAccent)
             .preferredColorScheme(appearance == "dark" ? .dark : appearance == "light" ? .light : nil)
             .onChange(of: scenePhase) { _, phase in
@@ -65,6 +67,7 @@ struct JarvisEVOApp: App {
             let model = AppModel(store: store, attachmentService: attachments, modelStore: modelStore, defaults: defaults)
             await model.bootstrap()
             self.model = model
+            OrivynShortcuts.updateAppShortcutParameters()
             startupError = nil
         } catch { startupError = error.localizedDescription }
     }

@@ -43,7 +43,7 @@ workflows:
           xcrun simctl list devices available -j > artifacts/integration-regression/simulators.json
           SIMULATOR_ID=$(python3 -c 'import json; v=json.load(open("artifacts/integration-regression/simulators.json"))["devices"]; ds=[d for r,items in v.items() if "iOS-26" in r for d in items if "iPhone" in d["name"] and d.get("isAvailable")]; ds.sort(key=lambda d:(d["name"]!="iPhone 16 Plus",d["name"])); print(ds[0]["udid"])')
           xcrun simctl bootstatus "$SIMULATOR_ID" -b
-          bash scripts/run_native_tests.sh artifacts/integration-regression xcodebuild -project JarvisEVO.xcodeproj -scheme JarvisEVO -destination "platform=iOS Simulator,id=$SIMULATOR_ID" -parallel-testing-enabled NO -test-timeouts-enabled YES -default-test-execution-time-allowance 90 -maximum-test-execution-time-allowance 120 -resultBundlePath artifacts/integration-regression/Tests.xcresult -only-testing:JarvisEVOUITests/OrivynIntegrationUITests CODE_SIGNING_ALLOWED=NO test
+          bash scripts/run_native_tests.sh artifacts/integration-regression xcodebuild -project JarvisEVO.xcodeproj -scheme JarvisEVO -destination "platform=iOS Simulator,id=$SIMULATOR_ID" -parallel-testing-enabled NO -test-timeouts-enabled YES -default-test-execution-time-allowance 90 -maximum-test-execution-time-allowance 120 -resultBundlePath artifacts/integration-regression/Tests.xcresult -only-testing:JarvisEVOUITests/OrivynIntegrationUITests -only-testing:JarvisEVOTests/IncomingTextTests -only-testing:JarvisEVOTests/ReminderSchedulerTests -only-testing:JarvisEVOTests/AppModelTests CODE_SIGNING_ALLOWED=NO test
     artifacts:
       - artifacts/integration-regression/*.log
       - artifacts/integration-regression/screenshots/**/*.png

@@ -5,11 +5,17 @@
 	<key>CFBundleDisplayName</key>
 	<string>Orivyn</string>
 	<key>OrivynFeedbackRepositoryURL</key>
-	<string>https://github.com/R347H4CK3R/Jarvis-EVO</string>
+	<string>https://github.com/R347H4CK3R/Orivyn</string>
 	<key>CFBundleShortVersionString</key>
-	<string>0.1.0</string>
+	<string>0.1.1</string>
 	<key>CFBundleVersion</key>
-	<string>4</string>
+	<string>5</string>
+	<key>CFBundleURLTypes</key>
+	<array><dict>
+		<key>CFBundleURLName</key><string>app.jarvisevo.ios.compose</string>
+		<key>CFBundleURLSchemes</key><array><string>orivyn</string></array>
+		<key>CFBundleTypeRole</key><string>Editor</string>
+	</dict></array>
 	<key>UILaunchScreen</key>
 	<dict/>
 	<key>NSMicrophoneUsageDescription</key>

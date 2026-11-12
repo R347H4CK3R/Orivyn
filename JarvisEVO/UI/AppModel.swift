@@ -90,6 +90,17 @@ final class AppModel {
     var selectedProvider: ProviderOption? { providers.first { $0.id == selectedProviderID } }
     var canSend: Bool { !isGenerating && !isImportingAttachments && !isChangingHistory && (!draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !pendingAttachments.isEmpty) }
     var isImportingAttachments: Bool { !attachmentImportJobs.isEmpty }
+    var canAcceptIncomingText: Bool {
+        !isGenerating && !isImportingAttachments && !isLoading && !isChangingHistory
+            && !isSavingSubmittedTurn && activeVoiceTurn == nil
+    }
+    func acceptIncomingText(_ text: String) throws {
+        guard canAcceptIncomingText else { throw IncomingTextError.composerBusy }
+        // Validate the complete replacement before mutation; preserve attachments and provider.
+        let combined = try IncomingTextRequest.appending(text, to: draft)
+        draft = combined
+    }
+
     /// Capture before an asynchronous Photos/camera transfer, then pass back to the add method.
     var attachmentImportContext: UUID { attachmentImportEpoch }
     var availableAttachmentSlots: Int {

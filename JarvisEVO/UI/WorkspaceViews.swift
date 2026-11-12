@@ -41,8 +41,7 @@ struct OrivynWorkspaceView: View {
                 }.buttonStyle(.borderedProminent)
             }
         case .scheduled:
-            CapabilityNoticeView(title: "Scheduled actions", icon: "clock.arrow.circlepath",
-                detail: "Autonomous scheduled actions are not available in this build. iOS does not guarantee continuous background model execution. A verified scheduling service is needed before Orivyn can promise to run tasks while the app is closed.") { EmptyView() }
+            ScheduledRemindersView()
         }
     }
 }
@@ -249,7 +248,7 @@ struct CustomizeWorkspaceView: View {
         Form {
             if let error = model.workspace.loadError { Section { Text(error).foregroundStyle(.red) } }
             Section {
-                NavigationLink { IntegrationCatalogView().navigationTitle("Plugins") } label: { row("Plugins", icon: "puzzlepiece.extension", color: .mint, detail: "Not connected") }
+                NavigationLink { IntegrationCatalogView().navigationTitle("Plugins") } label: { row("Plugins", icon: "puzzlepiece.extension", color: .mint, detail: "Local tools") }
                 NavigationLink { MemoryView(model: model) } label: { row("Memory", icon: "book.closed", color: .orange, detail: "\(model.memories.count) notes") }
                 NavigationLink { BehaviorEditorView(workspace: model.workspace) } label: { row("Behavior", icon: "sparkle", color: .cyan, detail: model.workspace.behavior.style) }
             }
@@ -262,6 +261,10 @@ struct CustomizeWorkspaceView: View {
                 NavigationLink { LocalDeviceView() } label: { row("Devices", icon: "desktopcomputer", color: .blue, detail: "This iPhone") }
                 NavigationLink { IntegrationDetailView(title: "Browser") } label: { row("Browser", icon: "network", color: .blue, detail: "Unavailable") }
                 NavigationLink { IntegrationDetailView(title: "Location") } label: { row("Location", icon: "location", color: .purple, detail: "Not requested") }
+            }
+            Section("On this iPhone") {
+                NavigationLink { ShortcutsHelpView() } label: { row("Shortcuts & sharing", icon: "square.and.arrow.up", color: .purple, detail: "Review first") }
+                NavigationLink { ScheduledRemindersView().navigationTitle("Scheduled") } label: { row("Local reminders", icon: "bell", color: .orange, detail: "One-time alerts") }
             }
             Section("On-device intelligence") {
                 Button(action: openModels) { row("Models", icon: "cpu", color: .blue, detail: "\(model.installedModels.count) installed") }
@@ -331,6 +334,14 @@ struct IntegrationCatalogView: View {
             Section {
                 Label("No external integrations connected", systemImage: "puzzlepiece.extension").font(.headline)
                 Text("Connections in the reference recording belong to another app and do not transfer to Orivyn. No account data, credentials or permissions have been copied.").font(.footnote).foregroundStyle(.secondary)
+            }
+            Section("On this iPhone") {
+                if query.isEmpty || "Shortcuts sharing text".localizedCaseInsensitiveContains(query) {
+                    NavigationLink { ShortcutsHelpView() } label: { Label("Shortcuts & sharing", systemImage: "square.and.arrow.up") }
+                }
+                if query.isEmpty || "Local reminders notifications".localizedCaseInsensitiveContains(query) {
+                    NavigationLink { ScheduledRemindersView().navigationTitle("Scheduled") } label: { Label("Local reminders", systemImage: "bell") }
+                }
             }
             Section("Integration roadmap") {
                 ForEach(groups.filter { query.isEmpty || $0.localizedCaseInsensitiveContains(query) }, id: \.self) { title in

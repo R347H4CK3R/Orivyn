@@ -6,6 +6,8 @@ import AVFoundation
 struct RootView: View {
     @Bindable var model: AppModel
     @State private var voice = VoiceService()
+    @State private var incoming = IncomingTextInbox.shared
+    @State private var reviewingIncoming: IncomingTextRequest?
     @State private var showHistory = false
     @State private var workspaceSection: WorkspaceSection = .chat
     @State private var showModels = false
@@ -83,6 +85,21 @@ struct RootView: View {
             })
             .animation(reduceMotion ? nil : .smooth(duration: 0.25), value: showHistory)
         }
+        .safeAreaInset(edge: .top, spacing: 0) { incomingBanner }
+        .sheet(item: $reviewingIncoming) { request in
+            IncomingTextView(request: request, canAccept: canAcceptSharedText) { text in
+                guard canAcceptSharedText else { throw IncomingTextError.composerBusy }
+                guard incoming.pending?.id == request.id else { throw IncomingTextError.staleRequest }
+                try model.acceptIncomingText(text)
+                incoming.discard(id: request.id)
+                reviewingIncoming = nil
+                workspaceSection = .chat
+                showHistory = false
+            } cancel: {
+                incoming.discard(id: request.id)
+                reviewingIncoming = nil
+            }
+        }
         .sheet(isPresented: $showModels) { ModelManagerView(model: model) }
         .sheet(isPresented: $showSettings) { SettingsView(model: model) }
         .sheet(item: $editingMessage) { message in
@@ -159,6 +176,41 @@ struct RootView: View {
         }
         .onChange(of: model.selectedProviderID) { _, _ in stopAudio() }
         .onDisappear { stopAudio(); cancelTransfers() }
+    }
+
+    private var canAcceptSharedText: Bool {
+        model.canAcceptIncomingText && !audioBusy && !attachmentsBusy
+            && pickerRequest == nil && scenePhase == .active
+    }
+    private var canReviewSharedText: Bool {
+        canAcceptSharedText && !showModels && !showSettings && !showHistory
+            && editingMessage == nil && selectingText == nil && previewAttachment == nil
+            && model.errorMessage == nil
+    }
+    @ViewBuilder private var incomingBanner: some View {
+        if incoming.pending != nil || incoming.lastError != nil {
+            VStack(alignment: .leading, spacing: 8) {
+                if let request = incoming.pending {
+                    HStack {
+                        Label("Shared text waiting", systemImage: "text.bubble").font(.subheadline)
+                        Spacer()
+                        Button("Review") { composerFocused = false; reviewingIncoming = request }
+                            .disabled(!canReviewSharedText).accessibilityIdentifier("incoming.review")
+                        Button { incoming.discard(id: request.id) } label: { Image(systemName: "xmark") }
+                            .accessibilityLabel("Discard shared text")
+                    }
+                }
+                if let error = incoming.lastError {
+                    HStack(alignment: .top) {
+                        Text(error).font(.caption).foregroundStyle(.secondary)
+                        Spacer()
+                        Button("Dismiss") { incoming.dismissError() }.font(.caption)
+                    }
+                }
+            }
+            .buttonStyle(.bordered).padding(.horizontal).padding(.vertical, 8)
+            .background(.regularMaterial)
+        }
     }
 
     private var conversation: some View {

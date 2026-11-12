@@ -28,6 +28,7 @@ final class OrivynIntegrationUITests: XCTestCase {
         app.open(URL(string: "orivyn://compose?text=Shared%20idea")!)
         XCTAssertTrue(app.buttons["incoming.review"].waitForExistence(timeout: 8))
         app.buttons["incoming.review"].tap()
+        capture("Orivyn build 5 incoming text review")
         app.buttons["incoming.accept"].tap()
         XCTAssertEqual(draft.value as? String, "Existing draft\n\nShared idea")
         XCTAssertFalse(app.buttons["composer.stop"].exists)
