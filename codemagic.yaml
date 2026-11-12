@@ -239,7 +239,7 @@ workflows:
 
   orivyn-bios-compatibility:
     name: Orivyn bounded native BIOS compatibility
-    max_build_duration: 10
+    max_build_duration: 9
     instance_type: mac_mini_m2
     environment:
       xcode: 26.0

@@ -16,3 +16,8 @@ class DelegateContracts(unittest.TestCase):
   source=(ROOT/'Diagnostics/VMProof/Sources/VMHarness.swift').read_text()
   self.assertIn('@escaping @MainActor @Sendable (WKNavigationActionPolicy)',source)
   self.assertIn('@escaping @MainActor @Sendable (WKNavigationResponsePolicy)',source)
+
+class FreeBuildBudget(unittest.TestCase):
+ def test_bios_gate_reserves_twenty_of_remaining_twenty_nine_minutes(self):
+  workflow=(ROOT/'codemagic.yaml').read_text().split('  orivyn-bios-compatibility:',1)[1]
+  self.assertIn('max_build_duration: 9',workflow)
