@@ -46,6 +46,7 @@ struct PluginConnectionForm: View {
     @Bindable var broker: PluginBroker
     var saved: PluginConnectionRecord?
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.scenePhase) private var scenePhase
     @State private var endpoint = ""
     @State private var token = ""
     @State private var useSaved = false
@@ -111,6 +112,11 @@ struct PluginConnectionForm: View {
                 } }
                 .onAppear { if let saved { endpoint = saved.endpoint } }
                 .onDisappear { token = ""; if !didInstall { cancelConnection() } }
+                .onChange(of: scenePhase) { _, phase in
+                    // The sheet can survive backgrounding. Revoke its unsaved
+                    // credential and queued handshake as well as the live session.
+                    if phase != .active { cancelConnection() }
+                }
         }.interactiveDismissDisabled(broker.isBusy)
     }
     private func cancelConnection() {

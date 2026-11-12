@@ -61,6 +61,7 @@ struct LocalSpaceView: View {
     @State private var filter = "All"
     @State private var preview: ChatAttachment?
     @State private var error: String?
+    @State private var showsImageCreation = false
     private var entries: [LocalLibraryEntry] {
         var seen: Set<UUID> = []
         let all = model.conversations.sorted { $0.updatedAt > $1.updatedAt }.flatMap { chat in
@@ -94,8 +95,14 @@ struct LocalSpaceView: View {
                 }.padding(.horizontal, 16).padding(.vertical, 8)
             }
             if imagesOnly {
-                Text("Images saved in your conversations. Image generation requires a supported provider and is not available yet.")
+                Text("Images saved on this iPhone. Create uses the supported Apple Image Playground sheet only after your explicit choice.")
                     .font(.caption).foregroundStyle(.secondary).padding(.horizontal, 20).padding(.bottom, 8)
+                Button("Create an image", systemImage: "sparkles") {
+                    if model.generatedImageStager != nil { showsImageCreation = true }
+                    else { error = "Private image storage is unavailable. Reopen Orivyn and try again." }
+                }.buttonStyle(.bordered).accessibilityIdentifier("image.create")
+                    .disabled(model.isSavingGeneratedImage)
+                if model.isSavingGeneratedImage { ProgressView("Saving accepted image…").font(.caption) }
             }
             if entries.isEmpty {
                 ContentUnavailableView(query.isEmpty ? "Your files belong here" : "No matching files",
@@ -137,7 +144,14 @@ struct LocalSpaceView: View {
             AttachmentPreviewView(attachment: attachment, originalURL: model.attachmentService.url(for: attachment),
                                   previewURL: model.attachmentService.previewURL(for: attachment))
         }
-        .alert("Could not update favorite", isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) {
+        .sheet(isPresented: $showsImageCreation) {
+            if let stager = model.generatedImageStager {
+                ImageCreationView(stager: stager) { url, concept in
+                    model.acceptGeneratedImage(url, concept: concept, stager: stager)
+                }
+            }
+        }
+        .alert("Could not update your library", isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) {
             Button("OK", role: .cancel) { error = nil }
         } message: { Text(error ?? "") }
     }

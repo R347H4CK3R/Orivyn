@@ -71,3 +71,16 @@ Private `00e9a9ef35868ee83cfa681e27a6a04bda70920e` contains the bounded MCP tran
 Run `6af6103f9679c85ac0af37bc` compiled the actual production client and passed all 36 MCPClientTests, 12 review/journal tests and 10 of 13 broker tests. Three broker regressions failed as intended: pre-canceled connect/run still dispatched, and failed outcome persistence left Running and allowed more calls. These now have narrow fixes, pending native recheck. Five separately named MCPURLSessionTransportTests were accidentally omitted from that selector and are explicitly included next; no claim of 41 passing cases is made.
 
 Two plugin UI tests failed earlier than the background-token assertion. The actual app logs show repeated concurrent presentation attempts from the Section; a field briefly existed then disappeared. One stable presentation owner is now on the enclosing integration List, with all original assertions retained. The credential-background behavior remains to be exercised after this presentation fix; it is not passed.
+
+## November 12 native correction checkpoint and phone-only scope
+
+The owner now requires all computation in the iPhone app, without another computer. The local companion experiment is excluded from this candidate and is not deployed. App-owned Desk remains separate from the requested actual virtual desktop. An isolated, license-audited phone-contained emulator proof is being investigated; it is not yet integrated, physically benchmarked or release-ready. Existing optional endpoint connections are never automatic prerequisites for local features.
+
+Exact private source `ead1ba759e198258c27221a1da3e633d845be528` ran native gate `6af613379679c85ac0af38fa`:
+- 91 selected unit tests passed, including 25 routing, 41 MCP contract/real URLSession adapter, 13 broker and 12 execution/journal tests.
+- Plugin empty setup/cancel with composer preservation passed.
+- Plugin background test genuinely exposed retained form credentials. The subsequent source cancels/clears the form on nonactive phase; its native rerun is pending.
+- Image creation failed on the missing entry as intended before implementation. Native Image Playground staging and library persistence are now source candidates, not verified generation.
+- Actual 1.5B coder screenshot shows `print(2 + 2)`. The test's response extraction returned only `python`, the code-language label. The quality assertion remains intact; a contained accessibility group and text-view extraction repair need native re-execution. The earlier 0.5B output failure was genuine, and the stronger automatic coding floor remains.
+
+Physical iPhone image generation, HDMI/lock/reconnect, memory/thermal behavior, real service connections, and the requested actual virtual desktop remain open acceptance gates. No new IPA or 1.0.0 release is implied by this checkpoint.

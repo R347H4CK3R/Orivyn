@@ -91,6 +91,12 @@ final class AppModel {
     private var attachmentCleanupNeeded = false
     private var isChangingHistory = false
     private var isSavingSubmittedTurn = false
+    private(set) var generatedImageStager: GeneratedImageStaging?
+    private var generatedImageTask: Task<Void, Never>?
+    private var generatedImageOperation: UUID?
+    private var generatedImageURL: URL?
+    private(set) var isSavingGeneratedImageRecord = false
+    var isSavingGeneratedImage: Bool { generatedImageTask != nil }
 
     init(store: SQLiteConversationStore, attachmentService: AttachmentService, modelStore: LocalModelStore,
          providers: [ProviderOption] = [], defaults: UserDefaults = .standard,
@@ -118,6 +124,73 @@ final class AppModel {
     func configurePlugins(directory: URL) {
         do { plugins = try PluginBroker(directory: directory); pluginSetupError = nil }
         catch { plugins = nil; pluginSetupError = error.localizedDescription }
+    }
+
+    /// Called once before presenting the app, when no accepted image owns a file.
+    func configureGeneratedImages(directory: URL) {
+        guard generatedImageTask == nil else { return }
+        do {
+            let staging = try GeneratedImageStaging(directory: directory)
+            // Only UUID image files accepted by the stager can be reclaimed.
+            for url in try FileManager.default.contentsOfDirectory(at: staging.directory, includingPropertiesForKeys: nil) {
+                let info = try url.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey])
+                guard info.isRegularFile == true, info.isSymbolicLink != true,
+                      UUID(uuidString: url.deletingPathExtension().lastPathComponent) != nil,
+                      ["png", "jpg", "jpeg", "heic", "heif"].contains(url.pathExtension.lowercased()) else { continue }
+                try staging.discard(url)
+            }
+            generatedImageStager = staging
+        } catch { generatedImageStager = nil; report(error) }
+    }
+
+    /// Takes cleanup ownership synchronously, before the system image callback returns.
+    /// It never submits to a provider or changes the current composer/selection.
+    @discardableResult
+    func acceptGeneratedImage(_ owned: URL, concept: String, stager: GeneratedImageStaging) -> Task<Void, Never>? {
+        guard generatedImageTask == nil, !isChangingHistory, !isLoading,
+              ImageCreationAvailability.isValidConcept(concept) else {
+            if owned != generatedImageURL { try? stager.discard(owned) }
+            errorMessage = "Finish the current image or history operation and use a valid image description."
+            return nil
+        }
+        guard owned.isFileURL, owned.standardizedFileURL.deletingLastPathComponent() == stager.directory,
+              UUID(uuidString: owned.deletingPathExtension().lastPathComponent) != nil else {
+            errorMessage = "The accepted image is not in Orivyn's private staging storage."
+            return nil
+        }
+        let operation = UUID()
+        generatedImageOperation = operation; generatedImageURL = owned
+        let importer = attachmentImporter
+        let task = Task { @MainActor in
+            defer {
+                do { try stager.discard(owned) } catch { self.report(error) }
+                self.generatedImageOperation = nil; self.generatedImageURL = nil
+                self.generatedImageTask = nil; self.isSavingGeneratedImageRecord = false
+                self.requestAttachmentCleanup()
+            }
+            do {
+                try Task.checkCancellation()
+                let image = try await importer.importAttachment(.file(owned))
+                // Importers retain ownership until they return, even after cancellation.
+                try Task.checkCancellation()
+                guard self.generatedImageOperation == operation, !self.isChangingHistory,
+                      image.isImage, self.attachmentService.url(for: image) != nil else {
+                    throw CancellationError()
+                }
+                let conversation = Conversation(title: "Image · " + String(concept.trimmingCharacters(in: .whitespacesAndNewlines).prefix(180)),
+                    messages: [ChatMessage(role: .user, content: concept),
+                        ChatMessage(role: .assistant, content: "Image created with Apple Image Playground and accepted by you.", attachments: [image])])
+                // History mutations wait for this brief atomic save. They may cancel an
+                // earlier import, but cannot race a committed result into deleted history.
+                self.isSavingGeneratedImageRecord = true
+                try await self.store.save(conversation)
+                self.upsert(conversation)
+            } catch {
+                if !(error is CancellationError) { self.report(error) }
+            }
+        }
+        generatedImageTask = task
+        return task
     }
 
     var activeConversation: Conversation? { conversations.first { $0.id == selectedConversationID } }
@@ -820,6 +893,8 @@ final class AppModel {
 
     private func beginHistoryChange() -> Bool {
         guard !isChangingHistory else { errorMessage = "Wait for the current history operation to finish."; return false }
+        guard !isSavingGeneratedImageRecord else { errorMessage = "Wait for the accepted image to finish saving before changing history."; return false }
+        generatedImageOperation = nil; generatedImageTask?.cancel()
         cancelAutomaticPreparation()
         isChangingHistory = true
         return true
@@ -836,7 +911,7 @@ final class AppModel {
     }
 
     private func performAttachmentCleanupIfReady() {
-        guard attachmentCleanupNeeded, attachmentImportJobs.isEmpty, !isChangingHistory else { return }
+        guard attachmentCleanupNeeded, attachmentImportJobs.isEmpty, generatedImageTask == nil, !isChangingHistory else { return }
         let attachments = conversations.flatMap(\.messages).flatMap(\.attachments) + pendingAttachments
         let retained = attachments.reduce(into: Set<String>()) { $0.formUnion($1.localRelativePaths) }
         do {

@@ -65,6 +65,7 @@ struct JarvisEVOApp: App {
                 defaults.removePersistentDomain(forName: "JarvisEVOUITests")
             }
             let model = AppModel(store: store, attachmentService: attachments, modelStore: modelStore, defaults: defaults)
+            model.configureGeneratedImages(directory: root.appendingPathComponent("GeneratedImagesStaging", isDirectory: true))
             await model.bootstrap()
             model.configurePlugins(directory: root.appendingPathComponent("Plugins", isDirectory: true))
             ExternalWorkspaceController.shared.configure(model: model)

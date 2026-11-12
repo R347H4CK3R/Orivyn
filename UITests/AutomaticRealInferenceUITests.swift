@@ -66,7 +66,17 @@ final class AutomaticRealInferenceUITests: XCTestCase {
         XCTAssertFalse(app.alerts.firstMatch.exists)
         XCTAssertFalse(app.buttons["model.automatic.cancel"].exists)
         XCTAssertEqual(app.textViews["composer.input"].value as? String, "")
-        let text = response.label + " " + response.descendants(matching: .staticText).allElementsBoundByIndex.map(\.label).joined(separator: " ")
+        // Selectable code may be a text view. Do not mistake its language label
+        // for the whole response through SwiftUI identifier inheritance.
+        let roots = app.descendants(matching: .any).matching(identifier: "assistant.response").allElementsBoundByIndex
+            + app.descendants(matching: .any).matching(identifier: "markdown.code.content").allElementsBoundByIndex
+        let text = roots.flatMap { root in
+            ([root] + root.descendants(matching: .staticText).allElementsBoundByIndex
+                + root.descendants(matching: .textView).allElementsBoundByIndex)
+                .flatMap { [$0.label, $0.value as? String ?? ""] }
+        }.joined(separator: " ")
+        let hierarchy = XCTAttachment(string: app.debugDescription)
+        hierarchy.name = "Actual response accessibility tree"; hierarchy.lifetime = .keepAlways; add(hierarchy)
         XCTAssertFalse(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
         return text
     }

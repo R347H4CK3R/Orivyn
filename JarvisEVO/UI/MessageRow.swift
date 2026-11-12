@@ -32,6 +32,7 @@ struct MessageRow: View {
             } else {
                 if !message.content.isEmpty {
                     RichMessageContent(text: message.content)
+                        .accessibilityElement(children: .contain)
                         .accessibilityIdentifier("assistant.response")
                         .contextMenu { actions }
                 } else if message.state == .streaming {

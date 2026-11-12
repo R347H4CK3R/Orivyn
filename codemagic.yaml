@@ -141,7 +141,7 @@ workflows:
       - artifacts/automatic-real-inference/Tests.xcresult
 
   orivyn-plugin-regression:
-    name: Orivyn plugins and automatic quality proof
+    name: Orivyn image privacy and automatic proof
     max_build_duration: 30
     instance_type: mac_mini_m2
     environment:
@@ -162,7 +162,7 @@ workflows:
           xcrun simctl bootstatus "$SIMULATOR_ID" -b
           # Real Core Location simulator input, explicitly not physical GPS evidence.
           xcrun simctl location "$SIMULATOR_ID" set 37.3349,-122.0090
-          bash scripts/run_native_tests.sh artifacts/plugin-regression xcodebuild -project JarvisEVO.xcodeproj -scheme JarvisEVO -destination "platform=iOS Simulator,id=$SIMULATOR_ID" -parallel-testing-enabled NO -test-timeouts-enabled YES -default-test-execution-time-allowance 90 -maximum-test-execution-time-allowance 720 -resultBundlePath artifacts/plugin-regression/Tests.xcresult -only-testing:JarvisEVOTests/MCPClientTests -only-testing:JarvisEVOTests/MCPURLSessionTransportTests -only-testing:JarvisEVOTests/AutomaticModelRouterTests -only-testing:JarvisEVOUITests/AutomaticRealInferenceUITests -only-testing:JarvisEVOUITests/ImageCreationUITests -only-testing:JarvisEVOTests/PluginExecutionTests -only-testing:JarvisEVOTests/PluginJournalTests -only-testing:JarvisEVOTests/PluginBrokerTests -only-testing:JarvisEVOUITests/PluginConnectionUITests CODE_SIGNING_ALLOWED=NO test
+          bash scripts/run_native_tests.sh artifacts/plugin-regression xcodebuild -project JarvisEVO.xcodeproj -scheme JarvisEVO -destination "platform=iOS Simulator,id=$SIMULATOR_ID" -parallel-testing-enabled NO -test-timeouts-enabled YES -default-test-execution-time-allowance 90 -maximum-test-execution-time-allowance 720 -resultBundlePath artifacts/plugin-regression/Tests.xcresult -only-testing:JarvisEVOTests/GeneratedImageStagingTests -only-testing:JarvisEVOTests/GeneratedImageAppModelTests -only-testing:JarvisEVOTests/ImageAttachmentAppFlowTests -only-testing:JarvisEVOTests/AppModelTests -only-testing:JarvisEVOTests/AutomaticPreparationTests -only-testing:JarvisEVOTests/MCPClientTests -only-testing:JarvisEVOTests/MCPURLSessionTransportTests -only-testing:JarvisEVOTests/AutomaticModelRouterTests -only-testing:JarvisEVOUITests/AutomaticRealInferenceUITests -only-testing:JarvisEVOUITests/ImageCreationUITests -only-testing:JarvisEVOTests/PluginExecutionTests -only-testing:JarvisEVOTests/PluginJournalTests -only-testing:JarvisEVOTests/PluginBrokerTests -only-testing:JarvisEVOUITests/PluginConnectionUITests CODE_SIGNING_ALLOWED=NO test
     artifacts:
       - artifacts/plugin-regression/*.log
       - artifacts/plugin-regression/screenshots/**/*.png
