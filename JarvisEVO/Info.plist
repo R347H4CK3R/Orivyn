@@ -3,17 +3,19 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleDisplayName</key>
-	<string>Jarvis-EVO</string>
+	<string>Orivyn</string>
+	<key>OrivynFeedbackRepositoryURL</key>
+	<string>https://github.com/R347H4CK3R/Jarvis-EVO</string>
 	<key>CFBundleShortVersionString</key>
 	<string>0.1.0</string>
 	<key>CFBundleVersion</key>
-	<string>3</string>
+	<string>4</string>
 	<key>UILaunchScreen</key>
 	<dict/>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Jarvis-EVO uses the microphone only when you start dictation or a voice conversation.</string>
+	<string>Orivyn uses the microphone only when you start dictation or a voice conversation.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>Jarvis-EVO transcribes your speech on this iPhone when you start dictation or voice conversation.</string>
+	<string>Orivyn transcribes your speech on this iPhone when you start dictation or voice conversation.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Take a photo to attach and recognize its text on this iPhone.</string>
 	<key>UIApplicationSceneManifest</key>

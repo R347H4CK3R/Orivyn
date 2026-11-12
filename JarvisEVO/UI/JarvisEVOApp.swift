@@ -33,11 +33,11 @@ struct JarvisEVOApp: App {
         if let model { RootView(model: model) }
         else if let startupError {
             ContentUnavailableView {
-                Label("Could not open Jarvis-EVO", systemImage: "externaldrive.badge.exclamationmark")
+                Label("Could not open Orivyn", systemImage: "externaldrive.badge.exclamationmark")
             } description: { Text(startupError) } actions: {
                 Button("Try again") { Task { await start() } }
             }
-        } else { ProgressView("Opening Jarvis-EVO…").task { await start() } }
+        } else { ProgressView("Opening Orivyn…").task { await start() } }
     }
 
     @MainActor private func start() async {

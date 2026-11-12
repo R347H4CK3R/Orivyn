@@ -18,7 +18,7 @@ class IPAValidationTests(unittest.TestCase):
         module = importlib.util.module_from_spec(SPEC)
         SPEC.loader.exec_module(module)
         return module
-    def make(self, *, arch=0x0100000C, minimum=26, platform=2, missing=False, traversal=False, empty=False, framework_min=None, framework_kind=6, build="1", binary_suffix=b""):
+    def make(self, *, arch=0x0100000C, minimum=26, platform=2, missing=False, traversal=False, empty=False, framework_min=None, framework_kind=6, build="1", binary_suffix=b"", display_name="Jarvis-EVO"):
         out = self.root / 'test.ipa'
         command = struct.pack('<6I', 0x32, 24, platform, minimum << 16, 26 << 16, 0)
         ncmds = 1
@@ -29,6 +29,7 @@ class IPAValidationTests(unittest.TestCase):
             ncmds += 1
         binary = struct.pack('<8I', 0xFEEDFACF, arch, 0, 2, ncmds, len(command), 0, 0) + command + binary_suffix
         info = {'CFBundleExecutable':'JarvisEVO','CFBundleIdentifier':'app.jarvisevo.ios','CFBundleName':'JarvisEVO','CFBundleShortVersionString':'0.1.0','CFBundleVersion':build,'MinimumOSVersion':'26.0','CFBundleSupportedPlatforms':['iPhoneOS']}
+        info['CFBundleDisplayName'] = display_name
         with zipfile.ZipFile(out, 'w') as z:
             z.writestr('Payload/JarvisEVO.app/Info.plist', plistlib.dumps(info))
             z.writestr('Payload/JarvisEVO.app/Assets.car', b'fixture-assets')
@@ -44,6 +45,12 @@ class IPAValidationTests(unittest.TestCase):
         self.assertEqual(result['architecture'], 'arm64')
         self.assertEqual(result['minimum_ios'], '26.0')
         self.assertEqual(len(result['sha256']), 64)
+    def test_report_uses_new_brand_and_keeps_bundle_identifier(self):
+        result = self.load().verify(self.make(display_name='Orivyn'))
+        self.assertEqual(result['app'], 'Orivyn')
+        self.assertEqual(result['bundle_identifier'], 'app.jarvisevo.ios')
+    def test_unknown_display_brand_rejected(self):
+        with self.assertRaises(ValueError): self.load().verify(self.make(display_name='Unknown'))
     def test_missing_executable_rejected(self):
         with self.assertRaises(ValueError): self.load().verify(self.make(missing=True))
     def test_empty_executable_rejected(self):

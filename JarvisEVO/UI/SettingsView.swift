@@ -19,10 +19,16 @@ struct SettingsView: View {
                     HStack(spacing: 14) {
                         EvoMark(size: 44)
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("Jarvis-EVO").font(.headline)
+                            Text("Orivyn").font(.headline)
                             Text("Your space. Your models.").font(.caption).foregroundStyle(.secondary)
                         }
                     }.padding(.vertical, 6)
+                }
+                Section {
+                    NavigationLink { CustomizeWorkspaceView(model: model, openModels: { showModels = true }) } label: {
+                        Label("Customize Orivyn", systemImage: "slider.horizontal.3")
+                    }
+                    Text("Free to use. No paid tiers or in-app unlocks.").font(.footnote).foregroundStyle(.secondary)
                 }
                 Section("Appearance") {
                     Picker("Appearance", selection: $appearance) {
@@ -45,7 +51,7 @@ struct SettingsView: View {
                     } label: { Label("Export conversation backup", systemImage: "square.and.arrow.up") }
                     Button { importingHistory = true } label: { Label("Import conversation backup", systemImage: "square.and.arrow.down") }.disabled(model.isGenerating)
                 } header: { Text("Your data") } footer: {
-                    Text("Backups include conversation text, extracted attachment text, and saved memories. Original files and API keys are not included. Keep backups private. Import merges conversations by identifier.")
+                    Text("Backups include conversation text, extracted attachment text, and saved memories. Original files, projects, favorites, response preferences and API keys are not included. Keep backups private. Import merges conversations by identifier.")
                 }
                 Section {
                     Button("Delete all conversations & memories", role: .destructive) { deletingAll = true }
@@ -54,10 +60,13 @@ struct SettingsView: View {
                     Label("Conversations are stored on this iPhone.", systemImage: "internaldrive").font(.subheadline)
                     Label("Downloaded models work without a network connection.", systemImage: "wifi.slash").font(.subheadline)
                     Label("Dictation requires on-device speech support and your permission.", systemImage: "mic").font(.subheadline)
-                    Text("This version supports text chat, PDF/text attachments, dictation, and read aloud. Web research, image generation, scheduled actions, external tools, and cloud sync are not available.")
+                    Text("This version supports local text chat, text/PDF and OCR image attachments, voice controls, local projects, favorites and response preferences. Web automation, image generation, scheduled actions, external account integrations and cloud sync are not available.")
                         .font(.footnote).foregroundStyle(.secondary)
-                    Text("Jarvis-EVO is an independent app. It is not affiliated with OpenAI. AI responses can be inaccurate; verify important information.")
+                    Text("Orivyn is an independent app. It is not affiliated with OpenAI. AI responses can be inaccurate; verify important information.")
                         .font(.footnote).foregroundStyle(.secondary)
+                }
+                Section("Help improve Orivyn") {
+                    NavigationLink { SuggestionView() } label: { Label("Send a suggestion", systemImage: "lightbulb") }
                 }
                 Section {
                     LabeledContent("Version", value: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0")
@@ -72,7 +81,7 @@ struct SettingsView: View {
                 case .failure(let error): model.report(error)
                 }
             }
-            .fileExporter(isPresented: $exportingHistory, document: document, contentType: .json, defaultFilename: "Jarvis-EVO-Backup") { result in
+            .fileExporter(isPresented: $exportingHistory, document: document, contentType: .json, defaultFilename: "Orivyn-Backup") { result in
                 if case .failure(let error) = result { model.report(error) }
                 if case .success = result { exported = true }
             }
@@ -80,7 +89,7 @@ struct SettingsView: View {
                 Button("Delete all content", role: .destructive) { Task { await model.deleteAllContent() } }
             } message: { Text("This cannot be undone. Export a backup first if you want to keep your data.") }
             .alert("Backup exported", isPresented: $exported) { Button("OK", role: .cancel) {} } message: { Text("Your backup was saved to the location you chose.") }
-            .alert("Jarvis-EVO", isPresented: Binding(get: { model.errorMessage != nil }, set: { if !$0 { model.errorMessage = nil } })) {
+            .alert("Orivyn", isPresented: Binding(get: { model.errorMessage != nil }, set: { if !$0 { model.errorMessage = nil } })) {
                 Button("OK") { model.errorMessage = nil }
             } message: { Text(model.errorMessage ?? "") }
         }
@@ -95,7 +104,7 @@ struct HistoryDocument: FileDocument {
     func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper { FileWrapper(regularFileWithContents: data) }
 }
 
-private struct RemoteSettingsView: View {
+struct RemoteSettingsView: View {
     @Bindable var model: AppModel
     @Environment(\.dismiss) private var dismiss
     @State private var baseURL = ""
@@ -116,7 +125,7 @@ private struct RemoteSettingsView: View {
                 Text("Use an HTTPS base URL ending in /v1 if your provider requires it. The app appends /chat/completions. Your API key is stored in this device’s Keychain, never in backups.")
             }
             Section {
-                Text("When you select this provider and send a message, conversation text, attachment text, and saved memories are sent to this endpoint. Its privacy policy, account requirements, and usage charges apply. No messages are sent by saving these settings.")
+                Text("When you select this provider and send a message, conversation text, attachment text, saved memories and response preferences are sent to this endpoint. Its privacy policy, account requirements, and usage charges apply. No messages are sent by saving these settings.")
                     .font(.subheadline)
                 Button {
                     saving = true
@@ -142,7 +151,7 @@ private struct RemoteSettingsView: View {
     }
 }
 
-private struct MemoryView: View {
+struct MemoryView: View {
     @Bindable var model: AppModel
     @State private var editor: MemoryEditorItem?
     var body: some View {

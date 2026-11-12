@@ -16,7 +16,7 @@ struct RootViewRegressionFixtureHost: View {
         guard arguments.contains("--uitesting"),
               let index = arguments.firstIndex(of: "--root-view-fixture"),
               arguments.indices.contains(index + 1),
-              ["voice-ownership", "history-scroll"].contains(arguments[index + 1]) else { return nil }
+              ["voice-ownership", "history-scroll", "model-download"].contains(arguments[index + 1]) else { return nil }
         return arguments[index + 1]
     }
 
@@ -26,7 +26,9 @@ struct RootViewRegressionFixtureHost: View {
                 VStack(spacing: 4) {
                     Text("CONTROLLED ROOTVIEW FIXTURE · NOT MODEL OUTPUT")
                         .font(.caption2.bold()).accessibilityIdentifier("fixture.notice")
-                    if mode == "voice-ownership" {
+                    if mode == "model-download" {
+                        ModelManagerView(model: fixture.model)
+                    } else if mode == "voice-ownership" {
                         HStack {
                             Button("Permission") { fixture.prepareVoice("permission") }.accessibilityIdentifier("fixture.voice.permission")
                             Button("Listen") { fixture.prepareVoice("listening") }.accessibilityIdentifier("fixture.voice.listening")
@@ -96,6 +98,7 @@ private final class RootViewRegressionFixture {
         if mode == "history-scroll" { for conversation in [a, b, short] { try await store.save(conversation) } }
         let model = AppModel(store: store, attachmentService: attachments, modelStore: models, defaults: defaults)
         await model.bootstrap()
+        if mode == "model-download" { model.beginControlledModelDownloadFixture() }
         let tokens = RootViewFixtureTokens()
         model.replaceProviders([ProviderOption(id: "root-ui-fixture", title: "Controlled UI fixture", detail: "Not an AI model", provider: RootViewFixtureProvider(tokens: tokens))])
         if mode == "history-scroll" { model.selectConversation(a.id) }
@@ -169,7 +172,7 @@ private final class RootViewRegressionFixture {
         }
     }
 
-    func stop() { work?.cancel(); session.stop(); model.stop() }
+    func stop() { work?.cancel(); session.stop(); model.stop(); model.cancelDownload() }
 }
 
 private struct RootViewFixtureProvider: AIProvider {

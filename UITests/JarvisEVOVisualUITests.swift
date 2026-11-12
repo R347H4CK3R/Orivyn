@@ -56,7 +56,7 @@ final class JarvisEVOVisualUITests: XCTestCase {
         app.buttons["conversation.new"].tap()
         app.buttons["history.open"].tap()
         let row = app.buttons.matching(identifier: "history.conversation").firstMatch
-        XCTAssertTrue(row.waitForExistence(timeout: 5))
+        reveal(row, in: app.descendants(matching: .any).matching(identifier: "history.list").firstMatch)
         let backdrop = app.buttons["history.backdrop"]
         XCTAssertTrue(backdrop.exists)
         let hierarchy = XCTAttachment(string: app.debugDescription)
@@ -74,7 +74,7 @@ final class JarvisEVOVisualUITests: XCTestCase {
         XCTAssertTrue(app.buttons["history.close"].exists)
         app.buttons["Archive"].tap()
         app.buttons["Archived"].tap()
-        XCTAssertTrue(row.waitForExistence(timeout: 5))
+        reveal(row, in: app.descendants(matching: .any).matching(identifier: "history.list").firstMatch)
         app.buttons["history.close"].tap()
         XCTAssertTrue(app.textViews["composer.input"].exists)
     }
@@ -95,7 +95,8 @@ final class JarvisEVOVisualUITests: XCTestCase {
     func testToolbarNewChatCreatesSelectableConversation() {
         app.buttons["conversation.new"].tap()
         app.buttons["history.open"].tap()
-        XCTAssertTrue(app.buttons.matching(identifier: "history.conversation").firstMatch.waitForExistence(timeout: 5))
+        reveal(app.buttons.matching(identifier: "history.conversation").firstMatch,
+               in: app.descendants(matching: .any).matching(identifier: "history.list").firstMatch)
         app.buttons["history.close"].tap()
         XCTAssertTrue(app.textViews["composer.input"].exists)
     }
@@ -124,22 +125,30 @@ final class JarvisEVOVisualUITests: XCTestCase {
     // Downloads the pinned public model through the actual app, runs real inference,
     // and proves both weights/selection and the completed reply survive app relaunch.
     func testRealDownloadedModelProducesAndPersistsConversation() {
-        executionTimeAllowance = 240
+        executionTimeAllowance = 300
         let modelID = "qwen2.5-0.5b-instruct-q4_k_m"
         app.buttons["model.choose"].tap()
+        let modelList = app.descendants(matching: .any).matching(identifier: "model.list").firstMatch
         let download = app.buttons["model.download.\(modelID)"]
-        XCTAssertTrue(download.waitForExistence(timeout: 5))
+        reveal(download, in: modelList)
         download.tap()
         XCTAssertEqual(app.state, .runningForeground, "Download must not open the neighboring model-details link.")
         XCTAssertTrue(app.buttons["model.done"].isHittable, "The Models sheet must remain interactive after starting a download.")
         let installed = app.descendants(matching: .any).matching(identifier: "model.installed.\(modelID)").firstMatch
-        XCTAssertTrue(installed.waitForExistence(timeout: 150), "The real model download or integrity verification did not finish.")
-        XCTAssertEqual(app.state, .runningForeground, "Installing a model must keep Jarvis-EVO in the foreground.")
+        let catalogName = app.staticTexts["model.catalog.name.\(modelID)"]
+        let installDeadline = Date().addingTimeInterval(150)
+        while !installed.exists && Date() < installDeadline {
+            if !catalogName.isHittable { reveal(catalogName, in: modelList, towardEnd: false) }
+            _ = installed.waitForExistence(timeout: min(1, max(0.01, installDeadline.timeIntervalSinceNow)))
+        }
+        XCTAssertTrue(installed.exists, "The real model download or integrity verification did not finish.")
+        reveal(installed, in: modelList, towardEnd: false)
+        XCTAssertEqual(app.state, .runningForeground, "Installing a model must keep Orivyn in the foreground.")
         XCTAssertTrue(app.buttons["model.done"].isHittable)
         XCTAssertFalse(app.alerts.firstMatch.exists)
         capture("Reference refresh - real model installed")
         let provider = app.buttons["model.provider.\(modelID)"]
-        XCTAssertTrue(provider.waitForExistence(timeout: 5), "The installed local model must appear as a selectable provider.")
+        reveal(provider, in: modelList, towardEnd: false)
         XCTAssertTrue(provider.isEnabled)
         provider.tap()
         let input = app.textViews["composer.input"]
@@ -163,8 +172,9 @@ final class JarvisEVOVisualUITests: XCTestCase {
         app.launch()
         XCTAssertTrue(response.waitForExistence(timeout: 10), "A completed local conversation must survive relaunch.")
         app.buttons["model.choose"].tap()
-        XCTAssertTrue(provider.waitForExistence(timeout: 5))
+        reveal(provider, in: modelList, towardEnd: false)
         XCTAssertEqual(provider.value as? String, "Selected")
+        reveal(installed, in: modelList)
         XCTAssertTrue(installed.exists)
         app.buttons["model.done"].tap()
     }

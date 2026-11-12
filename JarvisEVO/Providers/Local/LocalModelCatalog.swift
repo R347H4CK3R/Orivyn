@@ -13,19 +13,41 @@ struct LocalModelDescriptor: Codable, Identifiable, Hashable, Sendable {
     var formattedSize: String { ByteCountFormatter.string(fromByteCount: byteCount, countStyle: .file) }
 }
 
+// Keep catalog-only guidance out of persistent installed model manifests.
+struct LocalModelCatalogEntry: Identifiable, Sendable {
+    let descriptor: LocalModelDescriptor
+    let baseModel: String
+    let family: String
+    let purpose: String
+    let quantization: String
+    let recommendedRAMGB: Int
+    let notes: String
+    let licenseURL: URL?
+    var id: String { descriptor.id }
+    var requiredFreeStorageBytes: Int64 { descriptor.byteCount * 2 + 100_000_000 }
+    var formattedFreeStorage: String { ByteCountFormatter.string(fromByteCount: requiredFreeStorageBytes, countStyle: .file) }
+    func meetsRAMGuidance(physicalMemory: UInt64) -> Bool {
+        physicalMemory >= UInt64(recommendedRAMGB) * 1_000_000_000
+    }
+}
 enum LocalModelCatalog {
-    // Official Qwen artifact. Both URL revision and expected content digest are pinned.
-    static let defaultModel = LocalModelDescriptor(
-        id: "qwen2.5-0.5b-instruct-q4_k_m",
-        name: "Qwen 2.5 · 0.5B · Q4_K_M",
-        fileName: "qwen2.5-0.5b-instruct-q4_k_m.gguf",
-        downloadURL: URL(string: "https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF/resolve/9217f5db79a29953eb74d5343926648285ec7e67/qwen2.5-0.5b-instruct-q4_k_m.gguf"),
-        sha256: "74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db",
-        byteCount: 491_400_032,
-        license: "Apache-2.0",
-        sourceURL: URL(string: "https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF")
-    )
-    static let recommended = [defaultModel]
+    static var defaultModel: LocalModelDescriptor { entries.first { $0.id == defaultModelID }!.descriptor }
+    static var recommended: [LocalModelDescriptor] { entries.map(\.descriptor) }
+    static let purposes = ["All", "General chat", "Coding", "Reasoning"]
+    static func filtered(query: String, purpose: String, smallestFirst: Bool) -> [LocalModelCatalogEntry] {
+        let query = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        let matches = entries.filter { entry in
+            (purpose == "All" || entry.purpose == purpose) &&
+            (query.isEmpty || [entry.descriptor.name, entry.baseModel, entry.family, entry.purpose, entry.quantization]
+                .contains { $0.localizedCaseInsensitiveContains(query) })
+        }
+        if smallestFirst {
+            return matches.sorted {
+                $0.descriptor.byteCount == $1.descriptor.byteCount ? $0.id < $1.id : $0.descriptor.byteCount < $1.descriptor.byteCount
+            }
+        }
+        return matches
+    }
 }
 
 enum LocalModelError: LocalizedError, Equatable {

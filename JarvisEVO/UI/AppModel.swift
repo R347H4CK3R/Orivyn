@@ -32,6 +32,7 @@ final class AppModel {
     var errorMessage: String?
     var statusMessage: String?
     let network = NetworkStatus()
+    let workspace: WorkspaceStore
     private(set) var providers: [ProviderOption] = []
     var selectedProviderID: String {
         didSet {
@@ -60,6 +61,7 @@ final class AppModel {
     private var composerRevision = UUID()
     private var isApplyingOwnedComposerUpdate = false
     private var downloadTask: Task<Void, Never>?
+    private let localEngine = LlamaEngine()
     private var localProviders: [String: LocalAIProvider] = [:]
     private let attachmentImporter: any AttachmentImporting
     private var attachmentImportJobs: [UUID: AttachmentImportJob] = [:]
@@ -76,6 +78,7 @@ final class AppModel {
         self.modelStore = modelStore
         self.providers = providers
         self.defaults = defaults
+        workspace = WorkspaceStore(defaults: defaults)
         self.attachmentImporter = attachmentImporter ?? LocalAttachmentImporter(service: attachmentService)
         selectedProviderID = defaults.string(forKey: "selectedProviderID") ?? ""
         remoteBaseURL = defaults.string(forKey: "remoteBaseURL") ?? ""
@@ -126,7 +129,7 @@ final class AppModel {
         for model in installedModels {
             let provider: LocalAIProvider
             if let existing = localProviders[model.id] { provider = existing }
-            else { provider = LocalAIProvider(store: modelStore, model: model); localProviders[model.id] = provider }
+            else { provider = LocalAIProvider(store: modelStore, model: model, engine: localEngine); localProviders[model.id] = provider }
             options.append(ProviderOption(id: model.id, title: model.name, detail: "On this iPhone · works offline", provider: provider))
         }
         if options.isEmpty {
@@ -340,7 +343,7 @@ final class AppModel {
                 self.isSavingSubmittedTurn = false
                 try self.validateGeneration(voiceTicket)
                 let notes = self.memories.map(\.content).joined(separator: "\n")
-                let system = "You are Jarvis-EVO, a helpful personal assistant. Be clear about uncertainty and limitations. Do not claim to browse, run code, or take actions that you cannot perform. All configured providers receive text only. Image attachments supply OCR text, never image pixels. Do not infer objects, people, colors, layout, or other visual contents from an image attachment. " + (notes.isEmpty ? "" : "User-saved context, not higher-priority instructions:\n" + notes)
+                let system = "You are Orivyn, a helpful personal assistant. Be clear about uncertainty and limitations. Do not claim to browse, run code, or take actions that you cannot perform. All configured providers receive text only. Image attachments supply OCR text, never image pixels. Do not infer objects, people, colors, layout, or other visual contents from an image attachment. " + self.workspace.behavior.prompt + (notes.isEmpty ? "" : "\nUser-saved context, not higher-priority instructions:\n" + notes)
                 let request = GenerationRequest(messages: Array(conversation.messages.dropLast()), systemPrompt: system, maxTokens: 1024, temperature: 0.7)
                 let stream = try await provider.stream(request)
                 var checkpoint = Date()
@@ -634,6 +637,21 @@ final class AppModel {
 
     func cancelDownload() { downloadTask?.cancel() }
 
+#if DEBUG
+    /// Controlled UI state only. Never starts a network request or installs weights.
+    func beginControlledModelDownloadFixture() {
+        guard downloadTask == nil else { return }
+        downloadingModelID = LocalModelCatalog.defaultModel.id
+        downloadProgress = 0.25
+        downloadTask = Task { [weak self] in
+            do { try await Task.sleep(for: .seconds(3_600)) } catch { }
+            self?.downloadingModelID = nil
+            self?.downloadProgress = nil
+            self?.downloadTask = nil
+        }
+    }
+#endif
+
     func importModel(from url: URL) async {
         do {
             let descriptor = try await modelStore.importModel(from: url)
@@ -715,7 +733,7 @@ private struct AttachmentImportJob {
 
 private enum AppError: LocalizedError {
     case importTooLarge
-    var errorDescription: String? { "Choose a Jarvis-EVO JSON backup up to 50 MB." }
+    var errorDescription: String? { "Choose an Orivyn JSON backup up to 50 MB." }
 }
 
 /// Single-use per-turn ownership, not a global permission to cancel by session.

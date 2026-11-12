@@ -7,6 +7,12 @@ struct ModelManagerView: View {
     @State private var importing = false
     @State private var importingBusy = false
     @State private var removing: LocalModelDescriptor?
+    @State private var catalogQuery = ""
+    @State private var catalogPurpose = "All"
+    @State private var smallestFirst = false
+    private var catalogEntries: [LocalModelCatalogEntry] {
+        LocalModelCatalog.filtered(query: catalogQuery, purpose: catalogPurpose, smallestFirst: smallestFirst)
+    }
 
     var body: some View {
         NavigationStack {
@@ -34,12 +40,35 @@ struct ModelManagerView: View {
                 } header: { Text("Choose a model") } footer: {
                     Text("Local models run on this iPhone. Remote models send your messages, attachment text, and saved memory to the endpoint you configure.")
                 }
+                if let downloadingID = model.downloadingModelID {
+                    Section("Active download") {
+                        Text(LocalModelCatalog.entries.first { $0.id == downloadingID }?.descriptor.name ?? "Model")
+                        ProgressView(value: model.downloadProgress ?? 0)
+                        Button("Cancel download") { model.cancelDownload() }
+                            .accessibilityIdentifier("model.download.cancel")
+                    }
+                }
                 Section {
-                    ForEach(LocalModelCatalog.recommended) { descriptor in
+                    TextField("Search models or purpose", text: $catalogQuery)
+                        .textInputAutocapitalization(.never).autocorrectionDisabled()
+                        .accessibilityIdentifier("model.catalog.search")
+                    Picker("Purpose", selection: $catalogPurpose) {
+                        ForEach(LocalModelCatalog.purposes, id: \.self) { Text($0).tag($0) }
+                    }.accessibilityIdentifier("model.catalog.purpose")
+                    Toggle("Smallest downloads first", isOn: $smallestFirst)
+                    Text("\(catalogEntries.count) downloads · all free · no account or API key")
+                        .font(.caption).foregroundStyle(.secondary)
+                    if catalogEntries.isEmpty {
+                        Text("No matching models. Try a different search or purpose.")
+                            .font(.subheadline).foregroundStyle(.secondary)
+                    }
+                    ForEach(catalogEntries) { entry in
+                        let descriptor = entry.descriptor
                         VStack(alignment: .leading, spacing: 10) {
                             HStack(alignment: .top) {
                                 VStack(alignment: .leading, spacing: 5) {
                                     Text(descriptor.name).font(.subheadline.weight(.semibold))
+                                        .accessibilityIdentifier("model.catalog.name.\(descriptor.id)")
                                     Text("\(descriptor.formattedSize) · \(descriptor.license)").font(.caption).foregroundStyle(.secondary)
                                 }
                                 Spacer()
@@ -48,26 +77,34 @@ struct ModelManagerView: View {
                                         .accessibilityIdentifier("model.installed.\(descriptor.id)")
                                 }
                             }
+                            Text("\(entry.purpose) · \(entry.recommendedRAMGB) GB device RAM recommended")
+                                .font(.caption).foregroundStyle(.secondary)
+                            Text(entry.notes).font(.caption).foregroundStyle(.secondary)
+                            Text("Allow \(entry.formattedFreeStorage) free storage during installation.")
+                                .font(.caption).foregroundStyle(.secondary)
+                            if !entry.meetsRAMGuidance(physicalMemory: ProcessInfo.processInfo.physicalMemory) {
+                                Label("This iPhone is below the suggested RAM. Prefer a smaller model.", systemImage: "exclamationmark.triangle")
+                                    .font(.caption).foregroundStyle(.orange)
+                            }
+                            Text("Physical iPhone performance validation pending.").font(.caption).foregroundStyle(.secondary)
                             if model.downloadingModelID == descriptor.id {
-                                ProgressView(value: model.downloadProgress ?? 0)
-                                HStack {
-                                    Text("Downloading and verifying…").font(.caption).foregroundStyle(.secondary)
-                                    Spacer()
-                                    Button("Cancel") { model.cancelDownload() }.font(.caption)
-                                }
+                                Text("Downloading and verifying…").font(.caption).foregroundStyle(.secondary)
                             } else if !model.installedModels.contains(where: { $0.id == descriptor.id }) {
                                 Button { model.downloadModel(descriptor) } label: { Label("Download model", systemImage: "arrow.down.circle") }
                                     .accessibilityIdentifier("model.download.\(descriptor.id)")
                                     .disabled(model.downloadingModelID != nil || importingBusy)
                             }
-                            if let url = descriptor.sourceURL { Link("Model details & license", destination: url).font(.caption) }
+                            HStack {
+                                if let url = descriptor.sourceURL { Link("Publisher details", destination: url).font(.caption) }
+                                if let url = entry.licenseURL { Link("License", destination: url).font(.caption) }
+                            }
                         }
                         // Each control owns its tap; automatic List row actions can also open the link.
                         .buttonStyle(.borderless)
                         .padding(.vertical, 6)
                     }
-                } header: { Text("Recommended download") } footer: {
-                    Text("Download requires internet and free storage. Inference does not. This compact model is best for short, simple tasks. For best results, keep prompts focused.")
+                } header: { Text("Free model catalog") } footer: {
+                    Text("Models and precision variants are all free. Downloads use internet; local inference does not. RAM guidance is an estimate, not a guarantee. iOS memory pressure and thermals vary. One local model is loaded at a time with a 2,048-token context. No automatic downloads.")
                 }
                 if !model.installedModels.isEmpty {
                     Section("On this iPhone") {
@@ -90,6 +127,7 @@ struct ModelManagerView: View {
                     if importingBusy { ProgressView("Checking and importing model…") }
                 } footer: { Text("Choose an instruction-tuned GGUF file up to 2 GB with an embedded chat template. Compatibility and available memory vary. Only import models you trust and have permission to use.") }
             }
+            .accessibilityIdentifier("model.list")
             .navigationTitle("Models").navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() }.accessibilityIdentifier("model.done") } }
             .fileImporter(isPresented: $importing, allowedContentTypes: [.data], allowsMultipleSelection: false) { result in

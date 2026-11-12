@@ -15,7 +15,10 @@ def candidate_filename(info_path):
         if not isinstance(value, str) or re.fullmatch(r"[0-9]+(?:\.[0-9]+)*", value) is None:
             raise ValueError(f"{key} must contain only ASCII digits separated by single dots")
         versions.append(value)
-    return f"Jarvis-EVO-{versions[0]}-build{versions[1]}-unsigned.ipa"
+    name = info.get("CFBundleDisplayName", "Jarvis-EVO")
+    if name not in ("Jarvis-EVO", "Orivyn"):
+        raise ValueError("Unsupported app display name")
+    return f"{name}-{versions[0]}-build{versions[1]}-unsigned.ipa"
 
 
 if __name__ == "__main__":

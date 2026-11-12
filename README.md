@@ -1,3 +1,18 @@
+# Orivyn reconstructed candidate
+
+**Build 4 source reconstruction, not yet a verified release.** This candidate restores the video-inspired workspace and nine free model downloads over the independently recovered source `f4ac85877bfa707061a3c6cd902412be65cff34e`. The lost Orivyn commits were not recovered byte-for-byte. The original app identity and historical branches are preserved.
+
+- [Workspace, reconstruction provenance and limits](docs/ORIVYN_WORKSPACE_RECONSTRUCTION.md)
+- [Free model catalog, licenses, integrity and memory guidance](docs/model-catalog/README.md)
+- [Owner recording inventory](docs/VIDEO_REFERENCE.md) and [suggestion flow](docs/SUGGESTIONS.md)
+- New native/UI tests must pass on this exact source before a build-4 IPA is described as verified. Physical iPhone performance, signing and installation remain separate gates.
+
+The app has no paid tiers or in-app unlocks. Optional remote services are off by default and can have their own fees. External account integrations, autonomous scheduling, browser/computer control, hosted sites and image generation are explicitly unavailable, not simulated.
+
+## Historical Jarvis-EVO baseline documentation
+
+The following describes earlier candidates only, not validation of this reconstruction.
+
 # Jarvis-EVO
 
 An independent, original-branded native iPhone assistant for iOS 26 and newer. Not an OpenAI product. This repository is separate from Jarvis/GhostAI.

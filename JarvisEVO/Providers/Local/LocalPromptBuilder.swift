@@ -6,6 +6,14 @@ struct LocalPromptMessage: Sendable {
 }
 
 enum LocalPromptBuilder {
+    /// Real tokenizer counts reserve half the available input context for user text.
+    static func validateSystemPrompt(_ text: String, maxTokens: Int, contextSize: Int, tokenCount: (String) throws -> Int) throws {
+        guard maxTokens > 0, maxTokens < contextSize else { throw LocalModelError.invalidRequest }
+        guard try tokenCount(text) <= (contextSize - maxTokens) / 2 else {
+            throw ProviderError.rejected("Your Behavior preferences and saved memories leave too little space for a local reply. Shorten them in Customize, or select a provider with a larger context. Nothing was silently removed.")
+        }
+    }
+
     static func messages(from messages: [ChatMessage]) -> [LocalPromptMessage] {
         messages.filter { $0.state != .failed && (!$0.content.isEmpty || !$0.attachments.isEmpty) }.map { message in
             var content = message.content

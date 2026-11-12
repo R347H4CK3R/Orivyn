@@ -45,12 +45,14 @@ final class JarvisEVOUITests: XCTestCase {
         app.buttons["history.open"].tap()
         app.buttons["history.new"].tap()
         app.buttons["history.open"].tap()
-        XCTAssertTrue(app.buttons.matching(identifier: "history.conversation").firstMatch.waitForExistence(timeout: 5))
+        reveal(app.buttons.matching(identifier: "history.conversation").firstMatch,
+               in: app.descendants(matching: .any).matching(identifier: "history.list").firstMatch)
         app.terminate()
         app.launchArguments = ["--uitesting"]
         app.launch()
         app.buttons["history.open"].tap()
-        XCTAssertTrue(app.buttons.matching(identifier: "history.conversation").firstMatch.waitForExistence(timeout: 5))
+        reveal(app.buttons.matching(identifier: "history.conversation").firstMatch,
+               in: app.descendants(matching: .any).matching(identifier: "history.list").firstMatch)
     }
 
     // Regression: settings dismissal must return to a usable composer, not an orphaned sheet.

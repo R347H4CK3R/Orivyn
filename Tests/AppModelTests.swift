@@ -135,6 +135,37 @@ final class AppModelTests: XCTestCase {
         XCTAssertTrue(notes.isEmpty)
     }
 
+    func testSavedBehaviorReachesActualGenerationRequest() async throws {
+        let (model, _, source) = try await fixture()
+        var behavior = ResponseBehavior(); behavior.instructions = "Use concise explanations."; behavior.style = "Efficient"
+        try model.workspace.saveBehavior(behavior)
+        model.draft = "Test preferences"; model.send()
+        try await waitFor { await source.hasSubscriber }
+        let request = await source.lastRequest
+        XCTAssertTrue(request?.systemPrompt.contains("Use concise explanations.") == true)
+        XCTAssertTrue(request?.systemPrompt.contains("Style: Efficient") == true)
+        XCTAssertTrue(request?.systemPrompt.contains("Do not claim to browse, run code") == true)
+        model.stop(); try await waitFor { !model.isGenerating }
+    }
+
+    // Minimal GGUF storage headers verify engine ownership, not real inference.
+    func testInstalledProvidersShareOneRuntimeAcrossReloads() async throws {
+        let (model, _, _) = try await fixture()
+        for index in 0..<2 {
+            let file = root.appendingPathComponent("runtime-\(index).gguf")
+            var bytes = Data([0x47,0x47,0x55,0x46,3,0,0,0] + Array(repeating: 0, count: 24)); bytes[31] = UInt8(index)
+            try bytes.write(to: file); _ = try await model.modelStore.importModel(from: file)
+        }
+        try await model.reloadProviders()
+        let local = model.providers.compactMap { $0.provider as? LocalAIProvider }
+        XCTAssertEqual(local.count, 2); guard local.count == 2 else { return }
+        XCTAssertTrue(local[0].engine === local[1].engine)
+        let engine = local[0].engine
+        try await model.reloadProviders()
+        let reloaded = model.providers.compactMap { $0.provider as? LocalAIProvider }
+        XCTAssertEqual(reloaded.count, 2); XCTAssertTrue(reloaded.allSatisfy { $0.engine === engine })
+    }
+
     private func fixture() async throws -> (AppModel, SQLiteConversationStore, ControlledTokenSource) {
         let store = try SQLiteConversationStore(url: root.appendingPathComponent("test.sqlite"))
         let attachmentService = try AttachmentService(directory: root.appendingPathComponent("Attachments"))
@@ -161,13 +192,14 @@ private struct ControlledProvider: AIProvider {
     let id = "controlled-test"
     let displayName = "Controlled test provider"
     let source: ControlledTokenSource
-    func stream(_ request: GenerationRequest) async throws -> AsyncThrowingStream<String, Error> { await source.subscribe() }
+    func stream(_ request: GenerationRequest) async throws -> AsyncThrowingStream<String, Error> { await source.subscribe(request) }
 }
 
 private actor ControlledTokenSource {
     private let pair = AsyncThrowingStream<String, Error>.makeStream()
     private(set) var hasSubscriber = false
-    func subscribe() -> AsyncThrowingStream<String, Error> { hasSubscriber = true; return pair.stream }
+    private(set) var lastRequest: GenerationRequest?
+    func subscribe(_ request: GenerationRequest) -> AsyncThrowingStream<String, Error> { lastRequest = request; hasSubscriber = true; return pair.stream }
     func emit(_ value: String) { pair.continuation.yield(value) }
     func finish() { pair.continuation.finish() }
 }

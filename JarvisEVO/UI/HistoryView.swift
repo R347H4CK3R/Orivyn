@@ -5,6 +5,8 @@ struct HistoryView: View {
     let onClose: () -> Void
     let onSettings: () -> Void
     let onModels: () -> Void
+    var selectedSection: WorkspaceSection = .chat
+    var onNavigate: (WorkspaceSection) -> Void = { _ in }
     @State private var renaming: Conversation?
     @State private var newTitle = ""
     @State private var deleting: Conversation?
@@ -14,7 +16,7 @@ struct HistoryView: View {
         VStack(spacing: 0) {
             HStack(spacing: 12) {
                 EvoMark(size: 28)
-                Text("Jarvis-EVO").font(.headline)
+                Text("Orivyn").font(.headline)
                 Spacer(minLength: 0)
                 Button { searchFocused = false; onClose() } label: {
                     Image(systemName: "sidebar.left").font(.system(size: 20)).frame(width: 40, height: 44)
@@ -43,7 +45,7 @@ struct HistoryView: View {
             }
             .padding(.horizontal, 20).padding(.bottom, 12)
             Button {
-                Task { await model.newConversation(); onClose() }
+                Task { await model.newConversation(); onNavigate(.chat); onClose() }
             } label: {
                 Label("New conversation", systemImage: "square.and.pencil")
                     .font(.body.weight(.medium)).frame(maxWidth: .infinity, alignment: .leading)
@@ -51,6 +53,30 @@ struct HistoryView: View {
             }
             .accessibilityIdentifier("history.new")
             List {
+                Section {
+                    ForEach(WorkspaceSection.allCases) { section in
+                        Button { searchFocused = false; onNavigate(section) } label: {
+                            HStack(spacing: 12) {
+                                Image(systemName: section.icon).frame(width: 20)
+                                Text(section.title).font(.subheadline.weight(.medium)); Spacer()
+                            }.padding(.horizontal, 12).padding(.vertical, 10)
+                                .background(section == selectedSection ? Color.evoSurface : Color.clear, in: RoundedRectangle(cornerRadius: 12))
+                                .foregroundStyle(.primary)
+                        }.accessibilityIdentifier("workspace.route.\(section.rawValue)")
+                            .accessibilityAddTraits(section == selectedSection ? .isSelected : [])
+                            .listRowSeparator(.hidden).listRowBackground(Color.clear)
+                            .listRowInsets(EdgeInsets(top: 0, leading: 8, bottom: 0, trailing: 8))
+                    }
+                }
+                if !pinnedConversations.isEmpty {
+                    Section("Pinned") {
+                        ForEach(pinnedConversations) { chat in
+                            Button { model.selectConversation(chat.id); onNavigate(.chat); onClose() } label: {
+                                Text(chat.title).font(.subheadline).foregroundStyle(.primary).lineLimit(1)
+                            }.listRowBackground(Color.clear).listRowSeparator(.hidden)
+                        }
+                    }
+                }
                 Section {
                     if model.visibleConversations.isEmpty {
                         Text(model.searchText.isEmpty ? (model.showArchived ? "No archived conversations" : "Your conversations will appear here") : "No matching conversations")
@@ -61,6 +87,7 @@ struct HistoryView: View {
                         Button {
                             model.selectConversation(conversation.id)
                             searchFocused = false
+                            onNavigate(.chat)
                             onClose()
                         } label: {
                             Text(conversation.title)
@@ -74,6 +101,9 @@ struct HistoryView: View {
                         .listRowInsets(EdgeInsets(top: 1, leading: 8, bottom: 1, trailing: 8))
                         .listRowBackground(Color.clear)
                         .contextMenu {
+                            Button(model.workspace.isPinned(conversation.id) ? "Unpin" : "Pin", systemImage: "pin") {
+                                do { try model.workspace.togglePin(conversation.id) } catch { model.report(error) }
+                            }
                             Button("Rename", systemImage: "pencil") { newTitle = conversation.title; renaming = conversation }
                             Button(conversation.isArchived ? "Unarchive" : "Archive", systemImage: "archivebox") {
                                 Task { await model.archive(conversation.id, archived: !conversation.isArchived) }
@@ -98,14 +128,15 @@ struct HistoryView: View {
                 }
             }
             .listStyle(.plain).scrollContentBackground(.hidden)
+            .accessibilityIdentifier("history.list")
             .scrollDismissesKeyboard(.interactively)
             Divider().padding(.horizontal, 16)
             Button { searchFocused = false; onSettings() } label: {
                 HStack(spacing: 12) {
-                    Text("J").font(.subheadline.weight(.semibold)).frame(width: 34, height: 34)
+                    Text("O").font(.subheadline.weight(.semibold)).frame(width: 34, height: 34)
                         .background(Color.evoSurface, in: Circle())
                     VStack(alignment: .leading, spacing: 3) {
-                        Text("Jarvis-EVO").font(.subheadline.weight(.semibold))
+                        Text("Orivyn").font(.subheadline.weight(.semibold))
                         Text("Settings").font(.caption).foregroundStyle(.secondary)
                     }
                     Spacer()
@@ -134,6 +165,8 @@ struct HistoryView: View {
         } message: { Text("This removes this conversation from this iPhone. Export a backup first if you want to keep it.") }
     }
 
+    private var pinnedConversations: [Conversation] { model.visibleConversations.filter { model.workspace.isPinned($0.id) } }
+
     private func shortcut(_ title: String, image: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Label(title, systemImage: image).font(.caption.weight(.medium))
@@ -144,7 +177,7 @@ struct HistoryView: View {
 
     private func markdown(_ conversation: Conversation) -> String {
         "# \(conversation.title)\n\n" + conversation.messages.map { message in
-            "## \(message.role == .user ? "You" : "Jarvis-EVO")\n\n\(message.content)"
+            "## \(message.role == .user ? "You" : "Orivyn")\n\n\(message.content)"
         }.joined(separator: "\n\n")
     }
 }

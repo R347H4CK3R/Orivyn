@@ -7,6 +7,7 @@ struct RootView: View {
     @Bindable var model: AppModel
     @State private var voice = VoiceService()
     @State private var showHistory = false
+    @State private var workspaceSection: WorkspaceSection = .chat
     @State private var showModels = false
     @State private var showSettings = false
     @State private var editingMessage: ChatMessage?
@@ -45,14 +46,21 @@ struct RootView: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack(alignment: .leading) {
-                conversation
+                Group {
+                    if workspaceSection == .chat { conversation }
+                    else {
+                        OrivynWorkspaceView(model: model, section: workspaceSection, openMenu: openHistory,
+                            openChat: { navigate(to: .chat) }, openModels: { showModels = true })
+                    }
+                }
                     .disabled(showHistory)
                     .accessibilityHidden(showHistory)
                 if showHistory {
                     HStack(spacing: 0) {
                         HistoryView(model: model, onClose: closeHistory,
                                     onSettings: { closeHistory(); showSettings = true },
-                                    onModels: { closeHistory(); showModels = true })
+                                    onModels: { closeHistory(); showModels = true },
+                                    selectedSection: workspaceSection, onNavigate: navigate)
                             .frame(width: min(360, geometry.size.width * 0.84))
                         Button(action: closeHistory) {
                             Color.black.opacity(0.18).contentShape(Rectangle())
@@ -126,7 +134,7 @@ struct RootView: View {
         .sheet(item: $previewAttachment) { attachment in
             AttachmentPreviewView(attachment: attachment, originalURL: model.attachmentService.url(for: attachment), previewURL: model.attachmentService.previewURL(for: attachment))
         }
-        .alert("Jarvis-EVO", isPresented: Binding(get: { model.errorMessage != nil }, set: { if !$0 { model.errorMessage = nil } })) {
+        .alert("Orivyn", isPresented: Binding(get: { model.errorMessage != nil }, set: { if !$0 { model.errorMessage = nil } })) {
             Button("OK") { model.errorMessage = nil; offersPrivacySettings = false }
             if offersPrivacySettings {
                 Button("App Settings") {
@@ -170,7 +178,7 @@ struct RootView: View {
                 ToolbarItem(placement: .principal) {
                     Button { prepareNavigation(); showModels = true } label: {
                         HStack(spacing: 5) {
-                            Text("Jarvis-EVO").font(.system(.headline, design: .default)).lineLimit(1)
+                            Text("Orivyn").font(.system(.headline, design: .default)).lineLimit(1)
                             Image(systemName: "chevron.down").font(.system(size: 10, weight: .semibold)).foregroundStyle(.secondary)
                         }
                     }
@@ -357,7 +365,7 @@ struct RootView: View {
                 .disabled(model.availableAttachmentSlots == 0 || attachmentsBusy || audioBusy)
                 ZStack(alignment: .topLeading) {
                     if model.draft.isEmpty {
-                        Text("Ask Jarvis-EVO").font(.body).foregroundStyle(.secondary)
+                        Text("Ask Orivyn").font(.body).foregroundStyle(.secondary)
                             .padding(.top, 8).padding(.leading, 5).accessibilityHidden(true)
                     }
                     TextEditor(text: $model.draft)
@@ -365,7 +373,7 @@ struct RootView: View {
                         .frame(height: composerHeight)
                         .focused($composerFocused)
                         .disabled(audioBusy)
-                        .accessibilityLabel("Message Jarvis-EVO").accessibilityIdentifier("composer.input")
+                        .accessibilityLabel("Message Orivyn").accessibilityIdentifier("composer.input")
                 }
                 Button { toggleDictation() } label: {
                     Image(systemName: voice.isRecording ? "mic.fill" : "mic").font(.system(size: 20)).frame(width: 44, height: 44)
@@ -415,6 +423,7 @@ struct RootView: View {
     private var audioBusy: Bool { voice.isStarting || voice.isRecording || voice.isFinishing || voiceSession?.controller.isActive == true }
 
     private func prepareNavigation() { composerFocused = false; stopAudio(); cancelTransfers() }
+    private func navigate(to section: WorkspaceSection) { prepareNavigation(); workspaceSection = section; showHistory = false }
     private func openHistory() { prepareNavigation(); showHistory = true }
     private func closeHistory() { showHistory = false }
 

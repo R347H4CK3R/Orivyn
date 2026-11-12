@@ -3,13 +3,14 @@ import Foundation
 struct LocalAIProvider: AIProvider {
     let store: LocalModelStore
     let model: LocalModelDescriptor
-    private let engine = LlamaEngine()
+    let engine: LlamaEngine
     var id: String { "local:\(model.id)" }
     var displayName: String { "On-device · \(model.name)" }
 
-    init(store: LocalModelStore, model: LocalModelDescriptor = LocalModelCatalog.defaultModel) {
+    init(store: LocalModelStore, model: LocalModelDescriptor = LocalModelCatalog.defaultModel, engine: LlamaEngine = LlamaEngine()) {
         self.store = store
         self.model = model
+        self.engine = engine
     }
 
     func stream(_ request: GenerationRequest) async throws -> AsyncThrowingStream<String, Error> {

@@ -44,6 +44,14 @@ final class LocalInferenceTests: XCTestCase {
 }
 
 final class LocalPromptBuilderTests: XCTestCase {
+    func testSystemContextUsesTokenizerBudgetAndActionableError() throws {
+        XCTAssertNoThrow(try LocalPromptBuilder.validateSystemPrompt("valid", maxTokens: 1024, contextSize: 2048) { _ in 512 })
+        XCTAssertThrowsError(try LocalPromptBuilder.validateSystemPrompt("too much context", maxTokens: 1024, contextSize: 2048) { _ in 513 }) { error in
+            XCTAssertTrue(error.localizedDescription.contains("Behavior"))
+            XCTAssertTrue(error.localizedDescription.contains("saved memories"))
+        }
+    }
+
     func testAttachmentTextIsPresentAndDelimitedAsUntrusted() {
         let attachment = ChatAttachment(name: "notes.txt", relativePath: "notes.txt", mediaType: "text/plain", byteCount: 12, extractedText: "sample note")
         let message = ChatMessage(role: .user, content: "Summarize it", attachments: [attachment])

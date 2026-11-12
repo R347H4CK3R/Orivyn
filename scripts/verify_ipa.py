@@ -15,6 +15,7 @@ ARM64 = 0x0100000C
 DEBUG_FIXTURE_MARKERS = (
     'RootViewRegressionFixture', 'RootViewFixtureProvider', 'root-ui-fixture',
     '--root-view-fixture', 'CONTROLLED ROOTVIEW FIXTURE',
+    'beginControlledModelDownloadFixture',
 )
 CANDIDATE3_RESOURCES = {
     'katex-0.19.1.min.js': 'fa140498b8cfc8302cbe5e7cb1bdbc1f952bc38b3fa258ede09e73edbf9a74bc',
@@ -158,7 +159,9 @@ def verify(path):
         resources_required, resources = _release_content(archive, app, binary, build)
         with path.open('rb') as stream:
             digest = hashlib.file_digest(stream, 'sha256').hexdigest()
-        return {'app':'Jarvis-EVO','bundle_identifier':info['CFBundleIdentifier'],'version':version,'build':build,
+        display_name = info.get('CFBundleDisplayName', 'Jarvis-EVO')
+        if display_name not in ('Jarvis-EVO', 'Orivyn'): raise ValueError('Unsupported app display name')
+        return {'app':display_name,'bundle_identifier':info['CFBundleIdentifier'],'version':version,'build':build,
                 'architecture':'arm64','minimum_ios':minimum_text,'frameworks':sorted(verified),
                 'sha256':digest,'size':path.stat().st_size,
                 'release_fixture_markers_absent':True,'candidate3_resources_required':resources_required,

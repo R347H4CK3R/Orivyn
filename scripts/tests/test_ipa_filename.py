@@ -35,6 +35,17 @@ class IPAFilenameTests(unittest.TestCase):
                     self.assertEqual(result.stdout, "")
                     self.assertIn(key, result.stderr)
 
+    def test_rebranded_bundle_uses_new_name(self):
+        result = self.run_fixture({"CFBundleDisplayName": "Orivyn", "CFBundleShortVersionString": "0.2.0", "CFBundleVersion": "4"})
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout.strip(), "Orivyn-0.2.0-build4-unsigned.ipa")
+
+    def test_unknown_or_path_display_name_is_rejected(self):
+        for name in ["Unknown", "../Other", "Orivyn\n"]:
+            result = self.run_fixture({"CFBundleDisplayName": name, "CFBundleShortVersionString": "0.2.0", "CFBundleVersion": "4"})
+            self.assertNotEqual(result.returncode, 0)
+            self.assertEqual(result.stdout, "")
+
     def test_missing_build_metadata_is_rejected(self):
         result = self.run_fixture({"CFBundleShortVersionString": "0.1.0"})
         self.assertNotEqual(result.returncode, 0)

@@ -1,0 +1,781 @@
+{
+  "sourceCommit": "f4ac85877bfa707061a3c6cd902412be65cff34e",
+  "files": [
+    {
+      "path": ".github/workflows/verify.yml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "22fa42c2632cec9236f16e8066085d1e60277baa",
+      "size": 917,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/22fa42c2632cec9236f16e8066085d1e60277baa"
+    },
+    {
+      "path": ".gitignore",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "657f71bc1b6c82ed15b801bd21f1ed337e4b3cfe",
+      "size": 153,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/657f71bc1b6c82ed15b801bd21f1ed337e4b3cfe"
+    },
+    {
+      "path": "Artwork/JarvisEVO.svg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "1dd617724fd12fa7d8ae438570dfd96d42db34b5",
+      "size": 688,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/1dd617724fd12fa7d8ae438570dfd96d42db34b5"
+    },
+    {
+      "path": "JarvisEVO/Assets.xcassets/AppIcon.appiconset/AppIcon.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "67ce593f60f4d5fa70a0e8bbed5e4294c00249c1",
+      "size": 44948,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/67ce593f60f4d5fa70a0e8bbed5e4294c00249c1"
+    },
+    {
+      "path": "JarvisEVO/Assets.xcassets/AppIcon.appiconset/Contents.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7140563583a209df2e1515c4177e85428b7417f2",
+      "size": 203,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/7140563583a209df2e1515c4177e85428b7417f2"
+    },
+    {
+      "path": "JarvisEVO/Assets.xcassets/Contents.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "74d6a722cf39b2dd5bef11f166e6ac9b99568a01",
+      "size": 60,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/74d6a722cf39b2dd5bef11f166e6ac9b99568a01"
+    },
+    {
+      "path": "JarvisEVO/Core/AIProvider.swift",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "aa3da846373a9dc2f61df938db1918ec575524d5",
+      "size": 1216,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/aa3da846373a9dc2f61df938db1918ec575524d5"
+    },
+    {
+      "path": "JarvisEVO/Core/Conversation.swift",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "94a81aa758869862e9162d5d7ea395783f344d53",
+      "size": 6206,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/94a81aa758869862e9162d5d7ea395783f344d53"
+    },
+    {
+      "path": "JarvisEVO/Core/MarkdownDocument.swift",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c7fa16325daf097e09b74a5246003b09c6acaddc",
+      "size": 27158,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/c7fa16325daf097e09b74a5246003b09c6acaddc"
+    },
+    {
+      "path": "JarvisEVO/Info.plist",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "254e39e8def7b2d9c23d653990e9af64418e4f43",
+      "size": 1163,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/254e39e8def7b2d9c23d653990e9af64418e4f43"
+    },
+    {
+      "path": "JarvisEVO/Persistence/SQLiteConversationStore.swift",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "cb04b51ee0946336d676e8b240e5aee024123ef2",
+      "size": 13655,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/cb04b51ee0946336d676e8b240e5aee024123ef2"
+    },
+    {
+      "path": "JarvisEVO/Providers/Local/LlamaEngine.swift",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9fe77486b1ce984b0e960cb6248d386f0a37986f",
+      "size": 11166,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/9fe77486b1ce984b0e960cb6248d386f0a37986f"
+    },
+    {
+      "path": "JarvisEVO/Providers/Local/LocalAIProvider.swift",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f30bec0e2d7cbe3dceb51c9c7f7781515f717e30",
+      "size": 831,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/f30bec0e2d7cbe3dceb51c9c7f7781515f717e30"
+    },
+    {
+      "path": "JarvisEVO/Providers/Local/LocalModelCatalog.swift",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "aa4c7632aec701f0dec4fa1899672c39f1c4b5cd",
+      "size": 3374,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/aa4c7632aec701f0dec4fa1899672c39f1c4b5cd"
+    },
+    {
+      "path": "JarvisEVO/Providers/Local/LocalModelStore.swift",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "60e1888b748b595fcdfce5b2db7410ee3d3a1584",
+      "size": 10706,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/60e1888b748b595fcdfce5b2db7410ee3d3a1584"
+    },
+    {
+      "path": "JarvisEVO/Providers/Local/LocalPromptBuilder.swift",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "325b758d61de4129d2fe55bfc457136755293979",
+      "size": 2456,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/325b758d61de4129d2fe55bfc457136755293979"
+    },
+    {
+      "path": "JarvisEVO/Providers/Local/UTF8TokenAccumulator.swift",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "dbfa94159b5fa3d1d60f5ade4d981e4f27fb0dcc",
+      "size": 703,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/dbfa94159b5fa3d1d60f5ade4d981e4f27fb0dcc"
+    },
+    {
+      "path": "JarvisEVO/Providers/OpenAICompatibleProvider.swift",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "2767402f71e73644bbf7eb79e4abea60f2a2b93f",
+      "size": 7138,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/2767402f71e73644bbf7eb79e4abea60f2a2b93f"
+    },
+    {
+      "path": "JarvisEVO/Providers/SystemModelProvider.swift",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ea1577ac6fbfcbbcc0065a90e3e8832d4eb5a25b",
+      "size": 2596,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/ea1577ac6fbfcbbcc0065a90e3e8832d4eb5a25b"
+    },
+    {
+      "path": "JarvisEVO/Resources/KaTeX-0.19.1-LICENSE.txt",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "37c6433e3bedca7a97e08fe35d98582a5f7bac0c",
+      "size": 1107,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/37c6433e3bedca7a97e08fe35d98582a5f7bac0c"
+    },
+    {
+      "path": "JarvisEVO/Resources/katex-0.19.1.min.js",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c75d43c4858d75d9d3aff2783f9bb0a71c3f1430",
+      "size": 273081,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/c75d43c4858d75d9d3aff2783f9bb0a71c3f1430"
+    },
+    {
+      "path": "JarvisEVO/Services/AttachmentService.swift",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "cff3ee2c131f728816abebe15622957229c836ea",
+      "size": 7968,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/cff3ee2c131f728816abebe15622957229c836ea"
+    },
+    {
+      "path": "JarvisEVO/Services/ImageAttachmentService.swift",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c14546c7704d59461b53491e42d6d4fbab6f3505",
+      "size": 26205,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/c14546c7704d59461b53491e42d6d4fbab6f3505"
+    },
+    {
+      "path": "JarvisEVO/Services/KeychainService.swift",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "97b869f9caf1946f0a78153ca26377e269fbb42e",
+      "size": 2426,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/97b869f9caf1946f0a78153ca26377e269fbb42e"
+    },
+    {
+      "path": "JarvisEVO/Services/NetworkStatus.swift",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b3aac72482d60f7f9b3bd69ec785017d294e540f",
+      "size": 644,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/b3aac72482d60f7f9b3bd69ec785017d294e540f"
+    },
+    {
+      "path": "JarvisEVO/Services/VoiceConversationController.swift",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6c3351f1b28b90b3b903922fd14132dcc5bd1349",
+      "size": 11211,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/6c3351f1b28b90b3b903922fd14132dcc5bd1349"
+    },
+    {
+      "path": "JarvisEVO/Services/VoiceService.swift",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "10cd7a1941f9d6cc00ad383b55ba806b1d8758e2",
+      "size": 18290,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/10cd7a1941f9d6cc00ad383b55ba806b1d8758e2"
+    },
+    {
+      "path": "JarvisEVO/UI/AppModel.swift",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "605c430d100ffa1c668094c17a627d66298a9b7d",
+      "size": 38750,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/605c430d100ffa1c668094c17a627d66298a9b7d"
+    },
+    {
+      "path": "JarvisEVO/UI/AttachmentViews.swift",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "8feb2f86c16e0ef59bcdbd722e2da9328af7020c",
+      "size": 12480,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/8feb2f86c16e0ef59bcdbd722e2da9328af7020c"
+    },
+    {
+      "path": "JarvisEVO/UI/HistoryView.swift",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "47413d04231792ec170c178e796db531af3e05ff",
+      "size": 8544,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/47413d04231792ec170c178e796db531af3e05ff"
+    },
+    {
+      "path": "JarvisEVO/UI/JarvisEVOApp.swift",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c592753948ea3d7db8f2380591180b248a89cef7",
+      "size": 4612,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/c592753948ea3d7db8f2380591180b248a89cef7"
+    },
+    {
+      "path": "JarvisEVO/UI/MessageRow.swift",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d3245126a86cbee92adc889f280a2b4b7dcafd3a",
+      "size": 6063,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/d3245126a86cbee92adc889f280a2b4b7dcafd3a"
+    },
+    {
+      "path": "JarvisEVO/UI/ModelManagerView.swift",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "bd3706dc47975d841c6e43048cc0a8f9e01a9e97",
+      "size": 7598,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/bd3706dc47975d841c6e43048cc0a8f9e01a9e97"
+    },
+    {
+      "path": "JarvisEVO/UI/RichMessageContent.swift",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "19b2ed1e02e78ebd079583abfb08c7e4dc2c47f1",
+      "size": 24827,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/19b2ed1e02e78ebd079583abfb08c7e4dc2c47f1"
+    },
+    {
+      "path": "JarvisEVO/UI/RootView.swift",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c6938d7080f565afd6c20f4da41fe138737fa136",
+      "size": 32293,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/c6938d7080f565afd6c20f4da41fe138737fa136"
+    },
+    {
+      "path": "JarvisEVO/UI/RootViewRegressionFixtures.swift",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4137dfe1d47a1741d9267bcde5f254f151c45b8c",
+      "size": 11208,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/4137dfe1d47a1741d9267bcde5f254f151c45b8c"
+    },
+    {
+      "path": "JarvisEVO/UI/SettingsView.swift",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "af65bcdad0afa2ca6756845cab3aa82c4cf3ea79",
+      "size": 11308,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/af65bcdad0afa2ca6756845cab3aa82c4cf3ea79"
+    },
+    {
+      "path": "JarvisEVO/UI/VoiceConversationSession.swift",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d2c7ca4274c6fa5e7d5e326b44e36c48b8d6491a",
+      "size": 2203,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/d2c7ca4274c6fa5e7d5e326b44e36c48b8d6491a"
+    },
+    {
+      "path": "LICENSE",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "2c84703abcbe74d9ba0277a5278e4bf49f26b0ea",
+      "size": 1080,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/2c84703abcbe74d9ba0277a5278e4bf49f26b0ea"
+    },
+    {
+      "path": "Packages/LlamaRuntime/Package.swift",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "33406ab042299ef4486e659ea4b20ce6b37de5ee",
+      "size": 462,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/33406ab042299ef4486e659ea4b20ce6b37de5ee"
+    },
+    {
+      "path": "README.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "cc855fe5c6c9bdc0395705d06293c507409b09f6",
+      "size": 6111,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/cc855fe5c6c9bdc0395705d06293c507409b09f6"
+    },
+    {
+      "path": "Tests/AppModelTests.swift",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "beb20935f5e5c033fa7009a60b55c224f7e34e8b",
+      "size": 8336,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/beb20935f5e5c033fa7009a60b55c224f7e34e8b"
+    },
+    {
+      "path": "Tests/AttachmentPickerOwnershipTests.swift",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d1ff7296ad49c0984c370fe2918ea8d0291e6776",
+      "size": 1944,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/d1ff7296ad49c0984c370fe2918ea8d0291e6776"
+    },
+    {
+      "path": "Tests/AttachmentServiceTests.swift",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b4211721b592d191c1459a0ea238f132bcb6a304",
+      "size": 18705,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/b4211721b592d191c1459a0ea238f132bcb6a304"
+    },
+    {
+      "path": "Tests/ConversationTests.swift",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "502fe164c237f99bbec0426d44a9686797ba54ad",
+      "size": 2748,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/502fe164c237f99bbec0426d44a9686797ba54ad"
+    },
+    {
+      "path": "Tests/ImageAttachmentIntegrationTests.swift",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e66df6a776c4546bc35b2c8126044f67b8ffa196",
+      "size": 22391,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/e66df6a776c4546bc35b2c8126044f67b8ffa196"
+    },
+    {
+      "path": "Tests/ImageAttachmentServiceTests.swift",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "cbead18f68f31d899dc9405c3d9d6ecfdb82aa95",
+      "size": 20727,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/cbead18f68f31d899dc9405c3d9d6ecfdb82aa95"
+    },
+    {
+      "path": "Tests/ImagePreviewTrustTests.swift",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "70ab663a029b809581152aa77047ba339482582f",
+      "size": 26215,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/70ab663a029b809581152aa77047ba339482582f"
+    },
+    {
+      "path": "Tests/IntegratedInterfaceTests.swift",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d76590cc4680a7c605d5b7c35a3b25d39c6e651f",
+      "size": 26628,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/d76590cc4680a7c605d5b7c35a3b25d39c6e651f"
+    },
+    {
+      "path": "Tests/LocalInferenceTests.swift",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "0dbaa04751fc05046e57dd48be527b2be15f12c7",
+      "size": 4577,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/0dbaa04751fc05046e57dd48be527b2be15f12c7"
+    },
+    {
+      "path": "Tests/LocalModelStoreTests.swift",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f183f4bcce7745552e1c683d354a8c85e993806f",
+      "size": 3446,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/f183f4bcce7745552e1c683d354a8c85e993806f"
+    },
+    {
+      "path": "Tests/PersistenceTests.swift",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f30ee2c4e09dc941529ac6f351c3bc5d51781cba",
+      "size": 5637,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/f30ee2c4e09dc941529ac6f351c3bc5d51781cba"
+    },
+    {
+      "path": "Tests/ProviderTests.swift",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "016cbe30569a26d98982e53b0308e5f8436f3458",
+      "size": 2342,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/016cbe30569a26d98982e53b0308e5f8436f3458"
+    },
+    {
+      "path": "Tests/RichMessageContentTests.swift",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "51edcb95c9a919ee7fdac7ccd6594b914525545a",
+      "size": 16789,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/51edcb95c9a919ee7fdac7ccd6594b914525545a"
+    },
+    {
+      "path": "Tests/RootFixtureAvailabilityTests.swift",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9b1a319b4d1b4bc0e5cf5163dc1aff3118183af2",
+      "size": 945,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/9b1a319b4d1b4bc0e5cf5163dc1aff3118183af2"
+    },
+    {
+      "path": "Tests/VoiceAppModelTests.swift",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "5acb09f4cf17d59c66fff70ffdf000e6ca554ea9",
+      "size": 33222,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/5acb09f4cf17d59c66fff70ffdf000e6ca554ea9"
+    },
+    {
+      "path": "Tests/VoiceConversationControllerTests.swift",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "bc2edf538bda042171c27797fa9c9b91b2a1c375",
+      "size": 24113,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/bc2edf538bda042171c27797fa9c9b91b2a1c375"
+    },
+    {
+      "path": "Tests/VoiceConversationSessionTests.swift",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "1713b3ab026aa87871cb96737206bcce0421cb80",
+      "size": 9698,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/1713b3ab026aa87871cb96737206bcce0421cb80"
+    },
+    {
+      "path": "Tests/VoiceServiceTests.swift",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6e788ef9c1b554d4dfd3873d002003482c632e51",
+      "size": 23255,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/6e788ef9c1b554d4dfd3873d002003482c632e51"
+    },
+    {
+      "path": "ThirdPartyNotices/KaTeX-0.19.1-LICENSE.txt",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "37c6433e3bedca7a97e08fe35d98582a5f7bac0c",
+      "size": 1107,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/37c6433e3bedca7a97e08fe35d98582a5f7bac0c"
+    },
+    {
+      "path": "ThirdPartyNotices/Qwen2.5-LICENSE.txt",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6634c8cc3133b3848ec74b9f275acaaa1ea618ab",
+      "size": 11343,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/6634c8cc3133b3848ec74b9f275acaaa1ea618ab"
+    },
+    {
+      "path": "ThirdPartyNotices/llama.cpp-LICENSE.txt",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e7dca554bcb802f98408383a864404e3aa4eacca",
+      "size": 1078,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/e7dca554bcb802f98408383a864404e3aa4eacca"
+    },
+    {
+      "path": "UITests/Fixtures/OCR-card.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3fab46a16e8a2ea3cc61cb9b1fe22d42909bae89",
+      "size": 31064,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/3fab46a16e8a2ea3cc61cb9b1fe22d42909bae89"
+    },
+    {
+      "path": "UITests/Fixtures/README.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "eedbf2c1b414292f12991208119c8e976a7f46ec",
+      "size": 1029,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/eedbf2c1b414292f12991208119c8e976a7f46ec"
+    },
+    {
+      "path": "UITests/JarvisEVOAttachmentUITests.swift",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "93207b5d9ab61f9bc7fec3465e1af7a85e103027",
+      "size": 12121,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/93207b5d9ab61f9bc7fec3465e1af7a85e103027"
+    },
+    {
+      "path": "UITests/JarvisEVOUITests.swift",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a962de932376e9f92aa1da17c7d47724bfaea6c2",
+      "size": 6068,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/a962de932376e9f92aa1da17c7d47724bfaea6c2"
+    },
+    {
+      "path": "UITests/JarvisEVOVisualUITests.swift",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "79f72fbc5f4a48d997dcc72ecb2c6deb932bd8b8",
+      "size": 11737,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/79f72fbc5f4a48d997dcc72ecb2c6deb932bd8b8"
+    },
+    {
+      "path": "UITests/RootViewOwnershipUITests.swift",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ec1c9cb17705ba34fbc3548b505157d7856177ed",
+      "size": 5274,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/ec1c9cb17705ba34fbc3548b505157d7856177ed"
+    },
+    {
+      "path": "codemagic.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "244e85ccd94270448cf191f35729df6c60ad4283",
+      "size": 918,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/244e85ccd94270448cf191f35729df6c60ad4283"
+    },
+    {
+      "path": "docs/FEATURES.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "41db49cd4fb0c0c90e0a6c296be0901f0d49a3d8",
+      "size": 4569,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/41db49cd4fb0c0c90e0a6c296be0901f0d49a3d8"
+    },
+    {
+      "path": "docs/LOCAL_INFERENCE.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b40902cd4f89f5eedf33b825f79cf7f6894c41f1",
+      "size": 8540,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/b40902cd4f89f5eedf33b825f79cf7f6894c41f1"
+    },
+    {
+      "path": "docs/QA.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a0f3f696999edc245263c21b5a729963eca4103b",
+      "size": 10102,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/a0f3f696999edc245263c21b5a729963eca4103b"
+    },
+    {
+      "path": "docs/RICH_MESSAGE_RENDERER.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "5ab2fa48320826c145bb55806d46bf42b2728eea",
+      "size": 11653,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/5ab2fa48320826c145bb55806d46bf42b2728eea"
+    },
+    {
+      "path": "docs/SIDESTORE.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "513a7682293ee47d945412b81e799948889f0d06",
+      "size": 2510,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/513a7682293ee47d945412b81e799948889f0d06"
+    },
+    {
+      "path": "docs/THIRD_PARTY.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "cf362d8f068c673d27401aca17de82f2be1bf294",
+      "size": 1030,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/cf362d8f068c673d27401aca17de82f2be1bf294"
+    },
+    {
+      "path": "docs/UI_REFERENCE_RESEARCH.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "465aa9bc3a732d81d774348a77bd3f4082b489cd",
+      "size": 7039,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/465aa9bc3a732d81d774348a77bd3f4082b489cd"
+    },
+    {
+      "path": "docs/screenshots/build2-dark-ios26-iphone16plus.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "962566165d186c0b6327479a1f1a7b19b8cabdb5",
+      "size": 160331,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/962566165d186c0b6327479a1f1a7b19b8cabdb5"
+    },
+    {
+      "path": "docs/screenshots/build2-light-ios26-iphone16plus.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "8d89ef231d10f6a0782719f782271d4baa2e3ef4",
+      "size": 248746,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/8d89ef231d10f6a0782719f782271d4baa2e3ef4"
+    },
+    {
+      "path": "docs/screenshots/build2-local-conversation-ios26-iphone16plus.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "90e0ed71e17b7dcc187a56e1cbfbdb8de43f85b0",
+      "size": 249348,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/90e0ed71e17b7dcc187a56e1cbfbdb8de43f85b0"
+    },
+    {
+      "path": "docs/screenshots/build2-model-installed-ios26-iphone16plus.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e0cdf2ae95d3ea5412422e993a4c3f963947d9f4",
+      "size": 281512,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/e0cdf2ae95d3ea5412422e993a4c3f963947d9f4"
+    },
+    {
+      "path": "docs/screenshots/build2-sidebar-ios26-iphone16plus.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7b4d4e8c0fde61f9bdba22ee8015769b57779e89",
+      "size": 172863,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/7b4d4e8c0fde61f9bdba22ee8015769b57779e89"
+    },
+    {
+      "path": "docs/screenshots/main-screen-ios26-iphone16plus.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e473d9bad196e5906cc70c1293315a1800835057",
+      "size": 230234,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/e473d9bad196e5906cc70c1293315a1800835057"
+    },
+    {
+      "path": "docs/superpowers/plans/2026-11-11-implementation.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "5ff8af759a6465df4ebbff7c567a327c6b3b581f",
+      "size": 2964,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/5ff8af759a6465df4ebbff7c567a327c6b3b581f"
+    },
+    {
+      "path": "docs/superpowers/plans/2026-11-11-ios-reference-fidelity.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "88e9f190e9ab97cba7e364001a9452bf32aa6735",
+      "size": 3264,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/88e9f190e9ab97cba7e364001a9452bf32aa6735"
+    },
+    {
+      "path": "docs/superpowers/specs/2026-11-11-ios-reference-fidelity.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6b84c28981dbf84955e59f8b589aa25a876a8492",
+      "size": 3340,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/6b84c28981dbf84955e59f8b589aa25a876a8492"
+    },
+    {
+      "path": "docs/superpowers/specs/2026-11-11-jarvis-evo.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "429f9f220f4a46465cd4b3177e11dfdbb15ac524",
+      "size": 2637,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/429f9f220f4a46465cd4b3177e11dfdbb15ac524"
+    },
+    {
+      "path": "project.yml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "807c1ed263b9730bd6bd9a9940ad26dbfcfa275a",
+      "size": 1700,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/807c1ed263b9730bd6bd9a9940ad26dbfcfa275a"
+    },
+    {
+      "path": "scripts/bootstrap_llama.sh",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "502088a59c3290ad30bcd5b932828a7e71e8b548",
+      "size": 1820,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/502088a59c3290ad30bcd5b932828a7e71e8b548"
+    },
+    {
+      "path": "scripts/ci_macos.sh",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "5447efa189c5b2da5d305d0ab3445cac06f4dcbe",
+      "size": 2639,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/5447efa189c5b2da5d305d0ab3445cac06f4dcbe"
+    },
+    {
+      "path": "scripts/download_test_model.py",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "c2d87ac23ecd7be7ab4613e348900b5a220467ca",
+      "size": 2257,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/c2d87ac23ecd7be7ab4613e348900b5a220467ca"
+    },
+    {
+      "path": "scripts/ipa_filename.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6e2dcc160345ae832319c31a3800c43f73d03dd4",
+      "size": 1019,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/6e2dcc160345ae832319c31a3800c43f73d03dd4"
+    },
+    {
+      "path": "scripts/run_native_tests.sh",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "b50d01c58cfef1b130440aaf441be3fb8f9905ec",
+      "size": 4879,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/b50d01c58cfef1b130440aaf441be3fb8f9905ec"
+    },
+    {
+      "path": "scripts/tests/test_download_test_model.py",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "7defaeec63c52f3cfe5363d7ec1a72d283f27ec9",
+      "size": 1299,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/7defaeec63c52f3cfe5363d7ec1a72d283f27ec9"
+    },
+    {
+      "path": "scripts/tests/test_ipa_filename.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "fe8bacdeccb13d0d1a5103ad51c9e39b2fd6cd0f",
+      "size": 2167,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/fe8bacdeccb13d0d1a5103ad51c9e39b2fd6cd0f"
+    },
+    {
+      "path": "scripts/tests/test_run_native_tests.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "5947093688f7578c251d187cc6775bd24df6eb65",
+      "size": 12337,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/5947093688f7578c251d187cc6775bd24df6eb65"
+    },
+    {
+      "path": "scripts/tests/test_verify_ipa.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "dbff1bdaffaed46c3ba20c1eb8d33ef0bf7a8e8b",
+      "size": 10628,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/dbff1bdaffaed46c3ba20c1eb8d33ef0bf7a8e8b"
+    },
+    {
+      "path": "scripts/verify_ipa.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c4822c433f730961058f44ae4759d5eaa0359f3a",
+      "size": 10175,
+      "url": "https://api.github.com/repos/R347H4CK3R/Jarvis-EVO/git/blobs/c4822c433f730961058f44ae4759d5eaa0359f3a"
+    }
+  ]
+}
