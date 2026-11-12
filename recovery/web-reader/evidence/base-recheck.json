@@ -1,0 +1,8 @@
+{
+  "JarvisEVO/Core/AIProvider.swift": true,
+  "JarvisEVO/Core/Conversation.swift": true,
+  "JarvisEVO/Services/NetworkStatus.swift": true,
+  "JarvisEVO/UI/AppModel.swift": true,
+  "JarvisEVO/Providers/SystemModelProvider.swift": true,
+  "project.yml": true
+}

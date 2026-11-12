@@ -1,0 +1,66 @@
+[
+  {
+    "identity": "swift-nio-transport-services",
+    "version": "1.26.0",
+    "revision": "60c3e187154421171721c1a38e800b390680fb5d",
+    "repository": "https://github.com/apple/swift-nio-transport-services",
+    "license": "Apache-2.0",
+    "source_sha256": {
+      "Package.swift": "00aa13a786517d9ade6d6bc7a46945a6229b4da6f813cd58c69ebfd904874a89",
+      "LICENSE.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "Sources/NIOTransportServices/NIOTSConnectionBootstrap.swift": "bc08c26ca382a6d34d42cf63abbf85530131fb7867acf8fac1573e2807d33e2d",
+      "Sources/NIOTransportServices/NIOTSConnectionChannel.swift": "00f191f401ee220d02038bbb7f9407eca8a9ccf0a0236bda920c1aa4382c40d3"
+    }
+  },
+  {
+    "identity": "swift-nio",
+    "version": "2.83.0",
+    "revision": "34d486b01cd891297ac615e40d5999536a1e138d",
+    "repository": "https://github.com/apple/swift-nio",
+    "license": "Apache-2.0",
+    "source_sha256": {
+      "Package.swift": "1ecf2b5e0f33919fba7f56ed6129b394eeaf7447c09a80984a5860b33aad7bb8",
+      "LICENSE.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "Sources/CNIOLLHTTP/LICENSE": "ebca854e0134cd256d673627c20499f42577eb74bacf08b9f25b626a73c91277",
+      "Sources/NIOHTTP1/HTTPDecoder.swift": "653fbd626f24bff3b7ed39d46703f824ca45a68b4ee7061249b5175258ee822b",
+      "Sources/NIOHTTP1/HTTPPipelineSetup.swift": "ad64a04ade1e34237e004a8cf5565fffe44612558f3d39e05c1fe2ea379dfb99",
+      "Sources/CNIOLLHTTP/c_nio_llhttp.c": "ab87ee29b1fa6b16a6c949fc276df9a8066b91753e63caafe1bffd3a2c2db244",
+      "Sources/CNIOLLHTTP/c_nio_api.c": "be9fc04a49fbfa668e4d39cef54baee9b108a3754e4b24b15b001fe786bfed96",
+      "Sources/CNIOLLHTTP/c_nio_http.c": "3209023a6d64c90e64c1aaf2d143afe48663e857a6a7e7b8f4d62efececdfc13",
+      "Sources/CNIOLLHTTP/include/c_nio_llhttp.h": "49791e43bedad8a6275573d2c9424519c5ebb4618cf7a7ee6e0f71706674c5ba"
+    }
+  },
+  {
+    "identity": "swift-atomics",
+    "version": "1.2.0",
+    "revision": "cd142fd2f64be2100422d658e7411e39489da985",
+    "repository": "https://github.com/apple/swift-atomics",
+    "license": "Apache-2.0 (Swift runtime exception where included)",
+    "source_sha256": {
+      "Package.swift": "064addeb60a391ebdc333d2ba0caee796693c5afeb1bb803f96092024baa3ab2",
+      "LICENSE.txt": "770af8291f708538d8ff885a0bbc4e045cd700531741c4f99528d435c14d7f55"
+    }
+  },
+  {
+    "identity": "swift-collections",
+    "version": "1.1.4",
+    "revision": "671108c96644956dddcd89dd59c203dcdb36cec7",
+    "repository": "https://github.com/apple/swift-collections",
+    "license": "Apache-2.0 (Swift runtime exception where included)",
+    "source_sha256": {
+      "Package.swift": "3058248053fb7a82944b107eb4140a396adbc4da84a288d32c1112ca1b8abf60",
+      "LICENSE.txt": "770af8291f708538d8ff885a0bbc4e045cd700531741c4f99528d435c14d7f55"
+    }
+  },
+  {
+    "identity": "swift-system",
+    "version": "1.4.0",
+    "revision": "c8a44d836fe7913603e246acab7c528c2e780168",
+    "repository": "https://github.com/apple/swift-system",
+    "license": "Apache-2.0 (Swift runtime exception where included)",
+    "source_sha256": {
+      "Package.swift": "4ce36e788e91113ccebfd4a11342ec8ec32c3c1ef37df3307a0ee7f84f748043",
+      "LICENSE.txt": "2245a990b635558be210fb3eb4f8a6f7a49aebc0fefbf5859146a65ddc7ddcf3"
+    }
+  }
+]

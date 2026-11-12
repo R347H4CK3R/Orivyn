@@ -1,0 +1,393 @@
+{
+  "format_version": 1,
+  "package": "Jarvis-EVO isolated web-reader recovery package",
+  "status": "UNVERIFIED WIP: backup only; not integrated, native-tested, accepted, or released",
+  "repository": "R347H4CK3R/Jarvis-EVO",
+  "backup_branch": "recovery/evo-web-reader",
+  "base_commit": "d954d2056603616c0e05568a1772796f0791a9f5",
+  "base_tree": "da719c2f178f31873b8f502c1613800c61661292",
+  "target_directory": "recovery/web-reader",
+  "source": {
+    "package_directory": "Jarvis-EVO-web-work",
+    "selection_manifest": "DELIVERABLE_SHA256.json",
+    "selection_manifest_sha256": "491958ea5d810daa3a66787b2f2b04594ca7a8ac2a376bb5eb943c4f322ffba7",
+    "authored_files": 40,
+    "original_files_including_selection_manifest": 41,
+    "original_bytes": 217758
+  },
+  "artifact_files_including_this_manifest": 42,
+  "preservation": {
+    "bytes": "Exact original bytes; no source modifications, integration, line-ending conversion, or reformatting.",
+    "modes": "Git mode 100644 or 100755 according to each original file executable bits.",
+    "mapping": "Each original relative path is preserved under target_directory.",
+    "base": "All existing base-tree paths, blob identities, and modes must remain unchanged."
+  },
+  "excluded": [
+    "All unlisted files",
+    "Upstream checkouts and vendored source trees not selected by DELIVERABLE_SHA256.json",
+    ".git directories",
+    "Compiled probe and other build outputs",
+    "Private certificate key material"
+  ],
+  "checks_before_upload": {
+    "selection_manifest_sha256_verified": true,
+    "all_40_selected_sha256_values_verified": true,
+    "captured_upload_bytes_sha256_and_git_blob_ids_verified": true,
+    "regular_files_without_symlinks": true,
+    "credential_review": "Scanned selected content for credential markers and reviewed matches. Matches were parser terminology, policy prose, and synthetic tests; no actual credentials identified.",
+    "certificate_fixture": "Tests/Fixtures/WebTLSIdentity.der parses as a synthetic public X.509 certificate for public.example.com. No private key is included.",
+    "repository_private_verified": true,
+    "pr1_head_matches_base_verified": true,
+    "target_branch_absent_verified": true
+  },
+  "inherited_ci": {
+    "github_actions": {
+      "path": ".github/workflows/verify.yml",
+      "blob_sha": "22fa42c2632cec9236f16e8066085d1e60277baa",
+      "trigger": "workflow_dispatch only"
+    },
+    "codemagic": {
+      "path": "codemagic.yaml",
+      "blob_sha": "244e85ccd94270448cf191f35729df6c60ad4283",
+      "trigger": "No automatic triggering stanza"
+    },
+    "action": "Preserved unchanged. No workflow dispatch, build, integration, settings, permissions, billing, visibility, or release action."
+  },
+  "verification_limits": [
+    "This is a preservation manifest, not a test result or acceptance claim. Frozen source code and its scripts were not run.",
+    "Historical reports and evidence are preserved verbatim and were not independently reproduced during backup.",
+    "The publishing procedure must independently compute the complete Git tree and compare remote paths, modes, and blob IDs, including all unchanged base files, before creating the new branch.",
+    "The publishing procedure must request every artifact using github_fetch_file with encoding base64 and compare returned bytes with the recorded local hashes. If a connector normalizes non-UTF-8 data, report that limitation; matching Git blob identity proves object preservation but is not a claim of byte read-back.",
+    "This generated manifest cannot contain its own final hash or containing commit/tree IDs without circularity. Its bytes, blob ID, and containing commit/tree IDs are verified and reported separately."
+  ],
+  "files": [
+    {
+      "original_path": "JarvisEVO/Services/WebSources/PinnedWebTransport.swift",
+      "target_path": "recovery/web-reader/JarvisEVO/Services/WebSources/PinnedWebTransport.swift",
+      "bytes": 11155,
+      "sha256": "4a8266c7f1e2f01ca683e09f08c17d89f9f50cfeae17a7feaa1bdffb901481e1",
+      "git_blob_sha": "10be3d88fdd121202bec285ca19e18ab21b1a7c8",
+      "mode": "100644"
+    },
+    {
+      "original_path": "JarvisEVO/Services/WebSources/WebDNSResolver.swift",
+      "target_path": "recovery/web-reader/JarvisEVO/Services/WebSources/WebDNSResolver.swift",
+      "bytes": 4638,
+      "sha256": "47b92c2bf79d25db2c564da10bafe5eb4b6f2898652c15cd41a3c83d9644d743",
+      "git_blob_sha": "bc6625498d403a30f14cb8c261c9040f30a20b38",
+      "mode": "100644"
+    },
+    {
+      "original_path": "JarvisEVO/Services/WebSources/WebResponsePolicy.swift",
+      "target_path": "recovery/web-reader/JarvisEVO/Services/WebSources/WebResponsePolicy.swift",
+      "bytes": 2106,
+      "sha256": "139857b63d45fd06cdba657941fb35625822a6380802721cac7842e2cd4b8f00",
+      "git_blob_sha": "1de63c0480d4ca6956f99842b3fe5b56bdd65319",
+      "mode": "100644"
+    },
+    {
+      "original_path": "JarvisEVO/Services/WebSources/WebSource.swift",
+      "target_path": "recovery/web-reader/JarvisEVO/Services/WebSources/WebSource.swift",
+      "bytes": 3864,
+      "sha256": "15ee444577bbac810c2fd51613cd15d99d2a1453acbf9d802554549dd9d7f5e3",
+      "git_blob_sha": "dab06b0f16b1fb6e37d6316ccbeda963e7526a59",
+      "mode": "100644"
+    },
+    {
+      "original_path": "JarvisEVO/Services/WebSources/WebSourceContext.swift",
+      "target_path": "recovery/web-reader/JarvisEVO/Services/WebSources/WebSourceContext.swift",
+      "bytes": 3696,
+      "sha256": "8ace2a7e0239badf76f148ca9c9128a8b19cb98c13e8dac20f25e26672d79221",
+      "git_blob_sha": "a140c51c6649b7a253bc4d7f377605e002c515a4",
+      "mode": "100644"
+    },
+    {
+      "original_path": "JarvisEVO/Services/WebSources/WebSourceReader.swift",
+      "target_path": "recovery/web-reader/JarvisEVO/Services/WebSources/WebSourceReader.swift",
+      "bytes": 4077,
+      "sha256": "e01af9a064a384b72b7bc6b95c6680cfbd3d3cb0fae173c13d8ae9e3a76bfabb",
+      "git_blob_sha": "6ffae5ab67aaebd1bc654ce75ece00af9fd2be17",
+      "mode": "100644"
+    },
+    {
+      "original_path": "JarvisEVO/Services/WebSources/WebTextExtractor.swift",
+      "target_path": "recovery/web-reader/JarvisEVO/Services/WebSources/WebTextExtractor.swift",
+      "bytes": 11331,
+      "sha256": "e210962d22f211649dbd5a757d0d6c4a9b3e339125eecca49c5e780904dd224e",
+      "git_blob_sha": "3abaf1645d98cd3e88ce8379d7c2ec03c9dc566a",
+      "mode": "100644"
+    },
+    {
+      "original_path": "JarvisEVO/Services/WebSources/WebURLPolicy.swift",
+      "target_path": "recovery/web-reader/JarvisEVO/Services/WebSources/WebURLPolicy.swift",
+      "bytes": 3917,
+      "sha256": "60e567867be7b1c1b0b8655e4e3d90d84532fccd83cbb9f7e66e3eff900b0f91",
+      "git_blob_sha": "75feaa4bb780d411fedcbcf27b6ffc6a45cd2bec",
+      "mode": "100644"
+    },
+    {
+      "original_path": "Package.resolved",
+      "target_path": "recovery/web-reader/Package.resolved",
+      "bytes": 1390,
+      "sha256": "c2517fb6bd2f37e7a8e797d27fc269af2dee72eb60b9502155d84940fb7d7ac3",
+      "git_blob_sha": "9cca64ab8f53fa87936d9d8422fb0e84d2ed0e2c",
+      "mode": "100644"
+    },
+    {
+      "original_path": "Package.swift",
+      "target_path": "recovery/web-reader/Package.swift",
+      "bytes": 1337,
+      "sha256": "967e5d87a7fee8c8f8b35d838fc1f3d75ba842b7095781695af7fbd4e1fbc138",
+      "git_blob_sha": "9f44ed7e974c6361176470613ce3ef89c878d240",
+      "mode": "100644"
+    },
+    {
+      "original_path": "Tests/Fixtures/WebTLSIdentity.der",
+      "target_path": "recovery/web-reader/Tests/Fixtures/WebTLSIdentity.der",
+      "bytes": 853,
+      "sha256": "a8c2afbdf198ca2745ece4928b9b46fb68acf6ad73d44aad7dedbc7b7db0b8b1",
+      "git_blob_sha": "8000a84af58a278d8e2925f6aba88c0a2fc131fd",
+      "mode": "100644"
+    },
+    {
+      "original_path": "Tests/WebHTTPTransportTests.swift",
+      "target_path": "recovery/web-reader/Tests/WebHTTPTransportTests.swift",
+      "bytes": 5463,
+      "sha256": "d02fd4b3640c7fac817ff833b524886cc1b7a983943675f11c45cc2e24a60cc6",
+      "git_blob_sha": "4c70dd0a7d8adb37be4df101445786834688d181",
+      "mode": "100644"
+    },
+    {
+      "original_path": "Tests/WebSourcePolicyTests.swift",
+      "target_path": "recovery/web-reader/Tests/WebSourcePolicyTests.swift",
+      "bytes": 3413,
+      "sha256": "2b4bcf39605f27a482ebfec581a8a0a03def8912f9e7615b8a4501268cc8dc5b",
+      "git_blob_sha": "c9bb4ff1c7ac33aee99063fe91653b6b54dd5999",
+      "mode": "100644"
+    },
+    {
+      "original_path": "Tests/WebSourceReaderTests.swift",
+      "target_path": "recovery/web-reader/Tests/WebSourceReaderTests.swift",
+      "bytes": 3807,
+      "sha256": "a208ab6d06f2c234604133766a58ca61d9bddd4896847515cd0fda169f9e925b",
+      "git_blob_sha": "52f73bf5ada1007b793b7584f7c8832dc3938d2b",
+      "mode": "100644"
+    },
+    {
+      "original_path": "Tests/WebTLSIdentityTests.swift",
+      "target_path": "recovery/web-reader/Tests/WebTLSIdentityTests.swift",
+      "bytes": 2115,
+      "sha256": "11d41ae4849ea95e12275c078140f658800e704e93aa566e4377bf92089158c5",
+      "git_blob_sha": "1a669993728eab9ccd918c512e8d2e7385a1df05",
+      "mode": "100644"
+    },
+    {
+      "original_path": "Tests/WebTextExtractorTests.swift",
+      "target_path": "recovery/web-reader/Tests/WebTextExtractorTests.swift",
+      "bytes": 2666,
+      "sha256": "21cf7363c90cf0f6f82a8f4201fe5c3ca965435043865e0de0d9168e38b8ad5f",
+      "git_blob_sha": "d2ab61e23ac90eeefa188a808d5902ebfa382819",
+      "mode": "100644"
+    },
+    {
+      "original_path": "ThirdPartyNotices/llhttp-LICENSE.txt",
+      "target_path": "recovery/web-reader/ThirdPartyNotices/llhttp-LICENSE.txt",
+      "bytes": 1105,
+      "sha256": "ebca854e0134cd256d673627c20499f42577eb74bacf08b9f25b626a73c91277",
+      "git_blob_sha": "6c1512dd6bcd6de314673f8c2c7ff3fd6139f28e",
+      "mode": "100644"
+    },
+    {
+      "original_path": "ThirdPartyNotices/swift-atomics-LICENSE.txt",
+      "target_path": "recovery/web-reader/ThirdPartyNotices/swift-atomics-LICENSE.txt",
+      "bytes": 11751,
+      "sha256": "770af8291f708538d8ff885a0bbc4e045cd700531741c4f99528d435c14d7f55",
+      "git_blob_sha": "61b0c78195f2d00acaf658000eeca6ad406a3a29",
+      "mode": "100644"
+    },
+    {
+      "original_path": "ThirdPartyNotices/swift-collections-LICENSE.txt",
+      "target_path": "recovery/web-reader/ThirdPartyNotices/swift-collections-LICENSE.txt",
+      "bytes": 11751,
+      "sha256": "770af8291f708538d8ff885a0bbc4e045cd700531741c4f99528d435c14d7f55",
+      "git_blob_sha": "61b0c78195f2d00acaf658000eeca6ad406a3a29",
+      "mode": "100644"
+    },
+    {
+      "original_path": "ThirdPartyNotices/swift-nio-LICENSE.txt",
+      "target_path": "recovery/web-reader/ThirdPartyNotices/swift-nio-LICENSE.txt",
+      "bytes": 11358,
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "git_blob_sha": "d645695673349e3947e8e5ae42332d0ac3164cd7",
+      "mode": "100644"
+    },
+    {
+      "original_path": "ThirdPartyNotices/swift-nio-transport-services-LICENSE.txt",
+      "target_path": "recovery/web-reader/ThirdPartyNotices/swift-nio-transport-services-LICENSE.txt",
+      "bytes": 11358,
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "git_blob_sha": "d645695673349e3947e8e5ae42332d0ac3164cd7",
+      "mode": "100644"
+    },
+    {
+      "original_path": "ThirdPartyNotices/swift-system-LICENSE.txt",
+      "target_path": "recovery/web-reader/ThirdPartyNotices/swift-system-LICENSE.txt",
+      "bytes": 11750,
+      "sha256": "2245a990b635558be210fb3eb4f8a6f7a49aebc0fefbf5859146a65ddc7ddcf3",
+      "git_blob_sha": "004d67aff35d05d06650d50bf14a7ac789557e7c",
+      "mode": "100644"
+    },
+    {
+      "original_path": "docs/API_PROVENANCE.md",
+      "target_path": "recovery/web-reader/docs/API_PROVENANCE.md",
+      "bytes": 3436,
+      "sha256": "8cf6ede17c36f278bc387aa57ff76888de67165bc6639075774c99ee0fd557ca",
+      "git_blob_sha": "5aefa9cd19c73a5b789f1e7cb1283e61bf34e703",
+      "mode": "100644"
+    },
+    {
+      "original_path": "docs/INTEGRATION_PROPOSAL.md",
+      "target_path": "recovery/web-reader/docs/INTEGRATION_PROPOSAL.md",
+      "bytes": 5257,
+      "sha256": "696ef0ff277815d59b90509aa5ecb2cf5745fa6e81cd5cb8e9649ea6a190a521",
+      "git_blob_sha": "12eaf05e86b18ca583eb1d3ad9e8ba4e5fbff828",
+      "mode": "100644"
+    },
+    {
+      "original_path": "docs/TEST_REPORT.md",
+      "target_path": "recovery/web-reader/docs/TEST_REPORT.md",
+      "bytes": 4523,
+      "sha256": "97a0b9d54bb68d700cc585e11e230b8a413494a0842ad14c91b897863eee6bec",
+      "git_blob_sha": "a98805b2b91e529a00348be3ab0a0d5dc05ff24a",
+      "mode": "100644"
+    },
+    {
+      "original_path": "docs/WEB_SOURCE_DESIGN.md",
+      "target_path": "recovery/web-reader/docs/WEB_SOURCE_DESIGN.md",
+      "bytes": 8145,
+      "sha256": "9977ecd3ae885633e045a17610615a0335ed9441a7b58bcd3b8bdcb3745c6483",
+      "git_blob_sha": "4eba200d52dcfce09e6f6e01ddfdcb82bcc36c20",
+      "mode": "100644"
+    },
+    {
+      "original_path": "evidence/BASE_SHA256.json",
+      "target_path": "recovery/web-reader/evidence/BASE_SHA256.json",
+      "bytes": 805,
+      "sha256": "cc685fefe092679b6b67074de8de4f7e80d82fd806956a78d5495e895453e23e",
+      "git_blob_sha": "79394c116f120c3cd7552d921ff390cbd3913e2c",
+      "mode": "100644"
+    },
+    {
+      "original_path": "evidence/DEPENDENCIES.json",
+      "target_path": "recovery/web-reader/evidence/DEPENDENCIES.json",
+      "bytes": 3324,
+      "sha256": "979f90a64d0f996aceef5cadcb3fb218b7855fb6e691daf7de3d6a39ce9bd351",
+      "git_blob_sha": "b3ec02df201cb02e85466bc75461330cf1596c0f",
+      "mode": "100644"
+    },
+    {
+      "original_path": "evidence/base-recheck.json",
+      "target_path": "recovery/web-reader/evidence/base-recheck.json",
+      "bytes": 260,
+      "sha256": "da37947c129719c00f4018a5b32f30dadd8df7f0f81b1249e5620b57aa139eb4",
+      "git_blob_sha": "5609b7d108e95c2b822a4491307f735d0459e020",
+      "mode": "100644"
+    },
+    {
+      "original_path": "evidence/certificate-generation.txt",
+      "target_path": "recovery/web-reader/evidence/certificate-generation.txt",
+      "bytes": 1336,
+      "sha256": "fbea8d2e02c6515845d32fea4df54afcee73c7e3f7a5799257467f149a64f250",
+      "git_blob_sha": "b2da881830b91ef6666cf86346a777c17fe40436",
+      "mode": "100644"
+    },
+    {
+      "original_path": "evidence/llhttp-build.txt",
+      "target_path": "recovery/web-reader/evidence/llhttp-build.txt",
+      "bytes": 51390,
+      "sha256": "80634466a97560e304a8ad382ee2fce120dad641f8083b1b9e90ab13b866dce7",
+      "git_blob_sha": "62d3dafe0ff524e8773591fa344d4dd04ce48dac",
+      "mode": "100644"
+    },
+    {
+      "original_path": "evidence/native-test-attempt.txt",
+      "target_path": "recovery/web-reader/evidence/native-test-attempt.txt",
+      "bytes": 45,
+      "sha256": "83ac2d960dc5a7072e2f6875f96b04365aabfa3502b1339665286b8dd13af9d5",
+      "git_blob_sha": "a0d92a52afb4a94e14fbe9df4444d693e651a836",
+      "mode": "100644"
+    },
+    {
+      "original_path": "evidence/native-toolchain-check.txt",
+      "target_path": "recovery/web-reader/evidence/native-toolchain-check.txt",
+      "bytes": 46,
+      "sha256": "82845dc15d572c55ef93f5d4d91f7db4072e68cb605eaa3f8d0bf1ec9786eab5",
+      "git_blob_sha": "092e5b4d5c085050dc7e1433a2fff209e7916fd7",
+      "mode": "100644"
+    },
+    {
+      "original_path": "evidence/public-pinned-tls-check.json",
+      "target_path": "recovery/web-reader/evidence/public-pinned-tls-check.json",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "git_blob_sha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "mode": "100644"
+    },
+    {
+      "original_path": "evidence/public-pinned-tls-error.txt",
+      "target_path": "recovery/web-reader/evidence/public-pinned-tls-error.txt",
+      "bytes": 630,
+      "sha256": "0fb8f704f1528e2997638e037eb4dba8b6d885d749745feff23df0884b441577",
+      "git_blob_sha": "bc16289b639c41b767bc7451a12bc3ff6a2f09be",
+      "mode": "100644"
+    },
+    {
+      "original_path": "evidence/reference-checks-initial-failure.txt",
+      "target_path": "recovery/web-reader/evidence/reference-checks-initial-failure.txt",
+      "bytes": 1511,
+      "sha256": "a82d086bf625f7b27526d57a4acfbb7bd4b53190963eb3df4528d4e49239eb99",
+      "git_blob_sha": "3bec1dcef566e090021711a09982bf078f4d0025",
+      "mode": "100644"
+    },
+    {
+      "original_path": "evidence/reference-checks.txt",
+      "target_path": "recovery/web-reader/evidence/reference-checks.txt",
+      "bytes": 950,
+      "sha256": "8ebb7b88b4e2fc4be771bd9ad33d1775f7548f91c4b39f6da58a2d9352386d97",
+      "git_blob_sha": "cbad6b1eadaa64b8aff5c02b78fb5c060f82f891",
+      "mode": "100644"
+    },
+    {
+      "original_path": "scripts/check_public_pinned_tls.py",
+      "target_path": "recovery/web-reader/scripts/check_public_pinned_tls.py",
+      "bytes": 1812,
+      "sha256": "175122922ddaaeb1fcf47520f23dbf974e1e72d06a68cdff9fa6ebe31d199118",
+      "git_blob_sha": "2a58b3bb76f1c029677a01ae46007bf477c2b526",
+      "mode": "100644"
+    },
+    {
+      "original_path": "scripts/check_reference_fixtures.py",
+      "target_path": "recovery/web-reader/scripts/check_reference_fixtures.py",
+      "bytes": 3318,
+      "sha256": "98ee77eeaa6749911ae774bde46b2fe3b0066343ee8590c2f6c4728a02ac5043",
+      "git_blob_sha": "864a9c81cb10c5469c0e39b12d8d9f6a9f52aa38",
+      "mode": "100644"
+    },
+    {
+      "original_path": "scripts/llhttp_probe.c",
+      "target_path": "recovery/web-reader/scripts/llhttp_probe.c",
+      "bytes": 1375,
+      "sha256": "b9ea483f62005ec7dd4440469fc2ca7073623cfb3c3a709b2d5dc75394210c2b",
+      "git_blob_sha": "944a982341a4f78a7baf2e772a2f2f4b203718d6",
+      "mode": "100644"
+    },
+    {
+      "original_path": "DELIVERABLE_SHA256.json",
+      "target_path": "recovery/web-reader/DELIVERABLE_SHA256.json",
+      "bytes": 4694,
+      "sha256": "491958ea5d810daa3a66787b2f2b04594ca7a8ac2a376bb5eb943c4f322ffba7",
+      "git_blob_sha": "6f8fc9dd3a02e758f7292fde00b15eb15697c6ee",
+      "mode": "100644"
+    }
+  ]
+}

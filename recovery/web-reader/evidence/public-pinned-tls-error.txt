@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/workspace/shared/Jarvis-EVO-web-work/scripts/check_public_pinned_tls.py", line 5, in <module>
+    records = socket.getaddrinfo(host,443,socket.AF_INET,socket.SOCK_STREAM)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/socket.py", line 978, in getaddrinfo
+    for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+socket.gaierror: [Errno -3] Temporary failure in name resolution

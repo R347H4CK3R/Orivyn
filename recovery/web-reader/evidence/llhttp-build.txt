@@ -1,0 +1,525 @@
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c: In function ‘c_nio_llhttp__internal__c_load_initial_message_completed’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:637:26: warning: unused parameter ‘p’ [-Wunused-parameter]
+  637 |     const unsigned char* p,
+      |     ~~~~~~~~~~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:638:26: warning: unused parameter ‘endp’ [-Wunused-parameter]
+  638 |     const unsigned char* endp) {
+      |     ~~~~~~~~~~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c: In function ‘c_nio_llhttp__internal__c_update_finish’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:648:26: warning: unused parameter ‘p’ [-Wunused-parameter]
+  648 |     const unsigned char* p,
+      |     ~~~~~~~~~~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:649:26: warning: unused parameter ‘endp’ [-Wunused-parameter]
+  649 |     const unsigned char* endp) {
+      |     ~~~~~~~~~~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c: In function ‘c_nio_llhttp__internal__c_load_type’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:660:26: warning: unused parameter ‘p’ [-Wunused-parameter]
+  660 |     const unsigned char* p,
+      |     ~~~~~~~~~~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:661:26: warning: unused parameter ‘endp’ [-Wunused-parameter]
+  661 |     const unsigned char* endp) {
+      |     ~~~~~~~~~~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c: In function ‘c_nio_llhttp__internal__c_store_method’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:667:26: warning: unused parameter ‘p’ [-Wunused-parameter]
+  667 |     const unsigned char* p,
+      |     ~~~~~~~~~~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:668:26: warning: unused parameter ‘endp’ [-Wunused-parameter]
+  668 |     const unsigned char* endp,
+      |     ~~~~~~~~~~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c: In function ‘c_nio_llhttp__internal__c_is_equal_method’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:680:26: warning: unused parameter ‘p’ [-Wunused-parameter]
+  680 |     const unsigned char* p,
+      |     ~~~~~~~~~~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:681:26: warning: unused parameter ‘endp’ [-Wunused-parameter]
+  681 |     const unsigned char* endp) {
+      |     ~~~~~~~~~~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c: In function ‘c_nio_llhttp__internal__c_update_http_major’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:687:26: warning: unused parameter ‘p’ [-Wunused-parameter]
+  687 |     const unsigned char* p,
+      |     ~~~~~~~~~~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:688:26: warning: unused parameter ‘endp’ [-Wunused-parameter]
+  688 |     const unsigned char* endp) {
+      |     ~~~~~~~~~~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c: In function ‘c_nio_llhttp__internal__c_update_http_minor’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:695:26: warning: unused parameter ‘p’ [-Wunused-parameter]
+  695 |     const unsigned char* p,
+      |     ~~~~~~~~~~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:696:26: warning: unused parameter ‘endp’ [-Wunused-parameter]
+  696 |     const unsigned char* endp) {
+      |     ~~~~~~~~~~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c: In function ‘c_nio_llhttp__internal__c_test_lenient_flags’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:707:26: warning: unused parameter ‘p’ [-Wunused-parameter]
+  707 |     const unsigned char* p,
+      |     ~~~~~~~~~~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:708:26: warning: unused parameter ‘endp’ [-Wunused-parameter]
+  708 |     const unsigned char* endp) {
+      |     ~~~~~~~~~~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c: In function ‘c_nio_llhttp__internal__c_test_lenient_flags_1’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:714:26: warning: unused parameter ‘p’ [-Wunused-parameter]
+  714 |     const unsigned char* p,
+      |     ~~~~~~~~~~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:715:26: warning: unused parameter ‘endp’ [-Wunused-parameter]
+  715 |     const unsigned char* endp) {
+      |     ~~~~~~~~~~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c: In function ‘c_nio_llhttp__internal__c_test_flags’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:721:26: warning: unused parameter ‘p’ [-Wunused-parameter]
+  721 |     const unsigned char* p,
+      |     ~~~~~~~~~~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:722:26: warning: unused parameter ‘endp’ [-Wunused-parameter]
+  722 |     const unsigned char* endp) {
+      |     ~~~~~~~~~~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c: In function ‘c_nio_llhttp__internal__c_is_equal_upgrade’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:736:26: warning: unused parameter ‘p’ [-Wunused-parameter]
+  736 |     const unsigned char* p,
+      |     ~~~~~~~~~~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:737:26: warning: unused parameter ‘endp’ [-Wunused-parameter]
+  737 |     const unsigned char* endp) {
+      |     ~~~~~~~~~~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c: In function ‘c_nio_llhttp__internal__c_update_content_length’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:747:26: warning: unused parameter ‘p’ [-Wunused-parameter]
+  747 |     const unsigned char* p,
+      |     ~~~~~~~~~~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:748:26: warning: unused parameter ‘endp’ [-Wunused-parameter]
+  748 |     const unsigned char* endp) {
+      |     ~~~~~~~~~~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c: In function ‘c_nio_llhttp__internal__c_update_initial_message_completed’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:755:26: warning: unused parameter ‘p’ [-Wunused-parameter]
+  755 |     const unsigned char* p,
+      |     ~~~~~~~~~~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:756:26: warning: unused parameter ‘endp’ [-Wunused-parameter]
+  756 |     const unsigned char* endp) {
+      |     ~~~~~~~~~~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c: In function ‘c_nio_llhttp__internal__c_update_finish_1’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:763:26: warning: unused parameter ‘p’ [-Wunused-parameter]
+  763 |     const unsigned char* p,
+      |     ~~~~~~~~~~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:764:26: warning: unused parameter ‘endp’ [-Wunused-parameter]
+  764 |     const unsigned char* endp) {
+      |     ~~~~~~~~~~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c: In function ‘c_nio_llhttp__internal__c_test_lenient_flags_2’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:771:26: warning: unused parameter ‘p’ [-Wunused-parameter]
+  771 |     const unsigned char* p,
+      |     ~~~~~~~~~~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:772:26: warning: unused parameter ‘endp’ [-Wunused-parameter]
+  772 |     const unsigned char* endp) {
+      |     ~~~~~~~~~~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c: In function ‘c_nio_llhttp__internal__c_test_lenient_flags_3’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:778:26: warning: unused parameter ‘p’ [-Wunused-parameter]
+  778 |     const unsigned char* p,
+      |     ~~~~~~~~~~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:779:26: warning: unused parameter ‘endp’ [-Wunused-parameter]
+  779 |     const unsigned char* endp) {
+      |     ~~~~~~~~~~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c: In function ‘c_nio_llhttp__internal__c_mul_add_content_length’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:797:26: warning: unused parameter ‘p’ [-Wunused-parameter]
+  797 |     const unsigned char* p,
+      |     ~~~~~~~~~~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:798:26: warning: unused parameter ‘endp’ [-Wunused-parameter]
+  798 |     const unsigned char* endp,
+      |     ~~~~~~~~~~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c: In function ‘c_nio_llhttp__internal__c_test_lenient_flags_4’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:823:26: warning: unused parameter ‘p’ [-Wunused-parameter]
+  823 |     const unsigned char* p,
+      |     ~~~~~~~~~~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:824:26: warning: unused parameter ‘endp’ [-Wunused-parameter]
+  824 |     const unsigned char* endp) {
+      |     ~~~~~~~~~~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c: In function ‘c_nio_llhttp__internal__c_is_equal_content_length’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:834:26: warning: unused parameter ‘p’ [-Wunused-parameter]
+  834 |     const unsigned char* p,
+      |     ~~~~~~~~~~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:835:26: warning: unused parameter ‘endp’ [-Wunused-parameter]
+  835 |     const unsigned char* endp) {
+      |     ~~~~~~~~~~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c: In function ‘c_nio_llhttp__internal__c_test_lenient_flags_7’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:841:26: warning: unused parameter ‘p’ [-Wunused-parameter]
+  841 |     const unsigned char* p,
+      |     ~~~~~~~~~~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:842:26: warning: unused parameter ‘endp’ [-Wunused-parameter]
+  842 |     const unsigned char* endp) {
+      |     ~~~~~~~~~~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c: In function ‘c_nio_llhttp__internal__c_or_flags’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:848:26: warning: unused parameter ‘p’ [-Wunused-parameter]
+  848 |     const unsigned char* p,
+      |     ~~~~~~~~~~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:849:26: warning: unused parameter ‘endp’ [-Wunused-parameter]
+  849 |     const unsigned char* endp) {
+      |     ~~~~~~~~~~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c: In function ‘c_nio_llhttp__internal__c_test_lenient_flags_8’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:856:26: warning: unused parameter ‘p’ [-Wunused-parameter]
+  856 |     const unsigned char* p,
+      |     ~~~~~~~~~~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:857:26: warning: unused parameter ‘endp’ [-Wunused-parameter]
+  857 |     const unsigned char* endp) {
+      |     ~~~~~~~~~~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c: In function ‘c_nio_llhttp__internal__c_update_finish_3’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:871:26: warning: unused parameter ‘p’ [-Wunused-parameter]
+  871 |     const unsigned char* p,
+      |     ~~~~~~~~~~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:872:26: warning: unused parameter ‘endp’ [-Wunused-parameter]
+  872 |     const unsigned char* endp) {
+      |     ~~~~~~~~~~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c: In function ‘c_nio_llhttp__internal__c_or_flags_1’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:879:26: warning: unused parameter ‘p’ [-Wunused-parameter]
+  879 |     const unsigned char* p,
+      |     ~~~~~~~~~~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:880:26: warning: unused parameter ‘endp’ [-Wunused-parameter]
+  880 |     const unsigned char* endp) {
+      |     ~~~~~~~~~~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c: In function ‘c_nio_llhttp__internal__c_update_upgrade’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:887:26: warning: unused parameter ‘p’ [-Wunused-parameter]
+  887 |     const unsigned char* p,
+      |     ~~~~~~~~~~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:888:26: warning: unused parameter ‘endp’ [-Wunused-parameter]
+  888 |     const unsigned char* endp) {
+      |     ~~~~~~~~~~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c: In function ‘c_nio_llhttp__internal__c_store_header_state’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:895:26: warning: unused parameter ‘p’ [-Wunused-parameter]
+  895 |     const unsigned char* p,
+      |     ~~~~~~~~~~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:896:26: warning: unused parameter ‘endp’ [-Wunused-parameter]
+  896 |     const unsigned char* endp,
+      |     ~~~~~~~~~~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c: In function ‘c_nio_llhttp__internal__c_load_header_state’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:908:26: warning: unused parameter ‘p’ [-Wunused-parameter]
+  908 |     const unsigned char* p,
+      |     ~~~~~~~~~~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:909:26: warning: unused parameter ‘endp’ [-Wunused-parameter]
+  909 |     const unsigned char* endp) {
+      |     ~~~~~~~~~~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c: In function ‘c_nio_llhttp__internal__c_test_flags_4’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:915:26: warning: unused parameter ‘p’ [-Wunused-parameter]
+  915 |     const unsigned char* p,
+      |     ~~~~~~~~~~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:916:26: warning: unused parameter ‘endp’ [-Wunused-parameter]
+  916 |     const unsigned char* endp) {
+      |     ~~~~~~~~~~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c: In function ‘c_nio_llhttp__internal__c_test_lenient_flags_22’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:922:26: warning: unused parameter ‘p’ [-Wunused-parameter]
+  922 |     const unsigned char* p,
+      |     ~~~~~~~~~~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:923:26: warning: unused parameter ‘endp’ [-Wunused-parameter]
+  923 |     const unsigned char* endp) {
+      |     ~~~~~~~~~~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c: In function ‘c_nio_llhttp__internal__c_or_flags_5’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:929:26: warning: unused parameter ‘p’ [-Wunused-parameter]
+  929 |     const unsigned char* p,
+      |     ~~~~~~~~~~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:930:26: warning: unused parameter ‘endp’ [-Wunused-parameter]
+  930 |     const unsigned char* endp) {
+      |     ~~~~~~~~~~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c: In function ‘c_nio_llhttp__internal__c_update_header_state’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:937:26: warning: unused parameter ‘p’ [-Wunused-parameter]
+  937 |     const unsigned char* p,
+      |     ~~~~~~~~~~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:938:26: warning: unused parameter ‘endp’ [-Wunused-parameter]
+  938 |     const unsigned char* endp) {
+      |     ~~~~~~~~~~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c: In function ‘c_nio_llhttp__internal__c_or_flags_6’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:949:26: warning: unused parameter ‘p’ [-Wunused-parameter]
+  949 |     const unsigned char* p,
+      |     ~~~~~~~~~~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:950:26: warning: unused parameter ‘endp’ [-Wunused-parameter]
+  950 |     const unsigned char* endp) {
+      |     ~~~~~~~~~~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c: In function ‘c_nio_llhttp__internal__c_or_flags_7’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:957:26: warning: unused parameter ‘p’ [-Wunused-parameter]
+  957 |     const unsigned char* p,
+      |     ~~~~~~~~~~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:958:26: warning: unused parameter ‘endp’ [-Wunused-parameter]
+  958 |     const unsigned char* endp) {
+      |     ~~~~~~~~~~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c: In function ‘c_nio_llhttp__internal__c_or_flags_8’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:965:26: warning: unused parameter ‘p’ [-Wunused-parameter]
+  965 |     const unsigned char* p,
+      |     ~~~~~~~~~~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:966:26: warning: unused parameter ‘endp’ [-Wunused-parameter]
+  966 |     const unsigned char* endp) {
+      |     ~~~~~~~~~~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c: In function ‘c_nio_llhttp__internal__c_update_header_state_3’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:973:26: warning: unused parameter ‘p’ [-Wunused-parameter]
+  973 |     const unsigned char* p,
+      |     ~~~~~~~~~~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:974:26: warning: unused parameter ‘endp’ [-Wunused-parameter]
+  974 |     const unsigned char* endp) {
+      |     ~~~~~~~~~~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c: In function ‘c_nio_llhttp__internal__c_update_header_state_1’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:981:26: warning: unused parameter ‘p’ [-Wunused-parameter]
+  981 |     const unsigned char* p,
+      |     ~~~~~~~~~~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:982:26: warning: unused parameter ‘endp’ [-Wunused-parameter]
+  982 |     const unsigned char* endp) {
+      |     ~~~~~~~~~~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c: In function ‘c_nio_llhttp__internal__c_update_header_state_6’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:989:26: warning: unused parameter ‘p’ [-Wunused-parameter]
+  989 |     const unsigned char* p,
+      |     ~~~~~~~~~~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:990:26: warning: unused parameter ‘endp’ [-Wunused-parameter]
+  990 |     const unsigned char* endp) {
+      |     ~~~~~~~~~~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c: In function ‘c_nio_llhttp__internal__c_update_header_state_7’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:997:26: warning: unused parameter ‘p’ [-Wunused-parameter]
+  997 |     const unsigned char* p,
+      |     ~~~~~~~~~~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:998:26: warning: unused parameter ‘endp’ [-Wunused-parameter]
+  998 |     const unsigned char* endp) {
+      |     ~~~~~~~~~~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c: In function ‘c_nio_llhttp__internal__c_test_flags_2’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:1005:26: warning: unused parameter ‘p’ [-Wunused-parameter]
+ 1005 |     const unsigned char* p,
+      |     ~~~~~~~~~~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:1006:26: warning: unused parameter ‘endp’ [-Wunused-parameter]
+ 1006 |     const unsigned char* endp) {
+      |     ~~~~~~~~~~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c: In function ‘c_nio_llhttp__internal__c_mul_add_content_length_1’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:1012:26: warning: unused parameter ‘p’ [-Wunused-parameter]
+ 1012 |     const unsigned char* p,
+      |     ~~~~~~~~~~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:1013:26: warning: unused parameter ‘endp’ [-Wunused-parameter]
+ 1013 |     const unsigned char* endp,
+      |     ~~~~~~~~~~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c: In function ‘c_nio_llhttp__internal__c_or_flags_17’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:1038:26: warning: unused parameter ‘p’ [-Wunused-parameter]
+ 1038 |     const unsigned char* p,
+      |     ~~~~~~~~~~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:1039:26: warning: unused parameter ‘endp’ [-Wunused-parameter]
+ 1039 |     const unsigned char* endp) {
+      |     ~~~~~~~~~~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c: In function ‘c_nio_llhttp__internal__c_test_flags_3’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:1046:26: warning: unused parameter ‘p’ [-Wunused-parameter]
+ 1046 |     const unsigned char* p,
+      |     ~~~~~~~~~~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:1047:26: warning: unused parameter ‘endp’ [-Wunused-parameter]
+ 1047 |     const unsigned char* endp) {
+      |     ~~~~~~~~~~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c: In function ‘c_nio_llhttp__internal__c_test_lenient_flags_20’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:1053:26: warning: unused parameter ‘p’ [-Wunused-parameter]
+ 1053 |     const unsigned char* p,
+      |     ~~~~~~~~~~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:1054:26: warning: unused parameter ‘endp’ [-Wunused-parameter]
+ 1054 |     const unsigned char* endp) {
+      |     ~~~~~~~~~~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c: In function ‘c_nio_llhttp__internal__c_or_flags_18’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:1060:26: warning: unused parameter ‘p’ [-Wunused-parameter]
+ 1060 |     const unsigned char* p,
+      |     ~~~~~~~~~~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:1061:26: warning: unused parameter ‘endp’ [-Wunused-parameter]
+ 1061 |     const unsigned char* endp) {
+      |     ~~~~~~~~~~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c: In function ‘c_nio_llhttp__internal__c_and_flags’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:1068:26: warning: unused parameter ‘p’ [-Wunused-parameter]
+ 1068 |     const unsigned char* p,
+      |     ~~~~~~~~~~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:1069:26: warning: unused parameter ‘endp’ [-Wunused-parameter]
+ 1069 |     const unsigned char* endp) {
+      |     ~~~~~~~~~~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c: In function ‘c_nio_llhttp__internal__c_update_header_state_8’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:1076:26: warning: unused parameter ‘p’ [-Wunused-parameter]
+ 1076 |     const unsigned char* p,
+      |     ~~~~~~~~~~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:1077:26: warning: unused parameter ‘endp’ [-Wunused-parameter]
+ 1077 |     const unsigned char* endp) {
+      |     ~~~~~~~~~~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c: In function ‘c_nio_llhttp__internal__c_or_flags_20’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:1084:26: warning: unused parameter ‘p’ [-Wunused-parameter]
+ 1084 |     const unsigned char* p,
+      |     ~~~~~~~~~~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:1085:26: warning: unused parameter ‘endp’ [-Wunused-parameter]
+ 1085 |     const unsigned char* endp) {
+      |     ~~~~~~~~~~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c: In function ‘c_nio_llhttp__internal__c_load_method’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:1096:26: warning: unused parameter ‘p’ [-Wunused-parameter]
+ 1096 |     const unsigned char* p,
+      |     ~~~~~~~~~~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:1097:26: warning: unused parameter ‘endp’ [-Wunused-parameter]
+ 1097 |     const unsigned char* endp) {
+      |     ~~~~~~~~~~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c: In function ‘c_nio_llhttp__internal__c_store_http_major’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:1103:26: warning: unused parameter ‘p’ [-Wunused-parameter]
+ 1103 |     const unsigned char* p,
+      |     ~~~~~~~~~~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:1104:26: warning: unused parameter ‘endp’ [-Wunused-parameter]
+ 1104 |     const unsigned char* endp,
+      |     ~~~~~~~~~~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c: In function ‘c_nio_llhttp__internal__c_store_http_minor’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:1112:26: warning: unused parameter ‘p’ [-Wunused-parameter]
+ 1112 |     const unsigned char* p,
+      |     ~~~~~~~~~~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:1113:26: warning: unused parameter ‘endp’ [-Wunused-parameter]
+ 1113 |     const unsigned char* endp,
+      |     ~~~~~~~~~~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c: In function ‘c_nio_llhttp__internal__c_test_lenient_flags_24’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:1121:26: warning: unused parameter ‘p’ [-Wunused-parameter]
+ 1121 |     const unsigned char* p,
+      |     ~~~~~~~~~~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:1122:26: warning: unused parameter ‘endp’ [-Wunused-parameter]
+ 1122 |     const unsigned char* endp) {
+      |     ~~~~~~~~~~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c: In function ‘c_nio_llhttp__internal__c_load_http_major’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:1132:26: warning: unused parameter ‘p’ [-Wunused-parameter]
+ 1132 |     const unsigned char* p,
+      |     ~~~~~~~~~~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:1133:26: warning: unused parameter ‘endp’ [-Wunused-parameter]
+ 1133 |     const unsigned char* endp) {
+      |     ~~~~~~~~~~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c: In function ‘c_nio_llhttp__internal__c_load_http_minor’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:1139:26: warning: unused parameter ‘p’ [-Wunused-parameter]
+ 1139 |     const unsigned char* p,
+      |     ~~~~~~~~~~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:1140:26: warning: unused parameter ‘endp’ [-Wunused-parameter]
+ 1140 |     const unsigned char* endp) {
+      |     ~~~~~~~~~~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c: In function ‘c_nio_llhttp__internal__c_update_status_code’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:1146:26: warning: unused parameter ‘p’ [-Wunused-parameter]
+ 1146 |     const unsigned char* p,
+      |     ~~~~~~~~~~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:1147:26: warning: unused parameter ‘endp’ [-Wunused-parameter]
+ 1147 |     const unsigned char* endp) {
+      |     ~~~~~~~~~~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c: In function ‘c_nio_llhttp__internal__c_mul_add_status_code’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:1154:26: warning: unused parameter ‘p’ [-Wunused-parameter]
+ 1154 |     const unsigned char* p,
+      |     ~~~~~~~~~~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:1155:26: warning: unused parameter ‘endp’ [-Wunused-parameter]
+ 1155 |     const unsigned char* endp,
+      |     ~~~~~~~~~~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c: In function ‘c_nio_llhttp__internal__c_update_type’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:1184:26: warning: unused parameter ‘p’ [-Wunused-parameter]
+ 1184 |     const unsigned char* p,
+      |     ~~~~~~~~~~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:1185:26: warning: unused parameter ‘endp’ [-Wunused-parameter]
+ 1185 |     const unsigned char* endp) {
+      |     ~~~~~~~~~~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c: In function ‘c_nio_llhttp__internal__c_update_type_1’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:1192:26: warning: unused parameter ‘p’ [-Wunused-parameter]
+ 1192 |     const unsigned char* p,
+      |     ~~~~~~~~~~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_llhttp.c:1193:26: warning: unused parameter ‘endp’ [-Wunused-parameter]
+ 1193 |     const unsigned char* endp) {
+      |     ~~~~~~~~~~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_api.c: In function ‘c_nio_llhttp__on_message_begin’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_api.c:325:61: warning: unused parameter ‘p’ [-Wunused-parameter]
+  325 | int c_nio_llhttp__on_message_begin(llhttp_t* s, const char* p, const char* endp) {
+      |                                                 ~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_api.c:325:76: warning: unused parameter ‘endp’ [-Wunused-parameter]
+  325 | int c_nio_llhttp__on_message_begin(llhttp_t* s, const char* p, const char* endp) {
+      |                                                                ~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_api.c: In function ‘c_nio_llhttp__on_protocol_complete’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_api.c:339:65: warning: unused parameter ‘p’ [-Wunused-parameter]
+  339 | int c_nio_llhttp__on_protocol_complete(llhttp_t* s, const char* p, const char* endp) {
+      |                                                     ~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_api.c:339:80: warning: unused parameter ‘endp’ [-Wunused-parameter]
+  339 | int c_nio_llhttp__on_protocol_complete(llhttp_t* s, const char* p, const char* endp) {
+      |                                                                    ~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_api.c: In function ‘c_nio_llhttp__on_url_complete’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_api.c:353:60: warning: unused parameter ‘p’ [-Wunused-parameter]
+  353 | int c_nio_llhttp__on_url_complete(llhttp_t* s, const char* p, const char* endp) {
+      |                                                ~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_api.c:353:75: warning: unused parameter ‘endp’ [-Wunused-parameter]
+  353 | int c_nio_llhttp__on_url_complete(llhttp_t* s, const char* p, const char* endp) {
+      |                                                               ~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_api.c: In function ‘c_nio_llhttp__on_status_complete’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_api.c:367:63: warning: unused parameter ‘p’ [-Wunused-parameter]
+  367 | int c_nio_llhttp__on_status_complete(llhttp_t* s, const char* p, const char* endp) {
+      |                                                   ~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_api.c:367:78: warning: unused parameter ‘endp’ [-Wunused-parameter]
+  367 | int c_nio_llhttp__on_status_complete(llhttp_t* s, const char* p, const char* endp) {
+      |                                                                  ~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_api.c: In function ‘c_nio_llhttp__on_method_complete’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_api.c:381:63: warning: unused parameter ‘p’ [-Wunused-parameter]
+  381 | int c_nio_llhttp__on_method_complete(llhttp_t* s, const char* p, const char* endp) {
+      |                                                   ~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_api.c:381:78: warning: unused parameter ‘endp’ [-Wunused-parameter]
+  381 | int c_nio_llhttp__on_method_complete(llhttp_t* s, const char* p, const char* endp) {
+      |                                                                  ~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_api.c: In function ‘c_nio_llhttp__on_version_complete’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_api.c:395:64: warning: unused parameter ‘p’ [-Wunused-parameter]
+  395 | int c_nio_llhttp__on_version_complete(llhttp_t* s, const char* p, const char* endp) {
+      |                                                    ~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_api.c:395:79: warning: unused parameter ‘endp’ [-Wunused-parameter]
+  395 | int c_nio_llhttp__on_version_complete(llhttp_t* s, const char* p, const char* endp) {
+      |                                                                   ~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_api.c: In function ‘c_nio_llhttp__on_header_field_complete’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_api.c:409:69: warning: unused parameter ‘p’ [-Wunused-parameter]
+  409 | int c_nio_llhttp__on_header_field_complete(llhttp_t* s, const char* p, const char* endp) {
+      |                                                         ~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_api.c:409:84: warning: unused parameter ‘endp’ [-Wunused-parameter]
+  409 | int c_nio_llhttp__on_header_field_complete(llhttp_t* s, const char* p, const char* endp) {
+      |                                                                        ~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_api.c: In function ‘c_nio_llhttp__on_header_value_complete’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_api.c:423:69: warning: unused parameter ‘p’ [-Wunused-parameter]
+  423 | int c_nio_llhttp__on_header_value_complete(llhttp_t* s, const char* p, const char* endp) {
+      |                                                         ~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_api.c:423:84: warning: unused parameter ‘endp’ [-Wunused-parameter]
+  423 | int c_nio_llhttp__on_header_value_complete(llhttp_t* s, const char* p, const char* endp) {
+      |                                                                        ~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_api.c: In function ‘c_nio_llhttp__on_headers_complete’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_api.c:430:64: warning: unused parameter ‘p’ [-Wunused-parameter]
+  430 | int c_nio_llhttp__on_headers_complete(llhttp_t* s, const char* p, const char* endp) {
+      |                                                    ~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_api.c:430:79: warning: unused parameter ‘endp’ [-Wunused-parameter]
+  430 | int c_nio_llhttp__on_headers_complete(llhttp_t* s, const char* p, const char* endp) {
+      |                                                                   ~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_api.c: In function ‘c_nio_llhttp__on_message_complete’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_api.c:437:64: warning: unused parameter ‘p’ [-Wunused-parameter]
+  437 | int c_nio_llhttp__on_message_complete(llhttp_t* s, const char* p, const char* endp) {
+      |                                                    ~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_api.c:437:79: warning: unused parameter ‘endp’ [-Wunused-parameter]
+  437 | int c_nio_llhttp__on_message_complete(llhttp_t* s, const char* p, const char* endp) {
+      |                                                                   ~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_api.c: In function ‘c_nio_llhttp__on_chunk_header’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_api.c:451:60: warning: unused parameter ‘p’ [-Wunused-parameter]
+  451 | int c_nio_llhttp__on_chunk_header(llhttp_t* s, const char* p, const char* endp) {
+      |                                                ~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_api.c:451:75: warning: unused parameter ‘endp’ [-Wunused-parameter]
+  451 | int c_nio_llhttp__on_chunk_header(llhttp_t* s, const char* p, const char* endp) {
+      |                                                               ~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_api.c: In function ‘c_nio_llhttp__on_chunk_extension_name_complete’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_api.c:465:77: warning: unused parameter ‘p’ [-Wunused-parameter]
+  465 | int c_nio_llhttp__on_chunk_extension_name_complete(llhttp_t* s, const char* p, const char* endp) {
+      |                                                                 ~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_api.c:465:92: warning: unused parameter ‘endp’ [-Wunused-parameter]
+  465 | int c_nio_llhttp__on_chunk_extension_name_complete(llhttp_t* s, const char* p, const char* endp) {
+      |                                                                                ~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_api.c: In function ‘c_nio_llhttp__on_chunk_extension_value_complete’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_api.c:479:78: warning: unused parameter ‘p’ [-Wunused-parameter]
+  479 | int c_nio_llhttp__on_chunk_extension_value_complete(llhttp_t* s, const char* p, const char* endp) {
+      |                                                                  ~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_api.c:479:93: warning: unused parameter ‘endp’ [-Wunused-parameter]
+  479 | int c_nio_llhttp__on_chunk_extension_value_complete(llhttp_t* s, const char* p, const char* endp) {
+      |                                                                                 ~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_api.c: In function ‘c_nio_llhttp__on_chunk_complete’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_api.c:486:62: warning: unused parameter ‘p’ [-Wunused-parameter]
+  486 | int c_nio_llhttp__on_chunk_complete(llhttp_t* s, const char* p, const char* endp) {
+      |                                                  ~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_api.c:486:77: warning: unused parameter ‘endp’ [-Wunused-parameter]
+  486 | int c_nio_llhttp__on_chunk_complete(llhttp_t* s, const char* p, const char* endp) {
+      |                                                                 ~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_api.c: In function ‘c_nio_llhttp__on_reset’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_api.c:493:53: warning: unused parameter ‘p’ [-Wunused-parameter]
+  493 | int c_nio_llhttp__on_reset(llhttp_t* s, const char* p, const char* endp) {
+      |                                         ~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_api.c:493:68: warning: unused parameter ‘endp’ [-Wunused-parameter]
+  493 | int c_nio_llhttp__on_reset(llhttp_t* s, const char* p, const char* endp) {
+      |                                                        ~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_http.c: In function ‘c_nio_llhttp__before_headers_complete’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_http.c:14:73: warning: unused parameter ‘p’ [-Wunused-parameter]
+   14 | int c_nio_llhttp__before_headers_complete(llhttp_t* parser, const char* p,
+      |                                                             ~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_http.c:15:49: warning: unused parameter ‘endp’ [-Wunused-parameter]
+   15 |                                     const char* endp) {
+      |                                     ~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_http.c: In function ‘c_nio_llhttp__after_headers_complete’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_http.c:40:72: warning: unused parameter ‘p’ [-Wunused-parameter]
+   40 | int c_nio_llhttp__after_headers_complete(llhttp_t* parser, const char* p,
+      |                                                            ~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_http.c:41:48: warning: unused parameter ‘endp’ [-Wunused-parameter]
+   41 |                                    const char* endp) {
+      |                                    ~~~~~~~~~~~~^~~~
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_http.c: In function ‘c_nio_llhttp__after_message_complete’:
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_http.c:119:72: warning: unused parameter ‘p’ [-Wunused-parameter]
+  119 | int c_nio_llhttp__after_message_complete(llhttp_t* parser, const char* p,
+      |                                                            ~~~~~~~~~~~~^
+/workspace/shared/Jarvis-EVO-web-work/evidence/upstream/swift-nio/Sources/CNIOLLHTTP/c_nio_http.c:120:48: warning: unused parameter ‘endp’ [-Wunused-parameter]
+  120 |                                    const char* endp) {
+      |                                    ~~~~~~~~~~~~^~~~

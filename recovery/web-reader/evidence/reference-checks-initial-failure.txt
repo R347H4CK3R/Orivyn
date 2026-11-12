@@ -1,0 +1,19 @@
+test_context_json_quotes_cannot_escape_data (__main__.ReferenceFixtureChecks.test_context_json_quotes_cannot_escape_data) ... ok
+test_dependency_source_commits_match_recorded_pins (__main__.ReferenceFixtureChecks.test_dependency_source_commits_match_recorded_pins) ... ok
+test_nonpublic_address_fixtures_are_not_global (__main__.ReferenceFixtureChecks.test_nonpublic_address_fixtures_are_not_global) ... ok
+test_unicode_fixture_byte_expectations (__main__.ReferenceFixtureChecks.test_unicode_fixture_byte_expectations) ... FAIL
+test_content_length_chunked_and_eof_framing_at_many_boundaries (__main__.UpstreamLLHTTPChecks.test_content_length_chunked_and_eof_framing_at_many_boundaries) ... ok
+test_invalid_duplicate_length_chunk_and_incomplete_body_fail (__main__.UpstreamLLHTTPChecks.test_invalid_duplicate_length_chunk_and_incomplete_body_fail) ... ok
+
+======================================================================
+FAIL: test_unicode_fixture_byte_expectations (__main__.ReferenceFixtureChecks.test_unicode_fixture_byte_expectations)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/shared/Jarvis-EVO-web-work/scripts/check_reference_fixtures.py", line 16, in test_unicode_fixture_byte_expectations
+    self.assertEqual(len("<title>Fixture</title><p>Actual content</p>".encode()), 41)
+AssertionError: 43 != 41
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.064s
+
+FAILED (failures=1)

@@ -1,0 +1,13 @@
+{
+  "base": "/workspace/shared/Jarvis-EVO-recovery-next",
+  "git_commit": null,
+  "reason": "base is a filesystem snapshot, not a Git worktree",
+  "sha256": {
+    "JarvisEVO/Core/AIProvider.swift": "6ef3c74bd3283f7c6ccfc1a3c2188044747d127420356358ab3a03ed6d43a9e3",
+    "JarvisEVO/Core/Conversation.swift": "6b5d07f6e80e04f3f5abef83d2a048da2155304665dddaa007ab0cfcf9d15b7f",
+    "JarvisEVO/Services/NetworkStatus.swift": "20fa360856871b678a4d7f66a46b7645d95745360e7c97da4641f57338f0a50a",
+    "JarvisEVO/UI/AppModel.swift": "493fdfd345de07c2c071b85c5734313f9e163079b925863810112f0c597aba66",
+    "JarvisEVO/Providers/SystemModelProvider.swift": "ede4b3e345987ebd5eed5d1e449751c52a72e558e453d6c93b539c97f3fb743f",
+    "project.yml": "6245506686b0823ba1acfaa1e48c181a26c12f5d0fecb7862999278c9528450e"
+  }
+}

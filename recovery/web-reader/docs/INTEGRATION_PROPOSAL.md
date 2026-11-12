@@ -1,0 +1,26 @@
+# Integration proposal, not an applied patch
+
+Base: /workspace/shared/Jarvis-EVO-recovery-next. This is a filesystem snapshot without .git, so there is no invented commit SHA. Exact SHA-256 values for the observed AIProvider, Conversation, NetworkStatus, AppModel, SystemModelProvider and project.yml are in evidence/BASE_SHA256.json. Rehash immediately before integrating; another worker may legitimately have updated the active candidate meanwhile. No base files have been copied over or edited by this worker.
+
+## Minimal future integration
+
+1. Review the eight new Swift files under JarvisEVO/Services/WebSources and the new tests. Add the same exact dependency versions and resolved commit pins listed in evidence/DEPENDENCIES.json to the app's dependency definition only through a separate coordinator-reviewed change. The isolated root Package.swift is a compile harness, not a replacement for project.yml. Its iOS 18/macOS 14 minimum enables API compilation with Swift 6; the actual app remains iOS 26+.
+2. Compile the isolated package on a Mac with Swift 6.0+ using `swift test --enable-code-coverage`; then add the files/dependency products to a disposable copy of the iOS 26 application and run its existing full native gates. The module name JarvisEVO in this harness exists only so its test sources match the application test import; do not import this product alongside another JarvisEVO module. Copy the source files after review or rename the standalone package module deliberately.
+3. Link NIOCore, NIOHTTP1 and NIOTransportServices to the app, and NIOEmbedded to its test target. Include Tests/Fixtures/WebTLSIdentity.der in test resources only. Bundle the six ThirdPartyNotices files. Do not bundle evidence/upstream or build probes. Confirm SwiftPM's generated resolution exactly matches the hand-recorded version/revision lock; this lock has not been produced by a successful native resolve.
+4. At a future explicit "Read sources" action, show exact destination URLs and privacy disclosure, validate UserSuppliedWebURL values, pass NetworkStatus.isOnline, and keep a Task handle for cancellation. Do not automatically read URLs merely pasted into chat or returned by a model. Main-actor UI receives progress through an explicit Task { @MainActor ... } hop. Stale/cancelled UI sessions must not install a late result.
+5. Show source title as untrusted plain Text, original and final URLs, retrieval time, extraction truncation, per-source errors and the offline message. Do not auto-open links or render extracted content as HTML. The final URL currently equals the original because redirects are never followed.
+6. Offer a separate local-only summarize action. Reserve model context before constructing WebSourceContext; preserve its instruction/data separation and truncation flags. The model cannot browse or invoke tools. Resolve emitted citation IDs against the exact source snapshot registry; unknown IDs must remain visibly unsupported, never become guessed links. Remote-provider use requires a separate explicit decision, not a fallback.
+
+## Required native acceptance gates
+
+- All authored tests compile and pass under strict Swift 6 concurrency. Capture the full result bundle. Check DNS cancellation before scheduling, during callbacks and after a timeout for leaks/double-resume.
+- Controlled DNS fixture: mixed public/private records, private-only records, rotating/rebinding answers, excessive records and stale callbacks. Confirm the socket receives only the selected validated public literal and never re-resolves the original hostname.
+- Controlled TLS server: correct hostname succeeds with system trust; wrong-host, expired, untrusted, missing-chain and TLS <1.2 fail. No client certificate offered. Verify no network fetch from attacker-controlled certificate AIA/OCSP, no tickets/resumption, and no trust override. Unit tests with a test-only anchor do not replace real system-trust tests.
+- NIOEmbedded fixtures: bytewise split chunked/length/EOF messages, malformed and duplicate framing, 100/101, redirects to localhost/private schemes, oversized headers/body/trailers, compressed bomb headers, interrupted bodies, cancellation and timeout.
+- iPhone/iOS 26 network instrumentation: public pages, Wi-Fi loss, unknown reachability, IPv6-only environment, VPN/proxy configuration, large and slow bodies, cancellation during TLS and parser work. Verify no extra host/link/subresource or account calls.
+- Full app regressions and measured binary/install-size, startup, memory, and energy delta. NIO has a nontrivial dependency footprint; no guessed MB claim is supplied. Source checkout disk size is not installed binary size. NIOTransportServices itself links NIO components and Atomics, and NIO adds Collections/System resolution; there is no BoringSSL dependency.
+- A fresh independent security/code review before enabling any entry point. This worker has not obtained that review because all native-agent slots were occupied.
+
+## Not included
+
+No search engine, search history, public web index, browser/account integration, automatic page navigation, source persistence, model answer execution, AppModel/UI changes, push, CI edits, or publishing. Do not announce these features as shipped based on this overlay.
