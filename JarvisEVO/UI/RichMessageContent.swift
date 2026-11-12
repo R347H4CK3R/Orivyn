@@ -493,6 +493,10 @@ private struct OfflineMathWebView: UIViewRepresentable {
                 do {
                     let list = try await WKContentRuleListStore.default().compileContentRuleList(forIdentifier: "JarvisEVOOfflineMathDenyAll", encodedContentRuleList: rules)
                     guard !Task.isCancelled else { return }
+                    guard let list else {
+                        self.failed.wrappedValue = true
+                        return
+                    }
                     view.configuration.userContentController.add(list)
                     self.blockerReady = true
                     self.loadIfReady(view)
@@ -517,7 +521,7 @@ private struct OfflineMathWebView: UIViewRepresentable {
             view.loadHTMLString(currentHTML, baseURL: nil)
         }
 
-        func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+        func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping @MainActor @Sendable (WKNavigationActionPolicy) -> Void) {
             let isInitialDocument = navigationAction.navigationType == .other && navigationAction.request.url?.absoluteString == "about:blank"
             decisionHandler(isInitialDocument ? .allow : .cancel)
         }
