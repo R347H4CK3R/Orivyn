@@ -23,3 +23,27 @@ workflows:
       - artifacts/*/Tests.xcresult
 # No automatic triggers or publication. Run only after private repository access
 # and remaining free build capacity are authorized and verified.
+  orivyn-integration-regression:
+    name: Orivyn integration regression proof
+    max_build_duration: 20
+    instance_type: mac_mini_m2
+    environment:
+      xcode: 26.0
+    scripts:
+      - name: Focused native integration regression
+        script: |
+          set -euo pipefail
+          if ! command -v xcodegen >/dev/null; then brew install xcodegen; fi
+          bash scripts/bootstrap_llama.sh
+          xcodegen generate
+          mkdir -p artifacts/integration-regression
+          xcrun simctl list devices available -j > artifacts/integration-regression/simulators.json
+          SIMULATOR_ID=$(python3 -c 'import json; v=json.load(open("artifacts/integration-regression/simulators.json"))["devices"]; ds=[d for r,items in v.items() if "iOS-26" in r for d in items if "iPhone" in d["name"] and d.get("isAvailable")]; ds.sort(key=lambda d:(d["name"]!="iPhone 16 Plus",d["name"])); print(ds[0]["udid"])')
+          xcrun simctl bootstatus "$SIMULATOR_ID" -b
+          bash scripts/run_native_tests.sh artifacts/integration-regression xcodebuild -project JarvisEVO.xcodeproj -scheme JarvisEVO -destination "platform=iOS Simulator,id=$SIMULATOR_ID" -parallel-testing-enabled NO -test-timeouts-enabled YES -default-test-execution-time-allowance 90 -maximum-test-execution-time-allowance 120 -resultBundlePath artifacts/integration-regression/Tests.xcresult -only-testing:JarvisEVOUITests/OrivynIntegrationUITests CODE_SIGNING_ALLOWED=NO test
+    artifacts:
+      - artifacts/integration-regression/*.log
+      - artifacts/integration-regression/screenshots/**/*.png
+      - artifacts/integration-regression/screenshots/**/*.json
+      - artifacts/integration-regression/screenshots/**/*.txt
+      - artifacts/integration-regression/Tests.xcresult

@@ -1,0 +1,13 @@
+# Orivyn free iOS integrations, build 5
+
+Chris requested end-to-end completion, maximum practical iOS/cross-app compatibility, no paid tiers, and autonomous sensible design. Preserve the verified build-4 baseline and all bundle/storage/Keychain identities.
+
+Chosen approach: native App Intents and a validated custom URL scheme stage incoming text for explicit review; iOS local notifications provide actual one-time reminders. These require no server, paid API, App Group or shared signing entitlement. A full share extension would add provisioning/identity complexity, while server agents would need accounts, costs and persistent authority. Neither is silently claimed as delivered.
+
+Incoming text is untrusted. Accept only `orivyn://compose?text=...`, no credentials, ports, fragments, duplicate/unknown parameters or execution commands. Bound the URL to 32,768 UTF-8 bytes and input to 8,192 bytes. Preserve existing drafts, attachments and pending requests. Review explicitly appends to the current draft, with a 32,768-byte combined limit; it never sends a prompt, executes tools or selects a remote provider. Busy generation/import/history/audio operations prevent acceptance. Cancel/dismiss never modifies the draft. A second incoming request must not replace the first silently.
+
+App Shortcuts open Orivyn or stage text with the same review path. A discoverable Shortcuts/sharing page explains use from another app and the limits. No credentials are requested or copied from the reference app.
+
+Local reminders use UserNotifications as the authoritative pending queue, not a fake timer or duplicated optimistic store. The user chooses title, optional notes and a future date, explicitly approves notification permission, and is told the text may appear on the lock screen. Limit to 48 app-owned reminders, within 365 days, with bounded title/notes. Cancellation affects only the selected Orivyn reminder. Creation failures/denial do not report success. Relaunch lists actual OS-pending reminders. This does not run AI in the background or guarantee notification delivery under Focus/device settings.
+
+Verification: first expose failing real UI flows on the existing app; test parsing, draft ownership, permission/race/error cases, notification payloads and actual OS scheduling/relaunch/cancel. Run full native/UI/package gates and inspect captures before delivery. Recheck all nine exact model weight hashes and bounded Linux inference separately, without calling it iPhone performance. Physical hardware/signing remain blocked by the absence of a connected iPhone/Mac, not by source permission.
