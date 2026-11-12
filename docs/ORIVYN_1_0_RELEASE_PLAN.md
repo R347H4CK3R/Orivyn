@@ -6,9 +6,9 @@ Owner directive dated 2026-11-12: application Orivyn, assistant Jarvis, target 1
 
 - Public verified development preview: 0.1.0 build 4 in Orivyn-Distribution and Strata. Public IPA SHA `196091d0989f39a01787491efcfb7d1461bbca3a2f9d26f4d82b5bc7fa12ee7d`; app identity `app.jarvisevo.ios` preserved.
 - Strata commit `e2305dc5c145dd1f42b386529d01fe6224057734`: 15 entries, prior 14 unchanged. Anonymous binary verification plus all five public catalog files byte-checked. Standalone distribution metadata commit `e9fba9feec430788610d13d354c830d20a8ac966` points to the same verified release asset.
-- Private integration checkpoint `c71b3e393bc35a622671689c1d3a9f5f781bb823`: real native tool source, 64 Python checks pass; native build `6af5f7769679c85ac0af2e4e` failed three main-actor legacy UI delegate conformances before tests. Narrow @preconcurrency fix committed in the subsequent candidate; recompile required.
-- Earlier focused native run `6af5f2259679c85ac0af2bf4` on `df689ccddaad825c62dda74427e6c845494cd9a7`: 47 unit tests pass; actual OS reminder schedule/relaunch/cancel and cancel-form UI pass. Four new native tool controls had genuine RED. Three incoming-link assertions failed because XCUIApplication.open launched a new process; test-only warm routing now uses documented XCUISystem.open, still awaiting rerun.
-- Automatic routing and Desk acceptance tests are authored before production. Pure router/suggestion/Desk lifecycle tests are deliberately excluded from absent-feature UI snapshots until types exist.
+- Latest completed native gate: `6af60c119679c85ac0af3616` on exact private `1eb8e787ae305183ffaf6de8eb3bdb8e11ba5b54`. All 22 selected units and three UI tests passed; the real coder 0.5B useful-output test failed after a successful general download/Paris answer. Automatic controls and Desk scrolling state are now verified; stronger coder routing is prepared for retest.
+- Prior combined gate `6af601b89679c85ac0af3217` passed 135 selected units and 11 UI flows. The native Email/Calendar/Safari/location/reminder/incoming-link checkpoint is verified in simulation; physical permissions/account delivery remain distinct.
+- Permissioned MCP candidate is privately backed up at `00e9a9ef35868ee83cfa681e27a6a04bda70920e`; focused native gate `6af6103f9679c85ac0af37bc` is running. Review regression cases remain intentionally unfixed until their actual native failure evidence. Local scripts: 68 passed; no new IPA or public activation.
 
 ## Workstreams and honest completion state
 
@@ -41,7 +41,7 @@ Owner directive dated 2026-11-12: application Orivyn, assistant Jarvis, target 1
 
 ## Next objective
 
-Run the combined native gate: corrected actual system tools and incoming links, plus missing Automatic/Desk UI controls. Use genuine RED to unblock isolated pure-router and external-workspace implementation. In parallel, prepare the permissioned plugin/agent protocol design and final-source regression coverage. Log precise commits, checks, errors, repairs and unresolved device/provider requirements at each checkpoint.
+Complete the MCP compile/contracts/lifecycle gate, repair observed regressions, and rerun real Automatic with the stronger 1.5B coder under RAM/storage/network bounds. Continue the separately scoped user-owned workspace companion and native image-generation investigation. Keep configured external-provider, physical iPhone/HDMI and final exact-source package/catalog gates explicit.
 
 
 ## 2026-11-12 native checkpoint and next candidate
@@ -56,3 +56,18 @@ Desk first scope is not the full requested desktop: resizable windows, file mana
 Run `6af601b89679c85ac0af3217` on `b826d5a7e19c5f02560646db5cbd7501ca9ee0dd` completed: all 135 selected unit tests and 11 individual UI tests passed, including the native suggestion and disconnected Desk controls. Two UI tests failed. PluginConnectionUITests:18 established genuine missing `plugin.add` RED before MCP implementation. AutomaticModelUITests:20 failed to reveal cellular choice because XCTest tapped the full-row parent Switch center (x215), whereas the nested real UISwitch occupied x329–392; the failure hierarchy shows both remained value0. The test now targets the actual nested knob and asserts value1, preserving all persistence/network assertions. This is not yet a verified repair until native rerun.
 
 Follow-up source adds privacy-gated phone scrolling for the noninteractive display, a real two-download/general→coder→relaunch→general inference gate, and a more useful but honest Jarvis system instruction. Source-contract RED then GREEN was observed for actionable-help wording and final-candidate CI location/deadline requirements. Full local aggregate now 68 tests. New native compilation, real download/switch performance, screenshot review and final package remain pending.
+
+
+## Real automatic quality checkpoint
+Run `6af60c119679c85ac0af3616` on `1eb8e787ae305183ffaf6de8eb3bdb8e11ba5b54`: 22 selected unit tests and three UI tests passed. The actual nested UISwitch repair is now verified; opt-in/cellular-off persistence and Desk disconnected controls pass. The general 0.5B download and genuine Paris answer passed. Coder 0.5B failed the useful Python-output assertion; the native recording shows bare arithmetic, not the requested printing statement. No quality assertion was weakened.
+
+Bounded Linux CPU comparisons with the actual system prompt reproduce the 0.5B failure under temperature 0.7 and greedy; shorter system prompts do not fix it. The existing official 1.5B coder returned `print(2 + 2)` in three seeded sampling runs and greedy. This is narrow task evidence, not a broad model-quality or physical-iPhone benchmark. Automatic now targets that stronger model within explicit RAM/storage/download safeguards. Native 1.5B download/switch/relaunch remains pending.
+
+## Permissioned plugin candidate checkpoint
+Private `00e9a9ef35868ee83cfa681e27a6a04bda70920e` contains the bounded MCP transport, native connection/install/review/call forms, separate explicit Keychain storage, and durable outcome log. Native run `6af6103f9679c85ac0af37bc` is the first gate for 41 MCP plus 25 broker/journal/review cases and two UI cases. Review regression tests intentionally precede repairs for pre-canceled dispatch, form-token retention on background, and failed outcome persistence. Source presence is not a passing gate. No real external account/server or virtual desktop has been connected; no remote result is treated as independently verified execution.
+
+
+### First MCP native findings
+Run `6af6103f9679c85ac0af37bc` compiled the actual production client and passed all 36 MCPClientTests, 12 review/journal tests and 10 of 13 broker tests. Three broker regressions failed as intended: pre-canceled connect/run still dispatched, and failed outcome persistence left Running and allowed more calls. These now have narrow fixes, pending native recheck. Five separately named MCPURLSessionTransportTests were accidentally omitted from that selector and are explicitly included next; no claim of 41 passing cases is made.
+
+Two plugin UI tests failed earlier than the background-token assertion. The actual app logs show repeated concurrent presentation attempts from the Section; a field briefly existed then disappeared. One stable presentation owner is now on the enclosing integration List, with all original assertions retained. The credential-background behavior remains to be exercised after this presentation fix; it is not passed.

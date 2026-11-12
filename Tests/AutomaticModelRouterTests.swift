@@ -3,7 +3,8 @@ import XCTest
 
 final class AutomaticModelRouterTests: XCTestCase {
     private let generalID = "qwen2.5-0.5b-instruct-q4_k_m"
-    private let coderID = "qwen2.5-coder-0.5b-instruct-q4_k_m"
+    private let coderID = "qwen2.5-coder-1.5b-instruct-q4_k_m"
+    private let excludedCoderID = "qwen2.5-coder-0.5b-instruct-q4_k_m"
 
     func testGeneralPromptChoosesPinnedSmallGeneralDownloadWithExplanation() throws {
         let decision = try AutomaticModelRouter.route(text: "Help me plan a relaxing weekend", installed: [], environment: environment())
@@ -15,9 +16,10 @@ final class AutomaticModelRouterTests: XCTestCase {
     }
 
     func testCodingRequestsChoosePinnedCoderWithoutRunningAnotherModel() throws {
-        for prompt in ["Write a Python function to sort a list", "Debug this JavaScript error", "Refactor this SQL query", "Build a SwiftUI view", "```swift\nlet total = 1 + 2\n```"] {
+        for prompt in ["Write a Python statement that prints 2 + 2. Return only the code.", "Write a Python function to sort a list", "Debug this JavaScript error", "Refactor this SQL query", "Build a SwiftUI view", "```swift\nlet total = 1 + 2\n```"] {
             let decision = try AutomaticModelRouter.route(text: prompt, installed: [], environment: environment())
-            XCTAssertEqual(decision.model.id, "qwen2.5-coder-0.5b-instruct-q4_k_m", prompt)
+            XCTAssertEqual(decision.model.id, coderID, prompt)
+            XCTAssertEqual(decision.model.byteCount, 1_117_320_768, prompt)
             XCTAssertEqual(decision.purpose, "Coding", prompt)
             XCTAssertTrue(decision.needsDownload)
         }
@@ -154,12 +156,61 @@ final class AutomaticModelRouterTests: XCTestCase {
         for prompt in ["Hello", "Debug a function", "Solve this equation", "Open a website"] {
             let decision = try AutomaticModelRouter.route(text: prompt, installed: [], environment: environment(memory: 32_000_000_000))
             XCTAssertTrue([generalID, coderID].contains(decision.model.id))
-            XCTAssertLessThanOrEqual(decision.model.byteCount, 750_000_000)
+            XCTAssertLessThanOrEqual(decision.model.byteCount, 1_200_000_000)
+            XCTAssertEqual(AutomaticModelRouter.maximumDownloadBytes, 1_200_000_000)
             XCTAssertNotNil(decision.model.downloadURL)
         }
     }
 
-    private func environment(memory: UInt64 = 4_000_000_000, storage: Int64? = 4_000_000_000,
+    func testInstalledFailingSmallCoderNeverBecomesAutomaticChoice() throws {
+        let small = try descriptor(excludedCoderID)
+        let decision = try AutomaticModelRouter.route(text: "Debug this function", installed: [small], environment: environment())
+        XCTAssertEqual(decision.model.id, coderID)
+        XCTAssertTrue(decision.needsDownload)
+        XCTAssertThrowsError(try AutomaticModelRouter.route(text: "Debug this function", installed: [small], environment: environment(network: .offline))) {
+            XCTAssertEqual($0 as? AutomaticRoutingError, .offline)
+        }
+    }
+
+    func testCodingRequiresSixGBEvenWithInstalledModels() throws {
+        for installed in [[], [try descriptor(excludedCoderID)], [try descriptor(coderID)]] {
+            XCTAssertThrowsError(try AutomaticModelRouter.route(text: "Debug this function", installed: installed,
+                environment: environment(memory: 5_999_999_999))) {
+                XCTAssertEqual($0 as? AutomaticRoutingError, .insufficientMemory)
+            }
+        }
+        XCTAssertNoThrow(try AutomaticModelRouter.route(text: "Debug this function", installed: [], environment: environment(memory: 6_000_000_000)))
+    }
+
+    func testCodingStorageBoundaryDoesNotFallBackToSmallInstalledCoder() throws {
+        let installed = [try descriptor(excludedCoderID)]
+        XCTAssertThrowsError(try AutomaticModelRouter.route(text: "Debug this function", installed: installed,
+            environment: environment(storage: 2_334_641_535))) {
+            XCTAssertEqual($0 as? AutomaticRoutingError, .insufficientStorage)
+        }
+        XCTAssertTrue(try AutomaticModelRouter.route(text: "Debug this function", installed: installed,
+            environment: environment(storage: 2_334_641_536)).needsDownload)
+    }
+
+    func testCodingRetainsNetworkRestrictionsAndCellularOptIn() throws {
+        for network in [AutomaticDownloadNetwork.unknown, .offline, .constrained, .cellular] {
+            XCTAssertThrowsError(try AutomaticModelRouter.route(text: "Debug this function", installed: [], environment: environment(network: network)))
+        }
+        XCTAssertTrue(try AutomaticModelRouter.route(text: "Debug this function", installed: [],
+            environment: environment(network: .cellular, cellular: true)).needsDownload)
+    }
+
+    func testEligibleInstalledCoderWinsRegardlessOfExcludedSmallCoderOrder() throws {
+        let models = try [excludedCoderID, coderID].map(descriptor)
+        for ordered in [models, Array(models.reversed())] {
+            let decision = try AutomaticModelRouter.route(text: "Debug this function", installed: ordered,
+                environment: environment(storage: nil, network: .offline))
+            XCTAssertEqual(decision.model.id, coderID)
+            XCTAssertFalse(decision.needsDownload)
+        }
+    }
+
+    private func environment(memory: UInt64 = 6_000_000_000, storage: Int64? = 4_000_000_000,
                              network: AutomaticDownloadNetwork = .wifi, cellular: Bool = false) -> AutomaticRouteEnvironment {
         AutomaticRouteEnvironment(physicalMemory: memory, freeStorageBytes: storage, network: network, allowsCellular: cellular)
     }

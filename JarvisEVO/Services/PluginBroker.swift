@@ -39,7 +39,7 @@ final class PluginBroker {
     private var gate = PluginReviewGate()
     private var pendingToken: String?
     var isBusy: Bool { operationID != nil }
-    var canReviewTools: Bool { activeConnection != nil && stagedConnection == nil && client != nil && isForeground && !isBusy }
+    var canReviewTools: Bool { activeConnection != nil && stagedConnection == nil && client != nil && isForeground && !isBusy && !journal.requiresRecovery }
 
     init(directory: URL, clientFactory: @escaping @MainActor (MCPEndpoint, String?) throws -> any PluginMCPClient = {
         try MCPHTTPClient(endpoint: $0, bearerToken: $1)
@@ -64,6 +64,7 @@ final class PluginBroker {
     }
 
     func connect(endpointText: String, token: String, useSavedToken: Bool = false) async throws {
+        try Task.checkCancellation()
         guard !isBusy else { throw PluginBrokerError.busy }
         guard isForeground else { throw PluginBrokerError.foreground }
         let endpoint = try MCPEndpoint.validated(endpointText)
@@ -108,6 +109,7 @@ final class PluginBroker {
 
     func prepareReview(toolName: String, argumentText: String) throws -> PluginCallReview {
         invalidateReview()
+        guard !journal.requiresRecovery else { throw PluginExecutionError.outcomeNotRecorded }
         guard canReviewTools, let activeConnection,
               let definition = tools.first(where: { $0.name == toolName }) else { throw PluginBrokerError.notConnected }
         let arguments = try MCPJSONValue.parse(Data(argumentText.utf8), maximumBytes: 16_384)
@@ -121,6 +123,8 @@ final class PluginBroker {
     func invalidateReview() { gate.invalidate(); review = nil }
 
     func execute(reviewID: UUID) async throws {
+        try Task.checkCancellation()
+        guard !journal.requiresRecovery else { throw PluginExecutionError.outcomeNotRecorded }
         guard canReviewTools, let connection = activeConnection, let client else { throw PluginBrokerError.notConnected }
         let approved = try gate.consume(id: reviewID, connectionID: connection.id, catalogRevision: catalogRevision)
         review = nil

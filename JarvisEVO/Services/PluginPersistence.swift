@@ -11,6 +11,7 @@ final class PluginJournal {
     }
     private let file: URL
     private(set) var records: [PluginExecutionRecord] = []
+    private(set) var requiresRecovery = false
     init(directory: URL) throws {
         file = directory.appendingPathComponent("plugin-executions.json")
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
@@ -33,6 +34,7 @@ final class PluginJournal {
         } catch { throw PluginExecutionError.invalidJournal }
     }
     func begin(connectionID: UUID, toolName: String, now: Date = Date()) throws -> UUID {
+        guard !requiresRecovery else { throw PluginExecutionError.outcomeNotRecorded }
         guard PluginReviewGate.validName(toolName), now.timeIntervalSince1970.isFinite else { throw PluginExecutionError.invalidReview }
         var next = records
         if next.count >= 100 {
@@ -53,8 +55,16 @@ final class PluginJournal {
         }
         var next = records
         next[index].state = state
-        try save(next)
-        records = next
+        do {
+            try save(next)
+            records = next
+        } catch {
+            // Do not rewrite the durable evidence or imply an operation is still
+            // running after ownership ended. Block new dispatch until recovery.
+            records[index].state = .unknown
+            requiresRecovery = true
+            throw PluginExecutionError.outcomeNotRecorded
+        }
     }
     private func save(_ records: [PluginExecutionRecord]) throws {
         let data = try JSONEncoder().encode(Snapshot(records: records))

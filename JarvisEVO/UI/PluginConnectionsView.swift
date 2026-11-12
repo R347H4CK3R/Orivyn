@@ -2,13 +2,16 @@ import SwiftUI
 
 struct PluginConnectionsSection: View {
     @Bindable var broker: PluginBroker
-    @State private var adding = false
-    @State private var reconnecting: PluginConnectionRecord?
-    @State private var removing: PluginConnectionRecord?
-    @State private var error: String?
+    let onAdd: () -> Void
+    let onConnect: (PluginConnectionRecord) -> Void
+    let onRemove: (PluginConnectionRecord) -> Void
     var body: some View {
         Section {
-            Button("Add plugin connection", systemImage: "plus.circle") { adding = true }
+            if broker.journal.requiresRecovery {
+                Text(PluginExecutionError.outcomeNotRecorded.localizedDescription)
+                    .font(.footnote).foregroundStyle(.red).accessibilityIdentifier("plugin.recovery")
+            }
+            Button("Add plugin connection", systemImage: "plus.circle", action: onAdd)
                 .accessibilityIdentifier("plugin.add").disabled(broker.isBusy)
             Text("Connect your own HTTPS MCP server. No plugin code is installed on iOS. External providers may charge; Orivyn does not supply a hosted computer or forward your chats automatically.")
                 .font(.footnote).foregroundStyle(.secondary)
@@ -23,24 +26,20 @@ struct PluginConnectionsSection: View {
                         }
                         Button("Disconnect") { broker.disconnect() }
                     } else {
-                        Button("Connect and review tools") { reconnecting = record }.disabled(broker.isBusy)
+                        Button("Connect and review tools") { onConnect(record) }.disabled(broker.isBusy)
                     }
-                    Button("Remove saved connection", role: .destructive) { removing = record }.disabled(broker.isBusy)
+                    Button("Remove saved connection", role: .destructive) { onRemove(record) }.disabled(broker.isBusy)
                 }.padding(.vertical, 5)
             }
             NavigationLink("Execution log") { PluginExecutionLogView(journal: broker.journal) }
-            if let error { Text(error).font(.footnote).foregroundStyle(.red) }
         } header: { Text("Remote plugins") }
         .buttonStyle(.borderless)
-        .sheet(isPresented: $adding) { PluginConnectionForm(broker: broker) }
-        .sheet(item: $reconnecting) { record in PluginConnectionForm(broker: broker, saved: record) }
-        .confirmationDialog("Remove this local connection and its saved token?", isPresented: Binding(get: { removing != nil }, set: { if !$0 { removing = nil } }), titleVisibility: .visible) {
-            Button("Remove connection", role: .destructive) {
-                if let removing { do { try broker.removeConnection(id: removing.id) } catch { self.error = error.localizedDescription } }
-                removing = nil
-            }
-        } message: { Text("This does not delete remote data or revoke the token at its server.") }
     }
+}
+
+struct PluginConnectionPresentation: Identifiable {
+    let id = UUID()
+    var saved: PluginConnectionRecord?
 }
 
 struct PluginConnectionForm: View {
@@ -53,6 +52,8 @@ struct PluginConnectionForm: View {
     @State private var remember = false
     @State private var didInstall = false
     @State private var error: String?
+    @State private var connectionTask: Task<Void, Never>?
+    @State private var connectionAttempt: UUID?
     private var validEndpoint: Bool { (try? MCPEndpoint.validated(endpoint)) != nil }
     var body: some View {
         NavigationStack {
@@ -71,9 +72,14 @@ struct PluginConnectionForm: View {
                 Section {
                     Button("Connect and inspect tools") {
                         error = nil
-                        Task { do { try await broker.connect(endpointText: endpoint, token: token, useSavedToken: useSaved) }
-                               catch { self.error = error.localizedDescription } }
-                    }.disabled(!validEndpoint || broker.isBusy || broker.stagedConnection != nil)
+                        let submittedEndpoint = endpoint, submittedToken = token, submittedSaved = useSaved
+                        let attempt = UUID(); connectionAttempt = attempt
+                        connectionTask = Task {
+                            do { try await broker.connect(endpointText: submittedEndpoint, token: submittedToken, useSavedToken: submittedSaved) }
+                            catch { if connectionAttempt == attempt && !Task.isCancelled { self.error = error.localizedDescription } }
+                            if connectionAttempt == attempt { connectionTask = nil; connectionAttempt = nil }
+                        }
+                    }.disabled(!validEndpoint || connectionTask != nil || broker.isBusy || broker.stagedConnection != nil)
                         .accessibilityIdentifier("plugin.connect")
                     if broker.isBusy { ProgressView("Connecting…") }
                     if let error { Text(error).font(.footnote).foregroundStyle(.red) }
@@ -101,11 +107,15 @@ struct PluginConnectionForm: View {
                 }
             }.navigationTitle("Add plugin").navigationBarTitleDisplayMode(.inline)
                 .toolbar { ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { broker.disconnect(); token = ""; dismiss() }.accessibilityIdentifier("plugin.cancel")
+                    Button("Cancel") { cancelConnection(); dismiss() }.accessibilityIdentifier("plugin.cancel")
                 } }
                 .onAppear { if let saved { endpoint = saved.endpoint } }
-                .onDisappear { token = ""; if !didInstall { broker.disconnect() } }
+                .onDisappear { token = ""; if !didInstall { cancelConnection() } }
         }.interactiveDismissDisabled(broker.isBusy)
+    }
+    private func cancelConnection() {
+        connectionAttempt = nil; connectionTask?.cancel(); connectionTask = nil
+        token = ""; broker.disconnect()
     }
 }
 
@@ -114,6 +124,7 @@ struct PluginToolCallView: View {
     let tool: MCPToolDefinition
     @State private var arguments = "{}"
     @State private var error: String?
+    @State private var executionTask: Task<Void, Never>?
     var body: some View {
         Form {
             Section("Untrusted tool description") {
@@ -138,9 +149,12 @@ struct PluginToolCallView: View {
                     Text("Run sends exactly this request to the server. It may change external data or cost money according to that provider. Canceling afterward cannot undo a remote action. Review only actions and data you intend to authorize.").font(.footnote)
                     Button("Run reviewed call") {
                         error = nil
-                        Task { do { try await broker.execute(reviewID: review.id) }
-                               catch { self.error = error.localizedDescription } }
-                    }.disabled(broker.isBusy).accessibilityIdentifier("plugin.run")
+                        executionTask = Task {
+                            do { try await broker.execute(reviewID: review.id) }
+                            catch { if !Task.isCancelled { self.error = error.localizedDescription } }
+                            executionTask = nil
+                        }
+                    }.disabled(executionTask != nil || broker.isBusy).accessibilityIdentifier("plugin.run")
                 }
             }
             if broker.isBusy {
@@ -168,7 +182,7 @@ struct PluginToolCallView: View {
         }.navigationTitle("Review tool").navigationBarTitleDisplayMode(.inline)
             .onAppear { broker.clearResult(); broker.invalidateReview() }
             .onChange(of: arguments) { _, _ in broker.invalidateReview() }
-            .onDisappear { broker.invalidateReview(); if broker.isBusy { broker.disconnect() } }
+            .onDisappear { executionTask?.cancel(); executionTask = nil; broker.invalidateReview(); if broker.isBusy { broker.disconnect() } }
     }
 }
 
@@ -176,6 +190,7 @@ struct PluginExecutionLogView: View {
     @Bindable var journal: PluginJournal
     var body: some View {
         List {
+            if journal.requiresRecovery { Text(PluginExecutionError.outcomeNotRecorded.localizedDescription).foregroundStyle(.red) }
             Section { Text("This log records dispatch and server reports, not independently verified effects. Interrupted calls become outcome unknown and are never automatically replayed. Arguments, credentials and result bodies are not saved.").font(.footnote) }
             if journal.records.isEmpty { Text("No tool calls yet") }
             ForEach(journal.records) { record in

@@ -23,7 +23,7 @@ struct ModelManagerView: View {
                     if model.automaticModelsEnabled {
                         Toggle("Allow cellular downloads", isOn: $model.automaticAllowsCellular)
                             .accessibilityIdentifier("model.automatic.cellular")
-                        Text("Sending may download a verified general or coding model, up to 750 MB per request. Downloads normally require unmetered Wi-Fi or Ethernet. Cellular can use your data allowance. Network transition checks are best-effort; Low Data Mode is always blocked. Existing models are never automatically deleted.")
+                        Text("Sending may download a verified general model (491 MB) or coding model (1.12 GB), with a 1.2 GB per-request cap. Automatic coding requires at least 6 GB RAM guidance and about 2.34 GB free installation space. Downloads normally require unmetered Wi-Fi or Ethernet. Cellular can use your data allowance. Network transition checks are best-effort; Low Data Mode is always blocked. Existing models are never automatically deleted.")
                             .font(.caption).foregroundStyle(.secondary)
                     }
                     if let decision = model.automaticDecision {

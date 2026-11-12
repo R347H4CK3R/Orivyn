@@ -62,7 +62,7 @@ struct PluginExecutionRecord: Codable, Identifiable, Sendable {
 }
 
 enum PluginExecutionError: LocalizedError {
-    case invalidReview, staleReview, invalidJournal, missingRecord, journalFull
+    case invalidReview, staleReview, invalidJournal, missingRecord, journalFull, outcomeNotRecorded
     var errorDescription: String? {
         switch self {
         case .invalidReview: "The tool name or arguments exceed the safe review limits. Nothing was sent."
@@ -70,6 +70,7 @@ enum PluginExecutionError: LocalizedError {
         case .invalidJournal: "The plugin execution log could not be read safely. Existing data was preserved; tool execution is disabled."
         case .missingRecord: "This execution no longer has a running record. Its outcome was not changed."
         case .journalFull: "The execution log is full of unresolved operations. Resolve their outcomes before starting another call."
+        case .outcomeNotRecorded: "The server may have acted, but its outcome could not be saved. New calls are disabled. Preserve the log, restore writable storage and reopen Orivyn for recovery. Check the server before retrying the action."
         }
     }
 }

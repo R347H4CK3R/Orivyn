@@ -32,7 +32,7 @@ final class AutomaticRealInferenceUITests: XCTestCase {
         capture("Automatic coder output before quality assertion", app: app)
         let output = XCTAttachment(string: coder); output.name = "Actual coder response"; output.lifetime = .keepAlways; add(output)
         XCTAssertTrue(coder.lowercased().contains("print"), "The downloaded coder must actually generate Python code.")
-        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Automatic: Qwen 2.5 Coder · 0.5B")).firstMatch.exists)
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Automatic: Qwen 2.5 Coder · 1.5B")).firstMatch.exists)
         capture("Automatic real coder-model response", app: app)
 
         app.terminate(); app.launchArguments = ["--uitesting"]; app.launch()
@@ -40,7 +40,7 @@ final class AutomaticRealInferenceUITests: XCTestCase {
         app.buttons["model.choose"].tap()
         XCTAssertEqual(app.switches["model.automatic"].value as? String, "1")
         let list = app.descendants(matching: .any).matching(identifier: "model.list").firstMatch
-        for id in ["qwen2.5-0.5b-instruct-q4_k_m", "qwen2.5-coder-0.5b-instruct-q4_k_m"] {
+        for id in ["qwen2.5-0.5b-instruct-q4_k_m", "qwen2.5-coder-1.5b-instruct-q4_k_m"] {
             reveal(app.staticTexts["model.catalog.name.\(id)"], in: list)
             XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "model.installed.\(id)").firstMatch.exists)
         }

@@ -330,6 +330,9 @@ struct IntegrationCatalogView: View {
     var broker: PluginBroker?
     var setupError: String?
     @State private var query = ""
+    @State private var pluginPresentation: PluginConnectionPresentation?
+    @State private var removingPlugin: PluginConnectionRecord?
+    @State private var pluginError: String?
     private let groups = ["Email", "Calendar", "Passwords", "Health", "Finances", "Browser", "Location"]
     var body: some View {
         List {
@@ -337,8 +340,14 @@ struct IntegrationCatalogView: View {
                 Label(broker?.activeConnection == nil ? "No external integrations connected" : "Reviewed plugin connected", systemImage: "puzzlepiece.extension").font(.headline)
                 Text("Connections in the reference recording belong to another app and do not transfer to Orivyn. No account data, credentials or permissions have been copied.").font(.footnote).foregroundStyle(.secondary)
             }
-            if let broker { PluginConnectionsSection(broker: broker) }
+            if let broker {
+                PluginConnectionsSection(broker: broker,
+                    onAdd: { pluginPresentation = PluginConnectionPresentation() },
+                    onConnect: { pluginPresentation = PluginConnectionPresentation(saved: $0) },
+                    onRemove: { removingPlugin = $0 })
+            }
             else if let setupError { Section { Text(setupError).font(.footnote).foregroundStyle(.red) } }
+            if let pluginError { Section { Text(pluginError).font(.footnote).foregroundStyle(.red) } }
             Section("On this iPhone") {
                 if query.isEmpty || "Shortcuts sharing text".localizedCaseInsensitiveContains(query) {
                     NavigationLink { ShortcutsHelpView() } label: { Label("Shortcuts & sharing", systemImage: "square.and.arrow.up") }
@@ -360,6 +369,20 @@ struct IntegrationCatalogView: View {
                 }
             }
         }.searchable(text: $query, prompt: "Search integrations")
+            // A Section distributes presentation modifiers across its rows. Keep
+            // one stable presenter on the enclosing List, not one per plugin row.
+            .sheet(item: $pluginPresentation) { presentation in
+                if let broker { PluginConnectionForm(broker: broker, saved: presentation.saved) }
+            }
+            .confirmationDialog("Remove this local connection and its saved token?", isPresented: Binding(get: { removingPlugin != nil }, set: { if !$0 { removingPlugin = nil } }), titleVisibility: .visible) {
+                Button("Remove connection", role: .destructive) {
+                    if let removingPlugin, let broker {
+                        do { try broker.removeConnection(id: removingPlugin.id) }
+                        catch { pluginError = error.localizedDescription }
+                    }
+                    removingPlugin = nil
+                }
+            } message: { Text("This does not delete remote data or revoke the token at its server.") }
     }
 }
 
