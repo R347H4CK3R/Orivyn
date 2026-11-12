@@ -15,3 +15,9 @@ The initial full-manifest prompt was rejected by the actual 2,048-token local ru
 The prompt now includes a compact boundary summary instead; the full manifest stays bundled for local inspection. `test_self_knowledge_budget.py` renders the actual Swift literal template, runs the pinned tokenizer on available catalog weights, and requires at most 384 tokens for the default system prompt. This preserves at least 128 tokens of system allowance for customization. Existing runtime validation still rejects oversize custom instructions/memory rather than silently dropping them. The test explicitly skips when tokenizer/weights are absent; CI should additionally exercise the full AppModel request through native inference.
 
 After correction, all 76 script tests passed, including all nine real tokenizer checks: seven Qwen variants measured 304 tokens, two SmolLM variants 325 tokens. The default prompt is 1,360 characters, leaving 7,640 characters in the Apple provider's 9,000-character input policy. Native simulator inference remains a separate required check.
+
+## Native verification update (2026-11-12)
+
+The focused simulator gate at private commit `780b2a4` passed all 16 selected native tests (12 AppModel and 4 AppSelfKnowledge), including `testRealLocalModelAcceptsKnowledgeAtProductionOutputReservation` with the actual downloaded local model. The separate BIOS subgate failed; `KNOWLEDGE_STATUS=0` does not mean the aggregate workflow or virtual desktop passed. Evidence was retained from Codemagic build `6af63eb710a05158d8122bce`.
+
+Current local regression check: 78 Python tests pass, including the nine real tokenizer budget checks. These results supersede the earlier native-unrun notes above only for this selected self-knowledge gate. Physical iPhone tests, autonomous private-repository repair and a complete virtual desktop are still unverified/not implemented.
