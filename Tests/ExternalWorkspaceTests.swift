@@ -95,4 +95,28 @@ final class ExternalWorkspaceTests: XCTestCase {
         XCTAssertEqual(state.selectedPanel, .models)
         XCTAssertFalse(state.isSharing)
     }
+    func testScrollCommandsRequireVisibleWorkspaceAndNeverGrantSharing() {
+        var state = DeskPresentationState()
+        state.requestScroll(.down)
+        XCTAssertNil(state.scrollRequest)
+        state.connect(sessionID: "a")
+        state.requestScroll(.bottom)
+        XCTAssertNil(state.scrollRequest); XCTAssertFalse(state.isSharing)
+        state.startSharing(); state.requestScroll(.down)
+        let first = state.scrollRequest?.id
+        XCTAssertEqual(state.scrollRequest?.action, .down)
+        state.requestScroll(.down)
+        XCTAssertNotEqual(state.scrollRequest?.id, first, "Repeated scroll presses are separate commands.")
+        state.setForeground(false)
+        XCTAssertNil(state.scrollRequest)
+    }
+
+    func testPanelAndDisplayChangesDiscardOldScrollCommands() {
+        var state = DeskPresentationState()
+        state.connect(sessionID: "a"); state.startSharing(); state.requestScroll(.bottom)
+        state.select(.models); XCTAssertNil(state.scrollRequest)
+        state.requestScroll(.top); state.connect(sessionID: "b")
+        XCTAssertNil(state.scrollRequest); XCTAssertFalse(state.isSharing)
+    }
+
 }

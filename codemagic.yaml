@@ -109,3 +109,33 @@ workflows:
       - artifacts/automatic-regression/screenshots/**/*.json
       - artifacts/automatic-regression/screenshots/**/*.txt
       - artifacts/automatic-regression/Tests.xcresult
+
+  orivyn-automatic-real-inference:
+    name: Orivyn real automatic download and inference proof
+    max_build_duration: 30
+    instance_type: mac_mini_m2
+    environment:
+      xcode: 26.0
+    scripts:
+      - name: Actual automatic general and coder switching
+        script: |
+          set -euo pipefail
+          if ! command -v xcodegen >/dev/null; then brew install xcodegen; fi
+          bash scripts/bootstrap_llama.sh
+          # Xcode builds the unit-test target even for UI-only selection.
+          # Its real-model resource must exist; optional source does not skip Copy Resources.
+          python3 scripts/download_test_model.py
+          xcodegen generate
+          mkdir -p artifacts/automatic-real-inference
+          xcrun simctl list devices available -j > artifacts/automatic-real-inference/simulators.json
+          SIMULATOR_ID=$(python3 -c 'import json; v=json.load(open("artifacts/automatic-real-inference/simulators.json"))["devices"]; ds=[d for r,items in v.items() if "iOS-26" in r for d in items if "iPhone" in d["name"] and d.get("isAvailable")]; ds.sort(key=lambda d:(d["name"]!="iPhone 16 Plus",d["name"])); print(ds[0]["udid"])')
+          xcrun simctl bootstatus "$SIMULATOR_ID" -b
+          # Real Core Location simulator input, explicitly not physical GPS evidence.
+          xcrun simctl location "$SIMULATOR_ID" set 37.3349,-122.0090
+          bash scripts/run_native_tests.sh artifacts/automatic-real-inference xcodebuild -project JarvisEVO.xcodeproj -scheme JarvisEVO -destination "platform=iOS Simulator,id=$SIMULATOR_ID" -parallel-testing-enabled NO -test-timeouts-enabled YES -default-test-execution-time-allowance 600 -maximum-test-execution-time-allowance 720 -resultBundlePath artifacts/automatic-real-inference/Tests.xcresult -only-testing:JarvisEVOUITests/AutomaticRealInferenceUITests CODE_SIGNING_ALLOWED=NO test
+    artifacts:
+      - artifacts/automatic-real-inference/*.log
+      - artifacts/automatic-real-inference/screenshots/**/*.png
+      - artifacts/automatic-real-inference/screenshots/**/*.json
+      - artifacts/automatic-real-inference/screenshots/**/*.txt
+      - artifacts/automatic-real-inference/Tests.xcresult

@@ -146,6 +146,8 @@ final class AppModelTests: XCTestCase {
         XCTAssertTrue(request?.systemPrompt.contains("Use concise explanations.") == true)
         XCTAssertTrue(request?.systemPrompt.contains("Style: Efficient") == true)
         XCTAssertTrue(request?.systemPrompt.contains("Do not claim to browse, run code") == true)
+        XCTAssertTrue(request?.systemPrompt.contains("Do the useful parts of the request first") == true)
+        XCTAssertTrue(request?.systemPrompt.contains("Opening a review does not send, save or execute it") == true)
         model.stop(); try await waitFor { !model.isGenerating }
     }
 

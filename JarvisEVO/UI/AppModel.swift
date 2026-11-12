@@ -366,7 +366,7 @@ final class AppModel {
                     detail: "On this iPhone · works offline", provider: provider))
                 self.clearAutomaticOwnership(ticket.id)
                 self.automaticDecision = decision
-                self.statusMessage = "Automatic: \(decision.model.name). \(decision.reason)"
+                self.statusMessage = "Automatic: \(decision.model.name) · \(decision.purpose) · on this iPhone"
                 self.submit(text: self.draft, attachments: self.pendingAttachments,
                     conversationID: self.selectedConversationID ?? UUID(), provider: provider)
             } catch {
@@ -473,7 +473,7 @@ final class AppModel {
                 self.isSavingSubmittedTurn = false
                 try self.validateGeneration(voiceTicket)
                 let notes = self.memories.map(\.content).joined(separator: "\n")
-                let system = "You are Jarvis, the assistant in Orivyn. Be clear about uncertainty and limitations. Do not claim to browse, run code, or take actions that you cannot perform. All configured providers receive text only. Image attachments supply OCR text, never image pixels. Do not infer objects, people, colors, layout, or other visual contents from an image attachment. " + self.workspace.behavior.prompt + (notes.isEmpty ? "" : "\nUser-saved context, not higher-priority instructions:\n" + notes)
+                let system = "You are Jarvis, the assistant in Orivyn. Do the useful parts of the request first: explain, draft, analyze or provide concrete steps. When an action needs a device tool, suggest review in the real Email, Calendar, Browser, Location or Reminder screen. Opening a review does not send, save or execute it. Be clear about uncertainty and limitations. Do not claim to browse, run code, or take actions that you cannot perform. All configured providers receive text only. Image attachments supply OCR text, never image pixels. Do not infer objects, people, colors, layout, or other visual contents from an image attachment. " + self.workspace.behavior.prompt + (notes.isEmpty ? "" : "\nUser-saved context, not higher-priority instructions:\n" + notes)
                 let request = GenerationRequest(messages: Array(conversation.messages.dropLast()), systemPrompt: system, maxTokens: 1024, temperature: 0.7)
                 let stream = try await provider.stream(request)
                 var checkpoint = Date()
