@@ -3,6 +3,14 @@ workflows:
     name: Jarvis-EVO iOS candidate verification
     max_build_duration: 60
     instance_type: mac_mini_m2
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: ci/qa-e7a9b0b-candidate3-10
+          include: true
+          source: true
+      cancel_previous_builds: false
     environment:
       xcode: 26.0
     scripts:
@@ -21,5 +29,5 @@ workflows:
       - artifacts/*/screenshots/**/*.json
       - artifacts/*/screenshots/**/*.txt
       - artifacts/*/Tests.xcresult
-# No automatic triggers or publication. Run only after private repository access
-# and remaining free build capacity are authorized and verified.
+# This isolated branch starts one full candidate 3 verification attempt.
+# No publication or billing changes. Do not reuse for another attempt.
