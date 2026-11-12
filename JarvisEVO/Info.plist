@@ -22,6 +22,8 @@
 	<string>Orivyn uses the microphone only when you start dictation or a voice conversation.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>Orivyn transcribes your speech on this iPhone when you start dictation or voice conversation.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Only when you tap Get current location, Orivyn asks iOS for a one-time location displayed on this screen. It is not sent to a model or server.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Take a photo to attach and recognize its text on this iPhone.</string>
 	<key>UIApplicationSceneManifest</key>

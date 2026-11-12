@@ -254,13 +254,13 @@ struct CustomizeWorkspaceView: View {
             }
             Section {
                 ForEach(["Email", "Calendar", "Passwords", "Health", "Finances"], id: \.self) { title in
-                    NavigationLink { IntegrationDetailView(title: title) } label: { row(title, icon: IntegrationDetailView.icon(for: title), color: IntegrationDetailView.color(for: title), detail: "Unavailable") }
+                    NavigationLink { IntegrationDetailView(title: title) } label: { row(title, icon: IntegrationDetailView.icon(for: title), color: IntegrationDetailView.color(for: title), detail: IntegrationDetailView.status(for: title)) }
                 }
             }
             Section {
                 NavigationLink { LocalDeviceView() } label: { row("Devices", icon: "desktopcomputer", color: .blue, detail: "This iPhone") }
-                NavigationLink { IntegrationDetailView(title: "Browser") } label: { row("Browser", icon: "network", color: .blue, detail: "Unavailable") }
-                NavigationLink { IntegrationDetailView(title: "Location") } label: { row("Location", icon: "location", color: .purple, detail: "Not requested") }
+                NavigationLink { IntegrationDetailView(title: "Browser") } label: { row("Browser", icon: "network", color: .blue, detail: "Open a website") }
+                NavigationLink { IntegrationDetailView(title: "Location") } label: { row("Location", icon: "location", color: .purple, detail: "One-time request") }
             }
             Section("On this iPhone") {
                 NavigationLink { ShortcutsHelpView() } label: { row("Shortcuts & sharing", icon: "square.and.arrow.up", color: .purple, detail: "Review first") }
@@ -343,13 +343,13 @@ struct IntegrationCatalogView: View {
                     NavigationLink { ScheduledRemindersView().navigationTitle("Scheduled") } label: { Label("Local reminders", systemImage: "bell") }
                 }
             }
-            Section("Integration roadmap") {
+            Section("Native tools and integrations") {
                 ForEach(groups.filter { query.isEmpty || $0.localizedCaseInsensitiveContains(query) }, id: \.self) { title in
                     NavigationLink { IntegrationDetailView(title: title) } label: {
                         HStack(spacing: 12) {
                             Image(systemName: IntegrationDetailView.icon(for: title)).foregroundStyle(IntegrationDetailView.color(for: title)).frame(width: 28)
                             VStack(alignment: .leading, spacing: 3) {
-                                Text(title); Text("Not available in this build").font(.caption).foregroundStyle(.secondary)
+                                Text(title); Text(IntegrationDetailView.status(for: title)).font(.caption).foregroundStyle(.secondary)
                             }
                         }.padding(.vertical, 5)
                     }
@@ -361,6 +361,15 @@ struct IntegrationCatalogView: View {
 
 struct IntegrationDetailView: View {
     let title: String
+    static func status(for title: String) -> String {
+        switch title {
+        case "Email": "Review in Mail"
+        case "Calendar": "Review an event"
+        case "Browser": "Open a website"
+        case "Location": "One-time request"
+        default: "Not available in this build"
+        }
+    }
     static func icon(for title: String) -> String {
         switch title {
         case "Email": "envelope.fill"
@@ -392,9 +401,16 @@ struct IntegrationDetailView: View {
         default: "Location services are not integrated. Orivyn does not request or collect your location. You can choose to describe a place in a conversation."
         }
     }
-    var body: some View {
-        CapabilityNoticeView(title: title, icon: Self.icon(for: title), detail: detail) { EmptyView() }
-            .navigationTitle(title).navigationBarTitleDisplayMode(.inline)
+    @ViewBuilder var body: some View {
+        switch title {
+        case "Email": MailDraftView()
+        case "Calendar": CalendarDraftView()
+        case "Browser": BrowserToolView()
+        case "Location": LocationToolView()
+        default:
+            CapabilityNoticeView(title: title, icon: Self.icon(for: title), detail: detail) { EmptyView() }
+                .navigationTitle(title).navigationBarTitleDisplayMode(.inline)
+        }
     }
 }
 

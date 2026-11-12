@@ -10,10 +10,11 @@ final class OrivynIntegrationUITests: XCTestCase {
         app.launch()
         XCTAssertTrue(app.textViews["composer.input"].waitForExistence(timeout: 10))
     }
+    // XCUIApplication.open relaunches the app. Route through iOS to exercise a warm incoming URL without resetting in-memory draft/inbox.
     func testIncomingTextRequiresReviewAndCancelPreservesDraft() {
         let draft = app.textViews["composer.input"]
         draft.tap(); draft.typeText("Keep my draft")
-        app.open(URL(string: "orivyn://compose?text=Incoming%20text")!)
+        XCUIDevice.shared.system.open(URL(string: "orivyn://compose?text=Incoming%20text")!)
         let review = app.buttons["incoming.review"]
         XCTAssertTrue(review.waitForExistence(timeout: 8))
         review.tap()
@@ -25,7 +26,7 @@ final class OrivynIntegrationUITests: XCTestCase {
     func testIncomingTextAppendsOnlyAfterReviewAndDoesNotSend() {
         let draft = app.textViews["composer.input"]
         draft.tap(); draft.typeText("Existing draft")
-        app.open(URL(string: "orivyn://compose?text=Shared%20idea")!)
+        XCUIDevice.shared.system.open(URL(string: "orivyn://compose?text=Shared%20idea")!)
         XCTAssertTrue(app.buttons["incoming.review"].waitForExistence(timeout: 8))
         app.buttons["incoming.review"].tap()
         capture("Orivyn build 5 incoming text review")
@@ -35,9 +36,9 @@ final class OrivynIntegrationUITests: XCTestCase {
         XCTAssertFalse(app.descendants(matching: .any).matching(identifier: "assistant.response").firstMatch.exists)
     }
     func testSecondIncomingLinkCannotReplacePendingText() {
-        app.open(URL(string: "orivyn://compose?text=First%20request")!)
+        XCUIDevice.shared.system.open(URL(string: "orivyn://compose?text=First%20request")!)
         XCTAssertTrue(app.buttons["incoming.review"].waitForExistence(timeout: 8))
-        app.open(URL(string: "orivyn://compose?text=Second%20request")!)
+        XCUIDevice.shared.system.open(URL(string: "orivyn://compose?text=Second%20request")!)
         app.buttons["incoming.review"].tap()
         XCTAssertEqual(app.textViews["incoming.text"].value as? String, "First request")
         app.buttons["incoming.cancel"].tap()
