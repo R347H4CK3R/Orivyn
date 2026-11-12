@@ -142,7 +142,8 @@ final class JarvisEVOVisualUITests: XCTestCase {
             _ = installed.waitForExistence(timeout: min(1, max(0.01, installDeadline.timeIntervalSinceNow)))
         }
         XCTAssertTrue(installed.exists, "The real model download or integrity verification did not finish.")
-        reveal(installed, in: modelList, towardEnd: false)
+        reveal(catalogName, in: modelList, towardEnd: false)
+        XCTAssertTrue(installed.exists, "The visible model row must retain its verified installed badge.")
         XCTAssertEqual(app.state, .runningForeground, "Installing a model must keep Orivyn in the foreground.")
         XCTAssertTrue(app.buttons["model.done"].isHittable)
         XCTAssertFalse(app.alerts.firstMatch.exists)
@@ -174,7 +175,7 @@ final class JarvisEVOVisualUITests: XCTestCase {
         app.buttons["model.choose"].tap()
         reveal(provider, in: modelList, towardEnd: false)
         XCTAssertEqual(provider.value as? String, "Selected")
-        reveal(installed, in: modelList)
+        reveal(catalogName, in: modelList)
         XCTAssertTrue(installed.exists)
         app.buttons["model.done"].tap()
     }

@@ -62,6 +62,7 @@ struct HistoryView: View {
                             }.padding(.horizontal, 12).padding(.vertical, 10)
                                 .background(section == selectedSection ? Color.evoSurface : Color.clear, in: RoundedRectangle(cornerRadius: 12))
                                 .foregroundStyle(.primary)
+                                .contentShape(Rectangle())
                         }.accessibilityIdentifier("workspace.route.\(section.rawValue)")
                             .accessibilityAddTraits(section == selectedSection ? .isSelected : [])
                             .listRowSeparator(.hidden).listRowBackground(Color.clear)
