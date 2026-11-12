@@ -35,6 +35,9 @@ workflows:
           set -euo pipefail
           if ! command -v xcodegen >/dev/null; then brew install xcodegen; fi
           bash scripts/bootstrap_llama.sh
+          # Xcode builds the unit-test target even for UI-only selection.
+          # Its real-model resource must exist; optional source does not skip Copy Resources.
+          python3 scripts/download_test_model.py
           xcodegen generate
           mkdir -p artifacts/integration-regression
           xcrun simctl list devices available -j > artifacts/integration-regression/simulators.json
