@@ -26,7 +26,7 @@ struct ScheduledRemindersView: View {
             } footer: {
                 Text("Reminder titles and notes may appear on your lock screen. Focus, notification settings and device state can delay or suppress delivery.")
             }
-            Section("Pending reminders · \(scheduler.reminders.count)/48") {
+            Section {
                 if scheduler.reminders.isEmpty {
                     Text(scheduler.isBusy ? "Checking iOS reminders…" : "No pending reminders").foregroundStyle(.secondary)
                 }
@@ -43,6 +43,8 @@ struct ScheduledRemindersView: View {
                         }.buttonStyle(.borderless).disabled(scheduler.isBusy)
                     }.padding(.vertical, 4)
                 }
+            } header: {
+                Text("Pending reminders · \(scheduler.reminders.count)/48")
             } footer: {
                 Text("This list comes from iOS’s actual pending queue. Delivered, expired or canceled reminders are not recreated. Maximum 48 Orivyn reminders.")
             }
