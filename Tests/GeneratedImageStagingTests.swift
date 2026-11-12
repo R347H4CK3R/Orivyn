@@ -92,7 +92,10 @@ final class GeneratedImageStagingTests: XCTestCase {
         let owned = try staging.stage(from: source)
         XCTAssertEqual(try staging.directory.resourceValues(forKeys: [.isExcludedFromBackupKey]).isExcludedFromBackup, true)
         let attributes = try FileManager.default.attributesOfItem(atPath: owned.path)
-        XCTAssertEqual(attributes[.protectionKey] as? FileProtectionType, .complete)
+        // FileAttributeKey.protectionKey returns NSString, not the Swift raw-value struct.
+        let rawProtection = attributes[.protectionKey]
+        XCTAssertEqual(rawProtection as? String, FileProtectionType.complete.rawValue,
+            "Returned protection: \(String(describing: rawProtection)); type: \(rawProtection.map { String(reflecting: type(of: $0)) } ?? "nil")")
     }
 
     func testPolicyRequiresSupportedDeviceAndExactlyIOS26() {

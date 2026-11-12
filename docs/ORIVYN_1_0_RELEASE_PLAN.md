@@ -6,9 +6,10 @@ Owner directive dated 2026-11-12: application Orivyn, assistant Jarvis, target 1
 
 - Public verified development preview: 0.1.0 build 4 in Orivyn-Distribution and Strata. Public IPA SHA `196091d0989f39a01787491efcfb7d1461bbca3a2f9d26f4d82b5bc7fa12ee7d`; app identity `app.jarvisevo.ios` preserved.
 - Strata commit `e2305dc5c145dd1f42b386529d01fe6224057734`: 15 entries, prior 14 unchanged. Anonymous binary verification plus all five public catalog files byte-checked. Standalone distribution metadata commit `e9fba9feec430788610d13d354c830d20a8ac966` points to the same verified release asset.
-- Latest completed native gate: `6af60c119679c85ac0af3616` on exact private `1eb8e787ae305183ffaf6de8eb3bdb8e11ba5b54`. All 22 selected units and three UI tests passed; the real coder 0.5B useful-output test failed after a successful general download/Paris answer. Automatic controls and Desk scrolling state are now verified; stronger coder routing is prepared for retest.
-- Prior combined gate `6af601b89679c85ac0af3217` passed 135 selected units and 11 UI flows. The native Email/Calendar/Safari/location/reminder/incoming-link checkpoint is verified in simulation; physical permissions/account delivery remain distinct.
-- Permissioned MCP candidate is privately backed up at `00e9a9ef35868ee83cfa681e27a6a04bda70920e`; focused native gate `6af6103f9679c85ac0af37bc` is running. Review regression cases remain intentionally unfixed until their actual native failure evidence. Local scripts: 68 passed; no new IPA or public activation.
+- Latest completed native gate: `6af613379679c85ac0af38fa` at exact private `ead1ba759e198258c27221a1da3e633d845be528`. All 91 selected units and plugin setup/cancel UI passed. Genuine image-entry and credential-background RED preceded implementation. The stronger coder produced correct code in the actual screenshot; a rich-text extraction defect prevented the full test from continuing through switch/relaunch.
+- Current private candidate `167655c5dc2aa4b2ff91c56573513c8628519020` (local `1db3be7`, exact tree `3ac6d26620a892bc8fd19ca2c1318731f8913240`) adds reviewed Image Playground acceptance/import/persistence and repairs credential clearing/accessibility. Combined native run `6af61e6a10a05158d8121fe4` is active. Local 68 Python checks, generator, shell syntax, YAML and whitespace pass. New native image tests and repairs are not yet passed.
+- Prior native tools simulation: 78 selected units and nine real UI flows passed for Mail/Calendar/Safari/location/reminder/incoming-link controls. Physical account delivery/GPS/HDMI/voice/image-generation remain distinct.
+- Free build capacity refreshed before the current gate: 403/500 minutes used, 97 remaining, no subscription or billing transactions. Current gate is capped at 30 minutes. No new IPA or public activation.
 
 ## Workstreams and honest completion state
 
@@ -21,9 +22,9 @@ Owner directive dated 2026-11-12: application Orivyn, assistant Jarvis, target 1
 | Voice | Native speech/audio state-machine and integration baseline tests | Final regression plus physical microphone/speech/background interruptions |
 | Memory and context | Persistence, bounded prompts, shared runtime | Final context/router regression; measured performance limits |
 | Native tools | OS reminder lifecycle passed; Mail/Calendar/Safari/Location source written | Native SDK retest, actual system controller/cancel/location capture; physical provider delivery/GPS limits |
-| Automatic models | Design + real UI RED tests prepared | Pure router, network policy, owner-tagged async preparation, progress/cancel, no premature history; real runtime switching |
-| Agent/plugins/computer | Research and protocol architecture only | Reviewed plugin manifests, real connection/authentication, schema/permission broker, bounded tasks/logs/resume, actual backend test; no simulated computer |
-| Orivyn Desk | Apple API research + disconnected-state test | External scene controller, app-owned panels/layout/input, privacy lifecycle, physical display attach/reconnect/resolution testing |
+| Automatic models | 25 router tests, owner/network regressions and opt-in UI pass; actual 1.5B useful code screenshot | Finish corrected real download/switch/relaunch gate, then physical resource acceptance |
+| Agent/plugins/virtual desktop | 41 MCP transport/schema tests, broker/log/review gates pass; explicit connection UI | Background privacy recheck, actual configured service test, bounded autonomous orchestration; separate phone-only emulator proof, not a remote companion |
+| Orivyn Desk | App-owned scene/controller, consent reducer and phone scrolling controls pass focused simulation | Physical attach/reconnect/lock/resolution; no arbitrary installed apps or whole desktop claim |
 | Synchronization | Local data only | Select supported secure sync mechanism, conflict/privacy tests and actual supported-device verification |
 | Branding/distribution | Original Orivyn SVG/icon, app labels, private repo rename, public binary-only feed | Jarvis assistant identity, current README/screenshots, final 1.0.0 metadata only at release gate |
 
@@ -41,7 +42,7 @@ Owner directive dated 2026-11-12: application Orivyn, assistant Jarvis, target 1
 
 ## Next objective
 
-Complete the MCP compile/contracts/lifecycle gate, repair observed regressions, and rerun real Automatic with the stronger 1.5B coder under RAM/storage/network bounds. Continue the separately scoped user-owned workspace companion and native image-generation investigation. Keep configured external-provider, physical iPhone/HDMI and final exact-source package/catalog gates explicit.
+Finish the active image/privacy/automatic native gate. Continue an isolated license-audited phone-contained emulator proof and local vision feasibility research. The external companion is stopped and excluded by the latest owner direction. Keep configured external-provider, physical iPhone/HDMI, full desktop interaction and final exact-source package/catalog gates explicit.
 
 
 ## 2026-11-12 native checkpoint and next candidate

@@ -12,6 +12,14 @@ class AssistantIdentityTests(unittest.TestCase):
         self.assertTrue('You are Jarvis, the assistant in Orivyn.' in source, 'Missing requested Jarvis assistant identity')
         self.assertFalse('You are Orivyn, a helpful personal assistant.' in source, 'Obsolete assistant identity remains')
 
+    def test_capability_copy_matches_real_tools_and_retains_limits(self):
+        source = (ROOT / 'JarvisEVO/UI/SettingsView.swift').read_text()
+        self.assertIn('local reminders', source)
+        self.assertIn('Mail, Calendar, Safari and one-shot location', source)
+        self.assertIn('Image Playground requires supported iOS 26 settings', source)
+        self.assertIn('actual virtual desktop remain unfinished', source)
+        self.assertNotIn('image generation, scheduled actions, external account integrations and cloud sync are not available', source)
+
     def test_actionable_help_does_not_pretend_tools_ran(self):
         source = (ROOT / 'JarvisEVO/UI/AppModel.swift').read_text()
         self.assertTrue('Do the useful parts of the request first' in source)
