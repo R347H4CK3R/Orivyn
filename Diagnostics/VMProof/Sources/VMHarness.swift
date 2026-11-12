@@ -6,16 +6,17 @@ import Observation
 final class VMAssetHandler: NSObject, @preconcurrency WKURLSchemeHandler {
     private let store: VMAssetStore
     var active = true
-    init(store: VMAssetStore) { self.store = store }
+    let record: (String) -> Void
+    init(store: VMAssetStore, record: @escaping (String) -> Void) { self.store = store; self.record = record }
     func webView(_ webView: WKWebView, start task: any WKURLSchemeTask) {
         guard active else { task.didFailWithError(VMPolicyError.rejected); return }
         do {
             let (data, mime) = try store.response(for: task.request)
-            print("VM_PROOF asset served: \(task.request.url?.lastPathComponent ?? "none") \(data.count) bytes")
+            record("asset served: \(task.request.url?.lastPathComponent ?? "none") \(data.count) bytes")
             guard let url = task.request.url else { throw VMPolicyError.rejected }
             let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: "HTTP/1.1", headerFields: ["Content-Type": mime, "Content-Length": String(data.count), "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff"])!
             task.didReceive(response); task.didReceive(data); task.didFinish()
-        } catch { print("VM_PROOF asset rejected"); task.didFailWithError(VMPolicyError.rejected) }
+        } catch { record("asset rejected"); task.didFailWithError(VMPolicyError.rejected) }
     }
     func webView(_ webView: WKWebView, stop task: any WKURLSchemeTask) { /* Synchronous immutable response has no pending IO. */ }
 }
@@ -25,6 +26,10 @@ final class VMHarnessController: NSObject, @preconcurrency WKScriptMessageHandle
     private(set) var webView: WKWebView?
     private(set) var status = "Stopped. BIOS-only prototype; no guest desktop installed."
     private(set) var instructions: UInt64 = 0
+    private(set) var diagnostics = ""
+    private func record(_ text: String) {
+        diagnostics = String((diagnostics + "\n" + text).suffix(4096))
+    }
     private var owner: UUID?
     private var handler: VMAssetHandler?
     private var initialURL: URL?
@@ -36,7 +41,8 @@ final class VMHarnessController: NSObject, @preconcurrency WKScriptMessageHandle
             let root = Bundle.main.resourceURL!.appendingPathComponent("Assets", isDirectory: true)
             let store = try VMAssetStore(root: root)
             let identity = UUID(); owner = identity; instructions = 0
-            let handler = VMAssetHandler(store: store); self.handler = handler
+            diagnostics = "Owner created"
+            let handler = VMAssetHandler(store: store) { [weak self] in self?.record($0) }; self.handler = handler
             let configuration = WKWebViewConfiguration()
             configuration.websiteDataStore = .nonPersistent()
             configuration.preferences.javaScriptCanOpenWindowsAutomatically = false
@@ -69,12 +75,12 @@ final class VMHarnessController: NSObject, @preconcurrency WKScriptMessageHandle
         status = "Stopped. WebKit teardown requested; no guest state saved."
     }
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-        print("VM_PROOF event boundary: main=\(message.frameInfo.isMainFrame), scheme=\(message.frameInfo.securityOrigin.protocol), host=\(message.frameInfo.securityOrigin.host), owned=\(message.webView === webView)")
+        record("event boundary: main=\(message.frameInfo.isMainFrame), scheme=\(message.frameInfo.securityOrigin.protocol), host=\(message.frameInfo.securityOrigin.host), owned=\(message.webView === webView)")
         guard let owner, message.webView === webView, message.frameInfo.isMainFrame,
               message.frameInfo.securityOrigin.protocol == "orivyn-vm",
               message.frameInfo.securityOrigin.host == "bundle",
               let value = VMStatus.parse(message.body, owner: owner) else { return }
-        print("VM_PROOF accepted event: \(value.event.rawValue), instructions: \(value.instructions)")
+        record("accepted event: \(value.event.rawValue), instructions: \(value.instructions)")
         instructions = value.instructions
         switch value.event {
         case .ready: status = "BIOS initialized; starting actual emulated CPU."
@@ -86,7 +92,7 @@ final class VMHarnessController: NSObject, @preconcurrency WKScriptMessageHandle
     func webView(_ webView: WKWebView, decidePolicyFor action: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
         let allowed = self.webView === webView && owner != nil && action.request.url == initialURL
             && action.targetFrame?.isMainFrame == true && !action.shouldPerformDownload
-        print("VM_PROOF initial navigation allowed: \(allowed)")
+        record("initial navigation allowed: \(allowed)")
         decisionHandler(allowed ? .allow : .cancel)
     }
     func webView(_ webView: WKWebView, decidePolicyFor response: WKNavigationResponse, decisionHandler: @escaping (WKNavigationResponsePolicy) -> Void) {
@@ -104,13 +110,13 @@ final class VMHarnessController: NSObject, @preconcurrency WKScriptMessageHandle
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         guard self.webView === webView, owner != nil else { return }
         // Inspect only fixed local runtime capabilities, not page/user data.
-        webView.evaluateJavaScript("JSON.stringify({state:document.readyState,vm:typeof V86,controller:typeof OfflineVM,wasm:typeof WebAssembly,stop:typeof window.orivynStop})") { value, error in
-            print("VM_PROOF local document capabilities: \(value as? String ?? "unavailable"), evaluation failed: \(error != nil)")
+        webView.evaluateJavaScript("JSON.stringify({state:document.readyState,vm:typeof V86,controller:typeof OfflineVM,wasm:typeof WebAssembly,stop:typeof window.orivynStop})") { [weak self] value, error in
+            self?.record("local document capabilities: \(value as? String ?? "unavailable"), evaluation failed: \(error != nil)")
         }
     }
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
         guard self.webView === webView else { return }
-        print("VM_PROOF committed navigation failure: \((error as NSError).domain) \((error as NSError).code)")
+        record("committed navigation failure: \((error as NSError).domain) \((error as NSError).code)")
         stop(); status = "Local document failed. No network fallback."
     }
     func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
@@ -137,6 +143,7 @@ struct VMHarnessApp: App {
             VStack {
                 Text("Orivyn native BIOS proof").font(.headline)
                 Text(controller.status).accessibilityIdentifier("vm.status")
+                Text(controller.diagnostics).font(.caption2).lineLimit(5).accessibilityIdentifier("vm.diagnostics")
                 Text(String(controller.instructions)).accessibilityIdentifier("vm.instructions")
                 HStack {
                     Button("Start BIOS") { controller.start() }.disabled(controller.webView != nil).accessibilityIdentifier("vm.start")

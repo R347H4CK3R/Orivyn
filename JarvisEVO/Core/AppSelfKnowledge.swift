@@ -37,13 +37,12 @@ struct AppSelfKnowledge: Decodable, Sendable {
         guard let value = load(bundle: bundle) else {
             return identity + " Product capability metadata is unavailable; do not guess app features or claim repository access."
         }
-        let entries = value.capabilities.map { "\($0.id) [\($0.status.rawValue)]: \($0.detail)" }.joined(separator: "\n")
+        // Keep the full manifest locally; all local engines have a 2,048-token
+        // context and reserve 1,024 output tokens. Do not inject every detail.
         return """
         \(identity)
-        Bundled capability knowledge schema \(value.schemaVersion). This describes implementation boundaries, not live permission, service health, successful execution or release readiness.
-        Repository: \(value.repository). \(value.repositoryAccess)
-        \(entries)
-        For a bug report, distinguish symptoms from a hypothesis. Ask only for the relevant reproduction steps and redacted error. Never request credentials or assert a repair was applied without execution evidence.
+        Bundled capability knowledge schema \(value.schemaVersion). Repository: \(value.repository) (private; no source access).
+        Metadata is not proof of permission or completed actions. Desk is app-owned panels, not a VM. Chat has no visual understanding. self-repair [notAvailable]: cannot inspect private source, change this executable, build or publish a fix. Draft bug reports using reproduction steps and redacted errors; never claim a fix without execution evidence.
         """
     }
 }

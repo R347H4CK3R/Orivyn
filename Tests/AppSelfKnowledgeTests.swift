@@ -23,4 +23,22 @@ final class AppSelfKnowledgeTests: XCTestCase {
         """
         XCTAssertNil(AppSelfKnowledge.decode(Data(invalid.utf8)))
     }
+    func testRealLocalModelAcceptsKnowledgeAtProductionOutputReservation() async throws {
+        let model = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "qwen2.5-0.5b-instruct-q4_k_m", withExtension: "gguf"))
+        let engine = LlamaEngine()
+        let request = GenerationRequest(messages: [ChatMessage(role: .user,
+            content: "What is the name of this app? Answer with just the name.")],
+            systemPrompt: AppSelfKnowledge.prompt(providerID: "local:qwen"), maxTokens: 1024, temperature: 0)
+        do {
+            let stream = try await engine.stream(request, modelURL: model)
+            var output = ""
+            for try await chunk in stream { output += chunk }
+            XCTAssertTrue(output.localizedCaseInsensitiveContains("Orivyn"), "Actual knowledge response: \(output)")
+            await engine.unload()
+        } catch {
+            await engine.unload()
+            throw error
+        }
+    }
+
 }

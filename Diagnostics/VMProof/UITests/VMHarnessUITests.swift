@@ -17,7 +17,7 @@ final class VMHarnessUITests: XCTestCase {
             screenshot.name = "BIOS failure visible state"
             screenshot.lifetime = .keepAlways; add(screenshot)
         }
-        XCTAssertEqual(result, .completed, "BIOS did not execute: \(app.staticTexts["vm.status"].label)")
+        XCTAssertEqual(result, .completed, "BIOS did not execute: \(app.staticTexts["vm.status"].label). Trace: \(app.staticTexts["vm.diagnostics"].label)")
         XCTAssertTrue(app.staticTexts["vm.status"].label.contains("Actual BIOS running"))
         let capture=XCTAttachment(screenshot:app.screenshot());capture.name="Actual pinned v86 BIOS in system WKWebView, no guest";capture.lifetime = .keepAlways;add(capture)
         app.buttons["vm.stop"].tap()
