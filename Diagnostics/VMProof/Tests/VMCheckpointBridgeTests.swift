@@ -62,4 +62,47 @@ final class VMCheckpointBridgeTests: XCTestCase {
         await bridge.invalidate().value
     }
 
+    func testInvalidationDrainsConcurrentBeginBeforeStoreReuse() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try VMCheckpointStore(root: root)
+        for _ in 0..<32 {
+            let owner = UUID()
+            let bridge = VMCheckpointBridge(owner: owner, identity: identity, store: store)
+            let request: [String: Any] = ["owner": owner.uuidString, "action": "begin", "identity": identityBody, "expectedBytes": 3]
+            let pending = Task { @MainActor in
+                do { _ = try await bridge.process(request) } catch {}
+            }
+            await Task.yield()
+            await bridge.invalidate().value
+            // Drain must cover even a begin whose transaction was not yet returned.
+            let next = try await store.begin(identity: identity, expectedBytes: 1)
+            try await store.abort(transaction: next)
+            await pending.value
+        }
+    }
+
+    func testInvalidationDrainsCommitBeforeNextPublication() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try VMCheckpointStore(root: root), owner = UUID()
+        let bridge = VMCheckpointBridge(owner: owner, identity: identity, store: store)
+        let begun = try await bridge.process(["owner": owner.uuidString, "action": "begin", "identity": identityBody, "expectedBytes": 3]) as? [String: Any]
+        let transaction = try XCTUnwrap(begun?["transaction"] as? String)
+        _ = try await bridge.process(["owner": owner.uuidString, "action": "append", "transaction": transaction, "offset": 0, "base64": "AQID"])
+        let pending = Task { @MainActor in
+            do { _ = try await bridge.process(["owner": owner.uuidString, "action": "commit", "transaction": transaction]) } catch {}
+        }
+        await Task.yield()
+        await bridge.invalidate().value
+        let next = try await store.begin(identity: identity, expectedBytes: 1)
+        _ = try await store.append(transaction: next, offset: 0, data: Data([9]))
+        let saved = try await store.commit(transaction: next)
+        await pending.value
+        let latest = try await store.latest(identity: identity)
+        XCTAssertEqual(latest?.generation, saved.generation)
+    }
+
 }

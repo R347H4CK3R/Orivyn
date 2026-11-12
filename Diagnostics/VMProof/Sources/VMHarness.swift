@@ -34,13 +34,17 @@ final class VMHarnessController: NSObject, @preconcurrency WKScriptMessageHandle
     private(set) var checkpointStatus = "Checkpoint not yet saved."
     private(set) var checkpointBusy = false
     private var checkpointBridge: VMCheckpointBridge?
+    // One actor serializes this directory across every WebKit owner.
+    private var checkpointStore: VMCheckpointStore?
+    private var checkpointDrain: Task<Void, Never>?
+    private(set) var isDrainingCheckpoint = false
     private var owner: UUID?
     private var handler: VMAssetHandler?
     private var initialURL: URL?
     private var proofDeadline: Task<Void, Never>?
 
     func start() {
-        guard webView == nil, owner == nil else { return }
+        guard webView == nil, owner == nil, !isDrainingCheckpoint else { return }
         do {
             let root = Bundle.main.resourceURL!.appendingPathComponent("Assets", isDirectory: true)
             let store = try VMAssetStore(root: root)
@@ -54,7 +58,12 @@ final class VMHarnessController: NSObject, @preconcurrency WKScriptMessageHandle
             configuration.userContentController.add(self, name: "vmStatus")
             let directory = try FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true).appendingPathComponent("VMProofCheckpoints", isDirectory: true)
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true, attributes: [.protectionKey: FileProtectionType.complete])
-            let checkpointStore = try VMCheckpointStore(root: directory)
+            let checkpointStore: VMCheckpointStore
+            if let existing = self.checkpointStore { checkpointStore = existing }
+            else {
+                checkpointStore = try VMCheckpointStore(root: directory)
+                self.checkpointStore = checkpointStore
+            }
             let configurationDigest = SHA256.hash(data: Data("bios-only;ram=67108864;vga=2097152;network=none;schema=1".utf8)).map { String(format: "%02x", $0) }.joined()
             func assetGroupDigest(_ names: Set<String>) -> String {
                 let text = VMAssetCatalog.files.filter { names.contains($0.name) }.sorted { $0.name < $1.name }.map { $0.name + ":" + $0.sha256 }.joined(separator: "\n")
@@ -84,7 +93,18 @@ final class VMHarnessController: NSObject, @preconcurrency WKScriptMessageHandle
     }
     func stop() {
         proofDeadline?.cancel(); proofDeadline = nil
-        checkpointBridge?.invalidate(); checkpointBridge = nil; checkpointBusy = false
+        if checkpointBusy { checkpointStatus = "Checkpoint interrupted. Previously committed state is retained." }
+        if let bridge = checkpointBridge {
+            let drain = bridge.invalidate()
+            isDrainingCheckpoint = true
+            checkpointDrain = Task { @MainActor [weak self] in
+                await drain.value
+                guard let self else { return }
+                self.isDrainingCheckpoint = false
+                self.checkpointDrain = nil
+            }
+        }
+        checkpointBridge = nil; checkpointBusy = false
         owner = nil; initialURL = nil; handler?.active = false; handler = nil
         let old = webView; webView = nil
         old?.configuration.userContentController.removeScriptMessageHandler(forName: "vmStatus")
@@ -197,7 +217,7 @@ struct VMHarnessApp: App {
                 Text(controller.diagnostics).font(.caption2).lineLimit(5).accessibilityIdentifier("vm.diagnostics")
                 Text(String(controller.instructions)).accessibilityIdentifier("vm.instructions")
                 HStack {
-                    Button("Start BIOS") { controller.start() }.disabled(controller.webView != nil).accessibilityIdentifier("vm.start")
+                    Button("Start BIOS") { controller.start() }.disabled(controller.webView != nil || controller.isDrainingCheckpoint).accessibilityIdentifier("vm.start")
                     Button("Stop") { controller.stop() }.disabled(controller.webView == nil).accessibilityIdentifier("vm.stop")
                 }
                 Text(controller.checkpointStatus).font(.caption).accessibilityIdentifier("vm.checkpoint.status")

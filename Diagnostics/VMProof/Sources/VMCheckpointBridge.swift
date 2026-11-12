@@ -67,6 +67,7 @@ final class VMCheckpointBridge: NSObject, @preconcurrency WKScriptMessageHandler
     private let store: VMCheckpointStore
     private var active=true
     private var busy=false
+    private var idleWaiters: [CheckedContinuation<Void, Never>] = []
     private var transaction: UUID?
     private var restoreGeneration: UUID?
 
@@ -81,8 +82,17 @@ final class VMCheckpointBridge: NSObject, @preconcurrency WKScriptMessageHandler
     @discardableResult
     func invalidate() -> Task<Void,Never> {
         active=false;ownedWebView=nil;restoreGeneration=nil
-        let id=transaction;transaction=nil
-        return Task { if let id { try? await store.abort(transaction:id) } }
+        return Task { @MainActor in
+            // An actor call already in flight may still publish. Wait for the
+            // whole request, including begin's late-abort path, before reuse.
+            await waitUntilIdle()
+            let id=transaction;transaction=nil
+            if let id { try? await store.abort(transaction:id) }
+        }
+    }
+    private func waitUntilIdle() async {
+        guard busy else { return }
+        await withCheckedContinuation { idleWaiters.append($0) }
     }
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage,
                                replyHandler: @escaping @MainActor @Sendable (Any?, String?) -> Void) {
@@ -107,7 +117,12 @@ final class VMCheckpointBridge: NSObject, @preconcurrency WKScriptMessageHandler
     }
     private func execute(_ request:VMCheckpointRequest) async throws -> Any {
         guard active,!busy else { throw VMCheckpointError.rejected }
-        busy=true;defer { busy=false }
+        busy=true
+        defer {
+            busy=false
+            let waiters=idleWaiters;idleWaiters.removeAll()
+            for waiter in waiters { waiter.resume() }
+        }
         switch request {
         case let .begin(bytes,hash):
             guard transaction==nil else { throw VMCheckpointError.busy }
