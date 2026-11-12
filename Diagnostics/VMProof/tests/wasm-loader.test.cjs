@@ -1,0 +1,5 @@
+const test=require('node:test'),assert=require('node:assert/strict');
+const {instantiateOfflineWasm}=require('../Assets/wasm-loader.js');
+test('valid module never reads fallback',async()=>{let loaded=false;const valid=Uint8Array.from([0,97,115,109,1,0,0,0]);const result=await instantiateOfflineWasm(valid,async()=>{loaded=true;return valid},{},()=>{});assert.ok(result);assert.equal(loaded,false)});
+test('invalid module tries one bounded fallback and reports actual exception',async()=>{const events=[];let n=0;const valid=Uint8Array.from([0,97,115,109,1,0,0,0]);const result=await instantiateOfflineWasm(new Uint8Array([0]),async()=>{n++;return valid},{},x=>events.push(x));assert.ok(result);assert.equal(n,1);assert.match(events[0],/CompileError/);assert.ok(events.every(x=>x.length<=256));});
+test('both invalid modules reject rather than inventing execution',async()=>{const events=[];await assert.rejects(instantiateOfflineWasm(new Uint8Array([0]),async()=>new Uint8Array([0]),{},x=>events.push(x)));assert.equal(events.length,2)});

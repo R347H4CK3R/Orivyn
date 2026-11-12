@@ -22,7 +22,7 @@ def package_files(data,files):
     if hashlib.sha256(data).hexdigest()!=PACKAGE_SHA256:raise ValueError('Package checksum mismatch')
     result={}
     with tarfile.open(fileobj=io.BytesIO(data),mode='r:gz') as archive:
-        for name in ['libv86.js','v86.wasm']:
+        for name in ['libv86.js','v86.wasm','v86-fallback.wasm']:
             member=archive.getmember('package/build/'+name)
             if not member.isfile() or member.size!=files[name]['bytes']:raise ValueError('Invalid package member')
             result[name]=verified(archive.extractfile(member).read(member.size+1),files[name])
@@ -35,7 +35,7 @@ def main():
         if path.is_symlink():raise ValueError('Symlink output refused')
         if path.exists():verified(path.read_bytes(),expected)
         else:pending[name]=expected
-    if any(name in pending for name in ['libv86.js','v86.wasm']):
+    if any(name in pending for name in ['libv86.js','v86.wasm','v86-fallback.wasm']):
         package=package_files(download(PACKAGE_URL,5*1024*1024),files)
     else:package={}
     prepared={}
@@ -48,5 +48,5 @@ def main():
             os.replace(path,ROOT/'Assets'/name)
         finally:
             if os.path.exists(path):os.unlink(path)
-    print('Four exact public engine/ROM assets verified; no guest downloaded')
+    print('Five exact public engine/ROM assets verified; no guest downloaded')
 if __name__=='__main__':main()

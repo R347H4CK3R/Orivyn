@@ -7,3 +7,5 @@ Assets/v86.wasm
 Assets/seabios.bin
 Assets/vgabios.bin
 __pycache__/
+
+Assets/v86-fallback.wasm

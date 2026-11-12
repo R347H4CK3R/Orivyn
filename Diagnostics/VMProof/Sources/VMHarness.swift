@@ -83,6 +83,7 @@ final class VMHarnessController: NSObject, @preconcurrency WKScriptMessageHandle
         record("accepted event: \(value.event.rawValue), instructions: \(value.instructions)")
         instructions = value.instructions
         switch value.event {
+        case .diagnostic: record(value.diagnostic ?? "Missing diagnostic")
         case .ready: status = "BIOS initialized; starting actual emulated CPU."
         case .running: status = "Actual BIOS running. No operating-system guest installed."
         case .stopped: stop()

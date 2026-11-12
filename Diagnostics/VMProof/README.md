@@ -34,3 +34,7 @@ TinyCore ISO was deliberately NOT copied. The separate worker is constructing a 
 3. Bounded whole-VM checkpoint with engine+guest+configuration identity/digest and atomic storage; destroy/relaunch and freshly read the file. Nonpersistent WebKit storage here cannot satisfy this.
 4. Corrupt/mismatched state, repeated Stop/start, background/thermal/low-memory, WebContent termination and stale callbacks.
 5. Physical iPhone16Plus/iOS26 memory high-water mark, Stop latency, keyboard/touch, 20-minute heat/battery and resource handoff. Host/simulator success is not physical acceptance.
+
+### Compatibility recovery
+
+The pinned upstream loader tries `v86-fallback.wasm` when its optimized module is rejected. Upstream Makefile's optimized flags add bulk-memory, multivalue and SIMD128; the fallback uses CARGO_FLAGS_SAFE. Both assets come from the same checksum-verified npm archive, not another mirror/version. The isolated loader now restores exactly one local fallback attempt and reports bounded native-visible exception diagnostics. CSP, no-network policy, hashes,64MiB guest RAM,2MiB VGA and60-second proof limit remain unchanged. Both actual BIOS engines pass host tests; native compatibility and physical resource measurements remain unverified until new evidence.

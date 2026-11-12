@@ -60,17 +60,22 @@ struct VMAssetStore: Sendable {
 }
 
 struct VMStatus: Equatable {
-    enum Event: String { case ready, running, stopped, error }
+    enum Event: String { case ready, running, stopped, error, diagnostic }
     let event: Event
     let instructions: UInt64
+    let diagnostic: String?
     static func parse(_ body: Any, owner: UUID) -> Self? {
-        guard let value = body as? [String: Any], Set(value.keys) == ["version", "owner", "event", "instructions"],
+        guard let value = body as? [String: Any], (Set(value.keys) == ["version", "owner", "event", "instructions"] || Set(value.keys) == ["version", "owner", "event", "instructions", "diagnostic"]),
               let version = value["version"] as? NSNumber, CFGetTypeID(version) != CFBooleanGetTypeID(), version.doubleValue == 1,
               let ownerText = value["owner"] as? String, ownerText.count == 36, UUID(uuidString: ownerText) == owner,
               let name = value["event"] as? String, let event = Event(rawValue: name),
               let count = value["instructions"] as? NSNumber, CFGetTypeID(count) != CFBooleanGetTypeID(),
               count.doubleValue.isFinite, count.doubleValue >= 0, count.doubleValue <= 9_007_199_254_740_991,
               count.doubleValue.rounded(.down) == count.doubleValue else { return nil }
-        return Self(event: event, instructions: count.uint64Value)
+        let diagnostic = value["diagnostic"] as? String
+        if event == .diagnostic {
+            guard let diagnostic, !diagnostic.isEmpty, diagnostic.utf8.count <= 1024, diagnostic.count <= 256, count.uint64Value == 0 else { return nil }
+        } else if value["diagnostic"] != nil { return nil }
+        return Self(event: event, instructions: count.uint64Value, diagnostic: diagnostic)
     }
 }

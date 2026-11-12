@@ -44,6 +44,14 @@ final class VMPolicyTests: XCTestCase {
         let store = try VMAssetStore(root:root,catalog:[item]); try Data([9,9,9]).write(to:file)
         XCTAssertEqual(try store.response(for:URLRequest(url:URL(string:"orivyn-vm://bundle/index.html")!)).0,bytes)
     }
+    func testDiagnosticIsBoundedAndCannotPretendExecution() {
+        let owner = UUID()
+        var value:[String:Any] = ["version":1,"owner":owner.uuidString,"event":"diagnostic","instructions":0,"diagnostic":"primary WebAssembly: CompileError"]
+        XCTAssertNotNil(VMStatus.parse(value,owner:owner))
+        value["diagnostic"] = String(repeating:"x",count:257); XCTAssertNil(VMStatus.parse(value,owner:owner))
+        value["diagnostic"] = "test";value["instructions"] = 1;XCTAssertNil(VMStatus.parse(value,owner:owner))
+        value["instructions"] = 0;value["event"] = "running";XCTAssertNil(VMStatus.parse(value,owner:owner))
+    }
     func testStatusRequiresExactCurrentOwnerAndBoundedSchema() {
         let owner = UUID()
         let valid:[String:Any] = ["version":1,"owner":owner.uuidString,"event":"running","instructions":123]

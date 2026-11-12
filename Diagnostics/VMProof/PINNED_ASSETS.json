@@ -21,6 +21,11 @@
       "bytes": 36352,
       "sha256": "a4bc0d80cc3ca028c73dafa8fee396b8d054ce87ebd8abfbd31b06b437607880",
       "source": "assets/vgabios.bin"
+    },
+    "v86-fallback.wasm": {
+      "bytes": 2040034,
+      "sha256": "4eb64c9b7908d5931c1868eea4824b3a0a628eb86e6eac09d133776b50922d81",
+      "source": "vendor/package/build/v86-fallback.wasm"
     }
   }
 }
