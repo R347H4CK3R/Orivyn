@@ -3,9 +3,9 @@ import AVFoundation
 import Speech
 @testable import JarvisEVO
 
-/// These tests substitute only OS permission responses and, for availability, a
-/// nil recognizer. They exercise VoiceService state and real notification handlers.
-/// They never start microphone capture or claim physical dictation/playback coverage.
+/// Permission tests substitute OS authorization responses and a nil recognizer.
+/// Playback tests substitute the synthesizer/session side effects, but invoke the
+/// actual VoiceService delegate methods. No physical dictation/playback is claimed.
 @MainActor
 final class VoiceServiceTests: XCTestCase {
     func testDeniedSpeechPermissionReturnsActionableErrorAndResetsStartingState() async throws {
@@ -147,6 +147,157 @@ final class VoiceServiceTests: XCTestCase {
         XCTAssertFalse(voice.isStarting)
     }
 
+    // Removing the current utterance guard lets the cancelled first utterance
+    // clear the second utterance's state and deactivate its audio session.
+    func testLateCancelledUtteranceCannotStopReplacementPlayback() async throws {
+        let boundary = ControlledSpeechPlayback()
+        let session = TrackedVoiceSession()
+        let voice = VoiceService(playback: boundary, audioSession: session.boundary)
+        var completed = 0
+        var cancelled = 0
+        voice.onPlaybackFinished = { completed += 1 }
+        voice.onPlaybackCancelled = { cancelled += 1 }
+        try voice.speak("First response")
+        let first = try XCTUnwrap(boundary.utterances.last)
+        try voice.speak("Replacement response")
+        let second = try XCTUnwrap(boundary.utterances.last)
+        let deactivations = session.deactivations
+        boundary.cancel(first)
+        await drainVoiceCallbacks()
+        XCTAssertTrue(voice.isSpeaking)
+        XCTAssertEqual(session.deactivations, deactivations)
+        XCTAssertEqual(cancelled, 0)
+        boundary.finish(second)
+        try await waitFor { !voice.isSpeaking }
+        XCTAssertEqual(completed, 1)
+        XCTAssertEqual(session.deactivations, deactivations + 1)
+    }
+
+    func testLateFinishedUtteranceCannotFinishReplacementPlayback() async throws {
+        let boundary = ControlledSpeechPlayback()
+        let session = TrackedVoiceSession()
+        let voice = VoiceService(playback: boundary, audioSession: session.boundary)
+        var completed = 0
+        voice.onPlaybackFinished = { completed += 1 }
+        try voice.speak("First")
+        let first = try XCTUnwrap(boundary.utterances.last)
+        try voice.speak("Second")
+        boundary.finish(first)
+        await drainVoiceCallbacks()
+        XCTAssertTrue(voice.isSpeaking)
+        XCTAssertEqual(completed, 0)
+        voice.stopSpeaking()
+    }
+
+    func testStoppedUtteranceCallbackCannotDeactivateNewPlayback() async throws {
+        let boundary = ControlledSpeechPlayback()
+        let session = TrackedVoiceSession()
+        let voice = VoiceService(playback: boundary, audioSession: session.boundary)
+        try voice.speak("Old")
+        let old = try XCTUnwrap(boundary.utterances.last)
+        voice.stopSpeaking()
+        try voice.speak("New")
+        let deactivations = session.deactivations
+        boundary.finish(old)
+        boundary.cancel(old)
+        await drainVoiceCallbacks()
+        XCTAssertTrue(voice.isSpeaking)
+        XCTAssertEqual(session.deactivations, deactivations)
+        voice.stopSpeaking()
+    }
+
+    func testCurrentCancellationStopsPlaybackAndNotifiesOnlyOnce() async throws {
+        let boundary = ControlledSpeechPlayback()
+        let session = TrackedVoiceSession()
+        let voice = VoiceService(playback: boundary, audioSession: session.boundary)
+        var cancelled = 0
+        voice.onPlaybackCancelled = { cancelled += 1 }
+        try voice.speak("Current")
+        let utterance = try XCTUnwrap(boundary.utterances.last)
+        let deactivations = session.deactivations
+        boundary.cancel(utterance)
+        try await waitFor { !voice.isSpeaking }
+        boundary.finish(utterance)
+        boundary.cancel(utterance)
+        await drainVoiceCallbacks()
+        XCTAssertEqual(cancelled, 1)
+        XCTAssertEqual(session.deactivations, deactivations + 1)
+    }
+
+    func testLatePlaybackCallbackCannotDeactivatePendingRecordingPermission() async throws {
+        let boundary = ControlledSpeechPlayback()
+        let session = TrackedVoiceSession()
+        let permission = PendingSpeechPermission()
+        let voice = VoiceService(permissions: VoicePermissions(requestSpeech: { await permission.request() }, requestMicrophone: { false }),
+                                 playback: boundary, audioSession: session.boundary)
+        defer { voice.stopRecording(); permission.resolveAll(.denied) }
+        try voice.speak("Before microphone")
+        let utterance = try XCTUnwrap(boundary.utterances.last)
+        let attempt = Task { try await voice.startRecording() }
+        try await waitFor { permission.count == 1 }
+        let deactivations = session.deactivations
+        boundary.finish(utterance)
+        boundary.cancel(utterance)
+        await drainVoiceCallbacks()
+        XCTAssertTrue(voice.isStarting)
+        XCTAssertEqual(session.deactivations, deactivations)
+        voice.stopRecording()
+        permission.resolveFirst(.authorized)
+        try await attempt.value
+    }
+
+    func testPlaybackActivationFailureDoesNotLeaveSpeakingState() throws {
+        let boundary = ControlledSpeechPlayback()
+        let session = TrackedVoiceSession()
+        session.failActivation = true
+        let voice = VoiceService(playback: boundary, audioSession: session.boundary)
+        XCTAssertThrowsError(try voice.speak("Do not pretend this played"))
+        XCTAssertFalse(voice.isSpeaking)
+        XCTAssertTrue(boundary.utterances.isEmpty)
+    }
+
+    func testBlankPlaybackDoesNotStartAudioSession() throws {
+        let boundary = ControlledSpeechPlayback()
+        let session = TrackedVoiceSession()
+        let voice = VoiceService(playback: boundary, audioSession: session.boundary)
+        XCTAssertThrowsError(try voice.speak("  \n "))
+        XCTAssertFalse(voice.isSpeaking)
+        XCTAssertEqual(session.activations, 0)
+    }
+
+    func testEnergyDetectorEndsTurnOnlyAfterSpeechThenSustainedSilence() {
+        var detector = VoiceActivityDetector()
+        XCTAssertEqual(detector.observe(rms: 0, duration: 1), .listening)
+        XCTAssertEqual(detector.observe(rms: 0.1, duration: 0.3), .listening)
+        XCTAssertEqual(detector.observe(rms: 0, duration: 0.7), .listening)
+        XCTAssertEqual(detector.observe(rms: 0.1, duration: 0.1), .listening)
+        XCTAssertEqual(detector.observe(rms: 0, duration: 0.7), .listening)
+        XCTAssertEqual(detector.observe(rms: 0, duration: 0.6), .endOfTurn)
+    }
+
+    func testEnergyDetectorRejectsClickAndBoundsEmptyOrContinuousInput() {
+        var click = VoiceActivityDetector()
+        XCTAssertEqual(click.observe(rms: 0.5, duration: 0.01), .listening)
+        XCTAssertEqual(click.observe(rms: 0, duration: 1.5), .listening)
+        XCTAssertEqual(click.observe(rms: 0, duration: 11), .noSpeech)
+        var continuous = VoiceActivityDetector()
+        XCTAssertEqual(continuous.observe(rms: 0.1, duration: 44), .listening)
+        XCTAssertEqual(continuous.observe(rms: 0.1, duration: 1), .endOfTurn)
+    }
+
+    func testEnergyDetectorIgnoresInvalidSamples() {
+        var detector = VoiceActivityDetector()
+        XCTAssertEqual(detector.observe(rms: .nan, duration: 50), .listening)
+        XCTAssertEqual(detector.observe(rms: 1, duration: -.infinity), .listening)
+        XCTAssertEqual(detector.observe(rms: 0, duration: 1), .listening)
+    }
+
+    private func drainVoiceCallbacks() async {
+        // AVSpeechSynthesizerDelegate bridges to MainActor in an unstructured task.
+        // A short suspension drains those queued tasks without starting OS playback.
+        try? await Task.sleep(for: .milliseconds(30))
+    }
+
     private func waitingVoice(_ pending: PendingSpeechPermission) -> VoiceService {
         VoiceService(permissions: VoicePermissions(requestSpeech: { await pending.request() }, requestMicrophone: { false }))
     }
@@ -210,3 +361,29 @@ private final class PendingMicrophonePermission {
 }
 
 private enum VoiceWaitError: Error { case timeout }
+
+/// Only synthesized playback and audio-session hardware effects are replaced.
+/// Actual VoiceService delegate methods, identity guards and state run unchanged.
+@MainActor
+private final class ControlledSpeechPlayback: VoicePlayback {
+    weak var delegate: (any AVSpeechSynthesizerDelegate)?
+    private let source = AVSpeechSynthesizer()
+    private(set) var utterances: [AVSpeechUtterance] = []
+    func speak(_ utterance: AVSpeechUtterance) { utterances.append(utterance) }
+    func stop() {}
+    func finish(_ utterance: AVSpeechUtterance) { delegate?.speechSynthesizer?(source, didFinish: utterance) }
+    func cancel(_ utterance: AVSpeechUtterance) { delegate?.speechSynthesizer?(source, didCancel: utterance) }
+}
+
+@MainActor
+private final class TrackedVoiceSession {
+    var activations = 0
+    var deactivations = 0
+    var failActivation = false
+    var boundary: VoiceAudioSession {
+        VoiceAudioSession(activateRecording: {}, activatePlayback: {
+            self.activations += 1
+            if self.failActivation { throw VoiceWaitError.timeout }
+        }, deactivate: { self.deactivations += 1 })
+    }
+}

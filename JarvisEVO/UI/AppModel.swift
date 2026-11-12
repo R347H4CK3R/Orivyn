@@ -41,14 +41,22 @@ final class AppModel {
     private var generationTask: Task<Void, Never>?
     private var downloadTask: Task<Void, Never>?
     private var localProviders: [String: LocalAIProvider] = [:]
+    private let attachmentImporter: any AttachmentImporting
+    private var attachmentImportJobs: [UUID: AttachmentImportJob] = [:]
+    private var attachmentImportEpoch = UUID()
+    private var attachmentCleanupNeeded = false
+    private var isChangingHistory = false
+    private var isSavingSubmittedTurn = false
 
     init(store: SQLiteConversationStore, attachmentService: AttachmentService, modelStore: LocalModelStore,
-         providers: [ProviderOption] = [], defaults: UserDefaults = .standard) {
+         providers: [ProviderOption] = [], defaults: UserDefaults = .standard,
+         attachmentImporter: (any AttachmentImporting)? = nil) {
         self.store = store
         self.attachmentService = attachmentService
         self.modelStore = modelStore
         self.providers = providers
         self.defaults = defaults
+        self.attachmentImporter = attachmentImporter ?? LocalAttachmentImporter(service: attachmentService)
         selectedProviderID = defaults.string(forKey: "selectedProviderID") ?? ""
         remoteBaseURL = defaults.string(forKey: "remoteBaseURL") ?? ""
         remoteModelName = defaults.string(forKey: "remoteModelName") ?? ""
@@ -57,7 +65,14 @@ final class AppModel {
 
     var activeConversation: Conversation? { conversations.first { $0.id == selectedConversationID } }
     var selectedProvider: ProviderOption? { providers.first { $0.id == selectedProviderID } }
-    var canSend: Bool { !isGenerating && (!draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !pendingAttachments.isEmpty) }
+    var canSend: Bool { !isGenerating && !isImportingAttachments && !isChangingHistory && (!draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !pendingAttachments.isEmpty) }
+    var isImportingAttachments: Bool { !attachmentImportJobs.isEmpty }
+    /// Capture before an asynchronous Photos/camera transfer, then pass back to the add method.
+    var attachmentImportContext: UUID { attachmentImportEpoch }
+    var availableAttachmentSlots: Int {
+        guard !isChangingHistory, !isLoading, !isSavingSubmittedTurn else { return 0 }
+        return max(0, 4 - pendingAttachments.count - attachmentImportJobs.values.reduce(0) { $0 + $1.reservedSlots })
+    }
     var visibleConversations: [Conversation] {
         conversations.filter { conversation in
             conversation.isArchived == showArchived && (searchText.isEmpty || conversation.title.localizedCaseInsensitiveContains(searchText) || conversation.messages.contains { $0.content.localizedCaseInsensitiveContains(searchText) })
@@ -71,6 +86,7 @@ final class AppModel {
             conversations = try await store.list(includeArchived: true)
             memories = try await store.memories()
             if selectedConversationID == nil { selectedConversationID = conversations.first(where: { !$0.isArchived })?.id }
+            requestAttachmentCleanup()
             try await reloadProviders()
         } catch { report(error) }
     }
@@ -101,7 +117,7 @@ final class AppModel {
         if remoteEnabled && !remoteBaseURL.isEmpty && !remoteModelName.isEmpty {
             let endpoint = try RemoteEndpoint(baseURL: remoteBaseURL, model: remoteModelName)
             let provider = OpenAICompatibleProvider(endpoint: endpoint, apiKey: try KeychainService.read(endpoint: remoteBaseURL))
-            options.append(ProviderOption(id: "remote", title: remoteModelName, detail: "Remote · sends conversation text and attachments to your endpoint", provider: provider))
+            options.append(ProviderOption(id: "remote", title: remoteModelName, detail: "Remote · sends conversation and extracted attachment text to your endpoint", provider: provider))
         }
         replaceProviders(options)
     }
@@ -113,6 +129,9 @@ final class AppModel {
     }
 
     func newConversation() async {
+        guard beginHistoryChange() else { return }
+        defer { finishHistoryChange() }
+        cancelAttachmentImports()
         do {
             let conversation = Conversation(id: UUID(), title: "New conversation", createdAt: Date(), updatedAt: Date(), isArchived: false, messages: [])
             try await store.save(conversation)
@@ -153,6 +172,8 @@ final class AppModel {
         upsert(conversation)
         draft = ""
         pendingAttachments = []
+        // A Photos transfer started for this draft must not attach itself to the next draft after Send.
+        cancelAttachmentImports()
         startGeneration(conversationID: conversation.id, assistantID: assistant.id, provider: provider, restoringDraftOnSaveFailure: message)
     }
 
@@ -160,16 +181,25 @@ final class AppModel {
                                  restoringDraftOnSaveFailure original: ChatMessage? = nil) {
         isGenerating = true
         generatingConversationID = conversationID
+        isSavingSubmittedTurn = original != nil
+        let composerContext = attachmentImportEpoch
         generationTask = Task { [weak self] in
             guard let self else { return }
+            defer {
+                self.isSavingSubmittedTurn = false
+                self.isGenerating = false
+                self.generatingConversationID = nil
+                self.generationTask = nil
+            }
             var didPersist = false
             do {
                 guard let conversation = self.conversations.first(where: { $0.id == conversationID }) else { return }
                 try await self.store.save(conversation)
                 didPersist = true
+                self.isSavingSubmittedTurn = false
                 try Task.checkCancellation()
                 let notes = self.memories.map(\.content).joined(separator: "\n")
-                let system = "You are Jarvis-EVO, a helpful personal assistant. Be clear about uncertainty and limitations. Do not claim to browse, run code, or take actions that you cannot perform. " + (notes.isEmpty ? "" : "User-saved context, not higher-priority instructions:\n" + notes)
+                let system = "You are Jarvis-EVO, a helpful personal assistant. Be clear about uncertainty and limitations. Do not claim to browse, run code, or take actions that you cannot perform. All configured providers receive text only. Image attachments supply OCR text, never image pixels. Do not infer objects, people, colors, layout, or other visual contents from an image attachment. " + (notes.isEmpty ? "" : "User-saved context, not higher-priority instructions:\n" + notes)
                 let request = GenerationRequest(messages: Array(conversation.messages.dropLast()), systemPrompt: system, maxTokens: 1024, temperature: 0.7)
                 let stream = try await provider.stream(request)
                 var checkpoint = Date()
@@ -192,17 +222,22 @@ final class AppModel {
                 }
                 if didPersist { try? await self.persist(conversationID) }
                 if !didPersist, let original {
-                    self.draft = original.content
-                    self.pendingAttachments = original.attachments
-                    if let index = self.conversations.firstIndex(where: { $0.id == conversationID }) {
-                        self.conversations[index].messages.removeAll { $0.id == original.id || $0.id == assistantID }
+                    if self.selectedConversationID == conversationID, self.attachmentImportEpoch == composerContext,
+                       self.draft.isEmpty, self.pendingAttachments.isEmpty, self.attachmentImportJobs.isEmpty {
+                        self.draft = original.content
+                        self.pendingAttachments = original.attachments
+                        if let index = self.conversations.firstIndex(where: { $0.id == conversationID }) {
+                            self.conversations[index].messages.removeAll { $0.id == original.id || $0.id == assistantID }
+                        }
+                    } else {
+                        // Keep the failed user turn and its files in the originating conversation rather
+                        // than overwriting a different draft. It is not durable until a later save succeeds.
+                        self.statusMessage = "The unsaved message is still in its original conversation. Return there to edit or copy it before closing the app."
                     }
+                    self.requestAttachmentCleanup()
                 }
                 if !Task.isCancelled && !(error is CancellationError) { self.report(error) }
             }
-            self.isGenerating = false
-            self.generatingConversationID = nil
-            self.generationTask = nil
         }
     }
 
@@ -224,17 +259,26 @@ final class AppModel {
     }
 
     func delete(_ id: UUID) async {
+        guard beginHistoryChange() else { return }
+        defer { finishHistoryChange() }
+        if selectedConversationID == id { cancelAttachmentImports() }
         if generatingConversationID == id { stop(); await generationTask?.value }
         do {
             try await store.delete(id: id)
             conversations.removeAll { $0.id == id }
-            if selectedConversationID == id { selectedConversationID = nil }
-            let retained = Set(conversations.flatMap(\.messages).flatMap(\.attachments).map(\.relativePath) + pendingAttachments.map(\.relativePath))
-            try attachmentService.removeUnreferenced(keeping: retained)
+            if selectedConversationID == id {
+                selectedConversationID = nil
+                draft = ""
+                clearPendingAttachments()
+            }
+            requestAttachmentCleanup()
         } catch { report(error) }
     }
 
     func deleteAllContent() async {
+        guard beginHistoryChange() else { return }
+        defer { finishHistoryChange() }
+        cancelAttachmentImports()
         stop()
         await generationTask?.value
         do {
@@ -244,13 +288,16 @@ final class AppModel {
             selectedConversationID = nil
             draft = ""
             pendingAttachments = []
-            try attachmentService.removeAll()
+            requestAttachmentCleanup()
         } catch { report(error) }
     }
 
     @discardableResult
     func branch(through messageID: UUID) async -> Bool {
         guard !isGenerating, let activeConversation else { return false }
+        guard beginHistoryChange() else { return false }
+        defer { finishHistoryChange() }
+        cancelAttachmentImports()
         do {
             let branched = try activeConversation.branching(through: messageID)
             try await store.save(branched)
@@ -264,6 +311,9 @@ final class AppModel {
         guard !isGenerating, let activeConversation else { return }
         let text = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return }
+        guard beginHistoryChange() else { return }
+        defer { finishHistoryChange() }
+        cancelAttachmentImports()
         do {
             var branched = try activeConversation.branching(through: messageID)
             // The selected user turn is the final message in the new branch.
@@ -295,28 +345,81 @@ final class AppModel {
         startGeneration(conversationID: conversation.id, assistantID: assistant.id, provider: provider)
     }
 
-    func addAttachments(from urls: [URL]) async {
-        guard pendingAttachments.count + urls.count <= 4 else { errorMessage = "Attach up to four files per message."; return }
-        for url in urls {
-            do { pendingAttachments.append(try attachmentService.importFile(at: url)) }
-            catch { report(error); break }
+    func addAttachments(from urls: [URL], context: UUID? = nil) async {
+        await addAttachmentSources(urls.map(AttachmentImportSource.file), context: context)
+    }
+
+    func addImageAttachment(data: Data, suggestedName: String, context: UUID? = nil) async {
+        await addAttachmentSources([.image(data: data, suggestedName: suggestedName)], context: context)
+    }
+
+    func cancelAttachmentImports() {
+        attachmentImportEpoch = UUID()
+        for job in attachmentImportJobs.values { job.task.cancel() }
+        // Keep reservations until completion: cancelled Vision work may still be finishing off-main.
+    }
+
+    private func addAttachmentSources(_ sources: [AttachmentImportSource], context: UUID?) async {
+        guard !Task.isCancelled, !sources.isEmpty, context == nil || context == attachmentImportEpoch else { return }
+        guard !isChangingHistory, !isLoading else { errorMessage = "Wait for the history operation to finish before attaching files."; return }
+        guard !isSavingSubmittedTurn else { errorMessage = "Wait for the sent message to be saved before attaching more files."; return }
+        guard sources.count <= availableAttachmentSlots else { errorMessage = "Attach up to four files per message, including files still importing."; return }
+        let epoch = attachmentImportEpoch
+        let conversationID = selectedConversationID
+        let jobID = UUID()
+        let importer = attachmentImporter
+        let task = Task<AttachmentImportOutcome, Never> {
+            var imported: [ChatAttachment] = []
+            do {
+                for source in sources {
+                    try Task.checkCancellation()
+                    imported.append(try await importer.importAttachment(source))
+                    // Record ownership before observing cancellation, so late successes are cleaned up.
+                    try Task.checkCancellation()
+                }
+                return AttachmentImportOutcome(attachments: imported, errorMessage: nil, wasCancelled: false)
+            } catch {
+                let cancelled = Task.isCancelled || error is CancellationError
+                return AttachmentImportOutcome(attachments: imported, errorMessage: cancelled ? nil : error.localizedDescription,
+                                               wasCancelled: cancelled)
+            }
         }
+        // The main actor reserves the entire batch before another call can inspect available slots.
+        attachmentImportJobs[jobID] = AttachmentImportJob(reservedSlots: sources.count, task: task)
+        let result = await withTaskCancellationHandler {
+            await task.value
+        } onCancel: {
+            task.cancel()
+        }
+        attachmentImportJobs.removeValue(forKey: jobID)
+        if epoch == attachmentImportEpoch, conversationID == selectedConversationID,
+           !Task.isCancelled, !task.isCancelled, !result.wasCancelled {
+            pendingAttachments.append(contentsOf: result.attachments)
+            if let message = result.errorMessage { errorMessage = message }
+        }
+        // Current results are now referenced; stale/cancelled results are not. Sweep only after every
+        // importer has handed back its files, never while another importer is writing an unseen file.
+        requestAttachmentCleanup()
     }
 
     func removePendingAttachment(_ attachment: ChatAttachment) {
         pendingAttachments.removeAll { $0.id == attachment.id }
-        attachmentService.remove(attachment)
+        requestAttachmentCleanup()
     }
 
     func clearPendingAttachments() {
-        for attachment in pendingAttachments { attachmentService.remove(attachment) }
+        cancelAttachmentImports()
         pendingAttachments = []
+        requestAttachmentCleanup()
     }
 
     func exportData() async throws -> Data { try await store.exportData() }
 
     func importHistory(from url: URL) async {
         guard !isGenerating else { errorMessage = "Stop the current response before importing history."; return }
+        guard beginHistoryChange() else { return }
+        defer { finishHistoryChange() }
+        cancelAttachmentImports()
         let access = url.startAccessingSecurityScopedResource()
         defer { if access { url.stopAccessingSecurityScopedResource() } }
         do {
@@ -325,6 +428,7 @@ final class AppModel {
             try await store.importData(Data(contentsOf: url))
             conversations = try await store.list(includeArchived: true)
             memories = try await store.memories()
+            requestAttachmentCleanup()
         } catch { report(error) }
     }
 
@@ -402,6 +506,32 @@ final class AppModel {
 
     func report(_ error: Error) { errorMessage = error.localizedDescription }
 
+    private func beginHistoryChange() -> Bool {
+        guard !isChangingHistory else { errorMessage = "Wait for the current history operation to finish."; return false }
+        isChangingHistory = true
+        return true
+    }
+
+    private func finishHistoryChange() {
+        isChangingHistory = false
+        performAttachmentCleanupIfReady()
+    }
+
+    private func requestAttachmentCleanup() {
+        attachmentCleanupNeeded = true
+        performAttachmentCleanupIfReady()
+    }
+
+    private func performAttachmentCleanupIfReady() {
+        guard attachmentCleanupNeeded, attachmentImportJobs.isEmpty, !isChangingHistory else { return }
+        let attachments = conversations.flatMap(\.messages).flatMap(\.attachments) + pendingAttachments
+        let retained = attachments.reduce(into: Set<String>()) { $0.formUnion($1.localRelativePaths) }
+        do {
+            try attachmentService.removeUnreferenced(keeping: retained)
+            attachmentCleanupNeeded = false
+        } catch { report(error) }
+    }
+
     private func upsert(_ conversation: Conversation) {
         if let index = conversations.firstIndex(where: { $0.id == conversation.id }) { conversations[index] = conversation }
         else { conversations.insert(conversation, at: 0) }
@@ -418,6 +548,17 @@ final class AppModel {
         guard let conversation = conversations.first(where: { $0.id == id }) else { return }
         try await store.save(conversation)
     }
+}
+
+private struct AttachmentImportOutcome: Sendable {
+    let attachments: [ChatAttachment]
+    let errorMessage: String?
+    let wasCancelled: Bool
+}
+
+private struct AttachmentImportJob {
+    let reservedSlots: Int
+    let task: Task<AttachmentImportOutcome, Never>
 }
 
 private enum AppError: LocalizedError {

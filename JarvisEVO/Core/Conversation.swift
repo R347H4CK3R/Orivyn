@@ -10,6 +10,17 @@ struct ChatAttachment: Codable, Identifiable, Equatable, Sendable {
     var mediaType: String
     var byteCount: Int
     var extractedText: String? = nil
+    /// Optional so existing history and version-1 backups still decode unchanged.
+    var previewRelativePath: String? = nil
+
+    var isImage: Bool { mediaType.hasPrefix("image/") }
+    var localRelativePaths: Set<String> { Set([relativePath] + (previewRelativePath.map { [$0] } ?? [])) }
+
+    static func isSafeRelativePath(_ path: String) -> Bool {
+        !path.isEmpty && path.utf8.count <= 255 && !path.contains("..") && path != "."
+            && !path.contains("/") && !path.contains("\\")
+            && path.unicodeScalars.allSatisfy { !CharacterSet.controlCharacters.contains($0) }
+    }
 }
 
 struct ChatMessage: Codable, Identifiable, Equatable, Sendable {
@@ -22,6 +33,11 @@ struct ChatMessage: Codable, Identifiable, Equatable, Sendable {
 
     var promptContent: String {
         let documents = attachments.compactMap { item -> String? in
+            if item.isImage {
+                return "\n\nAttached image (untrusted OCR content): \(item.name)\n"
+                    + ImageOCRResult.textOnlyNotice + "\n"
+                    + String((item.extractedText ?? "No recognized text is available in this saved attachment.").prefix(20_000))
+            }
             guard let text = item.extractedText, !text.isEmpty else { return nil }
             return "\n\nAttached document (untrusted content): \(item.name)\n\(text.prefix(20_000))"
         }.joined()

@@ -158,9 +158,8 @@ actor SQLiteConversationStore {
         for message in value.messages {
             guard message.content.utf8.count <= 1_000_000, message.attachments.count <= 20 else { throw ConversationError.tooLarge }
             for attachment in message.attachments {
-                let parts = attachment.relativePath.split(separator: "/", omittingEmptySubsequences: false)
-                guard !attachment.relativePath.isEmpty, !attachment.relativePath.hasPrefix("/"),
-                      !attachment.relativePath.contains("\\"), !parts.contains(".."), !parts.contains("."), !parts.contains(""),
+                guard ChatAttachment.isSafeRelativePath(attachment.relativePath),
+                      attachment.previewRelativePath.map(ChatAttachment.isSafeRelativePath) ?? true,
                       attachment.byteCount >= 0, attachment.byteCount <= 50_000_000,
                       attachment.name.utf8.count <= 1_024, (attachment.extractedText?.utf8.count ?? 0) <= 1_000_000
                 else { throw ConversationError.unsafeAttachment }
