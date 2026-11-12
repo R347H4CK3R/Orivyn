@@ -49,7 +49,11 @@ def _release_content(archive, app, binary, build):
     # Numeric build 3 introduced the renderer. Keep historical build 1/2 package
     # reverification usable, while making this gate automatic in unchanged CI.
     if required:
-        for name, expected in CANDIDATE3_RESOURCES.items():
+        expected_resources = dict(CANDIDATE3_RESOURCES)
+        # Build 5 makes the runtime notice part of every app copy, not only source.
+        if int(build.split('.')[0]) >= 5:
+            expected_resources['llama.cpp-LICENSE.txt'] = '94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d'
+        for name, expected in expected_resources.items():
             try:
                 with archive.open(app + name) as stream:
                     digest = hashlib.file_digest(stream, 'sha256').hexdigest()

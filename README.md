@@ -2,6 +2,7 @@
 
 **Verified unsigned development candidate, build 4.** This candidate restores the video-inspired workspace and nine free model downloads over the independently recovered source `f4ac85877bfa707061a3c6cd902412be65cff34e`. The lost Orivyn commits were not recovered byte-for-byte. The original app identity and historical branches are preserved.
 
+- [Add the separate Orivyn SideStore source](https://raw.githubusercontent.com/R347H4CK3R/Orivyn-Distribution/main/source.json) and [installation/verification limits](docs/SIDESTORE.md). Public distribution contains only approved binary assets; source remains private.
 - [Workspace, reconstruction provenance and limits](docs/ORIVYN_WORKSPACE_RECONSTRUCTION.md)
 - [Free model catalog, licenses, integrity and memory guidance](docs/model-catalog/README.md)
 - [Owner recording inventory](docs/VIDEO_REFERENCE.md) and [suggestion flow](docs/SUGGESTIONS.md)

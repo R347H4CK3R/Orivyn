@@ -1,26 +1,31 @@
 # SideStore installation
 
-## Current development candidate
+## Current Orivyn preview
 
-A structurally verified **unsigned development candidate 2** is available. No GitHub release or catalog entry has been published. SideStore installation and refresh have not yet been tested on a physical device.
+Add this separate source in SideStore → Sources → +:
 
-- Version **0.1.0**, build **2**, bundle identifier `app.jarvisevo.ios`, ARM64, iOS **26.0+**.
-- CI artifact: `Jarvis-EVO-0.1.0-build2-unsigned.ipa`.
-- Candidate attachment name: `Jarvis-EVO-0.1.0-build2-development-candidate-unsigned.ipa`.
-- Both names refer to the same **2,457,684-byte** package.
-- SHA-256: `6b2cf99647adb9862a1d32e4664dbf6a244233a1ebde4d0ffd9e0bbe991f8ff5`.
-- Tested source: `1be1c99cb6ca1c68b5425a6cdfb0240963768b16`; [build and QA evidence](QA.md).
+https://raw.githubusercontent.com/R347H4CK3R/Orivyn-Distribution/main/source.json
 
-Use only this candidate's verified artifact when supplied as an attachment or obtained from the [recorded CI run](https://codemagic.io/app/6af4edea52f6da2271c62b79/build/6af507f3b54d2e261c61f4b7). Access to private CI artifacts may require the repository owner's account. Do not rename a source ZIP or download an unrelated Jarvis package as a substitute.
+The public [distribution-only repository](https://github.com/R347H4CK3R/Orivyn-Distribution) contains only the catalog, icon, install notes and unsigned IPA. The Orivyn source repository remains private. Jarvis Preview is a different source and was not modified.
+
+### Verified build 4 distribution package
+
+- Version **0.1.0**, build **4**, display name **Orivyn**, preserved bundle identifier `app.jarvisevo.ios`, ARM64, iOS **26.0+**.
+- [Unsigned distribution IPA](https://raw.githubusercontent.com/R347H4CK3R/Orivyn-Distribution/main/Orivyn-0.1.0-build4-distribution-unsigned.ipa).
+- Size **4,192,466 bytes**, SHA-256 `196091d0989f39a01787491efcfb7d1461bbca3a2f9d26f4d82b5bc7fa12ee7d`.
+- All four public assets were independently downloaded without authentication and compared byte-for-byte after publication.
+- This package adds the missing bundled llama.cpp MIT notice to the original verified unsigned build. Every original archive entry, including executable, framework, assets and Info.plist, is byte-identical. The original IPA is preserved separately: 4,192,549 bytes, SHA-256 `2e6084156b59d7cb0451a0bffc28cd3542264cca8416c4f508bb39ea2154be2c`.
+- [Native build and QA evidence](ORIVYN_RECONSTRUCTION_QA.md): 62 Python checks, 288 native tests and 27 UI tests passed. App source `791dc4755a0ab1039d3fd628a9480d1d4419d182` includes the real default-model download, local answer and relaunch flow.
+
+This is a **development preview**, not a fully device-accepted release. No physical-device installation or refresh has been verified. A catalog schema check and downloadable IPA do not prove SideStore installation works on a particular account/device.
 
 ## Installation procedure to validate on hardware
 
-1. Save the IPA and verify its file size and SHA-256 before importing it. On macOS, use `shasum -a 256 <filename>.ipa`; on Linux, use `sha256sum <filename>.ipa`.
-2. Install and configure SideStore using the current [official instructions](https://sidestore.io/).
-3. Import the IPA into SideStore and let SideStore sign it for your Apple account/device. The package is intentionally unsigned and cannot be installed directly.
-4. Follow SideStore's current pairing, refresh and account limits. No Apple credentials belong in this repository or diagnostic reports.
-5. Launch Jarvis-EVO on an iOS 26+ iPhone. Open Models, download the roughly **491 MB** Qwen model on Wi-Fi or import a compatible GGUF, and select it. Weights are not bundled in the IPA.
-6. Send a short prompt and confirm a completed response. Relaunch and confirm the conversation and model selection persist.
-7. Disable connectivity and repeat a local prompt. Test voice permissions/playback, stop/retry and refresh separately. Record device/OS, result and any exact error.
+1. Follow current [official SideStore instructions](https://sidestore.io/) to configure signing and pairing. Keep Apple credentials and pairing files private.
+2. Add the source above and install Orivyn, or download the IPA and import it into SideStore. The package is intentionally unsigned; SideStore must sign it for your Apple account/device.
+3. Respect SideStore's current free signing, app-ID and refresh limits. No paid billing or Apple enrollment is enabled by this project.
+4. Open Orivyn on an iOS 26+ iPhone. In Models, start with the approximately **491 MB** Qwen2.5 0.5B model on Wi-Fi. Nine official free download options are available, but larger models need more RAM/storage. Weights are not bundled in the IPA.
+5. Send a short prompt and confirm a completed response. Relaunch and confirm the conversation and model selection persist.
+6. Disable connectivity and repeat a local prompt. Test microphone/speech permissions, playback, stop/retry and SideStore refresh separately. Record device/OS, result and exact errors, never credentials.
 
-The target is iPhone 16 Plus and iOS 26+. Free Apple signing and SideStore provisioning limits can change. A simulator pass and valid ARM64 package do not verify installation, device offline behavior, hardware voice or LiveContainer compatibility. Treat this candidate as evaluation software until those gates pass.
+The target is iPhone 16 Plus and iOS 26+. A simulator pass and valid ARM64 package do not verify memory/thermal behavior, hardware voice or LiveContainer compatibility. Build 4 has no cross-app incoming-text staging, local reminders or external account integrations; work on a later candidate does not change this published package.
