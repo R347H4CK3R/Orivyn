@@ -312,6 +312,61 @@ final class VoiceServiceTests: XCTestCase {
         try? await Task.sleep(for: .milliseconds(30))
     }
 
+    func testSyntheticMediaResetRecreatesResourcesAndRetiresOldPlaybackIdentity() async throws {
+        let resources = TrackedResetResources()
+        let session = TrackedVoiceSession()
+        let voice = VoiceService(audioSession: session.boundary, resources: resources.boundary)
+        defer { voice.onInterruption = nil; voice.stopSpeaking() }
+        try voice.speak("Before reset")
+        let oldPlayback = try XCTUnwrap(resources.playbacks.first)
+        let oldUtterance = try XCTUnwrap(oldPlayback.utterances.last)
+        let retiredDelegate = try XCTUnwrap(oldPlayback.delegate)
+        var notified = false
+        voice.onInterruption = {
+            XCTAssertEqual(resources.engineCreations, 2)
+            XCTAssertEqual(resources.playbacks.count, 2)
+            XCTAssertFalse(voice.isSpeaking)
+            notified = true
+        }
+        let activations = session.activations
+        NotificationCenter.default.post(name: AVAudioSession.mediaServicesWereResetNotification, object: nil)
+        try await waitFor { notified }
+        XCTAssertNil(oldPlayback.delegate)
+        XCTAssertEqual(session.activations, activations, "Reset must not activate audio automatically")
+        let newPlayback = try XCTUnwrap(resources.playbacks.last)
+        XCTAssertFalse(newPlayback === oldPlayback)
+        XCTAssertTrue(newPlayback.utterances.isEmpty)
+        try voice.speak("Explicit restart")
+        XCTAssertEqual(newPlayback.utterances.last?.speechString, "Explicit restart")
+        retiredDelegate.speechSynthesizer?(AVSpeechSynthesizer(), didCancel: oldUtterance)
+        await drainVoiceCallbacks()
+        XCTAssertTrue(voice.isSpeaking)
+        newPlayback.finish(try XCTUnwrap(newPlayback.utterances.last))
+        try await waitFor { !voice.isSpeaking }
+    }
+
+    func testSyntheticMediaResetDoesNotResumePermissionAttemptOrStartAnotherOne() async throws {
+        let pending = PendingSpeechPermission()
+        let resources = TrackedResetResources()
+        let voice = VoiceService(permissions: VoicePermissions(requestSpeech: { await pending.request() }, requestMicrophone: { false }),
+                                 resources: resources.boundary)
+        defer { voice.stopRecording(); pending.resolveAll(.denied) }
+        let first = Task { try await voice.startRecording() }
+        try await waitFor { pending.count == 1 }
+        NotificationCenter.default.post(name: AVAudioSession.mediaServicesWereResetNotification, object: nil)
+        try await waitFor { resources.engineCreations == 2 }
+        XCTAssertFalse(voice.isStarting)
+        XCTAssertEqual(pending.count, 1)
+        pending.resolveFirst(.authorized)
+        try await first.value
+        XCTAssertFalse(voice.isRecording)
+        let explicitRetry = Task { try await voice.startRecording() }
+        try await waitFor { pending.count == 1 }
+        voice.stopRecording()
+        pending.resolveFirst(.denied)
+        try await explicitRetry.value
+    }
+
     private func waitingVoice(_ pending: PendingSpeechPermission) -> VoiceService {
         VoiceService(permissions: VoicePermissions(requestSpeech: { await pending.request() }, requestMicrophone: { false }))
     }
@@ -399,5 +454,23 @@ private final class TrackedVoiceSession {
             self.activations += 1
             if self.failActivation { throw VoiceWaitError.timeout }
         }, deactivate: { self.deactivations += 1 })
+    }
+}
+
+/// Factories observe real resource reconstruction, not a physical media reset.
+/// Synthesized audio is controlled; the real AVAudioEngine is never started.
+@MainActor
+private final class TrackedResetResources {
+    var engineCreations = 0
+    var playbacks: [ControlledSpeechPlayback] = []
+    var boundary: VoiceAudioResources {
+        VoiceAudioResources(makeEngine: {
+            self.engineCreations += 1
+            return AVAudioEngine()
+        }, makePlayback: {
+            let playback = ControlledSpeechPlayback()
+            self.playbacks.append(playback)
+            return playback
+        })
     }
 }

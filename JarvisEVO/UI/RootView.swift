@@ -1,5 +1,7 @@
 import SwiftUI
 import UniformTypeIdentifiers
+import PhotosUI
+import AVFoundation
 
 struct RootView: View {
     @Bindable var model: AppModel
@@ -7,11 +9,22 @@ struct RootView: View {
     @State private var showHistory = false
     @State private var showModels = false
     @State private var showSettings = false
-    @State private var showAttachmentImporter = false
     @State private var editingMessage: ChatMessage?
     @State private var selectingText: ChatMessage?
     @State private var copied = false
     @State private var dictationPrefix = ""
+    @State private var dictationTask: Task<Void, Never>?
+    @State private var dictationID: UUID?
+    @State private var voiceSession: VoiceConversationSession?
+    @State private var offersPrivacySettings = false
+    @State private var pickerRequest: AttachmentPickerRequest?
+    @State private var pickerOwnership = AttachmentPickerOwnership()
+    @State private var transferTask: Task<Void, Never>?
+    @State private var transferID: UUID?
+    @State private var previewAttachment: ChatAttachment?
+    @State private var followsTranscript = true
+    @State private var userIsScrolling = false
+    @State private var transcriptNearBottom = true
     @FocusState private var composerFocused: Bool
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -65,20 +78,66 @@ struct RootView: View {
                     .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { selectingText = nil } } }
             }
         }
-        .fileImporter(isPresented: $showAttachmentImporter, allowedContentTypes: [.pdf, .plainText, .json, .sourceCode], allowsMultipleSelection: true) { result in
-            switch result {
-            case .success(let urls): Task { await model.addAttachments(from: urls) }
-            case .failure(let error): model.report(error)
+        .sheet(item: $pickerRequest) { request in
+            switch request.kind {
+            case .files:
+                FileAttachmentPicker { result in
+                    let accepted = pickerOwnership.consume(request, currentContext: model.attachmentImportContext)
+                    finishPicker(request)
+                    guard accepted else { return }
+                    switch result {
+                    case .success(let urls): Task { await model.addAttachments(from: urls, context: request.context) }
+                    case .failure(let error): model.report(error)
+                    }
+                }
+            case .photos:
+                PhotoAttachmentPicker(selectionLimit: request.limit) { providers in
+                    let accepted = pickerOwnership.consume(request, currentContext: model.attachmentImportContext)
+                    finishPicker(request)
+                    if accepted { importPhotos(providers, context: request.context) }
+                }
+            case .camera:
+                CameraAttachmentPicker { result in
+                    let accepted = pickerOwnership.consume(request, currentContext: model.attachmentImportContext)
+                    finishPicker(request)
+                    guard accepted else { return }
+                    switch result {
+                    case .success(let data):
+                        if let data { Task { await model.addImageAttachment(data: data, suggestedName: "Camera photo.jpg", context: request.context) } }
+                    case .failure(let error): model.report(error)
+                    }
+                }.ignoresSafeArea()
             }
         }
+        .onChange(of: pickerRequest?.id) { oldID, newID in
+            if let oldID, newID == nil { pickerOwnership.cancel(id: oldID) }
+        }
+        .sheet(item: $previewAttachment) { attachment in
+            AttachmentPreviewView(attachment: attachment, originalURL: model.attachmentService.url(for: attachment), previewURL: model.attachmentService.previewURL(for: attachment))
+        }
         .alert("Jarvis-EVO", isPresented: Binding(get: { model.errorMessage != nil }, set: { if !$0 { model.errorMessage = nil } })) {
-            Button("OK") { model.errorMessage = nil }
+            Button("OK") { model.errorMessage = nil; offersPrivacySettings = false }
+            if offersPrivacySettings {
+                Button("App Settings") {
+                    if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) }
+                    offersPrivacySettings = false
+                }
+            }
         } message: { Text(model.errorMessage ?? "") }
         .overlay(alignment: .top) {
             if copied { Text("Copied").font(.caption.weight(.medium)).padding(.horizontal, 14).padding(.vertical, 9).background(.regularMaterial, in: Capsule()).padding(.top, 6).transition(.opacity) }
         }
-        .onChange(of: scenePhase) { _, phase in if phase != .active { voice.stopRecording() } }
-        .onChange(of: model.selectedConversationID) { _, _ in voice.stopRecording() }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .background { voiceSession?.controller.setForeground(false); stopAudio(); cancelTransfers() }
+            else if phase == .active { voiceSession?.controller.setForeground(true) }
+        }
+        .onChange(of: model.selectedConversationID) { oldID, newID in
+            let ownVoiceSelection = voiceSession?.selectionChanged(from: oldID, to: newID) == true
+            if !ownVoiceSelection { voice.stopRecording(); voice.stopSpeaking(); cancelTransfers() }
+            followsTranscript = true
+        }
+        .onChange(of: model.selectedProviderID) { _, _ in stopAudio() }
+        .onDisappear { stopAudio(); cancelTransfers() }
     }
 
     private var conversation: some View {
@@ -96,7 +155,7 @@ struct RootView: View {
                         .accessibilityLabel("Conversation history").accessibilityIdentifier("history.open")
                 }
                 ToolbarItem(placement: .principal) {
-                    Button { composerFocused = false; showModels = true } label: {
+                    Button { prepareNavigation(); showModels = true } label: {
                         HStack(spacing: 5) {
                             Text("Jarvis-EVO").font(.system(.headline, design: .default)).lineLimit(1)
                             Image(systemName: "chevron.down").font(.system(size: 10, weight: .semibold)).foregroundStyle(.secondary)
@@ -105,11 +164,13 @@ struct RootView: View {
                     .buttonStyle(.plain).accessibilityLabel("Choose model").accessibilityIdentifier("model.choose")
                 }
                 ToolbarItemGroup(placement: .topBarTrailing) {
-                    Button { composerFocused = false; Task { await model.newConversation() } } label: { Image(systemName: "square.and.pencil") }
+                    Button { prepareNavigation(); Task { await model.newConversation() } } label: { Image(systemName: "square.and.pencil") }
                         .accessibilityLabel("New conversation").accessibilityIdentifier("conversation.new")
                     Menu {
-                        Button { composerFocused = false; showModels = true } label: { Label("Models", systemImage: "cpu") }
-                        Button { composerFocused = false; showSettings = true } label: { Label("Settings", systemImage: "gearshape") }
+                        Button("Voice conversation", systemImage: "waveform") { startVoiceConversation() }
+                            .accessibilityIdentifier("voice.start")
+                        Button { prepareNavigation(); showModels = true } label: { Label("Models", systemImage: "cpu") }
+                        Button { prepareNavigation(); showSettings = true } label: { Label("Settings", systemImage: "gearshape") }
                             .accessibilityIdentifier("settings.open")
                     } label: { Image(systemName: "ellipsis") }
                     .accessibilityLabel("More options").accessibilityIdentifier("toolbar.more")
@@ -173,12 +234,13 @@ struct RootView: View {
                     ForEach(model.activeConversation?.messages ?? []) { message in
                         MessageRow(message: message, isGenerating: model.isGenerating, isSpeaking: voice.isSpeaking,
                                    attachmentURL: { model.attachmentService.url(for: $0) },
+                                   attachmentPreviewURL: { model.attachmentService.previewURL(for: $0) },
                                    onCopy: { copy(message.content) },
-                                   onReadAloud: { if voice.isSpeaking { voice.stopSpeaking() } else { do { try voice.speak(message.content) } catch { model.report(error) } } },
+                                   onReadAloud: { readAloud(message.content) },
                                    onSelect: { selectingText = message },
-                                   onEdit: { editingMessage = message },
-                                   onBranch: { Task { await model.branch(through: message.id) } },
-                                   onRegenerate: { Task { await model.regenerate(messageID: message.id) } })
+                                   onEdit: { stopAudio(); editingMessage = message },
+                                   onBranch: { stopAudio(); Task { await model.branch(through: message.id) } },
+                                   onRegenerate: { stopAudio(); followsTranscript = true; Task { await model.regenerate(messageID: message.id) } })
                         .id(message.id)
                     }
                     Color.clear.frame(height: 1).id("conversation.bottom")
@@ -186,12 +248,33 @@ struct RootView: View {
                 .padding(.horizontal, 20).padding(.top, 22).padding(.bottom, 14)
                 .frame(maxWidth: 740).frame(maxWidth: .infinity)
             }
-            .defaultScrollAnchor(.bottom)
+            .defaultScrollAnchor(.bottom, for: .initialOffset)
+            .defaultScrollAnchor(.top, for: .alignment)
             .scrollDismissesKeyboard(.interactively)
-            .onChange(of: model.activeConversation?.messages.count) { _, _ in
-                withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) { proxy.scrollTo("conversation.bottom", anchor: .bottom) }
+            .onScrollPhaseChange { _, phase in
+                userIsScrolling = phase == .interacting || phase == .decelerating
+                if userIsScrolling { followsTranscript = transcriptNearBottom }
+                else if phase == .idle { followsTranscript = transcriptNearBottom }
             }
-            .onChange(of: model.selectedConversationID) { _, _ in proxy.scrollTo("conversation.bottom", anchor: .bottom) }
+            .onScrollGeometryChange(for: TranscriptGeometry.self) { geometry in
+                TranscriptGeometry(height: geometry.contentSize.height, viewport: geometry.containerSize.height,
+                                   bottomGap: geometry.contentSize.height - geometry.contentOffset.y - geometry.containerSize.height)
+            } action: { old, new in
+                transcriptNearBottom = new.bottomGap < 80
+                if userIsScrolling { followsTranscript = transcriptNearBottom }
+                else if followsTranscript && new.height > new.viewport && new.height > old.height {
+                    proxy.scrollTo("conversation.bottom", anchor: .bottom)
+                }
+            }
+            .overlay(alignment: .bottomTrailing) {
+                if !transcriptNearBottom {
+                    Button {
+                        followsTranscript = true
+                        withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) { proxy.scrollTo("conversation.bottom", anchor: .bottom) }
+                    } label: { Image(systemName: "arrow.down").frame(width: 44, height: 44).background(.regularMaterial, in: Circle()) }
+                        .accessibilityLabel("Jump to latest message").accessibilityIdentifier("conversation.latest").padding()
+                }
+            }
         }
     }
 
@@ -207,33 +290,49 @@ struct RootView: View {
             if model.isGenerating && model.generatingConversationID != model.selectedConversationID {
                 Text("A response is running in another conversation.").font(.caption).foregroundStyle(.secondary)
             }
-            if voice.isRecording {
+            if let controller = voiceSession?.controller, controller.isActive || controller.state == .failed {
+                voiceConversationControls(controller)
+            } else if voice.isRecording || voice.isStarting || voice.isFinishing {
                 HStack {
-                    Image(systemName: "waveform")
-                    Text("Listening on this iPhone…")
+                    if voice.isStarting || voice.isFinishing { ProgressView().controlSize(.mini) }
+                    Text(voice.isStarting ? "Requesting microphone…" : voice.isFinishing ? "Finishing dictation…" : "Listening on this iPhone…")
                     Spacer()
-                    Button("Done") { voice.stopRecording() }
+                    if voice.isRecording { Button("Done") { voice.finishRecording() }.accessibilityIdentifier("dictation.done") }
+                    Button("Cancel") { stopAudio() }.accessibilityIdentifier("dictation.cancel")
                 }.font(.caption).padding(.horizontal, 24)
+            }
+            if attachmentsBusy {
+                HStack {
+                    ProgressView().controlSize(.mini)
+                    Text("Importing and recognizing text…")
+                    Spacer()
+                    Button("Cancel") { cancelTransfers() }.accessibilityIdentifier("attachment.import.cancel")
+                }.font(.caption).padding(.horizontal, 24).accessibilityIdentifier("attachment.import.progress")
             }
             if !model.pendingAttachments.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
                         ForEach(model.pendingAttachments) { attachment in
-                            HStack(spacing: 7) {
-                                Image(systemName: "doc.text")
-                                Text(attachment.name).lineLimit(1).frame(maxWidth: 180)
-                                Button { model.removePendingAttachment(attachment) } label: { Image(systemName: "xmark.circle.fill") }.accessibilityLabel("Remove \(attachment.name)")
-                            }.font(.caption).padding(10).background(Color.evoSurface, in: RoundedRectangle(cornerRadius: 14))
+                            AttachmentTile(attachment: attachment, previewURL: model.attachmentService.previewURL(for: attachment),
+                                           open: { previewAttachment = attachment }, remove: { model.removePendingAttachment(attachment) })
                         }
                     }.padding(.horizontal, 24)
                 }
             }
             HStack(alignment: .bottom, spacing: 0) {
-                Button { composerFocused = false; showAttachmentImporter = true } label: {
+                Menu {
+                    Button("Choose files", systemImage: "folder") { prepareAttachmentPicker(.files) }
+                        .accessibilityIdentifier("attachment.files")
+                    Button("Choose photos", systemImage: "photo") { prepareAttachmentPicker(.photos) }
+                        .accessibilityIdentifier("attachment.photos")
+                    if UIImagePickerController.isSourceTypeAvailable(.camera) {
+                        Button("Take photo", systemImage: "camera") { openCamera() }.accessibilityIdentifier("attachment.camera")
+                    }
+                } label: {
                     Image(systemName: "plus").font(.system(size: 22, weight: .regular)).frame(width: 44, height: 44)
                 }
-                .accessibilityLabel("Attach PDF or text file").accessibilityIdentifier("composer.attach")
-                .disabled(model.pendingAttachments.count >= 4)
+                .accessibilityLabel("Attach files or photos").accessibilityIdentifier("composer.attach")
+                .disabled(model.availableAttachmentSlots == 0 || attachmentsBusy || audioBusy)
                 ZStack(alignment: .topLeading) {
                     if model.draft.isEmpty {
                         Text("Ask Jarvis-EVO").font(.body).foregroundStyle(.secondary)
@@ -243,23 +342,29 @@ struct RootView: View {
                         .font(.body).scrollContentBackground(.hidden)
                         .frame(height: composerHeight)
                         .focused($composerFocused)
+                        .disabled(audioBusy)
                         .accessibilityLabel("Message Jarvis-EVO").accessibilityIdentifier("composer.input")
                 }
                 Button { toggleDictation() } label: {
                     Image(systemName: voice.isRecording ? "mic.fill" : "mic").font(.system(size: 20)).frame(width: 44, height: 44)
                 }
-                .accessibilityLabel(voice.isRecording ? "Stop dictation" : "Dictate message")
-                .accessibilityIdentifier("composer.dictate").disabled(voice.isStarting)
+                .accessibilityLabel(voice.isRecording ? "Finish dictation" : "Dictate message")
+                .accessibilityIdentifier("composer.dictate").disabled(voice.isStarting || voice.isFinishing || voiceSession?.controller.isActive == true || attachmentsBusy)
                 if model.isGenerating {
-                    Button { model.stop() } label: {
+                    Button { if voiceSession?.controller.isActive == true { voiceSession?.stop() } else { model.stop() } } label: {
                         Image(systemName: "stop.fill").font(.system(size: 13)).foregroundStyle(Color(uiColor: .systemBackground))
                             .frame(width: 32, height: 32).background(Color.primary, in: Circle()).frame(width: 44, height: 44)
                     }.accessibilityLabel("Stop response").accessibilityIdentifier("composer.stop")
+                } else if model.draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && model.pendingAttachments.isEmpty {
+                    Button { startVoiceConversation() } label: {
+                        Image(systemName: "waveform").font(.system(size: 16, weight: .semibold)).foregroundStyle(Color(uiColor: .systemBackground))
+                            .frame(width: 32, height: 32).background(Color.primary, in: Circle()).frame(width: 44, height: 44)
+                    }.accessibilityLabel("Start voice conversation").accessibilityIdentifier("composer.voice").disabled(audioBusy || attachmentsBusy)
                 } else {
-                    Button { voice.stopRecording(); model.send(); composerFocused = false } label: {
+                    Button { stopAudio(); followsTranscript = true; model.send(); composerFocused = false } label: {
                         Image(systemName: "arrow.up").font(.system(size: 17, weight: .semibold)).foregroundStyle(Color(uiColor: .systemBackground))
                             .frame(width: 32, height: 32).background(model.canSend ? Color.primary : Color.secondary.opacity(0.25), in: Circle()).frame(width: 44, height: 44)
-                    }.disabled(!model.canSend).accessibilityLabel("Send message").accessibilityIdentifier("composer.send")
+                    }.disabled(!model.canSend || audioBusy || attachmentsBusy).accessibilityLabel("Send message").accessibilityIdentifier("composer.send")
                 }
             }
             .buttonStyle(.plain)
@@ -284,15 +389,144 @@ struct RootView: View {
         return min(150, max(40, CGFloat(lines) * inputLineHeight + 16))
     }
 
-    private func openHistory() { composerFocused = false; showHistory = true }
+    private var attachmentsBusy: Bool { transferID != nil || model.isImportingAttachments }
+    private var audioBusy: Bool { voice.isStarting || voice.isRecording || voice.isFinishing || voiceSession?.controller.isActive == true }
+
+    private func prepareNavigation() { composerFocused = false; stopAudio(); cancelTransfers() }
+    private func openHistory() { prepareNavigation(); showHistory = true }
     private func closeHistory() { showHistory = false }
 
+    private func stopAudio() {
+        dictationTask?.cancel()
+        dictationTask = nil
+        dictationID = nil
+        voiceSession?.stop()
+        voice.stopRecording()
+        voice.stopSpeaking()
+    }
+
+    private func startVoiceConversation() {
+        guard !attachmentsBusy, model.pendingAttachments.isEmpty else {
+            model.errorMessage = "Voice conversation cannot send pending files. Your files are kept. Send or remove them, and finish or cancel importing, before starting voice."
+            return
+        }
+        stopAudio()
+        composerFocused = false
+        followsTranscript = true
+        let session = VoiceConversationSession(model: model, audio: voice)
+        session.controller.onError = { message in offersPrivacySettings = true; model.errorMessage = message }
+        voiceSession = session
+        do { try session.start() }
+        catch { model.report(error) }
+    }
+
     private func toggleDictation() {
-        if voice.isRecording { voice.stopRecording(); return }
+        if voice.isRecording { voice.finishRecording(); return }
+        guard !voice.isStarting, !voice.isFinishing else { return }
+        stopAudio()
         dictationPrefix = model.draft.isEmpty ? "" : model.draft + " "
         voice.onTranscript = { text in model.draft = dictationPrefix + text }
-        voice.onError = { model.errorMessage = $0 }
-        Task { do { try await voice.startRecording() } catch { model.report(error) } }
+        voice.onFinalTranscript = { text in model.draft = dictationPrefix + text }
+        voice.onError = { offersPrivacySettings = true; model.errorMessage = $0 }
+        voice.onInterruption = { model.errorMessage = "Dictation was interrupted. Your draft is kept." }
+        let id = UUID()
+        dictationID = id
+        dictationTask = Task { @MainActor in
+            guard !Task.isCancelled, dictationID == id else { return }
+            defer { if dictationID == id { dictationTask = nil } }
+            do { try await voice.startRecording() }
+            catch { if !Task.isCancelled, dictationID == id { offersPrivacySettings = true; model.report(error) } }
+        }
+    }
+
+    private func readAloud(_ text: String) {
+        let wasSpeaking = voice.isSpeaking
+        stopAudio()
+        if !wasSpeaking { do { try voice.speak(text) } catch { model.report(error) } }
+    }
+
+    private func prepareAttachmentPicker(_ kind: AttachmentPickerRequest.Kind) {
+        stopAudio()
+        composerFocused = false
+        let request = AttachmentPickerRequest(context: model.attachmentImportContext, kind: kind, limit: max(1, model.availableAttachmentSlots))
+        pickerOwnership.open(request)
+        pickerRequest = request
+    }
+
+    private func finishPicker(_ request: AttachmentPickerRequest) {
+        if pickerRequest?.id == request.id { pickerRequest = nil }
+    }
+
+    private func openCamera() {
+        let authorization = AVCaptureDevice.authorizationStatus(for: .video)
+        guard authorization != .denied && authorization != .restricted else {
+            offersPrivacySettings = true
+            model.errorMessage = "Camera access is unavailable. You can choose a photo or enable camera access in App Settings."
+            return
+        }
+        prepareAttachmentPicker(.camera)
+    }
+
+    private func importPhotos(_ providers: [NSItemProvider], context: UUID) {
+        guard !providers.isEmpty, context == model.attachmentImportContext else { return }
+        transferTask?.cancel()
+        let id = UUID()
+        transferID = id
+        transferTask = Task { @MainActor in
+            defer { if transferID == id { transferID = nil; transferTask = nil } }
+            do {
+                for provider in providers {
+                    try Task.checkCancellation()
+                    guard transferID == id, context == model.attachmentImportContext else { return }
+                    let image = try await PickedImage.load(from: provider)
+                    try Task.checkCancellation()
+                    guard transferID == id, context == model.attachmentImportContext else { return }
+                    await model.addImageAttachment(data: image.data, suggestedName: image.name, context: context)
+                }
+            } catch is CancellationError { }
+            catch { if transferID == id && context == model.attachmentImportContext { model.report(error) } }
+        }
+    }
+
+    private func cancelTransfers() {
+        transferTask?.cancel()
+        transferTask = nil
+        transferID = nil
+        if let request = pickerRequest { pickerOwnership.cancel(id: request.id) }
+        pickerRequest = nil
+        model.cancelAttachmentImports()
+    }
+
+    @ViewBuilder private func voiceConversationControls(_ controller: VoiceConversationController) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                if controller.state == .requestingPermission || controller.state == .finishing || controller.state == .awaitingResponse {
+                    ProgressView().controlSize(.mini)
+                } else { Image(systemName: controller.state == .speaking ? "speaker.wave.2" : "waveform") }
+                Text(voiceStatus(controller.state)).font(.subheadline.weight(.medium))
+                Spacer()
+                Button("End") { voiceSession?.stop() }.accessibilityIdentifier("voice.end")
+            }
+            if controller.state == .listening {
+                Button("Send spoken turn") { controller.finishTurn() }.accessibilityIdentifier("voice.finish")
+            } else if controller.state == .speaking || controller.state == .awaitingResponse {
+                Button("Interrupt and speak") { controller.interruptAndListen() }.accessibilityIdentifier("voice.interrupt")
+            }
+            Text("Foreground only. Speech is transcribed on this iPhone. Tap to interrupt; the microphone is off during playback.")
+                .font(.caption).foregroundStyle(.secondary)
+        }.padding(.horizontal, 24).accessibilityIdentifier("voice.status")
+    }
+
+    private func voiceStatus(_ state: VoiceConversationController.State) -> String {
+        switch state {
+        case .idle: "Voice stopped"
+        case .requestingPermission: "Preparing microphone…"
+        case .listening: "Listening…"
+        case .finishing: "Finishing your words…"
+        case .awaitingResponse: "Waiting for the model…"
+        case .speaking: "Speaking…"
+        case .failed: "Voice stopped. Your draft is kept."
+        }
     }
 
     private func copy(_ text: String) {
@@ -302,12 +536,26 @@ struct RootView: View {
     }
 }
 
-/// Original two-stroke navigation glyph, not a copied brand asset.
-private struct EvoMenuGlyph: View {
-    var body: some View {
-        VStack(alignment: .leading, spacing: 5) {
-            Capsule().frame(width: 18, height: 1.7)
-            Capsule().frame(width: 11, height: 1.7)
-        }.frame(maxWidth: .infinity, maxHeight: .infinity)
+private struct TranscriptGeometry: Equatable {
+    let height: CGFloat
+    let viewport: CGFloat
+    let bottomGap: CGFloat
+}
+
+/// Drawn locally as an original-color image so toolbar template tint does not
+/// turn these custom strokes into low-contrast material decoration.
+struct EvoMenuGlyph: View {
+    @Environment(\.colorScheme) private var scheme
+    var body: some View { Image(uiImage: Self.image(dark: scheme == .dark)).renderingMode(.original) }
+    static func image(dark: Bool) -> UIImage {
+        UIGraphicsImageRenderer(size: CGSize(width: 21, height: 21)).image { context in
+            let cg = context.cgContext
+            cg.setStrokeColor((dark ? UIColor.white : UIColor.black).cgColor)
+            cg.setLineWidth(1.7)
+            cg.setLineCap(.round)
+            cg.move(to: CGPoint(x: 2, y: 7)); cg.addLine(to: CGPoint(x: 19, y: 7))
+            cg.move(to: CGPoint(x: 2, y: 14)); cg.addLine(to: CGPoint(x: 12, y: 14))
+            cg.strokePath()
+        }
     }
 }

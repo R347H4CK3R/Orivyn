@@ -7,19 +7,15 @@
 	<key>CFBundleShortVersionString</key>
 	<string>0.1.0</string>
 	<key>CFBundleVersion</key>
-	<string>2</string>
+	<string>3</string>
 	<key>UILaunchScreen</key>
 	<dict/>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Jarvis-EVO uses the microphone only when you start dictation.</string>
+	<string>Jarvis-EVO uses the microphone only when you start dictation or a voice conversation.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>Jarvis-EVO transcribes speech when you enable dictation.</string>
+	<string>Jarvis-EVO transcribes your speech on this iPhone when you start dictation or voice conversation.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>Attach a photo to your conversation.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Attach selected photos to your conversation.</string>
-	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>Save generated or attached images when you choose to.</string>
+	<string>Take a photo to attach and recognize its text on this iPhone.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

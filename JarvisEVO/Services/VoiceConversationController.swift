@@ -55,6 +55,7 @@ final class VoiceConversationController {
     private var operation: Task<Void, Never>?
     private var sessionID: UUID?
     private var turnID: UUID?
+    private var lifecycleRevision = UUID()
     private var prefix = ""
 
     init(voice: any VoiceConversationAudio,
@@ -71,6 +72,7 @@ final class VoiceConversationController {
     /// turn's prefix, but is never sent if recognition returns no new speech.
     func start(draft: String = "") {
         guard isForeground, !isActive else { return }
+        lifecycleRevision = UUID()
         self.draft = draft
         errorMessage = nil
         let session = UUID()
@@ -80,17 +82,27 @@ final class VoiceConversationController {
 
     /// Stops the microphone, queued synthesis and this turn's generation. Keeps
     /// an unfinished transcript for review; an old callback cannot resume a loop.
-    func stop() {
-        let wasAwaiting = state == .awaitingResponse
+    func stop() { _ = terminateSession(state: .idle) }
+
+    /// Commit terminal ownership before any injected callback. Nested Stop sees
+    /// an already terminated operation; a callback-created session owns its state.
+    @discardableResult
+    private func terminateSession(state terminal: State, error: String? = nil) -> UUID {
+        let wasAwaiting = isActive && state == .awaitingResponse
+        let transition = UUID()
+        lifecycleRevision = transition
         sessionID = nil
         turnID = nil
         operation?.cancel()
         operation = nil
+        state = terminal
+        if let error { errorMessage = error }
         clearVoiceCallbacks()
         voice.stopRecording()
         voice.stopSpeaking()
         if wasAwaiting { cancelResponse() }
-        state = .idle
+        if let error, lifecycleRevision == transition { onError?(error) }
+        return transition
     }
 
     func setForeground(_ foreground: Bool) {
@@ -108,19 +120,14 @@ final class VoiceConversationController {
     /// Push-to-interrupt. This is not acoustic barge-in: the microphone stays off
     /// while the app speaks, avoiding capture of its own synthesized response.
     func interruptAndListen() {
-        guard isForeground, let session = sessionID,
+        guard isForeground, isActive,
               state == .speaking || state == .awaitingResponse else { return }
-        let wasAwaiting = state == .awaitingResponse
-        turnID = nil
-        operation?.cancel()
-        operation = nil
-        clearVoiceCallbacks()
-        voice.stopRecording()
-        voice.stopSpeaking()
-        if wasAwaiting { cancelResponse() }
+        let transition = terminateSession(state: .idle)
+        guard lifecycleRevision == transition, isForeground, !isActive else { return }
         draft = ""
         onDraftChanged?(draft)
-        beginListening(session: session, prefix: "")
+        guard lifecycleRevision == transition, isForeground, !isActive else { return }
+        start()
     }
 
     private func beginListening(session: UUID, prefix: String) {
@@ -228,10 +235,7 @@ final class VoiceConversationController {
     }
 
     private func fail(_ message: String) {
-        stop()
-        errorMessage = message
-        state = .failed
-        onError?(message)
+        _ = terminateSession(state: .failed, error: message)
     }
 
     private func clearVoiceCallbacks() {

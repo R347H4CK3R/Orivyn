@@ -22,7 +22,14 @@ final class JarvisEVOUITests: XCTestCase {
     // Regression: an empty composer must not create an empty saved message.
     func testEmptyComposerCannotSend() {
         XCTAssertTrue(app.textViews["composer.input"].waitForExistence(timeout: 10))
-        XCTAssertFalse(app.buttons["composer.send"].isEnabled)
+        XCTAssertFalse(app.buttons["composer.send"].exists)
+        XCTAssertTrue(app.buttons["composer.voice"].isEnabled)
+        app.buttons["composer.voice"].tap()
+        let error = app.alerts.firstMatch
+        XCTAssertTrue(error.waitForExistence(timeout: 5), "Without an installed model, voice must fail preflight before requesting the microphone.")
+        XCTAssertFalse(app.descendants(matching: .any).matching(identifier: "assistant.response").firstMatch.exists)
+        error.buttons["OK"].tap()
+        XCTAssertEqual(app.textViews["composer.input"].value as? String, "")
     }
 
     // Regression: selecting a suggestion must populate the real editable composer.
@@ -94,6 +101,7 @@ final class JarvisEVOUITests: XCTestCase {
         composer.typeText("Attach a document later")
         for _ in 0..<2 {
             app.buttons["composer.attach"].tap()
+            app.buttons["attachment.files"].tap()
             let cancel = app.buttons["Cancel"].firstMatch
             XCTAssertTrue(cancel.waitForExistence(timeout: 10))
             cancel.tap()

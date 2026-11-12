@@ -355,6 +355,131 @@ final class VoiceConversationControllerTests: XCTestCase {
         XCTAssertEqual(controller.draft, "Existing unsent draft")
     }
 
+    func testReentrantStopFromCancellationDoesNotCancelRecursively() async throws {
+        let audio = ControlledConversationAudio()
+        let response = PendingVoiceResponse()
+        var controller: VoiceConversationController!
+        var cancellations = 0
+        controller = VoiceConversationController(voice: audio, sendText: { try await response.send($0) }, cancelResponse: {
+            cancellations += 1
+            if cancellations == 1 { controller.stop() }
+        })
+        controller.start()
+        try await waitFor { controller.state == .listening }
+        audio.onFinalTranscript?("Question")
+        try await waitFor { response.inputs.count == 1 }
+        controller.stop()
+        XCTAssertEqual(cancellations, 1)
+        XCTAssertEqual(controller.state, .idle)
+        XCTAssertFalse(controller.isActive)
+        response.resolveFirst(.success("Late answer"))
+        await drain()
+        controller = nil
+    }
+
+    func testCancellationCallbackCanStartReplacementWithoutOldStopOverwritingIt() async throws {
+        let audio = ControlledConversationAudio()
+        let response = PendingVoiceResponse()
+        var controller: VoiceConversationController!
+        controller = VoiceConversationController(voice: audio, sendText: { try await response.send($0) }, cancelResponse: {
+            controller.start(draft: "Replacement")
+        })
+        controller.start()
+        try await waitFor { controller.state == .listening }
+        audio.onFinalTranscript?("Question")
+        try await waitFor { response.inputs.count == 1 }
+        controller.stop()
+        try await waitFor { controller.state == .listening }
+        XCTAssertEqual(controller.draft, "Replacement")
+        XCTAssertEqual(audio.starts, 2)
+        response.resolveFirst(.success("Late answer"))
+        controller.stop()
+        await drain()
+        controller = nil
+    }
+
+    func testFailureCancellationCallbackCannotOverwriteReplacementWithFailedState() async throws {
+        let audio = ControlledConversationAudio()
+        let response = PendingVoiceResponse()
+        var controller: VoiceConversationController!
+        controller = VoiceConversationController(voice: audio, sendText: { try await response.send($0) }, cancelResponse: {
+            controller.start(draft: "Replacement")
+        })
+        controller.start()
+        try await waitFor { controller.state == .listening }
+        audio.onFinalTranscript?("Question")
+        try await waitFor { response.inputs.count == 1 }
+        audio.onError?("Old operation failed")
+        try await waitFor { controller.state == .listening }
+        XCTAssertNil(controller.errorMessage)
+        XCTAssertEqual(controller.draft, "Replacement")
+        response.resolveFirst(.success("Late answer"))
+        controller.stop()
+        await drain()
+        controller = nil
+    }
+
+    func testInterruptDoesNotClearSessionStartedByCancellationCallback() async throws {
+        let audio = ControlledConversationAudio()
+        let response = PendingVoiceResponse()
+        var controller: VoiceConversationController!
+        controller = VoiceConversationController(voice: audio, sendText: { try await response.send($0) }, cancelResponse: {
+            controller.start(draft: "Replacement draft")
+        })
+        controller.start()
+        try await waitFor { controller.state == .listening }
+        audio.onFinalTranscript?("Question")
+        try await waitFor { response.inputs.count == 1 }
+        controller.interruptAndListen()
+        try await waitFor { controller.state == .listening }
+        XCTAssertEqual(controller.draft, "Replacement draft")
+        XCTAssertEqual(audio.starts, 2)
+        response.resolveFirst(.success("Late answer"))
+        controller.stop()
+        await drain()
+        controller = nil
+    }
+
+    func testInterruptDoesNotResumeAfterCancellationCallbackStopsAgain() async throws {
+        let audio = ControlledConversationAudio()
+        let response = PendingVoiceResponse()
+        var controller: VoiceConversationController!
+        var cancellations = 0
+        controller = VoiceConversationController(voice: audio, sendText: { try await response.send($0) }, cancelResponse: {
+            cancellations += 1
+            if cancellations == 1 { controller.stop() }
+        })
+        controller.start()
+        try await waitFor { controller.state == .listening }
+        audio.onFinalTranscript?("Question")
+        try await waitFor { response.inputs.count == 1 }
+        controller.interruptAndListen()
+        response.resolveFirst(.success("Late answer"))
+        await drain()
+        XCTAssertEqual(cancellations, 1)
+        XCTAssertEqual(controller.state, .idle)
+        XCTAssertEqual(audio.starts, 1)
+        controller = nil
+    }
+
+    func testInterruptDraftCallbackStopPreventsNewListening() async throws {
+        let audio = ControlledConversationAudio()
+        let response = PendingVoiceResponse()
+        let controller = makeController(audio, response)
+        controller.start()
+        try await waitFor { controller.state == .listening }
+        audio.onFinalTranscript?("Question")
+        try await waitFor { response.inputs.count == 1 }
+        response.resolveFirst(.success("Answer"))
+        try await waitFor { controller.state == .speaking }
+        controller.onDraftChanged = { [weak controller] _ in controller?.stop() }
+        controller.interruptAndListen()
+        await drain()
+        XCTAssertEqual(controller.state, .idle)
+        XCTAssertFalse(controller.isActive)
+        XCTAssertEqual(audio.starts, 1)
+    }
+
     private func makeController(_ audio: ControlledConversationAudio, _ response: PendingVoiceResponse) -> VoiceConversationController {
         VoiceConversationController(voice: audio, sendText: { try await response.send($0) }, cancelResponse: { response.cancellations += 1 })
     }

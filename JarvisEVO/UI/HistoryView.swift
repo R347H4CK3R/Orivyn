@@ -83,12 +83,14 @@ struct HistoryView: View {
                         }
                         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                             Button("Delete", systemImage: "trash", role: .destructive) { deleting = conversation }
+                                .buttonStyle(.automatic)
                             Button(conversation.isArchived ? "Unarchive" : "Archive", systemImage: "archivebox") {
                                 Task { await model.archive(conversation.id, archived: !conversation.isArchived) }
-                            }.tint(.gray)
+                            }.buttonStyle(.automatic).tint(.gray)
                         }
                         .swipeActions(edge: .leading) {
-                            Button("Rename", systemImage: "pencil") { newTitle = conversation.title; renaming = conversation }.tint(.gray)
+                            Button("Rename", systemImage: "pencil") { newTitle = conversation.title; renaming = conversation }
+                                .buttonStyle(.automatic).tint(.gray)
                         }
                     }
                 } header: {

@@ -7,8 +7,19 @@ workflows:
       xcode: 26.0
     scripts:
       - name: Test and package unsigned iPhone candidate
-        script: bash scripts/ci_macos.sh
+        script: bash scripts/run_native_tests.sh --run-build artifacts bash scripts/ci_macos.sh
     artifacts:
-      - artifacts/**
+      - artifacts/*/*.ipa
+      - artifacts/*/*-evidence-*.zip
+      - artifacts/*/*.log
+      - artifacts/*/*.json
+      - artifacts/*/*.txt
+      - artifacts/*/SHA256SUMS
+      - artifacts/*/screenshots/**/*.png
+      - artifacts/*/screenshots/**/*.jpg
+      - artifacts/*/screenshots/**/*.jpeg
+      - artifacts/*/screenshots/**/*.json
+      - artifacts/*/screenshots/**/*.txt
+      - artifacts/*/Tests.xcresult
 # No automatic triggers or publication. Run only after private repository access
 # and remaining free build capacity are authorized and verified.

@@ -186,6 +186,67 @@ final class VoiceAppModelTests: XCTestCase {
         XCTAssertFalse(model.isGenerating)
     }
 
+    func testUnsubmittedTicketDoesNotSurviveDraftEditAndRevert() async throws {
+        let (model, _, source) = try fixture()
+        model.draft = "Original"
+        let ticket = try model.makeVoiceTurnTicket(ownerID: UUID())
+        model.draft = "Edited"
+        model.draft = "Original"
+        do { _ = try await model.sendVoice("Stale speech", ticket: ticket); XCTFail("Restoring the same text must not restore ticket authority") }
+        catch { XCTAssertTrue(error is VoiceTurnError) }
+        let calls = await source.subscriptions
+        XCTAssertEqual(calls, 0)
+        XCTAssertEqual(model.draft, "Original")
+    }
+
+    func testSubmittedTurnDoesNotSurviveTransientComposerEdit() async throws {
+        let (model, store, source) = try fixture()
+        let ticket = try model.makeVoiceTurnTicket(ownerID: UUID())
+        let operation = Task { try await model.sendVoice("Question", ticket: ticket) }
+        try await waitFor { await source.subscriptions == 1 }
+        model.draft = "New thought"
+        model.draft = ""
+        await source.emit("Late answer")
+        await source.finish()
+        await assertCancellation(operation)
+        let saved = try await store.load(id: ticket.conversationID)
+        XCTAssertEqual(saved?.messages.last?.state, .interrupted)
+        XCTAssertEqual(model.draft, "")
+    }
+
+    func testImportAndRemovalBetweenTokensStillInvalidatesVoice() async throws {
+        let (model, _, source) = try fixture()
+        let ticket = try model.makeVoiceTurnTicket(ownerID: UUID())
+        let operation = Task { try await model.sendVoice("Question", ticket: ticket) }
+        try await waitFor { await source.subscriptions == 1 }
+        let file = root.appendingPathComponent("during-voice.txt")
+        try Data("Keep imported file until user removes it".utf8).write(to: file)
+        await model.addAttachments(from: [file])
+        let attachment = try XCTUnwrap(model.pendingAttachments.first)
+        XCTAssertNotNil(model.attachmentService.url(for: attachment))
+        model.removePendingAttachment(attachment)
+        await source.emit("No longer authorized for voice")
+        await source.finish()
+        await assertCancellation(operation)
+        XCTAssertTrue(model.pendingAttachments.isEmpty)
+    }
+
+    func testFailedImportBetweenTokensStillInvalidatesVoice() async throws {
+        let (model, _, source) = try fixture()
+        let ticket = try model.makeVoiceTurnTicket(ownerID: UUID())
+        let operation = Task { try await model.sendVoice("Question", ticket: ticket) }
+        try await waitFor { await source.subscriptions == 1 }
+        let unsupported = root.appendingPathComponent("not-supported.zip")
+        try Data("Not an accepted attachment format".utf8).write(to: unsupported)
+        await model.addAttachments(from: [unsupported])
+        XCTAssertFalse(model.isImportingAttachments)
+        XCTAssertTrue(model.pendingAttachments.isEmpty)
+        XCTAssertNotNil(model.errorMessage)
+        await source.emit("Late answer")
+        await source.finish()
+        await assertCancellation(operation)
+    }
+
     func testDraftEditAfterTicketCreationIsNotOverwritten() async throws {
         let (model, _, source) = try fixture()
         model.draft = "Before"
@@ -318,8 +379,7 @@ final class VoiceAppModelTests: XCTestCase {
         model.draft = "New text typed by the user"
         await source.emit("Late answer")
         await source.finish()
-        do { _ = try await operation.value; XCTFail("Changed composer must not authorize a voice continuation") }
-        catch { XCTAssertTrue(error is VoiceTurnError) }
+        await assertCancellation(operation)
         XCTAssertEqual(model.draft, "New text typed by the user")
     }
 
@@ -383,6 +443,110 @@ final class VoiceAppModelTests: XCTestCase {
         do { _ = try await model.sendVoice("Twice", ticket: ticket); XCTFail("Ticket must be single use") }
         catch { XCTAssertTrue(error is VoiceTurnError) }
         XCTAssertEqual(model.activeConversation?.messages.count, 2)
+    }
+
+    func testProductionSessionQueuedStopDoesNotCreateOrPersistATurn() async throws {
+        let (model, store, source) = try fixture()
+        let audio = VoiceBridgeAudio()
+        let session = VoiceConversationSession(model: model, audio: audio)
+        try session.start()
+        try await waitFor { session.controller.state == .listening }
+        audio.onFinalTranscript?("Do not send")
+        session.stop() // No yield before cancelling the queued sendText task.
+        try await Task.sleep(for: .milliseconds(30))
+        let calls = await source.subscriptions
+        let saved = try await store.list(includeArchived: true)
+        XCTAssertEqual(calls, 0)
+        XCTAssertTrue(saved.isEmpty)
+        XCTAssertTrue(model.conversations.isEmpty)
+        XCTAssertEqual(model.draft, "Do not send")
+        XCTAssertTrue(audio.spoken.isEmpty)
+    }
+
+    func testProductionSessionFinalSaveFailureNeverSpeaksOrRestartsMicrophone() async throws {
+        let (model, store, source) = try fixture()
+        let audio = VoiceBridgeAudio()
+        let session = VoiceConversationSession(model: model, audio: audio)
+        defer { session.stop() }
+        try session.start()
+        try await waitFor { session.controller.state == .listening }
+        audio.onFinalTranscript?("Question")
+        try await waitFor { await source.subscriptions == 1 }
+        let id = try XCTUnwrap(model.selectedConversationID)
+        try installCompletionFailureTrigger()
+        await source.emit("Cannot be durably completed")
+        await source.finish()
+        try await waitFor { session.controller.state == .failed }
+        XCTAssertTrue(audio.spoken.isEmpty)
+        XCTAssertEqual(audio.starts, 1)
+        let saved = try await store.load(id: id)
+        XCTAssertEqual(saved?.messages.last?.state, .failed)
+        XCTAssertFalse(session.controller.isActive)
+    }
+
+    func testProductionSessionProviderReplacementWithSameIDStopsVoiceContinuation() async throws {
+        let (model, store, source) = try fixture()
+        let audio = VoiceBridgeAudio()
+        let session = VoiceConversationSession(model: model, audio: audio)
+        defer { session.stop() }
+        try session.start()
+        try await waitFor { session.controller.state == .listening }
+        audio.onFinalTranscript?("Question")
+        try await waitFor { await source.subscriptions == 1 }
+        let id = try XCTUnwrap(model.selectedConversationID)
+        let replacement = VoiceTokenSource()
+        model.replaceProviders([ProviderOption(id: "voice-test", title: "Changed configuration", detail: "Test only", provider: VoiceControlledProvider(source: replacement))])
+        await source.emit("Old configuration answer")
+        await source.finish()
+        try await waitFor { session.controller.state == .failed }
+        let saved = try await store.load(id: id)
+        let replacementCalls = await replacement.subscriptions
+        XCTAssertEqual(saved?.messages.last?.state, .interrupted)
+        XCTAssertEqual(replacementCalls, 0)
+        XCTAssertTrue(audio.spoken.isEmpty)
+        XCTAssertEqual(audio.starts, 1)
+    }
+
+    func testProductionSessionBackgroundCancelsGenerationAndForegroundDoesNotResume() async throws {
+        let (model, store, source) = try fixture()
+        let audio = VoiceBridgeAudio()
+        let session = VoiceConversationSession(model: model, audio: audio)
+        defer { session.stop() }
+        try session.start()
+        try await waitFor { session.controller.state == .listening }
+        audio.onFinalTranscript?("Question")
+        try await waitFor { await source.subscriptions == 1 }
+        let id = try XCTUnwrap(model.selectedConversationID)
+        session.controller.setForeground(false)
+        await source.emit("Late answer")
+        await source.finish()
+        try await waitFor { !model.isGenerating }
+        session.controller.setForeground(true)
+        XCTAssertFalse(session.controller.isActive)
+        XCTAssertEqual(session.controller.state, .idle)
+        XCTAssertEqual(audio.starts, 1)
+        XCTAssertTrue(audio.spoken.isEmpty)
+        let saved = try await store.load(id: id)
+        XCTAssertEqual(saved?.messages.last?.state, .interrupted)
+    }
+
+    func testProductionSessionTransientDraftEditBlocksLateTTSAndKeepsComposer() async throws {
+        let (model, _, source) = try fixture()
+        let audio = VoiceBridgeAudio()
+        let session = VoiceConversationSession(model: model, audio: audio)
+        defer { session.stop() }
+        try session.start()
+        try await waitFor { session.controller.state == .listening }
+        audio.onFinalTranscript?("Question")
+        try await waitFor { await source.subscriptions == 1 }
+        model.draft = "Intervening user edit"
+        model.draft = ""
+        await source.emit("Late answer")
+        await source.finish()
+        try await waitFor { session.controller.state == .failed }
+        XCTAssertTrue(audio.spoken.isEmpty)
+        XCTAssertEqual(audio.starts, 1)
+        XCTAssertEqual(model.draft, "")
     }
 
     private func installCompletionFailureTrigger() throws {
@@ -461,4 +625,25 @@ private actor VoiceHoldingImporter: AttachmentImporting {
         return attachment
     }
     func release() { continuation?.resume(); continuation = nil }
+}
+
+/// Controlled OS boundary for tests of the real UI session/controller/model path.
+@MainActor
+private final class VoiceBridgeAudio: VoiceConversationAudio {
+    var isRecording = false
+    var isFinishing = false
+    var onTranscript: ((String) -> Void)?
+    var onFinalTranscript: ((String) -> Void)?
+    var onFinishing: (() -> Void)?
+    var onError: ((String) -> Void)?
+    var onPlaybackFinished: (() -> Void)?
+    var onPlaybackCancelled: (() -> Void)?
+    var onInterruption: (() -> Void)?
+    var starts = 0
+    var spoken: [String] = []
+    func startRecording() async throws { starts += 1; isRecording = true }
+    func finishRecording() { isRecording = false; isFinishing = true; onFinishing?() }
+    func stopRecording() { isRecording = false; isFinishing = false }
+    func speak(_ text: String) throws { spoken.append(text) }
+    func stopSpeaking() {}
 }

@@ -19,8 +19,12 @@ final class AppModel {
             if let ticket = activeVoiceTurn, selectedConversationID != ticket.conversationID { cancelVoiceTurn(ticket) }
         }
     }
-    var draft = ""
-    var pendingAttachments: [ChatAttachment] = []
+    var draft = "" {
+        didSet { if oldValue != draft { composerDidChange() } }
+    }
+    var pendingAttachments: [ChatAttachment] = [] {
+        didSet { if oldValue != pendingAttachments { composerDidChange() } }
+    }
     var searchText = ""
     var showArchived = false
     private(set) var isGenerating = false
@@ -53,6 +57,8 @@ final class AppModel {
     private let voiceContextID = UUID()
     private var conversationRevision = UUID()
     private var providerRevision = UUID()
+    private var composerRevision = UUID()
+    private var isApplyingOwnedComposerUpdate = false
     private var downloadTask: Task<Void, Never>?
     private var localProviders: [String: LocalAIProvider] = [:]
     private let attachmentImporter: any AttachmentImporting
@@ -169,7 +175,7 @@ final class AppModel {
                                conversationID: selectedConversationID ?? UUID(),
                                originatingConversationID: selectedConversationID, providerID: selectedProviderID,
                                conversationRevision: conversationRevision, providerRevision: providerRevision,
-                               composerContext: attachmentImportEpoch, draft: draft)
+                               composerContext: attachmentImportEpoch, composerRevision: composerRevision, draft: draft)
     }
 
     /// Returns only this ticket's complete, nonempty, durably saved assistant text.
@@ -181,7 +187,7 @@ final class AppModel {
         guard ticket.originatingConversationID == selectedConversationID,
               ticket.conversationRevision == conversationRevision, ticket.providerRevision == providerRevision,
               ticket.providerID == selectedProviderID, ticket.composerContext == attachmentImportEpoch,
-              ticket.draft == draft else { throw VoiceTurnError.contextChanged }
+              ticket.composerRevision == composerRevision, ticket.draft == draft else { throw VoiceTurnError.contextChanged }
         try validateVoiceAvailability()
         guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { throw ConversationError.emptyMessage }
         guard let provider = selectedProvider?.provider else { throw ProviderError.notConfigured }
@@ -231,10 +237,25 @@ final class AppModel {
         guard selectedConversationID == ticket.conversationID,
               conversationRevision == ticket.acceptedConversationRevision,
               selectedProviderID == ticket.providerID, providerRevision == ticket.providerRevision,
-              attachmentImportEpoch == ticket.acceptedComposerContext,
+              attachmentImportEpoch == ticket.acceptedComposerContext, composerRevision == ticket.composerRevision,
               draft.isEmpty, pendingAttachments.isEmpty, !isImportingAttachments else {
             throw VoiceTurnError.contextChanged
         }
+    }
+
+    /// Latch external edits, even when text/files later return to the old value.
+    /// Cancelling voice never cancels the unrelated import or changes its files.
+    private func composerDidChange() {
+        guard !isApplyingOwnedComposerUpdate else { return }
+        composerRevision = UUID()
+        cancelActiveVoiceTurn()
+    }
+
+    private func applyingOwnedComposerUpdate(_ update: () -> Void) {
+        let wasApplying = isApplyingOwnedComposerUpdate
+        isApplyingOwnedComposerUpdate = true
+        defer { isApplyingOwnedComposerUpdate = wasApplying }
+        update()
     }
 
     private func validateGeneration(_ ticket: VoiceTurnTicket?) throws {
@@ -275,10 +296,12 @@ final class AppModel {
         let assistant = ChatMessage(id: UUID(), role: .assistant, content: "", createdAt: Date(), state: .streaming, attachments: [])
         conversation.messages.append(assistant)
         upsert(conversation)
-        draft = ""
-        pendingAttachments = []
-        // A Photos transfer started for this draft must not attach itself to the next draft after Send.
-        cancelAttachmentImports()
+        applyingOwnedComposerUpdate {
+            draft = ""
+            pendingAttachments = []
+            // A Photos transfer started for this draft must not attach itself to the next draft after Send.
+            cancelAttachmentImports()
+        }
         voiceTicket?.acceptedComposerContext = attachmentImportEpoch
         return startGeneration(conversationID: conversation.id, assistantID: assistant.id, provider: provider,
                                restoringDraftOnSaveFailure: message, voiceTicket: voiceTicket)
@@ -346,8 +369,10 @@ final class AppModel {
                 if !didPersist, let original {
                     if self.selectedConversationID == conversationID, self.attachmentImportEpoch == composerContext,
                        self.draft.isEmpty, self.pendingAttachments.isEmpty, self.attachmentImportJobs.isEmpty {
-                        self.draft = original.content
-                        self.pendingAttachments = original.attachments
+                        self.applyingOwnedComposerUpdate {
+                            self.draft = original.content
+                            self.pendingAttachments = original.attachments
+                        }
                         if let index = self.conversations.firstIndex(where: { $0.id == conversationID }) {
                             self.conversations[index].messages.removeAll { $0.id == original.id || $0.id == assistantID }
                         }
@@ -479,6 +504,7 @@ final class AppModel {
     }
 
     func cancelAttachmentImports() {
+        composerDidChange()
         attachmentImportEpoch = UUID()
         for job in attachmentImportJobs.values { job.task.cancel() }
         // Keep reservations until completion: cancelled Vision work may still be finishing off-main.
@@ -489,6 +515,7 @@ final class AppModel {
         guard !isChangingHistory, !isLoading else { errorMessage = "Wait for the history operation to finish before attaching files."; return }
         guard !isSavingSubmittedTurn else { errorMessage = "Wait for the sent message to be saved before attaching more files."; return }
         guard sources.count <= availableAttachmentSlots else { errorMessage = "Attach up to four files per message, including files still importing."; return }
+        composerDidChange()
         let epoch = attachmentImportEpoch
         let conversationID = selectedConversationID
         let jobID = UUID()
@@ -704,6 +731,7 @@ final class VoiceTurnTicket {
     fileprivate let conversationRevision: UUID
     fileprivate let providerRevision: UUID
     fileprivate let composerContext: UUID
+    fileprivate let composerRevision: UUID
     fileprivate let draft: String
     fileprivate var acceptedConversationRevision: UUID?
     fileprivate var acceptedComposerContext: UUID?
@@ -712,7 +740,7 @@ final class VoiceTurnTicket {
 
     fileprivate init(ownerID: UUID, modelID: UUID, conversationID: UUID, originatingConversationID: UUID?,
                      providerID: String, conversationRevision: UUID, providerRevision: UUID,
-                     composerContext: UUID, draft: String) {
+                     composerContext: UUID, composerRevision: UUID, draft: String) {
         self.ownerID = ownerID
         self.modelID = modelID
         self.conversationID = conversationID
@@ -721,6 +749,7 @@ final class VoiceTurnTicket {
         self.conversationRevision = conversationRevision
         self.providerRevision = providerRevision
         self.composerContext = composerContext
+        self.composerRevision = composerRevision
         self.draft = draft
     }
 }

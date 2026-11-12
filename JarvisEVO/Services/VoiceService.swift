@@ -14,8 +14,9 @@ final class VoiceService: NSObject, VoiceConversationAudio {
     private(set) var inputLevel: Float = 0
     private let recognizer: SFSpeechRecognizer?
     private let permissions: VoicePermissions
-    private let engine = AVAudioEngine()
-    private let playback: any VoicePlayback
+    private var engine: AVAudioEngine
+    private var playback: any VoicePlayback
+    private let resources: VoiceAudioResources
     private let audioSession: VoiceAudioSession
     private var currentUtterance: AVSpeechUtterance?
     private var request: SFSpeechAudioBufferRecognitionRequest?
@@ -32,10 +33,13 @@ final class VoiceService: NSObject, VoiceConversationAudio {
     var onInterruption: (() -> Void)?
 
     init(permissions: VoicePermissions = .system, recognizer: SFSpeechRecognizer? = SFSpeechRecognizer(),
-         playback: (any VoicePlayback)? = nil, audioSession: VoiceAudioSession = .system) {
+         playback: (any VoicePlayback)? = nil, audioSession: VoiceAudioSession = .system,
+         resources: VoiceAudioResources = .system) {
         self.permissions = permissions
         self.recognizer = recognizer
-        self.playback = playback ?? SystemVoicePlayback()
+        self.resources = resources
+        self.engine = resources.makeEngine()
+        self.playback = playback ?? resources.makePlayback()
         self.audioSession = audioSession
         super.init()
         self.playback.delegate = self
@@ -59,7 +63,21 @@ final class VoiceService: NSObject, VoiceConversationAudio {
     }
 
     @objc nonisolated private func audioServicesReset(_ notification: Notification) {
-        Task { @MainActor [weak self] in self?.handleInterruption() }
+        Task { @MainActor [weak self] in self?.handleMediaServicesReset() }
+    }
+
+    private func handleMediaServicesReset() {
+        // QA1749: orphaned media objects must be recreated, not merely stopped.
+        // Retire IDs before disposal so queued old delegates cannot affect retry.
+        stopRecording()
+        stopSpeaking()
+        playback.delegate = nil
+        engine = resources.makeEngine()
+        playback = resources.makePlayback()
+        playback.delegate = self
+        // Session category/mode are reapplied only on an explicit subsequent
+        // start/speak. Rebuilding resources never activates capture or playback.
+        onInterruption?()
     }
 
     private func handleInterruption() {
@@ -324,6 +342,15 @@ protocol VoicePlayback: AnyObject {
     func stop()
 }
 
+/// Real OS resources by default. Factories permit deterministic reset-boundary
+/// tests without pretending a synthetic notification invalidates audio hardware.
+@MainActor
+struct VoiceAudioResources {
+    var makeEngine: @MainActor () -> AVAudioEngine
+    var makePlayback: @MainActor () -> any VoicePlayback
+    static let system = VoiceAudioResources(makeEngine: { AVAudioEngine() }, makePlayback: { SystemVoicePlayback() })
+}
+
 @MainActor
 private final class SystemVoicePlayback: VoicePlayback {
     private let synthesizer = AVSpeechSynthesizer()
@@ -345,7 +372,9 @@ struct VoiceAudioSession {
     static let system = VoiceAudioSession(
         activateRecording: {
             let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.record, mode: .measurement, options: .duckOthers)
+            // Apple's Speech tutorial uses playAndRecord/measurement. Avoid
+            // prolonged ducking during up-to-45-second listening turns.
+            try session.setCategory(.playAndRecord, mode: .measurement, options: [])
             try session.setActive(true, options: .notifyOthersOnDeactivation)
         },
         activatePlayback: {
