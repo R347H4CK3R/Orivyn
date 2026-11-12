@@ -60,7 +60,22 @@ final class JarvisEVOAttachmentUITests: XCTestCase {
         XCTAssertTrue(app.buttons["attachment.share.clean"].exists)
         app.buttons["attachment.share.original"].tap()
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'GPS'")).firstMatch.waitForExistence(timeout: 5))
-        app.buttons["Cancel"].firstMatch.tap()
+        captureEvidence("Original photo metadata warning BEFORE outside dismissal - no sharing")
+        let warning = app.sheets["Share original photo?"]
+        dismissOriginalShareWarning(warning)
+        let warningGone = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: warning)
+        let popoverGone = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: app.popovers.firstMatch)
+        let outsideGone = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: app.otherElements["PopoverDismissRegion"])
+        let dismissed = XCTWaiter.wait(for: [warningGone, popoverGone, outsideGone], timeout: 5)
+        captureEvidence("Preview after dismissing the original-share warning without sharing")
+        XCTAssertEqual(dismissed, .completed, "Outside dismissal must remove the original-photo warning.")
+        XCTAssertFalse(app.otherElements["PopoverDismissRegion"].exists)
+        XCTAssertFalse(app.popovers.firstMatch.exists)
+        XCTAssertFalse(app.sheets.firstMatch.exists, "Dismissal must not open a share activity sheet.")
+        XCTAssertTrue(app.images["attachment.image"].exists)
+        XCTAssertTrue(app.staticTexts["attachment.ocr.text"].label.contains("JARVIS 42"))
+        XCTAssertTrue(app.buttons["attachment.share.clean"].isHittable, "A share activity must not cover the restored preview controls.")
+        XCTAssertTrue(app.buttons["attachment.preview.done"].isHittable)
         let screenshot = XCTAttachment(screenshot: app.screenshot())
         screenshot.name = "Real imported fixture image and on-device OCR"
         screenshot.lifetime = .keepAlways; add(screenshot)
@@ -68,6 +83,47 @@ final class JarvisEVOAttachmentUITests: XCTestCase {
         app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'attachment.remove.'")).firstMatch.tap()
         XCTAssertFalse(preview.exists)
         XCTAssertTrue(app.buttons["composer.voice"].exists)
+    }
+
+    /// iOS26's observed confirmation popover omits its Cancel role button.
+    /// Cancel via the actual outside-dismiss surface, never the sharing action.
+    private func dismissOriginalShareWarning(_ warning: XCUIElement) {
+        let popover = app.popovers.firstMatch
+        let outside = app.otherElements["PopoverDismissRegion"]
+        XCTAssertTrue(warning.waitForExistence(timeout: 5))
+        XCTAssertTrue(popover.waitForExistence(timeout: 5))
+        XCTAssertTrue(outside.waitForExistence(timeout: 5))
+        guard app.state == .runningForeground, !app.alerts.firstMatch.exists else {
+            return XCTFail("The original-photo warning must be foreground without another alert.")
+        }
+        let frames = [warning.frame, popover.frame, outside.frame, app.frame]
+        guard frames.allSatisfy({ frame in
+            [frame.minX, frame.minY, frame.width, frame.height].allSatisfy(\.isFinite)
+                && frame.width > 0 && frame.height > 0
+        }), popover.frame.contains(warning.frame) else {
+            return XCTFail("The native warning/popover/dismiss region must have valid nested geometry.")
+        }
+        let visible = outside.frame.intersection(app.frame).insetBy(dx: 22, dy: 22)
+        let top = max(visible.minY, popover.frame.maxY + 22)
+        let availableHeight = visible.maxY - top
+        guard !visible.isNull, visible.width >= 44, availableHeight >= 44 else {
+            return XCTFail("No sufficiently large visible dismissal surface exists below this popover.")
+        }
+        let safeOutside = CGRect(x: visible.minX, y: top, width: visible.width, height: availableHeight)
+        let point = CGPoint(x: safeOutside.midX, y: safeOutside.midY)
+        let geometry = XCTAttachment(string: "Warning=\(warning.frame), full popover=\(popover.frame), dismiss region=\(outside.frame), app=\(app.frame), verified outside tap=\(point). The Share original action is never tapped.")
+        geometry.name = "Original-share warning safe outside-dismiss geometry"
+        geometry.lifetime = .keepAlways; add(geometry)
+        // Recheck live frames immediately before the action, including the
+        // complete popover/arrow rather than just the warning Sheet's bounds.
+        guard warning.exists, popover.exists, outside.exists,
+              outside.frame.intersection(app.frame).insetBy(dx: 22, dy: 22).contains(point),
+              !popover.frame.insetBy(dx: -22, dy: -22).contains(point),
+              !warning.frame.insetBy(dx: -22, dy: -22).contains(point) else {
+            return XCTFail("The warning moved or its outside dismissal surface changed; no tap attempted.")
+        }
+        app.coordinate(withNormalizedOffset: .zero)
+            .withOffset(CGVector(dx: point.x - app.frame.minX, dy: point.y - app.frame.minY)).tap()
     }
 
     /// Photos hosts its grid in a remote view service. Run9 pixels and AX show
