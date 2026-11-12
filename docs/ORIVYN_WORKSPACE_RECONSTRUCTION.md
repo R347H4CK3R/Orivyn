@@ -19,4 +19,6 @@ The model catalog is a separate integrated change with its own publisher/templat
 
 Native tests are authored for persistence/corruption/migration, preference propagation, shared runtime identity, feedback destination validation, navigation draft preservation, route filter reset and project relaunch. They were not executed by the reconstruction worker because xcrun/Xcode is absent from that workspace. Packaging tests have a separate executable Python suite. Four branding checks were observed failing before the restored implementation and passing afterward.
 
-Before release: independently review the combined source, run native and UI tests on Xcode 26 with real weights, inspect actual screenshots, exercise model switching/cancellation/unload, validate the physical iPhone memory budget, build/checksum the exact ARM64 IPA and verify signing/installation. Do not present this source reconstruction as an already-tested IPA, pixel-perfect reproduction or full backend parity.
+The integrated source subsequently passed 288 native and 27 UI tests on Xcode 26.0.1 with real default-model weights and produced a separately verified ARM64 IPA. See [the exact-source build report](ORIVYN_RECONSTRUCTION_QA.md). The initial worker limitation above is not the final build status.
+
+Before release: exercise broader-model switching/cancellation/unload on an actual iPhone, validate its memory/thermal budget, and verify signing/installation. Do not present this reconstruction as pixel-perfect reproduction, full backend parity or a physical-device-qualified release.

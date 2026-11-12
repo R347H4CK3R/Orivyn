@@ -1,11 +1,12 @@
 # Orivyn reconstructed candidate
 
-**Build 4 source reconstruction, not yet a verified release.** This candidate restores the video-inspired workspace and nine free model downloads over the independently recovered source `f4ac85877bfa707061a3c6cd902412be65cff34e`. The lost Orivyn commits were not recovered byte-for-byte. The original app identity and historical branches are preserved.
+**Verified unsigned development candidate, build 4.** This candidate restores the video-inspired workspace and nine free model downloads over the independently recovered source `f4ac85877bfa707061a3c6cd902412be65cff34e`. The lost Orivyn commits were not recovered byte-for-byte. The original app identity and historical branches are preserved.
 
 - [Workspace, reconstruction provenance and limits](docs/ORIVYN_WORKSPACE_RECONSTRUCTION.md)
 - [Free model catalog, licenses, integrity and memory guidance](docs/model-catalog/README.md)
 - [Owner recording inventory](docs/VIDEO_REFERENCE.md) and [suggestion flow](docs/SUGGESTIONS.md)
-- New native/UI tests must pass on this exact source before a build-4 IPA is described as verified. Physical iPhone performance, signing and installation remain separate gates.
+- [Build 4 verification and remaining gates](docs/ORIVYN_RECONSTRUCTION_QA.md): 62 Python, 288 native and 27 UI tests passed with zero failures or test skips on exact source `791dc4755a0ab1039d3fd628a9480d1d4419d182`. Actual download, local inference and relaunch persistence passed.
+- Unsigned ARM64 IPA: `Orivyn-0.1.0-build4-unsigned.ipa`, 4,192,549 bytes, SHA-256 `2e6084156b59d7cb0451a0bffc28cd3542264cca8416c4f508bb39ea2154be2c`. Requires iOS 26 or newer and signing before installation. Physical iPhone performance remains unverified.
 
 The app has no paid tiers or in-app unlocks. Optional remote services are off by default and can have their own fees. External account integrations, autonomous scheduling, browser/computer control, hosted sites and image generation are explicitly unavailable, not simulated.
 

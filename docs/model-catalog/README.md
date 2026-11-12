@@ -39,6 +39,6 @@ Qwen3 can spend the short reply budget on thinking text. It is labeled experimen
 
 ## What was actually verified
 
-Fresh reconstruction checks: official metadata/license reads for eight repositories; all nine exact GGUF templates accepted by pinned b9049; catalog and package Python tests; generated-source freshness and whitespace checks. Native compile/UI/device-package results belong to the separate build report and must be verified before delivery.
+Fresh reconstruction checks: official metadata/license reads for eight repositories; all nine exact GGUF templates accepted by pinned b9049; catalog and package Python tests; generated-source freshness and whitespace checks. The integrated source subsequently passed native compile, 288 native tests, 27 UI tests and ARM64 device-package verification. Fresh full-weight native inference in that run covers the default Qwen model, not every catalog entry. See [the exact-source build report](../ORIVYN_RECONSTRUCTION_QA.md).
 
 Historical retained reports describe eight full-file SHA/size checks and Linux CPU inference probes for the lost candidate. Those logs/source bytes were not recovered and are **not** presented as fresh execution evidence. No physical-iPhone RAM, thermal, latency or battery benchmark has been performed for this catalog. Broader variants should be admitted only after repeating publisher/license/template checks and practical device testing, not merely to increase a count.
