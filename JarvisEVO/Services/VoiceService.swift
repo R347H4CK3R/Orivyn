@@ -69,7 +69,7 @@ final class VoiceService: NSObject, VoiceConversationAudio {
     }
 
     func startRecording() async throws {
-        guard !isRecording && !isStarting && !isFinishing else { return }
+        guard !Task.isCancelled, !isRecording && !isStarting && !isFinishing else { return }
         let attempt = UUID()
         recordingID = attempt
         isStarting = true

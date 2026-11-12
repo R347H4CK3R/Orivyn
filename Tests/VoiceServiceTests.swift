@@ -8,6 +8,20 @@ import Speech
 /// actual VoiceService delegate methods. No physical dictation/playback is claimed.
 @MainActor
 final class VoiceServiceTests: XCTestCase {
+    func testAlreadyCancelledRecordingTaskDoesNotRequestPermission() async throws {
+        var permissionRequests = 0
+        let voice = VoiceService(permissions: VoicePermissions(requestSpeech: {
+            permissionRequests += 1
+            return .denied
+        }, requestMicrophone: { false }))
+        let attempt = Task { try await voice.startRecording() }
+        attempt.cancel() // Do not yield before cancelling the queued operation.
+        try await attempt.value
+        XCTAssertEqual(permissionRequests, 0)
+        XCTAssertFalse(voice.isStarting)
+        XCTAssertFalse(voice.isRecording)
+    }
+
     func testDeniedSpeechPermissionReturnsActionableErrorAndResetsStartingState() async throws {
         let voice = VoiceService(permissions: VoicePermissions(requestSpeech: { .denied }, requestMicrophone: { false }))
         await assertError(.speechPermission, from: voice)

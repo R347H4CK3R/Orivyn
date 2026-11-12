@@ -31,6 +31,73 @@ final class VoiceConversationControllerTests: XCTestCase {
         controller.stop()
     }
 
+    // A cancelled MainActor task can still execute its body. Without an entry
+    // guard, stopping synchronously after the final callback still sends a turn.
+    func testStopBeforeResponseTaskStartsNeverCallsSendText() async throws {
+        let audio = ControlledConversationAudio()
+        var sent: [String] = []
+        let controller = VoiceConversationController(voice: audio, sendText: {
+            sent.append($0)
+            return "Must not be requested"
+        }, cancelResponse: {})
+        controller.start()
+        try await waitFor { controller.state == .listening }
+        audio.onFinalTranscript?("Do not send after Stop")
+        controller.stop() // No suspension between final callback and Stop.
+        await drain()
+        XCTAssertTrue(sent.isEmpty)
+        XCTAssertTrue(audio.spoken.isEmpty)
+        XCTAssertEqual(controller.state, .idle)
+    }
+
+    // Without the task-entry guard, the cancelled task starts the microphone
+    // after stopRecording has already run, leaving capture orphaned.
+    func testStopBeforeListeningTaskStartsNeverRequestsMicrophone() async {
+        let audio = ControlledConversationAudio()
+        let response = PendingVoiceResponse()
+        let controller = makeController(audio, response)
+        controller.start()
+        controller.stop() // No suspension, so the listening task has not begun.
+        await drain()
+        XCTAssertEqual(audio.starts, 0)
+        XCTAssertFalse(audio.isRecording)
+        XCTAssertEqual(controller.state, .idle)
+    }
+
+    func testStopFromFinalDraftCallbackDoesNotRestoreAwaitingState() async throws {
+        let audio = ControlledConversationAudio()
+        var sent: [String] = []
+        let controller = VoiceConversationController(voice: audio, sendText: {
+            sent.append($0)
+            return "Unexpected response"
+        }, cancelResponse: {})
+        controller.start()
+        try await waitFor { controller.state == .listening }
+        controller.onDraftChanged = { [weak controller] _ in controller?.stop() }
+        audio.onFinalTranscript?("Stop while publishing this transcript")
+        XCTAssertEqual(controller.state, .idle)
+        XCTAssertFalse(controller.isActive)
+        await drain()
+        XCTAssertTrue(sent.isEmpty)
+    }
+
+    func testStopFromResponseDraftCallbackCannotStartPlayback() async throws {
+        let audio = ControlledConversationAudio()
+        let response = PendingVoiceResponse()
+        let controller = makeController(audio, response)
+        controller.start()
+        try await waitFor { controller.state == .listening }
+        controller.onDraftChanged = { [weak controller] text in
+            if text.isEmpty { controller?.stop() }
+        }
+        audio.onFinalTranscript?("Question")
+        try await waitFor { response.inputs.count == 1 }
+        response.resolveFirst(.success("Must not be spoken after callback stops voice"))
+        try await waitFor { !controller.isActive }
+        XCTAssertEqual(controller.state, .idle)
+        XCTAssertTrue(audio.spoken.isEmpty)
+    }
+
     func testDuplicateFinalTranscriptSubmitsExactlyOneTurn() async throws {
         let audio = ControlledConversationAudio()
         let response = PendingVoiceResponse()

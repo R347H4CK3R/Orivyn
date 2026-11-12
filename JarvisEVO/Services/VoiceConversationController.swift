@@ -132,7 +132,8 @@ final class VoiceConversationController {
         state = .requestingPermission
         installVoiceCallbacks(session: session, turn: turn)
         operation = Task { @MainActor [weak self] in
-            guard let self else { return }
+            guard let self, !Task.isCancelled, self.matches(session, turn),
+                  self.state == .requestingPermission else { return }
             do {
                 try await self.voice.startRecording()
                 guard !Task.isCancelled, self.matches(session, turn) else { return }
@@ -196,12 +197,14 @@ final class VoiceConversationController {
             return
         }
         updateTranscript(text)
+        guard matches(session, turn), acceptsTranscript else { return }
         let submitted = draft.trimmingCharacters(in: .whitespacesAndNewlines)
         voice.stopRecording()
         operation?.cancel()
         state = .awaitingResponse
         operation = Task { @MainActor [weak self] in
-            guard let self else { return }
+            guard let self, !Task.isCancelled, self.matches(session, turn),
+                  self.state == .awaitingResponse else { return }
             do {
                 let response = try await self.sendText(submitted)
                 guard !Task.isCancelled, self.matches(session, turn), self.state == .awaitingResponse else { return }
@@ -210,6 +213,7 @@ final class VoiceConversationController {
                 }
                 self.draft = ""
                 self.onDraftChanged?("")
+                guard !Task.isCancelled, self.matches(session, turn), self.state == .awaitingResponse else { return }
                 self.state = .speaking
                 try self.voice.speak(response)
             } catch {
