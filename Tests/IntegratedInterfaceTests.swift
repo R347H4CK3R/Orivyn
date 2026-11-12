@@ -33,6 +33,77 @@ final class IntegratedInterfaceTests: XCTestCase {
         }
     }
 
+    func testMathInkGateRejectsBlankWrongAppearanceAndRuleOnlySurfaces() throws {
+        // Negative measurement fixtures only, never used as app or WK evidence.
+        for dark in [false, true] {
+            for fill in [UIColor.white, UIColor.black, UIColor.clear] {
+                let blank = UIGraphicsImageRenderer(size: CGSize(width: 350, height: 179)).image { context in
+                    context.cgContext.setFillColor(fill.cgColor)
+                    context.cgContext.fill(CGRect(x: 0, y: 0, width: 350, height: 179))
+                }
+                XCTAssertFalse(try fractionInk(in: blank, dark: dark).hasFractionStructure)
+            }
+            let rule = UIGraphicsImageRenderer(size: CGSize(width: 350, height: 179)).image { context in
+                context.cgContext.setFillColor((dark ? UIColor.black : UIColor.white).cgColor)
+                context.cgContext.fill(CGRect(x: 0, y: 0, width: 350, height: 179))
+                context.cgContext.setFillColor((dark ? UIColor.white : UIColor.black).cgColor)
+                context.cgContext.fill(CGRect(x: 165, y: 80, width: 20, height: 1))
+            }
+            XCTAssertFalse(try fractionInk(in: rule, dark: dark).hasFractionStructure)
+        }
+    }
+
+    func testMathInkGateRejectsConnectedRectangleAndPlusSign() throws {
+        // Counterexamples to the old row-count predicate. These are negative
+        // measurement inputs only, never replacement math or rendering evidence.
+        for dark in [false, true] {
+            for scale in [CGFloat(1), 2, 3] {
+                for plus in [false, true] {
+                    let format = UIGraphicsImageRendererFormat()
+                    format.scale = scale
+                    let image = UIGraphicsImageRenderer(size: CGSize(width: 350, height: 179), format: format).image { context in
+                        context.cgContext.setFillColor((dark ? UIColor.black : UIColor.white).cgColor)
+                        context.cgContext.fill(CGRect(x: 0, y: 0, width: 350, height: 179))
+                        context.cgContext.setFillColor((dark ? UIColor.white : UIColor.black).cgColor)
+                        if plus {
+                            context.cgContext.fill(CGRect(x: 165, y: 85, width: 20, height: 2))
+                            context.cgContext.fill(CGRect(x: 174, y: 76, width: 2, height: 20))
+                        } else {
+                            context.cgContext.fill(CGRect(x: 165, y: 80, width: 20, height: 10))
+                        }
+                    }
+                    XCTAssertFalse(try fractionInk(in: image, dark: dark).hasFractionStructure,
+                        "A connected \(plus ? "plus sign" : "rectangle") at \(scale)x in \(dark ? "dark" : "light") is not a fraction.")
+                }
+            }
+        }
+    }
+
+    func testMathInkGateAcceptsSeparatedMeasurementControl() throws {
+        // This proves the measurement predicate is not always false. It does
+        // NOT establish WebKit rendering: only the actual WK snapshots do that.
+        for dark in [false, true] {
+            for scale in [CGFloat(1), 2, 3] {
+                let format = UIGraphicsImageRendererFormat()
+                format.scale = scale
+                let image = UIGraphicsImageRenderer(size: CGSize(width: 350, height: 179), format: format).image { context in
+                    let foreground: UIColor = dark ? .white : .black
+                    context.cgContext.setFillColor((dark ? UIColor.black : UIColor.white).cgColor)
+                    context.cgContext.fill(CGRect(x: 0, y: 0, width: 350, height: 179))
+                    let attributes: [NSAttributedString.Key: Any] = [.font: UIFont.monospacedDigitSystemFont(ofSize: 20, weight: .regular), .foregroundColor: foreground]
+                    for (text, y) in [("1", CGFloat(54)), ("2", CGFloat(94))] {
+                        let string = NSAttributedString(string: text, attributes: attributes)
+                        string.draw(at: CGPoint(x: 175 - string.size().width / 2, y: y))
+                    }
+                    context.cgContext.setFillColor(foreground.cgColor)
+                    context.cgContext.fill(CGRect(x: 165, y: 85, width: 20, height: 2))
+                }
+                XCTAssertTrue(try fractionInk(in: image, dark: dark).hasFractionStructure,
+                    "Separated measurement glyphs and bar at \(scale)x must be recognized independently of WebKit.")
+            }
+        }
+    }
+
     private func inspectFixture(dark: Bool, large: Bool) async throws {
         let source = """
         ## Native rendering fixture
@@ -132,7 +203,154 @@ final class IntegratedInterfaceTests: XCTestCase {
         XCTAssertLessThanOrEqual(web.bounds.width, 350)
         XCTAssertGreaterThanOrEqual(web.bounds.height, 44)
         XCTAssertLessThanOrEqual(web.bounds.height, 500)
+        try await verifyActualMathSnapshot(web, window: window, dark: dark)
         capture(window: window, name: "Native MessageRow fixture - \(dark ? "dark accessibility" : "light") - NOT model inference")
+    }
+
+    /// drawHierarchy omits remote WebKit pixels. Capture the actual compositor
+    /// surface without executing JavaScript or replacing the production markup.
+    private func verifyActualMathSnapshot(_ web: WKWebView, window: UIWindow, dark: Bool) async throws {
+        // The large-text fixture's math extended below the visible viewport in
+        // run9. Scroll the enclosing native transcript, not the math document.
+        var ancestor = web.superview
+        var hostScroll: UIScrollView?
+        while let view = ancestor {
+            if let scroll = view as? UIScrollView { hostScroll = scroll; break }
+            ancestor = view.superview
+        }
+        let scroll = try XCTUnwrap(hostScroll, "Math must be inside the actual hosted message scroll view.")
+        let readyDeadline = ContinuousClock.now + .seconds(5)
+        var previousFrame = CGRect.null
+        var stableSamples = 0
+        var visible = false
+        repeat {
+            scroll.scrollRectToVisible(web.convert(web.bounds, to: scroll).insetBy(dx: 0, dy: -8), animated: false)
+            window.layoutIfNeeded()
+            let frame = web.convert(web.bounds, to: window)
+            let visibleFrame = frame.intersection(window.bounds).intersection(scroll.convert(scroll.bounds, to: window))
+            visible = !visibleFrame.isNull && visibleFrame.width >= frame.width - 1 && visibleFrame.height >= frame.height - 1
+            if visible, !web.isLoading, web.estimatedProgress == 1, frame == previousFrame { stableSamples += 1 }
+            else { stableSamples = 0 }
+            previousFrame = frame
+            if stableSamples >= 2 { break }
+            try await Task.sleep(for: .milliseconds(50))
+        } while ContinuousClock.now < readyDeadline
+        let viewport = XCTAttachment(string: "Math frame on window=\(previousFrame); window=\(window.bounds); host viewport=\(scroll.convert(scroll.bounds, to: window)); fully visible=\(visible); stable ready samples=\(stableSamples); appearance=\(web.traitCollection.userInterfaceStyle.rawValue)")
+        viewport.name = "Actual math snapshot viewport - \(dark ? "dark" : "light")"
+        viewport.lifetime = .keepAlways; add(viewport)
+        capture(window: window, name: "Actual MessageRow after bringing math onscreen - \(dark ? "dark" : "light") - remote pixels captured separately")
+        XCTAssertTrue(visible, "The complete math surface must be onscreen before capture.")
+        XCTAssertGreaterThanOrEqual(stableSamples, 2)
+        XCTAssertEqual(web.traitCollection.userInterfaceStyle, dark ? .dark : .light)
+        let configuration = WKSnapshotConfiguration()
+        configuration.rect = web.bounds
+        configuration.afterScreenUpdates = true
+        let snapshot: UIImage
+        do { snapshot = try await web.takeSnapshot(configuration: configuration) }
+        catch {
+            let failure = XCTAttachment(string: "Actual WKWebView.takeSnapshot failed: \(error as NSError)\n" + hierarchyDescription(window))
+            failure.name = "Math compositor snapshot failure"; failure.lifetime = .keepAlways; add(failure)
+            throw error
+        }
+        let attachment = XCTAttachment(image: snapshot)
+        attachment.name = "ACTUAL WKWebView fraction pixels - \(dark ? "dark accessibility" : "light") - controlled fixture, not inference"
+        attachment.lifetime = .keepAlways; add(attachment)
+        let ink = try fractionInk(in: snapshot, dark: dark)
+        let measurements = XCTAttachment(string: ink.description)
+        measurements.name = "Actual math fraction ink measurements - \(dark ? "dark" : "light")"
+        measurements.lifetime = .keepAlways; add(measurements)
+        XCTAssertGreaterThan(ink.foregroundPixels, 20, "A loaded but blank WebKit document does not prove visible math.")
+        XCTAssertLessThan(ink.foregroundFraction, 0.15, "A uniformly opaque wrong-color surface is not math ink.")
+        XCTAssertTrue(ink.hasFractionStructure, "The controlled fraction must have visible numerator/denominator ink separated by a horizontal fraction bar.")
+    }
+
+    private struct FractionInk {
+        let foregroundPixels: Int
+        let foregroundFraction: Double
+        let hasFractionStructure: Bool
+        let description: String
+    }
+
+    /// Analyze original snapshot pixels over the known appearance background.
+    /// Ignore edge scroll indicators. The known 1/2 fixture must have three
+    /// distinct occupied row bands: numerator, horizontal rule, denominator.
+    /// Actual blank scanlines, not skipped neighbors, must separate each band.
+    private func fractionInk(in image: UIImage, dark: Bool) throws -> FractionInk {
+        let bitmap = try XCTUnwrap(image.cgImage)
+        let width = bitmap.width, height = bitmap.height
+        XCTAssertGreaterThan(width, 0); XCTAssertGreaterThan(height, 0)
+        var pixels = [UInt8](repeating: 0, count: width * height * 4)
+        try pixels.withUnsafeMutableBytes { bytes in
+            let context = try XCTUnwrap(CGContext(data: bytes.baseAddress, width: width, height: height,
+                bitsPerComponent: 8, bytesPerRow: width * 4, space: CGColorSpaceCreateDeviceRGB(),
+                bitmapInfo: CGBitmapInfo.byteOrder32Big.rawValue | CGImageAlphaInfo.premultipliedLast.rawValue))
+            context.setFillColor((dark ? UIColor.black : UIColor.white).cgColor)
+            context.fill(CGRect(x: 0, y: 0, width: width, height: height))
+            context.draw(bitmap, in: CGRect(x: 0, y: 0, width: width, height: height))
+        }
+        let sx = CGFloat(width) / max(1, image.size.width)
+        let sy = CGFloat(height) / max(1, image.size.height)
+        let insetX = max(1, Int(8 * sx)), insetY = max(1, Int(2 * sy))
+        guard width > insetX * 2, height > insetY * 2 else {
+            return FractionInk(foregroundPixels: 0, foregroundFraction: 0, hasFractionStructure: false, description: "Snapshot is too small to contain a visible fraction: \(width)x\(height)")
+        }
+        var rows = [Int](repeating: 0, count: height)
+        var longestRuns = rows
+        var rowMinX = [Int](repeating: width, count: height)
+        var rowMaxX = [Int](repeating: -1, count: height)
+        var count = 0, minX = width, maxX = -1, minY = height, maxY = -1
+        for y in insetY..<(height - insetY) {
+            var run = 0
+            for x in insetX..<(width - insetX) {
+                let i = (y * width + x) * 4
+                let luminance = (Int(pixels[i]) + Int(pixels[i + 1]) + Int(pixels[i + 2])) / 3
+                let foreground = dark ? luminance > 160 : luminance < 95
+                if foreground {
+                    count += 1; rows[y] += 1; run += 1
+                    longestRuns[y] = max(longestRuns[y], run)
+                    rowMinX[y] = min(rowMinX[y], x); rowMaxX[y] = max(rowMaxX[y], x)
+                    minX = min(minX, x); maxX = max(maxX, x); minY = min(minY, y); maxY = max(maxY, y)
+                } else { run = 0 }
+            }
+        }
+        // Maximal occupied bands are separated by >=1 completely blank pixel
+        // row across the interior. A solid rectangle or connected plus forms
+        // one band, so cannot supply its own numerator/bar/denominator.
+        var bands: [Range<Int>] = []
+        var bandStart: Int?
+        for y in insetY..<(height - insetY) {
+            if rows[y] > 0 {
+                if bandStart == nil { bandStart = y }
+            } else if let start = bandStart {
+                bands.append(start..<y); bandStart = nil
+            }
+        }
+        if let start = bandStart { bands.append(start..<(height - insetY)) }
+        var separatedFraction = false
+        if bands.count == 3, minX <= maxX {
+            let numerator = bands[0], bar = bands[1], denominator = bands[2]
+            let barLeft = rowMinX[bar].min() ?? width
+            let barRight = rowMaxX[bar].max() ?? -1
+            let barWidth = barRight - barLeft + 1
+            let horizontalTolerance = max(1, Int(ceil(sx)))
+            let requiredRun = max(3, Int(ceil(Double(maxX - minX + 1) * 0.60)))
+            func isGlyphBand(_ band: Range<Int>) -> Bool {
+                // Distinct, vertically extended ink contained over/under the
+                // bar. This uses relative geometry, not a font or digit bitmap.
+                rows[band].reduce(0, +) >= 3 && band.count > bar.count
+                    && (rowMinX[band].min() ?? width) >= barLeft - horizontalTolerance
+                    && (rowMaxX[band].max() ?? -1) <= barRight + horizontalTolerance
+            }
+            separatedFraction = barWidth >= 3 * bar.count
+                && (longestRuns[bar].max() ?? 0) >= requiredRun
+                && isGlyphBand(numerator) && isGlyphBand(denominator)
+        }
+        let fraction = Double(count) / Double((width - insetX * 2) * (height - insetY * 2))
+        let bandDescription = bands.map { band in
+            "rows=\(band), pixels=\(rows[band].reduce(0, +)), x=\(rowMinX[band].min() ?? width)...\(rowMaxX[band].max() ?? -1), longest run=\(longestRuns[band].max() ?? 0)"
+        }.joined(separator: "; ")
+        return FractionInk(foregroundPixels: count, foregroundFraction: fraction, hasFractionStructure: fraction < 0.15 && separatedFraction,
+            description: "Original snapshot=\(width)x\(height) pixels / \(image.size) points, appearance=\(dark ? "dark" : "light"), foreground pixels=\(count), foreground fraction=\(fraction), ink bounds=(\(minX),\(minY))..(\(maxX),\(maxY)), occupied bands=[\(bandDescription)]. Thresholds: lightRGB<95/darkRGB>160; exactly three bands separated by fully blank scanlines; middle bar width≥3×height and contiguous run≥60% of ink width; upper/lower glyph bands taller than bar, within its horizontal extent ±1pt. Measurement never changes the supplied image or markup.")
     }
 
     private func capture(window: UIWindow, name: String) {

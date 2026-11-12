@@ -38,9 +38,10 @@ final class JarvisEVOAttachmentUITests: XCTestCase {
         let foundPhoto = photo.waitForExistence(timeout: 10)
         captureEvidence("Native Photos picker before selecting the seeded fixture")
         XCTAssertTrue(foundPhoto, "The known fixture must exist in the real simulator photo library.")
-        XCTAssertTrue(photo.isHittable)
-        photo.tap()
         let done = app.buttons["Done"].firstMatch
+        XCTAssertTrue(done.waitForExistence(timeout: 5))
+        XCTAssertFalse(done.isEnabled, "The fixture must not already be selected before the real tap.")
+        selectVisiblePhoto(photo)
         let foundDone = done.waitForExistence(timeout: 5)
         captureEvidence("Native Photos picker after selecting the seeded fixture")
         XCTAssertTrue(foundDone)
@@ -67,6 +68,53 @@ final class JarvisEVOAttachmentUITests: XCTestCase {
         app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'attachment.remove.'")).firstMatch.tap()
         XCTAssertFalse(preview.exists)
         XCTAssertTrue(app.buttons["composer.voice"].exists)
+    }
+
+    /// Photos hosts its grid in a remote view service. Run9 pixels and AX show
+    /// this Image visibly inside its grid while isHittable is false. Validate
+    /// the live visible hit region, then require Done and real OCR to prove action.
+    private func selectVisiblePhoto(_ photo: XCUIElement) {
+        guard app.state == .runningForeground, !app.alerts.firstMatch.exists else {
+            return XCTFail("Photos must be foreground without a blocking alert before selection.")
+        }
+        let scroll = app.scrollViews["photosView_content_scroll_view"]
+        let grid = app.otherElements.matching(identifier: "PXGGridLayout-Group")
+            .matching(NSPredicate(format: "label == %@", photo.label)).firstMatch
+        XCTAssertTrue(scroll.waitForExistence(timeout: 5))
+        XCTAssertTrue(grid.waitForExistence(timeout: 5))
+        let imageFrame = photo.frame
+        let frames = [imageFrame, grid.frame, scroll.frame, app.frame]
+        guard frames.allSatisfy({ frame in
+            [frame.minX, frame.minY, frame.width, frame.height].allSatisfy(\.isFinite)
+                && frame.width > 0 && frame.height > 0
+        }) else { return XCTFail("Photos supplied invalid image/grid/viewport geometry.") }
+        let visible = imageFrame.intersection(grid.frame).intersection(scroll.frame).intersection(app.frame)
+        guard !visible.isNull, visible.width >= 44, visible.height >= 44,
+              visible.width * visible.height >= imageFrame.width * imageFrame.height * 0.95 else {
+            return XCTFail("The thumbnail must be almost fully visible inside its actual grid and viewport before tapping.")
+        }
+        let point = CGPoint(x: visible.midX, y: visible.midY)
+        let navigation = app.navigationBars["Photos"]
+        let privacyBanner = app.otherElements["PXGSingleViewContainerView_AX"]
+        guard imageFrame.insetBy(dx: 8, dy: 8).contains(point),
+              !(navigation.exists && navigation.frame.contains(point)),
+              !(privacyBanner.exists && privacyBanner.frame.contains(point)),
+              !app.toolbars.allElementsBoundByIndex.contains(where: { $0.frame.contains(point) }) else {
+            return XCTFail("The thumbnail center must be inside the image, clear of navigation, privacy banner and toolbars.")
+        }
+        let geometry = XCTAttachment(string: "Remote Photos Image isHittable=\(photo.isHittable), image=\(imageFrame), grid=\(grid.frame), scroll=\(scroll.frame), app=\(app.frame), visible=\(visible), verified tap center=\(point)")
+        geometry.name = "Native Photos verified visible selection geometry"
+        geometry.lifetime = .keepAlways; add(geometry)
+        let liveFrame = photo.frame
+        guard imageFrame.insetBy(dx: -1, dy: -1).contains(liveFrame),
+              liveFrame.insetBy(dx: -1, dy: -1).contains(imageFrame) else {
+            return XCTFail("The thumbnail moved after geometry validation; no coordinate tap was attempted.")
+        }
+        if photo.isHittable { photo.tap() }
+        else {
+            app.coordinate(withNormalizedOffset: .zero)
+                .withOffset(CGVector(dx: point.x - app.frame.minX, dy: point.y - app.frame.minY)).tap()
+        }
     }
 
     private func captureEvidence(_ name: String) {
