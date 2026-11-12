@@ -70,7 +70,9 @@ private struct SafariBrowser: UIViewControllerRepresentable {
     }
     func updateUIViewController(_ controller: SFSafariViewController, context: Context) {}
 
-    @MainActor final class Coordinator: NSObject, SFSafariViewControllerDelegate {
+    // UIKit delivers this UI completion on the main thread. The SDK's legacy
+    // delegate protocol is nonisolated; retain runtime main-actor checking.
+    @MainActor final class Coordinator: NSObject, @preconcurrency SFSafariViewControllerDelegate {
         private let completed: () -> Void
         private var didComplete = false
         init(completed: @escaping () -> Void) { self.completed = completed }

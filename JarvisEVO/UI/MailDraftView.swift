@@ -94,7 +94,9 @@ private struct MailEditor: UIViewControllerRepresentable {
     }
     func updateUIViewController(_ controller: MFMailComposeViewController, context: Context) {}
 
-    @MainActor final class Coordinator: NSObject, MFMailComposeViewControllerDelegate {
+    // UIKit delivers this UI completion on the main thread. The SDK's legacy
+    // delegate protocol is nonisolated; retain runtime main-actor checking.
+    @MainActor final class Coordinator: NSObject, @preconcurrency MFMailComposeViewControllerDelegate {
         private let completed: (String) -> Void
         private var didComplete = false
         init(completed: @escaping (String) -> Void) { self.completed = completed }

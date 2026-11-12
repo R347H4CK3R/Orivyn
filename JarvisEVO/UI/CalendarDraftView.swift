@@ -97,7 +97,9 @@ private struct CalendarEditor: UIViewControllerRepresentable {
     }
     func updateUIViewController(_ controller: EKEventEditViewController, context: Context) {}
 
-    @MainActor final class Coordinator: NSObject, EKEventEditViewDelegate {
+    // UIKit delivers this UI completion on the main thread. The SDK's legacy
+    // delegate protocol is nonisolated; retain runtime main-actor checking.
+    @MainActor final class Coordinator: NSObject, @preconcurrency EKEventEditViewDelegate {
         private let completed: (String) -> Void
         private var didComplete = false
         init(completed: @escaping (String) -> Void) { self.completed = completed }
