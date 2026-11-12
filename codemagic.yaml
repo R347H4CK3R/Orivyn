@@ -200,3 +200,22 @@ workflows:
       - artifacts/resource-regression/screenshots/**/*.json
       - artifacts/resource-regression/screenshots/**/*.txt
       - artifacts/resource-regression/Tests.xcresult
+
+  orivyn-native-capabilities:
+    name: Orivyn isolated native vision and BIOS gates
+    max_build_duration: 30
+    instance_type: mac_mini_m2
+    environment:
+      xcode: 26.0
+    scripts:
+      - name: Actual WKWebView BIOS and pinned native multimodal runtime
+        script: bash scripts/run_native_capabilities.sh
+    artifacts:
+      - artifacts/native-capabilities/**/*.log
+      - artifacts/native-capabilities/**/*.txt
+      - artifacts/native-capabilities/**/*.json
+      - artifacts/native-capabilities/**/*.zip
+      - artifacts/native-capabilities/**/Tests.xcresult
+      - artifacts/native-capabilities/**/VisionProof.xcresult
+      - artifacts/native-capabilities/**/screenshots/**/*.png
+      - artifacts/native-capabilities/**/screenshots/**/*.jpg

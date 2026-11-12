@@ -1,0 +1,48 @@
+name: VisionProof
+options:
+  deploymentTarget:
+    iOS: '26.0'
+settings:
+  base:
+    SWIFT_VERSION: '6.0'
+    SWIFT_STRICT_CONCURRENCY: complete
+    CODE_SIGNING_ALLOWED: NO
+    CLANG_CXX_LANGUAGE_STANDARD: c++17
+    SWIFT_OBJC_BRIDGING_HEADER: Sources/Bridge.h
+    HEADER_SEARCH_PATHS: ['$(SRCROOT)/Bridge', '$(BUILT_PRODUCTS_DIR)/llama.framework/Headers', '$(SRCROOT)/Frameworks/llama.xcframework/ios-arm64/llama.framework/Headers']
+    GCC_PREPROCESSOR_DEFINITIONS: ['$(inherited)', 'OV_TESTING=1']
+targets:
+  VisionProof:
+    type: application
+    platform: iOS
+    sources: [Sources, Bridge]
+    dependencies:
+      - framework: Frameworks/llama.xcframework
+        embed: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.orivyn.internal.visionproof
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+  VisionProofTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [Tests]
+    dependencies:
+      - target: VisionProof
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.orivyn.internal.visionproof.tests
+        GENERATE_INFOPLIST_FILE: YES
+schemes:
+  VisionProof:
+    build:
+      targets:
+        VisionProof: all
+        VisionProofTests: [test]
+    test:
+      gatherCoverageData: false
+      targets: [VisionProofTests]
+      environmentVariables:
+        VISION_MODEL_DIR: $(VISION_MODEL_DIR)
+        VISION_REQUIRE_REAL: $(VISION_REQUIRE_REAL)

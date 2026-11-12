@@ -1,0 +1,54 @@
+name: OrivynVMProof
+options:
+  deploymentTarget:
+    iOS: '26.0'
+settings:
+  base:
+    SWIFT_VERSION: '6.0'
+    SWIFT_STRICT_CONCURRENCY: complete
+    IPHONEOS_DEPLOYMENT_TARGET: '26.0'
+    CODE_SIGNING_ALLOWED: NO
+    TARGETED_DEVICE_FAMILY: '1'
+targets:
+  OrivynVMProof:
+    type: application
+    platform: iOS
+    sources:
+      - path: Sources
+      - path: Assets
+        type: folder
+        buildPhase: resources
+      - path: Notices
+        type: folder
+        buildPhase: resources
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: app.orivyn.internal.vmproof
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+  OrivynVMProofTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [Tests]
+    dependencies:
+      - target: OrivynVMProof
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+  OrivynVMProofUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [UITests]
+    dependencies:
+      - target: OrivynVMProof
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+schemes:
+  OrivynVMProof:
+    build:
+      targets:
+        OrivynVMProof: all
+    test:
+      targets: [OrivynVMProofTests, OrivynVMProofUITests]

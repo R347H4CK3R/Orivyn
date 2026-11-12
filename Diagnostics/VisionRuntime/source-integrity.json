@@ -1,0 +1,125 @@
+{
+  "commit": "2496f9c14965c39589f53eea31bdb6d762b1d360",
+  "files": [
+    {
+      "path": "LICENSE",
+      "gitBlob": "e7dca554bcb802f98408383a864404e3aa4eacca",
+      "sha256": "94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d",
+      "bytes": 1078
+    },
+    {
+      "path": "CMakeLists.txt",
+      "gitBlob": "310a3dcfd2411f2c4773fa717f9ec3c7ca58bfda",
+      "sha256": "56bef594c12828fe9b63b2ef751187519b4f888e732b939cdfa4b4a9f9226909",
+      "bytes": 9029
+    },
+    {
+      "path": "build-xcframework.sh",
+      "gitBlob": "c25a1ef28c188fc7366075fa49755154cd189619",
+      "sha256": "d6c19abdc61778bee389fa31237d4c3d0cfdc1f7512dc17466b9843c2ea7ce82",
+      "bytes": 21514
+    },
+    {
+      "path": "include/llama.h",
+      "gitBlob": "2ea226726ad873311c7c50689f440b6d40ce8cb5",
+      "sha256": "05c78260dbb1359f64694e408646fe75689b1ab5764f81a9f4f4bb7028a9d60b",
+      "bytes": 80391
+    },
+    {
+      "path": "tools/CMakeLists.txt",
+      "gitBlob": "b433c91d85eba849e290897b08c26848f77ba12d",
+      "sha256": "0e471b0b077f1696a893326045a88d626159a7b6bf4c8141639f0a25bc785c39",
+      "bytes": 930
+    },
+    {
+      "path": "ggml/include/ggml.h",
+      "gitBlob": "3357a0d9985acdaf0a8eb9a0711b1725783fa351",
+      "sha256": "e9dcbc46054d3dfcecdeb90504146c30e547d29da73ae9605ce40e907343627b",
+      "bytes": 107658
+    },
+    {
+      "path": "ggml/include/ggml-alloc.h",
+      "gitBlob": "78aa059dde380ac6a88355de164b7fa377b7749d",
+      "sha256": "3793a2175be355619cc426982706b7fa94ad801b66d2aeef4b95e68c434ba0ef",
+      "bytes": 3624
+    },
+    {
+      "path": "ggml/include/gguf.h",
+      "gitBlob": "02d5f221c03c8917ca8fea8a0d69df2b7abe42a6",
+      "sha256": "657433f5d216c53c0801897ce59a1d4414af9b234fc885a7340275fac56af415",
+      "bytes": 10433
+    },
+    {
+      "path": "ggml/include/ggml-backend.h",
+      "gitBlob": "d0c7e5a1be08f88ba4c635837fc20158835637fc",
+      "sha256": "f958619aa6b8eceeb0b888b5e5f460f3bf07be727a9b247d41f01acb8ebad109",
+      "bytes": 24944
+    },
+    {
+      "path": "ggml/include/ggml-opt.h",
+      "gitBlob": "1c2ed79b77420e74fd3b81b83367109164380853",
+      "sha256": "3586de1bc8a934b5c72339e2b6937b0641e8f149b512231e666f67de0736eea2",
+      "bytes": 14040
+    },
+    {
+      "path": "ggml/include/ggml-cpu.h",
+      "gitBlob": "e3e067c916f14e785da031beea50743bb6644636",
+      "sha256": "1aafe97e576ea38c0da57517fb2492955d0b69c1a799842481fc069d6d9d28ef",
+      "bytes": 7696
+    },
+    {
+      "path": "vendor/miniaudio/miniaudio.h",
+      "gitBlob": "c6d493ee81f553b8dd584e402453f130c20e0546",
+      "sha256": "ac7af4de748b7e26b777f37e01cee313a308a7296a3eb080e2906b320cc55c89",
+      "bytes": 4108168
+    },
+    {
+      "path": "vendor/stb/stb_image.h",
+      "gitBlob": "9eedabedc45b3e6fd88fae6f14a160b4d53272ec",
+      "sha256": "594c2fe35d49488b4382dbfaec8f98366defca819d916ac95becf3e75f4200b3",
+      "bytes": 283010
+    },
+    {
+      "path": "tools/mtmd/README.md",
+      "gitBlob": "70194194718bb1c853932890afdcce489075341a",
+      "sha256": "5821ef525780b71085f68da7e4ea1dd9b90241fbba91cb928519b06eb2f76c42",
+      "bytes": 5627
+    },
+    {
+      "path": "tools/mtmd/mtmd-audio.cpp",
+      "gitBlob": "6bab1b6be9179b6173ccf839331e3d9869b9895f",
+      "sha256": "47a0ce0b32c0c94c14045830f691f7edafbf4114d2aa019aae0dd9a5d358c857",
+      "bytes": 34693
+    },
+    {
+      "path": "tools/mtmd/mtmd-helper.h",
+      "gitBlob": "57da78a754fc7c524af8fa580fb9d7aeaa44e49c",
+      "sha256": "b5cbc1513e58f6ee0a6af71750ed28bc4d8f6a54f3e7fc911355680b40ba7f81",
+      "bytes": 4529
+    },
+    {
+      "path": "tools/mtmd/mtmd-image.cpp",
+      "gitBlob": "1b058e026013c008ad5d10cb9be6be3452a62790",
+      "sha256": "91f595b6206e0904b442a0a3b9bf04e3b42adbbc04892c8ff1bb65ecd35b5595",
+      "bytes": 60630
+    },
+    {
+      "path": "tools/mtmd/mtmd-helper.cpp",
+      "gitBlob": "409407416371d0dc21f5778815b6b3c32af8db32",
+      "sha256": "42b3550d099a4e2fe0d372225693533762d7ab63f1e849e9137630c52ae45ceb",
+      "bytes": 18986
+    },
+    {
+      "path": "tools/mtmd/CMakeLists.txt",
+      "gitBlob": "21d17dbaa419a5f7627ca162dbc19a4433aa00f6",
+      "sha256": "e1ef9627ae700a10af084d704eeafa44bb115f4ea3d7b64214830654454c2cdb",
+      "bytes": 3886
+    },
+    {
+      "path": "tools/mtmd/mtmd.h",
+      "gitBlob": "e364174b82082b2d74bc6e3d4efffd472ecd388e",
+      "sha256": "f989a20f31f79e19eb4a83faaed6add03aa81f6d4e58d1c4ade75f0fc01bedec",
+      "bytes": 13076
+    }
+  ]
+}

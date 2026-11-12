@@ -1,0 +1,9 @@
+artifacts/
+*.xcodeproj/
+*.log
+BIOS_HOST_RESULT.json
+Assets/libv86.js
+Assets/v86.wasm
+Assets/seabios.bin
+Assets/vgabios.bin
+__pycache__/

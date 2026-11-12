@@ -1,0 +1,7 @@
+Frameworks/
+*.xcodeproj/
+artifacts/
+*.gguf
+*.log
+__pycache__/
+local-*.txt

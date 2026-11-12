@@ -4,26 +4,28 @@ Owner directive dated 2026-11-12: application Orivyn, assistant Jarvis, target 1
 
 ## Current checkpoint
 
-- Public verified development preview: 0.1.0 build 4 in Orivyn-Distribution and Strata. Public IPA SHA `196091d0989f39a01787491efcfb7d1461bbca3a2f9d26f4d82b5bc7fa12ee7d`; app identity `app.jarvisevo.ios` preserved.
-- Strata commit `e2305dc5c145dd1f42b386529d01fe6224057734`: 15 entries, prior 14 unchanged. Anonymous binary verification plus all five public catalog files byte-checked. Standalone distribution metadata commit `e9fba9feec430788610d13d354c830d20a8ac966` points to the same verified release asset.
-- Latest completed native gate: `6af613379679c85ac0af38fa` at exact private `ead1ba759e198258c27221a1da3e633d845be528`. All 91 selected units and plugin setup/cancel UI passed. Genuine image-entry and credential-background RED preceded implementation. The stronger coder produced correct code in the actual screenshot; a rich-text extraction defect prevented the full test from continuing through switch/relaunch.
-- Current private candidate `167655c5dc2aa4b2ff91c56573513c8628519020` (local `1db3be7`, exact tree `3ac6d26620a892bc8fd19ca2c1318731f8913240`) adds reviewed Image Playground acceptance/import/persistence and repairs credential clearing/accessibility. Combined native run `6af61e6a10a05158d8121fe4` is active. Local 68 Python checks, generator, shell syntax, YAML and whitespace pass. New native image tests and repairs are not yet passed.
-- Prior native tools simulation: 78 selected units and nine real UI flows passed for Mail/Calendar/Safari/location/reminder/incoming-link controls. Physical account delivery/GPS/HDMI/voice/image-generation remain distinct.
-- Free build capacity refreshed before the current gate: 403/500 minutes used, 97 remaining, no subscription or billing transactions. Current gate is capped at 30 minutes. No new IPA or public activation.
+- Public verified development preview remains **0.1.0 build 4** in Orivyn-Distribution and Strata. Public IPA SHA `196091d0989f39a01787491efcfb7d1461bbca3a2f9d26f4d82b5bc7fa12ee7d`; identity `app.jarvisevo.ios` preserved. No 1.0.0 or new IPA has been published.
+- Latest privately backed-up, native-tested source: `730ec2f2e9ced5b8983245956464545eb18cfe76`, tree `dc94a509ddb8a9d16189be66abce4d67b5088a1c`. Focused run `6af6257710a05158d81222a1` passed **90 unit tests and three UI tests**; **one physical-device-only file-protection test was explicitly skipped**, not passed. Real active-engine release → reload/inference and image-form exclusive ownership passed.
+- Prior run `6af61e6a10a05158d8121fe4` passed 154 of 155 units and all four UI tests, including real general → 1.5B coder → relaunch → general inference and background credential clearing. The sole Simulator protection mismatch is now correctly separated from physical acceptance. All 41 MCP tests passed; no actual external server/account was contacted.
+- Native tools baseline: 78 selected units and nine real UI flows passed for Mail/Calendar/Safari/location/reminder/incoming-link controls. Physical account delivery/GPS/HDMI/voice/image generation remain distinct unverified gates.
+- Fresh local aggregate: 70 Python tests, catalog generator check, shell syntax and whitespace pass. Full final-source aggregate native test/package remains pending.
+- Free build capacity refreshed after the resource gate: **421/500 minutes used, 79 remaining**, subscription disabled and no previous transactions. Combine essential gates; do not enable paid billing.
+- Phone-only vision and actual desktop are isolated research, not production features. Actual 500M VLM pixel inference works but blank-image hallucinations block broad quality claims. A larger official Apache-2.0 model is under bounded comparison. Native ImageIO/mtmd and WKWebView BIOS harnesses are being prepared for one combined gate.
+- The old TinyCore graphical guest is excluded from packaging because exact source/license coverage is incomplete. A signed, pinned maintained Buildroot guest is compiling locally with two jobs; an execution-session interruption was verified and resumed incrementally with a filesystem lock. No guest build completion or iPhone desktop claim is made.
 
 ## Workstreams and honest completion state
 
 | Workstream | Existing verified baseline | Remaining 1.0.0 work/gate |
 |---|---|---|
 | Chat and history | Streaming, conversations, search, management, actions, rendering baseline tested | Regress full final source; actual new screenshots |
-| Offline inference | Real default-model download/answer/relaunch; 9 full pinned weight CPU smoke tests | Automatic selection/download/switch ownership; real general/coder switching; device memory/thermal limits |
+| Offline inference | Real default-model download/answer/relaunch; 9 pinned weight CPU smoke tests; real automatic general/coder/relaunch/switch passed | Final full-source regression; physical memory/thermal/battery limits |
 | Online inference | Configurable OpenAI-compatible implementation and automated protocol tests | User-configured real endpoint acceptance without unapproved credential/transcript disclosure; explicit remote fallback policy |
 | Documents and images | Text/PDF and OCR extraction, attachment ownership tests | Multimodal image understanding/generation require compatible real provider/runtime; do not call OCR vision |
 | Voice | Native speech/audio state-machine and integration baseline tests | Final regression plus physical microphone/speech/background interruptions |
 | Memory and context | Persistence, bounded prompts, shared runtime | Final context/router regression; measured performance limits |
-| Native tools | OS reminder lifecycle passed; Mail/Calendar/Safari/Location source written | Native SDK retest, actual system controller/cancel/location capture; physical provider delivery/GPS limits |
-| Automatic models | 25 router tests, owner/network regressions and opt-in UI pass; actual 1.5B useful code screenshot | Finish corrected real download/switch/relaunch gate, then physical resource acceptance |
-| Agent/plugins/virtual desktop | 41 MCP transport/schema tests, broker/log/review gates pass; explicit connection UI | Background privacy recheck, actual configured service test, bounded autonomous orchestration; separate phone-only emulator proof, not a remote companion |
+| Native tools | Native OS reminder lifecycle, Mail fallback, EventKit editor/cancel, Safari return and simulated location/clear passed | Physical provider delivery/GPS and final full-source regression |
+| Automatic models | 25 router tests, owner/network regressions, opt-in UI and real 1.5B useful code/download/switch/relaunch pass | Physical resource acceptance; explicit policy for optional online routing |
+| Agent/plugins/virtual desktop | 41 MCP tests, broker/log/review and background privacy pass; explicit connection UI | Actual authorized service test, bounded autonomous orchestration; genuine phone-only guest/native lifecycle/physical acceptance, not a remote companion |
 | Orivyn Desk | App-owned scene/controller, consent reducer and phone scrolling controls pass focused simulation | Physical attach/reconnect/lock/resolution; no arbitrary installed apps or whole desktop claim |
 | Synchronization | Local data only | Select supported secure sync mechanism, conflict/privacy tests and actual supported-device verification |
 | Branding/distribution | Original Orivyn SVG/icon, app labels, private repo rename, public binary-only feed | Jarvis assistant identity, current README/screenshots, final 1.0.0 metadata only at release gate |
@@ -42,8 +44,9 @@ Owner directive dated 2026-11-12: application Orivyn, assistant Jarvis, target 1
 
 ## Next objective
 
-Finish the active image/privacy/automatic native gate. Continue an isolated license-audited phone-contained emulator proof and local vision feasibility research. The external companion is stopped and excluded by the latest owner direction. Keep configured external-provider, physical iPhone/HDMI, full desktop interaction and final exact-source package/catalog gates explicit.
+Complete the isolated native vision/runtime and BIOS/WKWebView gates within the remaining free budget, resolve measured vision quality and guest redistribution issues, then integrate verified functionality into the existing exclusive resource owner. Continue the requested bounded autonomous workflow and synchronization work without relying on an external computer. The companion stays stopped and excluded. Physical iPhone/HDMI, supported real provider delivery, full desktop interaction and final exact-source package/catalog gates remain explicit.
 
+Earlier checkpoints below are chronological evidence, not current-status claims. Later corrections supersede earlier hypotheses.
 
 ## 2026-11-12 native checkpoint and next candidate
 
@@ -93,7 +96,7 @@ Exact private source `167655c5dc2aa4b2ff91c56573513c8628519020`, native run `6af
 
 The real two-download general → Qwen Coder 1.5B → relaunch → general switch passed, including useful `print(2 + 2)` output and Paris after relaunch. Screenshots independently confirm actual readable responses, not fixture output. Background credential clearing and plugin setup/cancel now pass. Image creation/cancel preserved the draft; the simulator truthfully reported unavailable capability. It did not create an image, so physical Apple Image Playground generation remains unverified.
 
-The sole unit failure was an invalid test cast of `.protectionKey` to `FileProtectionType`; Foundation returns an NSString/raw string. The assertion now compares that string to `.complete.rawValue`, without skipping simulator protection or altering production storage. Its next native execution is combined with a resource-release gate. The shared engine currently retains its model after text generation, and its old unload method can return while busy, so exclusive heavy-feature ownership must be implemented before claiming final image/VM/vision memory safety.
+The sole unit failure was initially attributed to an invalid cast of `.protectionKey` to `FileProtectionType`; a later native rerun also returned raw nil, establishing the separate Simulator limitation described below. The assertion now compares that string to `.complete.rawValue`, without skipping simulator protection or altering production storage. Its next native execution is combined with a resource-release gate. The shared engine currently retains its model after text generation, and its old unload method can return while busy, so exclusive heavy-feature ownership must be implemented before claiming final image/VM/vision memory safety.
 
 Latest free-budget UI check: 411 of 500 macOS minutes used, 89 remaining, subscription disabled. Source candidate `fb81c072480c32642e48ccb753d6c24805f995ec` is backed up privately and starts a 15-minute-capped focused RED gate for actual model release and missing image resource ownership. No new IPA or catalog activation.
 
@@ -104,3 +107,7 @@ Isolated v86 proof now boots a genuine TinyCore graphical desktop, types into it
 Native `6af6229310a05158d8122162` on `fb81c072480c32642e48ccb753d6c24805f995ec` executed the real model regression and failed with `unload() returned before the active engine was reusable: busy`. Image ownership UI failed at the missing `image.creation.resources.ready` control. These failures precede the shared-release barrier and exclusive image-form lease implementation.
 
 The corrected protection cast still returned raw nil in Simulator. Apple DTS independently reproduces exactly this `.completeFileProtection` limitation: https://developer.apple.com/forums/thread/780632 . Production protection is unchanged. The test is split into a real backup/byte/permissions test, an explicit physical-device-only metadata test (reported as skipped in Simulator), and a source-contract check retaining the complete-protection write request. None of these proves lock-time enforcement. Actual iPhone file attributes and locked-device access remain mandatory physical acceptance, not a simulator pass.
+
+
+### Resource ownership native GREEN
+Exact source `730ec2f2e9ced5b8983245956464545eb18cfe76` (local tree `dc94a509ddb8a9d16189be66abce4d67b5088a1c`) passed `6af6257710a05158d81222a1` at 20:50 UTC: 90 selected unit tests passed, one explicitly physical-only Complete-protection test skipped, and all three image/resource UI tests passed. The real model active-stream unload → release → reload/inference regression passed in 14.105 seconds. All 11 ownership, 32 voice bridge, 15 automatic preparation, 12 AppModel and nine accepted-image tests passed, plus ten simulator-supported staging tests. UI cancel and background dismissal preserve the composer and do not reopen the form. Actual nested Image Playground generation on hardware, physical lock protection and OS memory/thermal reclaim remain unverified; no new IPA is implied.

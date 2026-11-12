@@ -1,0 +1,2 @@
+# Preserve verbatim upstream license notices, including upstream whitespace.
+Diagnostics/VMProof/Notices/* -whitespace

@@ -1,0 +1,8 @@
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs');
+const {V86}=require('../Assets/libv86.js');const {createController}=require('../Assets/controller.js');
+const read=name=>{const b=fs.readFileSync(new URL('../Assets/'+name,'file://'+__filename));return b.buffer.slice(b.byteOffset,b.byteOffset+b.byteLength)};
+test('actual bundled BIOS executes through owner-safe controller, without NIC',{timeout:30000},async()=>{
+ const assets={wasm:read('v86.wasm'),bios:read('seabios.bin'),vga:read('vgabios.bin')};let vm;const events=[];
+ const controller=createController({owner:'12345678-1234-1234-1234-123456789abc',load:async()=>assets,emit:e=>events.push(e),construct:a=>vm=new V86({wasm_fn:async imports=>(await WebAssembly.instantiate(a.wasm,imports)).instance.exports,memory_size:64*1024*1024,vga_memory_size:2*1024*1024,bios:{buffer:a.bios},vga_bios:{buffer:a.vga},net_device:{type:'none'},autostart:false,disable_speaker:true,log_level:0})});
+ try{await controller.start();await new Promise(r=>setTimeout(r,1000));controller.status();assert.equal(events.at(-1).event,'running');assert.ok(events.at(-1).instructions>100000);assert.equal(vm.v86.cpu.devices.net,undefined);assert.equal(vm.v86.cpu.devices.virtio_net,undefined);assert.equal(vm.network_adapter,undefined);fs.writeFileSync('BIOS_HOST_RESULT.json',JSON.stringify({instructions:events.at(-1).instructions,maxRSSKiB:process.resourceUsage().maxRSS,claim:'Host BIOS component execution only; no WKWebView/iPhone result'},null,2));}finally{await controller.stop();}assert.equal(events.at(-1).event,'stopped');
+});

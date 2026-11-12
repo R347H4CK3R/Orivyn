@@ -1,0 +1,21 @@
+{
+  "repository": "ggml-org/SmolVLM-500M-Instruct-GGUF",
+  "revision": "1c289caed23f23378ec6a11cd26786ba1a51bca9",
+  "baseRevision": "a7da5b986cb59b408707209984f360a5f4ad7e47",
+  "artifacts": [
+    {
+      "file": "SmolVLM-500M-Instruct-Q8_0.gguf",
+      "size": 436806912,
+      "sha": "9d4612de6a42214499e301494a3ecc2be0abdd9de44e663bda63f1152fad1bf4",
+      "actualSHA256": "9d4612de6a42214499e301494a3ecc2be0abdd9de44e663bda63f1152fad1bf4",
+      "seconds": 17.4
+    },
+    {
+      "file": "mmproj-SmolVLM-500M-Instruct-f16.gguf",
+      "size": 199468800,
+      "sha": "4b2fca922e549e9b9608f4ba56f93565dd5220e935ba5570a2a864a0fcc988a6",
+      "actualSHA256": "4b2fca922e549e9b9608f4ba56f93565dd5220e935ba5570a2a864a0fcc988a6",
+      "seconds": 9.56
+    }
+  ]
+}

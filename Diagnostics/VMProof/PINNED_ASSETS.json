@@ -1,0 +1,26 @@
+{
+  "distributionApproved": false,
+  "v86Commit": "315b2b0b758703ef0e6cc7b4088d6068f83f3c20",
+  "files": {
+    "libv86.js": {
+      "bytes": 359857,
+      "sha256": "e257912c4a1129e36a86c1e2df69904ab969d87bffd24aa6676e84d6ddffc1c6",
+      "source": "vendor/package/build/libv86.js"
+    },
+    "v86.wasm": {
+      "bytes": 2007347,
+      "sha256": "2f0c4150f266415b754a84a32e6f8e4c975a1d3abb94c78b047fa30027db1ef1",
+      "source": "vendor/package/build/v86.wasm"
+    },
+    "seabios.bin": {
+      "bytes": 131072,
+      "sha256": "73e3f359102e3a9982c35fce98eb7cd08f18303ac7f1ba6ebfbe6cdc1c244d98",
+      "source": "assets/seabios.bin"
+    },
+    "vgabios.bin": {
+      "bytes": 36352,
+      "sha256": "a4bc0d80cc3ca028c73dafa8fee396b8d054ce87ebd8abfbd31b06b437607880",
+      "source": "assets/vgabios.bin"
+    }
+  }
+}
