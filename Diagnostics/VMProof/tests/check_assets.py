@@ -12,3 +12,7 @@ html=(root/'Assets/index.html').read_text()
 assert "default-src 'none'" in html and "worker-src 'none'" in html
 assert 'https:' not in html and 'http:' not in html
 print('10 asset hashes/lengths verified; no guest image bundled')
+# The native allowlist must attest the same bytes, not just the JSON manifest.
+swift=(root/'Sources/AssetCatalog.swift').read_text()
+for item in manifest:
+ assert f'VMAsset(name: "{item["name"]}", bytes: {item["bytes"]}, sha256: "{item["sha256"]}", mime: "{item["mime"]}")' in swift, item['name']

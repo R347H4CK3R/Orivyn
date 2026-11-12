@@ -11,10 +11,11 @@ function createController({owner,load,construct,emit}){
   clearTimeout(timer);finishReady=null;if(!valid)return;
   if(vm.v86.cpu.devices.net||vm.v86.cpu.devices.virtio_net||vm.network_adapter)throw Error('Offline invariant');
   report('ready');await vm.run();if(!valid)return;phase='running';report('running');
- }catch(e){if(!valid)return;phase='failed';clearTimeout(timer);finishReady=null;const old=vm;vm=null;report('error');if(old){try{await old.destroy()}catch{ /* Failure remains reported; never convert cleanup failure to success. */ }}}}
+ }catch(e){if(!valid)return;emit({version:1,owner,event:'diagnostic',instructions:0,diagnostic:('controller: '+String(e?.name||'Error')+': '+String(e?.message||'unknown')).slice(0,256)});phase='failed';clearTimeout(timer);finishReady=null;const old=vm;vm=null;report('error');if(old){try{await old.destroy()}catch{ /* Failure remains reported; never convert cleanup failure to success. */ }}}}
  async function type(text){if(!valid||phase!=='running'||typeof text!=='string'||text.length>1024||/[^\x09\x0a\x20-\x7e]/.test(text))throw Error('Invalid input state');await vm.keyboard_send_text(text,10);}
  function status(){if(valid&&phase==='running')report('running');}
  return Object.freeze({start,stop,type,status});
 }
 const api={createController};if(typeof module!=='undefined')module.exports=api;root.OfflineVM=api;
 })(globalThis);
+(function(root){'use strict';root.installVMDiagnostics=function(target,owner,emit){let active=true;const report=(stage,error)=>{if(active)emit({version:1,owner,event:'diagnostic',instructions:0,diagnostic:(stage+': '+String(error?.name||'Error')+': '+String(error?.message||'unknown')).slice(0,256)})};const rejection=e=>report('engine promise',e.reason),error=e=>report('engine script',e.error||{message:e.message});target.addEventListener('unhandledrejection',rejection);target.addEventListener('error',error);return()=>{active=false;target.removeEventListener('unhandledrejection',rejection);target.removeEventListener('error',error)}}})(globalThis);
