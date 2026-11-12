@@ -23,7 +23,7 @@ final class VMHarnessUITests: XCTestCase {
         app.buttons["vm.stop"].tap()
         XCTAssertTrue(app.buttons["vm.start"].isEnabled)
         XCTAssertFalse(app.webViews.firstMatch.exists)
-        XCTAssertTrue(app.staticTexts["vm.status"].label.contains("no guest state saved"))
+        XCTAssertTrue(app.staticTexts["vm.status"].label.contains("previous checkpoints retained"))
     }
     func testBackgroundStopsWithoutAutomaticRestart() {
         let app=XCUIApplication();app.launch();app.buttons["vm.start"].tap()
@@ -32,4 +32,23 @@ final class VMHarnessUITests: XCTestCase {
         XCTAssertTrue(app.buttons["vm.start"].isEnabled);XCTAssertFalse(app.webViews.firstMatch.exists)
         XCTAssertTrue(app.staticTexts["vm.status"].label.contains("WebKit teardown requested"), "Must observe lifecycle teardown, not a fresh app launch")
     }
+    func testCheckpointSurvivesAppRelaunchAndRequiresResume() {
+        let app = XCUIApplication(); app.launch(); app.buttons["vm.start"].tap()
+        let running = NSPredicate(format: "label CONTAINS %@", "Actual BIOS running")
+        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: running, object: app.staticTexts["vm.status"])], timeout: 35), .completed)
+        app.buttons["vm.checkpoint.save"].tap()
+        let saved = NSPredicate(format: "label CONTAINS %@", "Checkpoint verified and saved")
+        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: saved, object: app.staticTexts["vm.checkpoint.status"])], timeout: 35), .completed)
+        XCTAssertTrue(app.staticTexts["vm.status"].label.contains("paused"))
+        app.terminate(); app.launch(); app.buttons["vm.start"].tap()
+        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: running, object: app.staticTexts["vm.status"])], timeout: 35), .completed)
+        app.buttons["vm.checkpoint.restore"].tap()
+        let restored = NSPredicate(format: "label CONTAINS %@", "Checkpoint verified and restored")
+        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: restored, object: app.staticTexts["vm.checkpoint.status"])], timeout: 35), .completed)
+        XCTAssertTrue(app.staticTexts["vm.status"].label.contains("paused"))
+        app.buttons["vm.resume"].tap()
+        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: running, object: app.staticTexts["vm.status"])], timeout: 10), .completed)
+        app.buttons["vm.stop"].tap()
+    }
+
 }

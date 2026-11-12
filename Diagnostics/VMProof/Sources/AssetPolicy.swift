@@ -60,7 +60,7 @@ struct VMAssetStore: Sendable {
 }
 
 struct VMStatus: Equatable {
-    enum Event: String { case ready, running, stopped, error, diagnostic }
+    enum Event: String { case ready, running, paused, stopped, error, diagnostic }
     let event: Event
     let instructions: UInt64
     let diagnostic: String?

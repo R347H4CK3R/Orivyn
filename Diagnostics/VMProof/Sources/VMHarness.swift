@@ -1,6 +1,7 @@
 import SwiftUI
 import WebKit
 import Observation
+import CryptoKit
 
 @MainActor
 final class VMAssetHandler: NSObject, @preconcurrency WKURLSchemeHandler {
@@ -30,6 +31,9 @@ final class VMHarnessController: NSObject, @preconcurrency WKScriptMessageHandle
     private func record(_ text: String) {
         diagnostics = String((diagnostics + "\n" + text).suffix(4096))
     }
+    private(set) var checkpointStatus = "Checkpoint not yet saved."
+    private(set) var checkpointBusy = false
+    private var checkpointBridge: VMCheckpointBridge?
     private var owner: UUID?
     private var handler: VMAssetHandler?
     private var initialURL: URL?
@@ -48,7 +52,23 @@ final class VMHarnessController: NSObject, @preconcurrency WKScriptMessageHandle
             configuration.preferences.javaScriptCanOpenWindowsAutomatically = false
             configuration.setURLSchemeHandler(handler, forURLScheme: "orivyn-vm")
             configuration.userContentController.add(self, name: "vmStatus")
+            let directory = try FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true).appendingPathComponent("VMProofCheckpoints", isDirectory: true)
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true, attributes: [.protectionKey: FileProtectionType.complete])
+            let checkpointStore = try VMCheckpointStore(root: directory)
+            let configurationDigest = SHA256.hash(data: Data("bios-only;ram=67108864;vga=2097152;network=none;schema=1".utf8)).map { String(format: "%02x", $0) }.joined()
+            func assetGroupDigest(_ names: Set<String>) -> String {
+                let text = VMAssetCatalog.files.filter { names.contains($0.name) }.sorted { $0.name < $1.name }.map { $0.name + ":" + $0.sha256 }.joined(separator: "\n")
+                return SHA256.hash(data: Data(text.utf8)).map { String(format: "%02x", $0) }.joined()
+            }
+            let checkpointIdentity = VMCheckpointIdentity(engineSHA256: assetGroupDigest(["libv86.js", "v86.wasm", "v86-fallback.wasm"]),
+                guestSHA256: assetGroupDigest(["seabios.bin", "vgabios.bin"]), configurationSHA256: configurationDigest)
+            let bridge = VMCheckpointBridge(owner: identity, identity: checkpointIdentity, store: checkpointStore)
+            checkpointBridge = bridge
+            configuration.userContentController.addScriptMessageHandler(bridge, contentWorld: .page, name: "vmCheckpoint")
+            let identityJSON = String(data: try JSONEncoder().encode(checkpointIdentity), encoding: .utf8)!
+            configuration.userContentController.addUserScript(WKUserScript(source: "window.orivynCheckpointIdentity=Object.freeze(" + identityJSON + ");", injectionTime: .atDocumentStart, forMainFrameOnly: true))
             let view = WKWebView(frame: .zero, configuration: configuration)
+            bridge.ownedWebView = view
             view.navigationDelegate = self; view.uiDelegate = self
             view.isInspectable = false
             webView = view
@@ -64,15 +84,44 @@ final class VMHarnessController: NSObject, @preconcurrency WKScriptMessageHandle
     }
     func stop() {
         proofDeadline?.cancel(); proofDeadline = nil
+        checkpointBridge?.invalidate(); checkpointBridge = nil; checkpointBusy = false
         owner = nil; initialURL = nil; handler?.active = false; handler = nil
         let old = webView; webView = nil
         old?.configuration.userContentController.removeScriptMessageHandler(forName: "vmStatus")
+        old?.configuration.userContentController.removeScriptMessageHandler(forName: "vmCheckpoint", contentWorld: .page)
         old?.stopLoading(); old?.navigationDelegate = nil; old?.uiDelegate = nil
         old?.removeFromSuperview()
         // Replace the document and release ownership; this is not proof of immediate
         // WebContent-process memory reclamation. Device measurement remains required.
         old?.loadHTMLString("", baseURL: nil)
-        status = "Stopped. WebKit teardown requested; no guest state saved."
+        status = "Stopped. WebKit teardown requested; previous checkpoints retained."
+    }
+    func checkpoint(restore: Bool) {
+        guard let view = webView, let identity = owner, !checkpointBusy else { return }
+        checkpointBusy = true
+        checkpointStatus = restore ? "Verifying and loading checkpoint…" : "Pausing and saving verified checkpoint…"
+        let script = restore ? "const value=await window.orivynRestoreCheckpoint(); return value === null ? 'missing' : 'restored';" : "await window.orivynSaveCheckpoint(); return 'saved';"
+        view.callAsyncJavaScript(script, arguments: [:], in: nil, in: .page) { [weak self, weak view] result in
+            guard let self, self.owner == identity, self.webView === view else { return }
+            self.checkpointBusy = false
+            switch result {
+            case .success(let value):
+                switch value as? String {
+                case "saved": self.checkpointStatus = "Checkpoint verified and saved. BIOS is paused."
+                case "restored": self.checkpointStatus = "Checkpoint verified and restored. Tap Resume."
+                case "missing": self.checkpointStatus = "No compatible checkpoint saved."
+                default: self.checkpointStatus = "Unexpected checkpoint response; no success claimed."
+                }
+            case .failure: self.checkpointStatus = "Checkpoint failed. Previous saved state is retained."
+            }
+        }
+    }
+    func resume() {
+        guard !checkpointBusy, let view = webView, let identity = owner else { return }
+        view.callAsyncJavaScript("await window.orivynResume();", arguments: [:], in: nil, in: .page) { [weak self] result in
+            guard let self, self.owner == identity else { return }
+            if case .failure = result { self.checkpointStatus = "Resume was not accepted. Check the current runtime state." }
+        }
     }
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
         record("event boundary: main=\(message.frameInfo.isMainFrame), scheme=\(message.frameInfo.securityOrigin.protocol), host=\(message.frameInfo.securityOrigin.host), owned=\(message.webView === webView)")
@@ -85,6 +134,7 @@ final class VMHarnessController: NSObject, @preconcurrency WKScriptMessageHandle
         switch value.event {
         case .diagnostic: record(value.diagnostic ?? "Missing diagnostic")
         case .ready: status = "BIOS initialized; starting actual emulated CPU."
+        case .paused: status = "BIOS paused. Resume explicitly; checkpoint result is shown separately."
         case .running: status = "Actual BIOS running. No operating-system guest installed."
         case .stopped: stop()
         case .error: stop(); status = "Emulator failed. No saved state or external fallback."
@@ -121,7 +171,7 @@ final class VMHarnessController: NSObject, @preconcurrency WKScriptMessageHandle
         stop(); status = "Local document failed. No network fallback."
     }
     func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
-        guard self.webView === webView else { return }; stop(); status = "WebContent ended. Start again explicitly; no state was saved."
+        guard self.webView === webView else { return }; stop(); status = "WebContent ended. Start again explicitly; unsaved changes were lost."
     }
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
         guard self.webView === webView else { return }; stop(); status = "Local WebKit load failed. No network fallback."
@@ -150,9 +200,15 @@ struct VMHarnessApp: App {
                     Button("Start BIOS") { controller.start() }.disabled(controller.webView != nil).accessibilityIdentifier("vm.start")
                     Button("Stop") { controller.stop() }.disabled(controller.webView == nil).accessibilityIdentifier("vm.stop")
                 }
+                Text(controller.checkpointStatus).font(.caption).accessibilityIdentifier("vm.checkpoint.status")
+                HStack {
+                    Button("Save checkpoint") { controller.checkpoint(restore: false) }.accessibilityIdentifier("vm.checkpoint.save")
+                    Button("Restore") { controller.checkpoint(restore: true) }.accessibilityIdentifier("vm.checkpoint.restore")
+                    Button("Resume") { controller.resume() }.accessibilityIdentifier("vm.resume")
+                }.disabled(controller.webView == nil || controller.checkpointBusy)
                 if let view = controller.webView { VMWebSurface(webView: view).accessibilityIdentifier("vm.surface") }
                 Spacer(minLength: 0)
-                Text("No guest ISO, networking, persistence, app bridge or external computer. Physical iPhone performance is unverified.").font(.caption)
+                Text("BIOS-only checkpoint test. No guest desktop, networking, host-file access or external computer. Native checkpoint behavior and physical iPhone performance remain unverified.").font(.caption)
             }.padding()
             .onChange(of: phase) { _, phase in if phase != .active { controller.stop() } }
             .onReceive(NotificationCenter.default.publisher(for: UIApplication.didReceiveMemoryWarningNotification)) { _ in controller.stop() }

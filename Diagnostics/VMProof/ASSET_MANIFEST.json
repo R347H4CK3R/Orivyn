@@ -1,20 +1,26 @@
 [
   {
     "name": "boot.js",
-    "bytes": 1438,
-    "sha256": "695aacc7d6e7f911d2c49180fb81e2f19bb283be41cc6e042f08efdb90115736",
+    "bytes": 1789,
+    "sha256": "6ac6029d7b14c79aacf29d5186f7c74e83e046cc2b9f51c25e4ee1549aed1ef2",
     "mime": "text/javascript"
   },
   {
+    "name": "checkpoint.js",
+    "mime": "text/javascript",
+    "bytes": 3298,
+    "sha256": "ce8dc3c1b8db165ebbdeb720f88da400e1b8ad719c88269ed24deee16a1fc0c7"
+  },
+  {
     "name": "controller.js",
-    "bytes": 2661,
-    "sha256": "aae9c5ea3e58a12aa59abe01431266a7e0503e8717d3dea963ab2666f8369542",
+    "bytes": 3390,
+    "sha256": "2b3e25b527b67e2e51ae9be0dd9fb8a695505c786b0cf0ff209646461fdfbcc4",
     "mime": "text/javascript"
   },
   {
     "name": "index.html",
-    "bytes": 800,
-    "sha256": "2835210ac793359f6668bd1f9c0db8063d953523494769053b00c7eb0c999228",
+    "bytes": 856,
+    "sha256": "05bd66b37512c1ca238094b0d1528fdfbe39a3d10503d27f4546bd6031d50e00",
     "mime": "text/html"
   },
   {
