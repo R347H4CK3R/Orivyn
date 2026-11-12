@@ -87,15 +87,27 @@ final class GeneratedImageStagingTests: XCTestCase {
         XCTAssertTrue(try FileManager.default.contentsOfDirectory(atPath: outside.path).isEmpty)
     }
 
-    func testOwnedStagingIsExcludedFromBackupAndProtected() throws {
+    func testOwnedStagingIsExcludedFromBackupAndPreservesBytes() throws {
         let source = try write(Data([1]))
         let owned = try staging.stage(from: source)
         XCTAssertEqual(try staging.directory.resourceValues(forKeys: [.isExcludedFromBackupKey]).isExcludedFromBackup, true)
+        XCTAssertEqual(try Data(contentsOf: owned), Data([1]))
+        let directoryAttributes = try FileManager.default.attributesOfItem(atPath: staging.directory.path)
+        XCTAssertEqual((directoryAttributes[.posixPermissions] as? NSNumber)?.intValue, 0o700)
+    }
+
+    func testCompleteProtectionAttributeOnPhysicalDevice() throws {
+        #if targetEnvironment(simulator)
+        // Apple DTS reproduces nil for completeFileProtection on Simulator:
+        // https://developer.apple.com/forums/thread/780632
+        // This is an explicit hardware gate, not a claim that lock protection passed.
+        throw XCTSkip("Physical iPhone required: Simulator does not expose Complete data-protection metadata or meaningful locked-device enforcement (Apple DTS 780632).")
+        #else
+        let source = try write(Data([1]))
+        let owned = try staging.stage(from: source)
         let attributes = try FileManager.default.attributesOfItem(atPath: owned.path)
-        // FileAttributeKey.protectionKey returns NSString, not the Swift raw-value struct.
-        let rawProtection = attributes[.protectionKey]
-        XCTAssertEqual(rawProtection as? String, FileProtectionType.complete.rawValue,
-            "Returned protection: \(String(describing: rawProtection)); type: \(rawProtection.map { String(reflecting: type(of: $0)) } ?? "nil")")
+        XCTAssertEqual(attributes[.protectionKey] as? String, FileProtectionType.complete.rawValue)
+        #endif
     }
 
     func testPolicyRequiresSupportedDeviceAndExactlyIOS26() {

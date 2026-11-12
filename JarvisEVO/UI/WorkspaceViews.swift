@@ -62,6 +62,7 @@ struct LocalSpaceView: View {
     @State private var preview: ChatAttachment?
     @State private var error: String?
     @State private var showsImageCreation = false
+    @State private var imageLeaseID: UUID?
     private var entries: [LocalLibraryEntry] {
         var seen: Set<UUID> = []
         let all = model.conversations.sorted { $0.updatedAt > $1.updatedAt }.flatMap { chat in
@@ -98,10 +99,11 @@ struct LocalSpaceView: View {
                 Text("Images saved on this iPhone. Create uses the supported Apple Image Playground sheet only after your explicit choice.")
                     .font(.caption).foregroundStyle(.secondary).padding(.horizontal, 20).padding(.bottom, 8)
                 Button("Create an image", systemImage: "sparkles") {
-                    if model.generatedImageStager != nil { showsImageCreation = true }
+                    guard model.canBeginHeavyWork, imageLeaseID == nil else { return }
+                    if model.generatedImageStager != nil { imageLeaseID = UUID(); showsImageCreation = true }
                     else { error = "Private image storage is unavailable. Reopen Orivyn and try again." }
                 }.buttonStyle(.bordered).accessibilityIdentifier("image.create")
-                    .disabled(model.isSavingGeneratedImage)
+                    .disabled(!model.canBeginHeavyWork || imageLeaseID != nil)
                 if model.isSavingGeneratedImage { ProgressView("Saving accepted image…").font(.caption) }
             }
             if entries.isEmpty {
@@ -144,9 +146,13 @@ struct LocalSpaceView: View {
             AttachmentPreviewView(attachment: attachment, originalURL: model.attachmentService.url(for: attachment),
                                   previewURL: model.attachmentService.previewURL(for: attachment))
         }
-        .sheet(isPresented: $showsImageCreation) {
-            if let stager = model.generatedImageStager {
-                ImageCreationView(stager: stager) { url, concept in
+        .sheet(isPresented: $showsImageCreation, onDismiss: {
+            // This stable outer presenter owns release, not the nested Apple sheet.
+            if let id = imageLeaseID { model.endHeavyWork(id: id) }
+            imageLeaseID = nil
+        }) {
+            if let stager = model.generatedImageStager, let id = imageLeaseID {
+                ImageCreationView(model: model, leaseID: id, stager: stager) { url, concept in
                     model.acceptGeneratedImage(url, concept: concept, stager: stager)
                 }
             }

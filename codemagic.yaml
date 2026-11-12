@@ -180,6 +180,7 @@ workflows:
       - name: Focused real model release and image ownership
         script: |
           set -euo pipefail
+          export HOMEBREW_NO_AUTO_UPDATE=1
           if ! command -v xcodegen >/dev/null; then brew install xcodegen; fi
           bash scripts/bootstrap_llama.sh
           # Xcode builds the unit-test target even for UI-only selection.
@@ -192,7 +193,7 @@ workflows:
           xcrun simctl bootstatus "$SIMULATOR_ID" -b
           # Real Core Location simulator input, explicitly not physical GPS evidence.
           xcrun simctl location "$SIMULATOR_ID" set 37.3349,-122.0090
-          bash scripts/run_native_tests.sh artifacts/resource-regression xcodebuild -project JarvisEVO.xcodeproj -scheme JarvisEVO -destination "platform=iOS Simulator,id=$SIMULATOR_ID" -parallel-testing-enabled NO -test-timeouts-enabled YES -default-test-execution-time-allowance 90 -maximum-test-execution-time-allowance 720 -resultBundlePath artifacts/resource-regression/Tests.xcresult -only-testing:JarvisEVOTests/LocalResourceReleaseTests -only-testing:JarvisEVOTests/GeneratedImageStagingTests -only-testing:JarvisEVOUITests/ImageResourceOwnershipUITests CODE_SIGNING_ALLOWED=NO test
+          bash scripts/run_native_tests.sh artifacts/resource-regression xcodebuild -project JarvisEVO.xcodeproj -scheme JarvisEVO -destination "platform=iOS Simulator,id=$SIMULATOR_ID" -parallel-testing-enabled NO -test-timeouts-enabled YES -default-test-execution-time-allowance 90 -maximum-test-execution-time-allowance 720 -resultBundlePath artifacts/resource-regression/Tests.xcresult -only-testing:JarvisEVOTests/LocalHeavyWorkTests -only-testing:JarvisEVOTests/GeneratedImageAppModelTests -only-testing:JarvisEVOTests/VoiceAppModelTests -only-testing:JarvisEVOTests/AppModelTests -only-testing:JarvisEVOTests/AutomaticPreparationTests -only-testing:JarvisEVOTests/LocalResourceReleaseTests -only-testing:JarvisEVOTests/GeneratedImageStagingTests -only-testing:JarvisEVOUITests/ImageResourceOwnershipUITests -only-testing:JarvisEVOUITests/ImageCreationUITests CODE_SIGNING_ALLOWED=NO test
     artifacts:
       - artifacts/resource-regression/*.log
       - artifacts/resource-regression/screenshots/**/*.png

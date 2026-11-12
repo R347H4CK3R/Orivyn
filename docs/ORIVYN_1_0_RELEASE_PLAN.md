@@ -85,3 +85,22 @@ Exact private source `ead1ba759e198258c27221a1da3e633d845be528` ran native gate 
 - Actual 1.5B coder screenshot shows `print(2 + 2)`. The test's response extraction returned only `python`, the code-language label. The quality assertion remains intact; a contained accessibility group and text-view extraction repair need native re-execution. The earlier 0.5B output failure was genuine, and the stronger automatic coding floor remains.
 
 Physical iPhone image generation, HDMI/lock/reconnect, memory/thermal behavior, real service connections, and the requested actual virtual desktop remain open acceptance gates. No new IPA or 1.0.0 release is implied by this checkpoint.
+
+
+## Image, privacy and automatic-switch native checkpoint
+
+Exact private source `167655c5dc2aa4b2ff91c56573513c8628519020`, native run `6af61e6a10a05158d8121fe4`, completed November 12 at 20:23 UTC. 154 of 155 selected unit tests and all four selected UI tests passed. All nine accepted-image persistence/import/race tests passed; no provider was involved in that persistence boundary. All 41 MCP tests and the selected broker/routing/composer suites passed.
+
+The real two-download general → Qwen Coder 1.5B → relaunch → general switch passed, including useful `print(2 + 2)` output and Paris after relaunch. Screenshots independently confirm actual readable responses, not fixture output. Background credential clearing and plugin setup/cancel now pass. Image creation/cancel preserved the draft; the simulator truthfully reported unavailable capability. It did not create an image, so physical Apple Image Playground generation remains unverified.
+
+The sole unit failure was an invalid test cast of `.protectionKey` to `FileProtectionType`; Foundation returns an NSString/raw string. The assertion now compares that string to `.complete.rawValue`, without skipping simulator protection or altering production storage. Its next native execution is combined with a resource-release gate. The shared engine currently retains its model after text generation, and its old unload method can return while busy, so exclusive heavy-feature ownership must be implemented before claiming final image/VM/vision memory safety.
+
+Latest free-budget UI check: 411 of 500 macOS minutes used, 89 remaining, subscription disabled. Source candidate `fb81c072480c32642e48ccb753d6c24805f995ec` is backed up privately and starts a 15-minute-capped focused RED gate for actual model release and missing image resource ownership. No new IPA or catalog activation.
+
+Isolated v86 proof now boots a genuine TinyCore graphical desktop, types into its editor, opens its File menu and restores a guest file from a snapshot. This is Linux component evidence only. The old TinyCore ISO has unresolved exact corresponding-source coverage for several graphical extensions and is excluded from any app package. A pinned maintained Buildroot guest is being prepared instead. Native WKWebView and physical iPhone VM acceptance remain open.
+
+
+### Resource RED and physical data-protection distinction
+Native `6af6229310a05158d8122162` on `fb81c072480c32642e48ccb753d6c24805f995ec` executed the real model regression and failed with `unload() returned before the active engine was reusable: busy`. Image ownership UI failed at the missing `image.creation.resources.ready` control. These failures precede the shared-release barrier and exclusive image-form lease implementation.
+
+The corrected protection cast still returned raw nil in Simulator. Apple DTS independently reproduces exactly this `.completeFileProtection` limitation: https://developer.apple.com/forums/thread/780632 . Production protection is unchanged. The test is split into a real backup/byte/permissions test, an explicit physical-device-only metadata test (reported as skipped in Simulator), and a source-contract check retaining the complete-protection write request. None of these proves lock-time enforcement. Actual iPhone file attributes and locked-device access remain mandatory physical acceptance, not a simulator pass.

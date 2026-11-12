@@ -3,6 +3,8 @@ import ImagePlayground
 
 /// Explicit, user-controlled image creation. Never calls a text provider or mutates the composer.
 struct ImageCreationView: View {
+    @Bindable var model: AppModel
+    let leaseID: UUID
     let stager: GeneratedImageStaging
     /// Called synchronously after staging. The recipient immediately registers ownership,
     /// imports/validates the image, and discards this URL after success or failure.
@@ -13,6 +15,8 @@ struct ImageCreationView: View {
     @State private var submittedConcept = ""
     @State private var showPlayground = false
     @State private var error: String?
+    @State private var preparationError: String?
+    private var resourcesReady: Bool { model.heavyWorkLease?.id == leaseID && model.heavyWorkLease?.phase == .ready }
 
     private var available: Bool {
         ImageCreationAvailability.isAvailable(supportsImagePlayground: supportsImagePlayground,
@@ -22,6 +26,17 @@ struct ImageCreationView: View {
     var body: some View {
         NavigationStack {
             Form {
+                Section {
+                    if resourcesReady {
+                        Text("Text-model memory is released. Chat pauses while this image form is open.")
+                            .font(.caption).foregroundStyle(.secondary)
+                            .accessibilityIdentifier("image.creation.resources.ready")
+                    } else if let preparationError {
+                        Text(preparationError).font(.caption).foregroundStyle(.orange)
+                    } else {
+                        ProgressView("Releasing text-model memory…")
+                    }
+                }
                 Section {
                     Text("Create an image")
                         .font(.headline)
@@ -49,11 +64,11 @@ struct ImageCreationView: View {
                             .font(.caption).foregroundStyle(.secondary)
                     }
                     Button("Create image") {
-                        guard available, ImageCreationAvailability.isValidConcept(concept) else { return }
+                        guard resourcesReady, available, ImageCreationAvailability.isValidConcept(concept) else { return }
                         submittedConcept = concept
                         showPlayground = true
                     }
-                    .disabled(!available || !ImageCreationAvailability.isValidConcept(concept) || showPlayground)
+                    .disabled(!resourcesReady || !available || !ImageCreationAvailability.isValidConcept(concept) || showPlayground)
                     .accessibilityIdentifier("image.creation.generate")
                 }
             }
@@ -66,8 +81,22 @@ struct ImageCreationView: View {
                 }
             }
         }
+        .task(id: leaseID) {
+            do { try await model.beginHeavyWork(id: leaseID, kind: .imageCreation) }
+            catch {
+                if error is CancellationError { dismiss() }
+                else { preparationError = error.localizedDescription }
+            }
+        }
+        .onChange(of: model.heavyWorkLease?.phase) { _, phase in
+            guard model.heavyWorkLease?.id == leaseID, phase == .revoked else { return }
+            showPlayground = false
+            dismiss()
+        }
         .imagePlaygroundSheet(isPresented: $showPlayground, concept: submittedConcept, sourceImage: nil,
             onCompletion: { url in
+                // A late system callback after background/cancel has no authority to save.
+                guard resourcesReady else { return }
                 // Copy now, before returning from the system callback. Do not defer this URL.
                 do {
                     let owned = try stager.stage(from: url)

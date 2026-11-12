@@ -25,6 +25,7 @@ final class GeneratedImageAppModelTests: XCTestCase {
         let stager = try staging(); let owned = try stage(stager)
         let task = try XCTUnwrap(model.acceptGeneratedImage(owned, concept: "  Blue kite  ", stager: stager))
         XCTAssertTrue(model.isSavingGeneratedImage)
+        XCTAssertFalse(model.canSend, "Do not overlap a text model with accepted-image decoding")
         await task.value
         XCTAssertFalse(model.isSavingGeneratedImage); XCTAssertFalse(model.isGenerating)
         XCTAssertEqual(model.selectedConversationID, selected); XCTAssertEqual(model.draft, "Keep this draft")

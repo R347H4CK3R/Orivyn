@@ -83,7 +83,24 @@ final class AppModel {
     private var automaticDownloadOwner: UUID?
     private var automaticPreparer: (any AutomaticModelPreparing)?
     private var automaticProviderFactory: (@MainActor (LocalModelDescriptor) -> any AIProvider)?
-    private let localEngine = LlamaEngine()
+    private let localEngine: LlamaEngine
+    private let resourceReleaser: any LocalResourceReleasing
+    private(set) var heavyWorkLease: LocalHeavyWorkLease?
+    private var heavyReleasePending = false
+    private var heavyPresenterDismissed = false
+    private var heavyWorkForeground = true
+    private var thermalBlocksHeavyWork = false
+    private var pressureReleaseTask: Task<Void, Never>?
+    var isLocalResourceAdmissionBlocked: Bool {
+        heavyWorkLease != nil || pressureReleaseTask != nil || thermalBlocksHeavyWork
+    }
+    var isInferenceAdmissionBlocked: Bool { isLocalResourceAdmissionBlocked || isSavingGeneratedImage }
+    var canBeginHeavyWork: Bool {
+        !isLocalResourceAdmissionBlocked && heavyWorkForeground && !isGenerating
+            && !isPreparingAutomaticModel && !isLoading && !isSavingSubmittedTurn
+            && activeVoiceTurn == nil && !isImportingAttachments && !isChangingHistory
+            && !isSavingGeneratedImage
+    }
     private var localProviders: [String: LocalAIProvider] = [:]
     private let attachmentImporter: any AttachmentImporting
     private var attachmentImportJobs: [UUID: AttachmentImportJob] = [:]
@@ -102,7 +119,11 @@ final class AppModel {
          providers: [ProviderOption] = [], defaults: UserDefaults = .standard,
          attachmentImporter: (any AttachmentImporting)? = nil,
          automaticPreparer: (any AutomaticModelPreparing)? = nil,
-         automaticProviderFactory: (@MainActor (LocalModelDescriptor) -> any AIProvider)? = nil) {
+         automaticProviderFactory: (@MainActor (LocalModelDescriptor) -> any AIProvider)? = nil,
+         resourceReleaser: (any LocalResourceReleasing)? = nil) {
+        let engine = LlamaEngine()
+        self.localEngine = engine
+        self.resourceReleaser = resourceReleaser ?? engine
         self.store = store
         self.attachmentService = attachmentService
         self.modelStore = modelStore
@@ -119,6 +140,69 @@ final class AppModel {
         self.automaticPreparer = automaticPreparer ?? LocalAutomaticModelPreparer(store: modelStore, network: network)
         self.automaticProviderFactory = automaticProviderFactory
         network.onAutomaticPathChange = { [weak self] path in self?.automaticNetworkChanged(to: path) }
+    }
+
+    /// Reserve synchronously, then wait for actual text worker/resource cleanup.
+    /// The caller supplies the stable presentation identity before the first await.
+    func beginHeavyWork(id: UUID, kind: LocalHeavyWorkKind) async throws {
+        try Task.checkCancellation()
+        guard heavyWorkForeground else { throw LocalHeavyWorkError.background }
+        guard !thermalBlocksHeavyWork, pressureReleaseTask == nil else { throw LocalHeavyWorkError.resourcePressure }
+        guard canBeginHeavyWork else { throw LocalHeavyWorkError.busy }
+        heavyWorkLease = LocalHeavyWorkLease(id: id, kind: kind, phase: .preparing)
+        heavyReleasePending = true; heavyPresenterDismissed = false
+        await resourceReleaser.unload()
+        heavyReleasePending = false
+        if heavyPresenterDismissed, heavyWorkLease?.id == id { heavyWorkLease = nil }
+        do {
+            try Task.checkCancellation()
+            guard heavyWorkLease?.id == id, heavyWorkLease?.phase == .preparing,
+                  heavyWorkForeground, !thermalBlocksHeavyWork, pressureReleaseTask == nil else {
+                throw CancellationError()
+            }
+            heavyWorkLease?.phase = .ready
+        } catch {
+            revokeHeavyWork(id: id)
+            throw error
+        }
+    }
+
+    /// Must be called by the outer presentation after dismissal / actual feature cleanup,
+    /// never by a nested system sheet's onDisappear. Old owners cannot release new ones.
+    func endHeavyWork(id: UUID) {
+        guard heavyWorkLease?.id == id else { return }
+        heavyPresenterDismissed = true
+        if heavyReleasePending { heavyWorkLease?.phase = .revoked }
+        else { heavyWorkLease = nil }
+    }
+
+    func revokeHeavyWork(id: UUID? = nil) {
+        guard let current = heavyWorkLease, id == nil || id == current.id else { return }
+        heavyWorkLease?.phase = .revoked
+    }
+
+    func setHeavyWorkForeground(_ foreground: Bool) {
+        heavyWorkForeground = foreground
+        if !foreground { revokeHeavyWork() }
+    }
+
+    func setHeavyWorkThermalState(_ state: ProcessInfo.ThermalState) {
+        let blocked = state == .serious || state == .critical
+        let newlyBlocked = blocked && !thermalBlocksHeavyWork
+        thermalBlocksHeavyWork = blocked
+        if newlyBlocked { handleLocalResourcePressure() }
+    }
+
+    func handleLocalResourcePressure() {
+        revokeHeavyWork()
+        stop()
+        guard pressureReleaseTask == nil else { return }
+        statusMessage = "Memory-intensive work stopped to protect your iPhone. Your draft is kept."
+        let releaser = resourceReleaser
+        pressureReleaseTask = Task { @MainActor in
+            await releaser.unload()
+            self.pressureReleaseTask = nil
+        }
     }
 
     func configurePlugins(directory: URL) {
@@ -148,6 +232,7 @@ final class AppModel {
     @discardableResult
     func acceptGeneratedImage(_ owned: URL, concept: String, stager: GeneratedImageStaging) -> Task<Void, Never>? {
         guard generatedImageTask == nil, !isChangingHistory, !isLoading,
+              !isGenerating, !isPreparingAutomaticModel, !isImportingAttachments,
               ImageCreationAvailability.isValidConcept(concept) else {
             if owned != generatedImageURL { try? stager.discard(owned) }
             errorMessage = "Finish the current image or history operation and use a valid image description."
@@ -195,10 +280,10 @@ final class AppModel {
 
     var activeConversation: Conversation? { conversations.first { $0.id == selectedConversationID } }
     var selectedProvider: ProviderOption? { providers.first { $0.id == selectedProviderID } }
-    var canSend: Bool { !isGenerating && !isPreparingAutomaticModel && !isLoading && !isSavingSubmittedTurn && activeVoiceTurn == nil && !isImportingAttachments && !isChangingHistory && (!draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !pendingAttachments.isEmpty) }
+    var canSend: Bool { !isInferenceAdmissionBlocked && !isGenerating && !isPreparingAutomaticModel && !isLoading && !isSavingSubmittedTurn && activeVoiceTurn == nil && !isImportingAttachments && !isChangingHistory && (!draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !pendingAttachments.isEmpty) }
     var isImportingAttachments: Bool { !attachmentImportJobs.isEmpty }
     var canAcceptIncomingText: Bool {
-        !isGenerating && !isPreparingAutomaticModel && !isImportingAttachments && !isLoading && !isChangingHistory
+        !isLocalResourceAdmissionBlocked && !isGenerating && !isPreparingAutomaticModel && !isImportingAttachments && !isLoading && !isChangingHistory
             && !isSavingSubmittedTurn && activeVoiceTurn == nil
     }
     func acceptIncomingText(_ text: String) throws {
@@ -211,7 +296,7 @@ final class AppModel {
     /// Capture before an asynchronous Photos/camera transfer, then pass back to the add method.
     var attachmentImportContext: UUID { attachmentImportEpoch }
     var availableAttachmentSlots: Int {
-        guard !isChangingHistory, !isLoading, !isSavingSubmittedTurn else { return 0 }
+        guard !isInferenceAdmissionBlocked, !isChangingHistory, !isLoading, !isSavingSubmittedTurn else { return 0 }
         return max(0, 4 - pendingAttachments.count - attachmentImportJobs.values.reduce(0) { $0 + $1.reservedSlots })
     }
     var visibleConversations: [Conversation] {
@@ -349,7 +434,7 @@ final class AppModel {
 
     private func validateVoiceAvailability() throws {
         guard pendingAttachments.isEmpty, !isImportingAttachments else { throw VoiceTurnError.attachmentsPending }
-        guard !isGenerating, !isPreparingAutomaticModel, !isLoading, !isChangingHistory, !isSavingSubmittedTurn else { throw VoiceTurnError.busy }
+        guard !isInferenceAdmissionBlocked, !isGenerating, !isPreparingAutomaticModel, !isLoading, !isChangingHistory, !isSavingSubmittedTurn else { throw VoiceTurnError.busy }
         guard selectedProvider?.provider != nil else { throw ProviderError.notConfigured }
         if selectedProviderID == "remote", network.isOnline == false { throw VoiceTurnError.offlineRemote }
     }
@@ -383,6 +468,7 @@ final class AppModel {
 
     private func validateGeneration(_ ticket: VoiceTurnTicket?) throws {
         try Task.checkCancellation()
+        guard !isInferenceAdmissionBlocked else { throw LocalHeavyWorkError.busy }
         if let ticket { try validateVoiceContext(ticket) }
     }
 
@@ -496,6 +582,7 @@ final class AppModel {
     @discardableResult
     private func submit(text: String, attachments: [ChatAttachment], conversationID: UUID, provider: any AIProvider,
                         voiceTicket: VoiceTurnTicket? = nil) -> Task<Result<String, any Error>, Never> {
+        guard !isInferenceAdmissionBlocked else { return Task { .failure(LocalHeavyWorkError.busy) } }
         let content = text.trimmingCharacters(in: .whitespacesAndNewlines)
         let message = ChatMessage(id: UUID(), role: .user, content: content.isEmpty ? "Please review the attached file." : content,
                                   createdAt: Date(), state: .complete, attachments: attachments)
@@ -524,6 +611,7 @@ final class AppModel {
     private func startGeneration(conversationID: UUID, assistantID: UUID, provider: any AIProvider,
                                  restoringDraftOnSaveFailure original: ChatMessage? = nil,
                                  voiceTicket: VoiceTurnTicket? = nil) -> Task<Result<String, any Error>, Never> {
+        guard !isInferenceAdmissionBlocked else { return Task { .failure(LocalHeavyWorkError.busy) } }
         let generation = voiceTicket?.id ?? UUID()
         generationID = generation
         isGenerating = true
@@ -657,7 +745,7 @@ final class AppModel {
 
     @discardableResult
     func branch(through messageID: UUID) async -> Bool {
-        guard !isGenerating, let activeConversation else { return false }
+        guard !isInferenceAdmissionBlocked, !isGenerating, let activeConversation else { return false }
         guard beginHistoryChange() else { return false }
         defer { finishHistoryChange() }
         cancelAttachmentImports()
@@ -671,7 +759,7 @@ final class AppModel {
     }
 
     func editAndBranch(messageID: UUID, text: String) async {
-        guard !isGenerating, let activeConversation else { return }
+        guard !isInferenceAdmissionBlocked, !isGenerating, let activeConversation else { return }
         let text = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return }
         guard beginHistoryChange() else { return }
@@ -690,7 +778,7 @@ final class AppModel {
     }
 
     func regenerate(messageID: UUID) async {
-        guard !isGenerating, let conversation = activeConversation,
+        guard !isInferenceAdmissionBlocked, !isGenerating, let conversation = activeConversation,
               let index = conversation.messages.firstIndex(where: { $0.id == messageID }),
               let user = conversation.messages[..<index].last(where: { $0.role == .user }) else { return }
         guard await branch(through: user.id) else { return }
@@ -698,7 +786,7 @@ final class AppModel {
     }
 
     private func regenerateLastUserTurn() {
-        guard !isGenerating, let provider = selectedProvider?.provider, var conversation = activeConversation else {
+        guard !isInferenceAdmissionBlocked, !isGenerating, let provider = selectedProvider?.provider, var conversation = activeConversation else {
             errorMessage = "Choose an available model before generating a response."
             return
         }
@@ -892,6 +980,7 @@ final class AppModel {
     func report(_ error: Error) { errorMessage = error.localizedDescription }
 
     private func beginHistoryChange() -> Bool {
+        guard !isLocalResourceAdmissionBlocked else { errorMessage = LocalHeavyWorkError.busy.localizedDescription; return false }
         guard !isChangingHistory else { errorMessage = "Wait for the current history operation to finish."; return false }
         guard !isSavingGeneratedImageRecord else { errorMessage = "Wait for the accepted image to finish saving before changing history."; return false }
         generatedImageOperation = nil; generatedImageTask?.cancel()

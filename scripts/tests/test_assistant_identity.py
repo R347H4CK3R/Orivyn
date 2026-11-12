@@ -27,5 +27,13 @@ class AssistantIdentityTests(unittest.TestCase):
         self.assertTrue('Opening a review does not send, save or execute it' in source)
         self.assertTrue('Do not claim to browse, run code' in source)
 
+    def test_generated_image_storage_requests_complete_protection_without_downgrade(self):
+        # Source contract only: Simulator cannot enforce the physical lock boundary.
+        source = (ROOT / 'JarvisEVO/Services/GeneratedImageStaging.swift').read_text()
+        self.assertIn('options: [.atomic, .completeFileProtection]', source)
+        self.assertIn('.protectionKey: FileProtectionType.complete', source)
+        self.assertNotIn('completeFileProtectionUntilFirstUserAuthentication', source)
+        self.assertNotIn('FileProtectionType.none', source)
+
 if __name__ == '__main__':
     unittest.main()

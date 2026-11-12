@@ -24,14 +24,14 @@
 - Model load/release/reload: old stream terminates and a new real inference succeeds.
 
 ## Task 1: Observe native missing behavior
-- [ ] Add `LocalResourceReleaseTests` using the real bundled model: consume a token, await `unload()`, require a new stream to succeed and produce nonempty text.
-- [ ] Add `ImageResourceOwnershipUITests`: open Images → Create, require a truthful released-resource indicator, cancel, and prove the original composer is available without sending.
-- [ ] Run those tests with repaired staging tests in a focused native gate. Preserve actual failure evidence before production edits.
+- [x] Add `LocalResourceReleaseTests` using the real bundled model: consume a token, await `unload()`, require a new stream to succeed and produce nonempty text.
+- [x] Add `ImageResourceOwnershipUITests`: open Images → Create, require a truthful released-resource indicator, cancel, and prove the original composer is available without sending.
+- [x] Run those tests with repaired staging tests in a focused native gate. Preserve actual failure evidence before production edits.
 
 ## Task 2: Engine and coordinator ownership
 - [ ] Retain the active engine Task; `unload()` is async, marks release, cancels it and suspends until cleanup nils resources/path and resumes waiters. New streams reject during release.
 - [ ] Add `LocalHeavyWorkLease` (UUID, kind, preparing/ready/revoked) and injectable `LocalResourceReleasing` boundary; production uses the shared LlamaEngine.
-- [ ] AppModel `beginHeavyWork(kind:) async throws -> UUID`, `endHeavyWork(id:)`, `revokeHeavyWork()` and foreground changes validate cancellation and ownership before/after release. Revocation retains admission until presenter dismissal.
+- [ ] AppModel `beginHeavyWork(id:kind:) async throws`, `endHeavyWork(id:)`, `revokeHeavyWork(id:)` and foreground changes validate cancellation and ownership before/after release. Revocation retains admission until presenter dismissal.
 - [ ] Add controlled native coordinator tests for concurrent calls, pre-cancellation, cancel/restart, late release, background, active generation, every submit path, and composer preservation. Fake only the asynchronous resource boundary, never an inference result.
 
 ## Task 3: Stable image presenter and lifecycle

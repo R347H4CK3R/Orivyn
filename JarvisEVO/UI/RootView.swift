@@ -172,7 +172,18 @@ struct RootView: View {
         .overlay(alignment: .top) {
             if copied { Text("Copied").font(.caption.weight(.medium)).padding(.horizontal, 14).padding(.vertical, 9).background(.regularMaterial, in: Capsule()).padding(.top, 6).transition(.opacity) }
         }
+        .onAppear {
+            model.setHeavyWorkForeground(scenePhase == .active)
+            model.setHeavyWorkThermalState(ProcessInfo.processInfo.thermalState)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didReceiveMemoryWarningNotification)) { _ in
+            model.handleLocalResourcePressure()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: ProcessInfo.thermalStateDidChangeNotification)) { _ in
+            model.setHeavyWorkThermalState(ProcessInfo.processInfo.thermalState)
+        }
         .onChange(of: scenePhase) { _, phase in
+            model.setHeavyWorkForeground(phase == .active)
             ExternalWorkspaceController.shared.setForeground(phase == .active)
             model.plugins?.setForeground(phase == .active)
             if phase != .active { model.cancelAutomaticPreparation() }

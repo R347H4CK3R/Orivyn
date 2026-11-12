@@ -4,17 +4,18 @@ import llama
 /// A single actor owns llama's mutable context. No runtime pointer leaves this file.
 /// Different replies never share a KV cache, so cancelled output cannot leak into the
 /// next request. The caller supplies the complete, visible conversation each time.
-actor LlamaEngine {
+actor LlamaEngine: LocalResourceReleasing {
     private static let backend: Void = { llama_backend_init() }()
     private let contextSize: UInt32 = 2048
     private let batchSize = 128
     private var resources: LlamaResources?
     private var loadedPath: String?
     private var busy = false
-    private var unloadWhenIdle = false
+    private var workerTask: Task<Void, Never>?
+    private var releaseRequests = 0
 
     func stream(_ request: GenerationRequest, modelURL: URL) throws -> AsyncThrowingStream<String, Error> {
-        guard !busy else { throw LocalModelError.busy }
+        guard !busy, releaseRequests == 0 else { throw LocalModelError.busy }
         guard (1...1024).contains(request.maxTokens), request.temperature.isFinite,
               (0...2).contains(request.temperature), request.messages.contains(where: { $0.role == .user && (!$0.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || $0.attachments.contains(where: { !($0.extractedText ?? "").isEmpty })) }),
               request.systemPrompt.utf8.count + request.messages.reduce(0, { $0 + $1.content.utf8.count }) <= 1_000_000 else { throw LocalModelError.invalidRequest }
@@ -28,15 +29,25 @@ actor LlamaEngine {
                 pair.continuation.finish(throwing: error)
             }
             busy = false
-            if unloadWhenIdle { resources = nil; loadedPath = nil; unloadWhenIdle = false }
+            workerTask = nil
         }
+        workerTask = worker
         pair.continuation.onTermination = { @Sendable _ in worker.cancel() }
         return pair.stream
     }
 
-    func unload() {
-        if busy { unloadWhenIdle = true }
-        else { resources = nil; loadedPath = nil }
+    /// Cancellation is cooperative at decode boundaries. Awaiting this method,
+    /// unlike merely canceling a consumer, is a real resource-release barrier.
+    func unload() async {
+        releaseRequests += 1
+        defer { releaseRequests -= 1 }
+        let worker = workerTask
+        worker?.cancel()
+        await worker?.value
+        // generate() has returned, so its local owner/sampler/KV references are gone.
+        // Concurrent releasers keep admission closed until every waiter resumes.
+        resources = nil
+        loadedPath = nil
     }
 
     private func load(_ url: URL) throws -> LlamaResources {
