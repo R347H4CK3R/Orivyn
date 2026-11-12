@@ -16,6 +16,7 @@ final class AppModel {
         didSet {
             guard oldValue != selectedConversationID else { return }
             conversationRevision = UUID()
+            cancelAutomaticPreparation()
             if let ticket = activeVoiceTurn, selectedConversationID != ticket.conversationID { cancelVoiceTurn(ticket) }
         }
     }
@@ -37,9 +38,23 @@ final class AppModel {
     var selectedProviderID: String {
         didSet {
             defaults.set(selectedProviderID, forKey: "selectedProviderID")
-            if oldValue != selectedProviderID { providerRevision = UUID(); cancelActiveVoiceTurn() }
+            if oldValue != selectedProviderID { providerRevision = UUID(); cancelActiveVoiceTurn(); cancelAutomaticPreparation() }
         }
     }
+    var automaticModelsEnabled: Bool {
+        didSet {
+            defaults.set(automaticModelsEnabled, forKey: "orivyn.automaticModels")
+            if oldValue != automaticModelsEnabled { cancelAutomaticPreparation() }
+        }
+    }
+    var automaticAllowsCellular: Bool {
+        didSet {
+            defaults.set(automaticAllowsCellular, forKey: "orivyn.automaticCellular")
+            if oldValue != automaticAllowsCellular { cancelAutomaticPreparation() }
+        }
+    }
+    private(set) var automaticDecision: AutomaticModelDecision?
+    var isPreparingAutomaticModel: Bool { automaticTicket != nil }
     private(set) var installedModels: [LocalModelDescriptor] = []
     private(set) var memories: [MemoryNote] = []
     private(set) var downloadProgress: Double?
@@ -61,6 +76,11 @@ final class AppModel {
     private var composerRevision = UUID()
     private var isApplyingOwnedComposerUpdate = false
     private var downloadTask: Task<Void, Never>?
+    private var automaticTask: Task<Void, Never>?
+    private var automaticTicket: AutomaticPreparationTicket?
+    private var automaticDownloadOwner: UUID?
+    private var automaticPreparer: (any AutomaticModelPreparing)?
+    private var automaticProviderFactory: (@MainActor (LocalModelDescriptor) -> any AIProvider)?
     private let localEngine = LlamaEngine()
     private var localProviders: [String: LocalAIProvider] = [:]
     private let attachmentImporter: any AttachmentImporting
@@ -72,7 +92,9 @@ final class AppModel {
 
     init(store: SQLiteConversationStore, attachmentService: AttachmentService, modelStore: LocalModelStore,
          providers: [ProviderOption] = [], defaults: UserDefaults = .standard,
-         attachmentImporter: (any AttachmentImporting)? = nil) {
+         attachmentImporter: (any AttachmentImporting)? = nil,
+         automaticPreparer: (any AutomaticModelPreparing)? = nil,
+         automaticProviderFactory: (@MainActor (LocalModelDescriptor) -> any AIProvider)? = nil) {
         self.store = store
         self.attachmentService = attachmentService
         self.modelStore = modelStore
@@ -80,18 +102,23 @@ final class AppModel {
         self.defaults = defaults
         workspace = WorkspaceStore(defaults: defaults)
         self.attachmentImporter = attachmentImporter ?? LocalAttachmentImporter(service: attachmentService)
+        automaticModelsEnabled = defaults.bool(forKey: "orivyn.automaticModels")
+        automaticAllowsCellular = defaults.bool(forKey: "orivyn.automaticCellular")
         selectedProviderID = defaults.string(forKey: "selectedProviderID") ?? ""
         remoteBaseURL = defaults.string(forKey: "remoteBaseURL") ?? ""
         remoteModelName = defaults.string(forKey: "remoteModelName") ?? ""
         remoteEnabled = defaults.bool(forKey: "remoteEnabled")
+        self.automaticPreparer = automaticPreparer ?? LocalAutomaticModelPreparer(store: modelStore, network: network)
+        self.automaticProviderFactory = automaticProviderFactory
+        network.onAutomaticPathChange = { [weak self] path in self?.automaticNetworkChanged(to: path) }
     }
 
     var activeConversation: Conversation? { conversations.first { $0.id == selectedConversationID } }
     var selectedProvider: ProviderOption? { providers.first { $0.id == selectedProviderID } }
-    var canSend: Bool { !isGenerating && !isImportingAttachments && !isChangingHistory && (!draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !pendingAttachments.isEmpty) }
+    var canSend: Bool { !isGenerating && !isPreparingAutomaticModel && !isLoading && !isSavingSubmittedTurn && activeVoiceTurn == nil && !isImportingAttachments && !isChangingHistory && (!draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !pendingAttachments.isEmpty) }
     var isImportingAttachments: Bool { !attachmentImportJobs.isEmpty }
     var canAcceptIncomingText: Bool {
-        !isGenerating && !isImportingAttachments && !isLoading && !isChangingHistory
+        !isGenerating && !isPreparingAutomaticModel && !isImportingAttachments && !isLoading && !isChangingHistory
             && !isSavingSubmittedTurn && activeVoiceTurn == nil
     }
     func acceptIncomingText(_ text: String) throws {
@@ -128,6 +155,7 @@ final class AppModel {
     func replaceProviders(_ providers: [ProviderOption]) {
         providerRevision = UUID()
         cancelActiveVoiceTurn()
+        cancelAutomaticPreparation()
         self.providers = providers
         if !providers.contains(where: { $0.id == selectedProviderID && $0.isAvailable }) {
             selectedProviderID = providers.first(where: \.isAvailable)?.id ?? providers.first?.id ?? ""
@@ -241,7 +269,7 @@ final class AppModel {
 
     private func validateVoiceAvailability() throws {
         guard pendingAttachments.isEmpty, !isImportingAttachments else { throw VoiceTurnError.attachmentsPending }
-        guard !isGenerating, !isLoading, !isChangingHistory, !isSavingSubmittedTurn else { throw VoiceTurnError.busy }
+        guard !isGenerating, !isPreparingAutomaticModel, !isLoading, !isChangingHistory, !isSavingSubmittedTurn else { throw VoiceTurnError.busy }
         guard selectedProvider?.provider != nil else { throw ProviderError.notConfigured }
         if selectedProviderID == "remote", network.isOnline == false { throw VoiceTurnError.offlineRemote }
     }
@@ -263,6 +291,7 @@ final class AppModel {
         guard !isApplyingOwnedComposerUpdate else { return }
         composerRevision = UUID()
         cancelActiveVoiceTurn()
+        cancelAutomaticPreparation()
     }
 
     private func applyingOwnedComposerUpdate(_ update: () -> Void) {
@@ -279,6 +308,7 @@ final class AppModel {
 
     func send() {
         guard canSend else { return }
+        if automaticModelsEnabled { prepareAutomaticSend(); return }
         if selectedProviderID == "remote" && network.isOnline == false {
             guard let local = providers.first(where: { $0.id != "remote" && $0.isAvailable }) else {
                 errorMessage = "You’re offline and no local model is ready. Your draft is saved in the composer. Install a local model when connected to chat offline."
@@ -292,6 +322,95 @@ final class AppModel {
             return
         }
         submit(text: draft, attachments: pendingAttachments, conversationID: selectedConversationID ?? UUID(), provider: provider)
+    }
+
+    private func prepareAutomaticSend() {
+        guard downloadTask == nil, let preparer = automaticPreparer else {
+            errorMessage = "A model download is already running. Your draft is unchanged; finish or cancel it before Automatic can prepare this request."
+            return
+        }
+        let ticket = AutomaticPreparationTicket(conversationID: selectedConversationID,
+            conversationRevision: conversationRevision, providerRevision: providerRevision,
+            composerRevision: composerRevision, draft: draft, attachments: pendingAttachments.map(\.id))
+        automaticTicket = ticket
+        automaticDecision = nil
+        errorMessage = nil
+        automaticTask = Task { [weak self] in
+            guard let self else { return }
+            do {
+                let decision = try await preparer.prepare(text: ticket.draft, allowsCellular: self.automaticAllowsCellular) { [weak self] decision, fraction in
+                    guard let self, self.ownsAutomatic(ticket) else { return }
+                    self.automaticDecision = decision
+                    if decision.needsDownload {
+                        self.automaticDownloadOwner = ticket.id
+                        self.downloadingModelID = decision.model.id
+                        self.downloadProgress = fraction
+                    }
+                }
+                try Task.checkCancellation()
+                guard self.ownsAutomatic(ticket) else { return }
+                let provider: any AIProvider
+                if let factory = self.automaticProviderFactory { provider = factory(decision.model) }
+                else {
+                    let local = self.localProviders[decision.model.id].flatMap { $0.model == decision.model ? $0 : nil }
+                        ?? LocalAIProvider(store: self.modelStore, model: decision.model, engine: self.localEngine)
+                    self.localProviders[decision.model.id] = local
+                    provider = local
+                }
+                // No await from the final ownership check through submission. The manual
+                // provider preference remains unchanged; this provider belongs to one turn.
+                self.installedModels.removeAll { $0.id == decision.model.id }
+                self.installedModels.append(decision.model)
+                self.providers.removeAll { $0.id == decision.model.id || $0.id == "local-unavailable" }
+                self.providers.append(ProviderOption(id: decision.model.id, title: decision.model.name,
+                    detail: "On this iPhone · works offline", provider: provider))
+                self.clearAutomaticOwnership(ticket.id)
+                self.automaticDecision = decision
+                self.statusMessage = "Automatic: \(decision.model.name). \(decision.reason)"
+                self.submit(text: self.draft, attachments: self.pendingAttachments,
+                    conversationID: self.selectedConversationID ?? UUID(), provider: provider)
+            } catch {
+                guard self.automaticTicket?.id == ticket.id else { return }
+                self.clearAutomaticOwnership(ticket.id)
+                if !(error is CancellationError) && !Task.isCancelled {
+                    self.errorMessage = "Automatic preparation stopped: \(error.localizedDescription) Your draft is unchanged. You can choose a model manually."
+                }
+            }
+        }
+    }
+
+    private func ownsAutomatic(_ ticket: AutomaticPreparationTicket) -> Bool {
+        automaticTicket?.id == ticket.id && automaticModelsEnabled
+            && ticket.conversationID == selectedConversationID && ticket.conversationRevision == conversationRevision
+            && ticket.providerRevision == providerRevision && ticket.composerRevision == composerRevision
+            && ticket.draft == draft && ticket.attachments == pendingAttachments.map(\.id)
+            && !isGenerating && !isImportingAttachments && !isChangingHistory && !isLoading
+            && !isSavingSubmittedTurn && activeVoiceTurn == nil
+    }
+    private func clearAutomaticOwnership(_ id: UUID) {
+        guard automaticTicket?.id == id else { return }
+        automaticTicket = nil
+        automaticTask = nil
+        if automaticDownloadOwner == id {
+            automaticDownloadOwner = nil; downloadingModelID = nil; downloadProgress = nil
+        }
+    }
+    func automaticNetworkChanged(to path: AutomaticDownloadNetwork) {
+        // Path monitoring is best-effort across transitions. URLSession additionally
+        // enforces cellular/expensive flags and always forbids Low Data Mode for auto.
+        guard automaticDownloadOwner != nil else { return }
+        let permitted = path == .wifi || path == .wired || (path == .cellular && automaticAllowsCellular)
+        if !permitted {
+            cancelAutomaticPreparation()
+            statusMessage = "Automatic download paused because the connection no longer meets your policy. Your draft is unchanged; send again when ready."
+        }
+    }
+    func cancelAutomaticPreparation() {
+        guard let id = automaticTicket?.id else { return }
+        let task = automaticTask
+        clearAutomaticOwnership(id)
+        automaticDecision = nil
+        task?.cancel()
     }
 
     @discardableResult
@@ -405,7 +524,7 @@ final class AppModel {
         return task
     }
 
-    func stop() { cancelActiveVoiceTurn(); generationTask?.cancel() }
+    func stop() { cancelAutomaticPreparation(); cancelActiveVoiceTurn(); generationTask?.cancel() }
 
     func rename(_ id: UUID, to title: String) async {
         let title = title.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -551,6 +670,7 @@ final class AppModel {
             }
         }
         // The main actor reserves the entire batch before another call can inspect available slots.
+        cancelAutomaticPreparation()
         attachmentImportJobs[jobID] = AttachmentImportJob(reservedSlots: sources.count, task: task)
         let result = await withTaskCancellationHandler {
             await task.value
@@ -628,7 +748,7 @@ final class AppModel {
     }
 
     func downloadModel(_ descriptor: LocalModelDescriptor) {
-        guard downloadTask == nil else { return }
+        guard downloadTask == nil, !isPreparingAutomaticModel else { return }
         downloadingModelID = descriptor.id
         downloadProgress = 0
         downloadTask = Task { [weak self] in
@@ -646,7 +766,10 @@ final class AppModel {
         }
     }
 
-    func cancelDownload() { downloadTask?.cancel() }
+    func cancelDownload() {
+        if automaticDownloadOwner != nil { cancelAutomaticPreparation() }
+        else { downloadTask?.cancel() }
+    }
 
 #if DEBUG
     /// Controlled UI state only. Never starts a network request or installs weights.
@@ -664,6 +787,7 @@ final class AppModel {
 #endif
 
     func importModel(from url: URL) async {
+        cancelAutomaticPreparation()
         do {
             let descriptor = try await modelStore.importModel(from: url)
             try await reloadProviders()
@@ -672,7 +796,7 @@ final class AppModel {
     }
 
     func removeModel(_ descriptor: LocalModelDescriptor) async {
-        guard !isGenerating else { errorMessage = "Stop the response before removing a model."; return }
+        guard !isGenerating, !isPreparingAutomaticModel else { errorMessage = "Stop the response or automatic preparation before removing a model."; return }
         do {
             if let provider = localProviders[descriptor.id] { await provider.unload() }
             try await modelStore.remove(descriptor)
@@ -689,6 +813,7 @@ final class AppModel {
 
     private func beginHistoryChange() -> Bool {
         guard !isChangingHistory else { errorMessage = "Wait for the current history operation to finish."; return false }
+        cancelAutomaticPreparation()
         isChangingHistory = true
         return true
     }
@@ -794,4 +919,14 @@ enum VoiceTurnError: LocalizedError {
         case .offlineRemote: return "You’re offline. Choose an available on-device model before starting voice conversation."
         }
     }
+}
+
+private struct AutomaticPreparationTicket {
+    let id = UUID()
+    let conversationID: UUID?
+    let conversationRevision: UUID
+    let providerRevision: UUID
+    let composerRevision: UUID
+    let draft: String
+    let attachments: [UUID]
 }

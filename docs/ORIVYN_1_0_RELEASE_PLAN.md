@@ -42,3 +42,12 @@ Owner directive dated 2026-11-12: application Orivyn, assistant Jarvis, target 1
 ## Next objective
 
 Run the combined native gate: corrected actual system tools and incoming links, plus missing Automatic/Desk UI controls. Use genuine RED to unblock isolated pure-router and external-workspace implementation. In parallel, prepare the permissioned plugin/agent protocol design and final-source regression coverage. Log precise commits, checks, errors, repairs and unresolved device/provider requirements at each checkpoint.
+
+
+## 2026-11-12 native checkpoint and next candidate
+
+Run `6af5fb7d9679c85ac0af2fef` on `8f61fdd4e00b5b51264c706b03d786da364540ef` compiled the legacy UIKit delegate bridges and passed all 78 selected native unit tests plus nine individual native UI tests. Real Safari open/return, EventKit editor/cancel, simulated one-shot location/clear, editable Mail fallback, OS reminder schedule/relaunch/cancel, and warm incoming-text review/cancel/first-request ownership passed. Mail delivery, real calendar account persistence, physical GPS, Shortcuts app registration and hardware remain separate unverified gates. The combined workflow intentionally failed because two Automatic controls and Desk entry were absent; those exact failures preceded implementation.
+
+The next source candidate implements bounded local automatic routing, owner-checked preparation, URLSession network policy, progress/cancel, native review suggestions, and an app-owned external-display privacy controller/read-only panel. It includes 20 router, 11 suggestion, 15 coordinator, three network configuration and eight Desk state tests, all awaiting native execution. The standalone plugin UI acceptance remains intentionally RED before MCP production. No native-pass claim applies to this new source yet, and no new IPA is released.
+
+Desk first scope is not the full requested desktop: resizable windows, file manager, terminal, external keyboard/pointer interaction and real remote computer require additional work and tests. No simulated remote machine or embedded arbitrary iOS apps is claimed.

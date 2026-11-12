@@ -10,6 +10,6 @@ Spec: docs/superpowers/specs/2026-11-12-automatic-model-tools-design.md
 
 Interfaces for pure worker:
 - AutomaticRouteEnvironment(physicalMemory: UInt64, freeStorageBytes: Int64?, network: AutomaticDownloadNetwork, allowsCellular: Bool).
-- AutomaticDownloadNetwork: unknown, offline, wifi, cellular, constrained.
+- AutomaticDownloadNetwork: unknown, offline, wifi, wired, cellular, constrained.
 - AutomaticModelRouter.route(text: String, installed: [LocalModelDescriptor], environment: AutomaticRouteEnvironment) throws -> AutomaticModelDecision(model: LocalModelDescriptor, needsDownload: Bool, reason: String, purpose: String).
 - NativeToolSuggestion.forText(String) -> optional enum email/calendar/browser/location/reminder, with id/title; suggestion only, never dispatch.

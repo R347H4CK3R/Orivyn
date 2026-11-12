@@ -7,6 +7,7 @@ struct RootView: View {
     @Bindable var model: AppModel
     @State private var voice = VoiceService()
     @State private var incoming = IncomingTextInbox.shared
+    @State private var reviewingTool: NativeToolSuggestion?
     @State private var reviewingIncoming: IncomingTextRequest?
     @State private var showHistory = false
     @State private var workspaceSection: WorkspaceSection = .chat
@@ -100,6 +101,14 @@ struct RootView: View {
                 reviewingIncoming = nil
             }
         }
+        .sheet(item: $reviewingTool) { tool in
+            NavigationStack {
+                toolReview(tool)
+                    .toolbar { ToolbarItem(placement: .cancellationAction) {
+                        Button("Done") { reviewingTool = nil }.accessibilityIdentifier("tool.review.done")
+                    } }
+            }
+        }
         .sheet(isPresented: $showModels) { ModelManagerView(model: model) }
         .sheet(isPresented: $showSettings) { SettingsView(model: model) }
         .sheet(item: $editingMessage) { message in
@@ -164,6 +173,8 @@ struct RootView: View {
             if copied { Text("Copied").font(.caption.weight(.medium)).padding(.horizontal, 14).padding(.vertical, 9).background(.regularMaterial, in: Capsule()).padding(.top, 6).transition(.opacity) }
         }
         .onChange(of: scenePhase) { _, phase in
+            ExternalWorkspaceController.shared.setForeground(phase == .active)
+            if phase != .active { model.cancelAutomaticPreparation() }
             if phase == .background { voiceSession?.controller.setForeground(false); stopAudio(); cancelTransfers() }
             else if phase == .active { voiceSession?.controller.setForeground(true) }
         }
@@ -175,7 +186,7 @@ struct RootView: View {
             transcriptNearBottom = true
         }
         .onChange(of: model.selectedProviderID) { _, _ in stopAudio() }
-        .onDisappear { stopAudio(); cancelTransfers() }
+        .onDisappear { model.cancelAutomaticPreparation(); stopAudio(); cancelTransfers() }
     }
 
     private var canAcceptSharedText: Bool {
@@ -185,7 +196,7 @@ struct RootView: View {
     private var canReviewSharedText: Bool {
         canAcceptSharedText && !showModels && !showSettings && !showHistory
             && editingMessage == nil && selectingText == nil && previewAttachment == nil
-            && model.errorMessage == nil
+            && model.errorMessage == nil && reviewingTool == nil
     }
     @ViewBuilder private var incomingBanner: some View {
         if incoming.pending != nil || incoming.lastError != nil {
@@ -360,8 +371,46 @@ struct RootView: View {
         .id(model.selectedConversationID)
     }
 
+    @ViewBuilder private func toolReview(_ tool: NativeToolSuggestion) -> some View {
+        switch tool {
+        case .email: MailDraftView()
+        case .calendar: CalendarDraftView()
+        case .browser: BrowserToolView()
+        case .location: LocationToolView()
+        case .reminder: ScheduledRemindersView()
+        }
+    }
+
     private var composer: some View {
         VStack(spacing: 10) {
+            if model.isPreparingAutomaticModel {
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack {
+                        Text(model.automaticDecision?.model.name ?? "Choosing a local model…").font(.caption.weight(.semibold))
+                        Spacer()
+                        Button("Cancel") { model.cancelAutomaticPreparation() }
+                            .accessibilityIdentifier("model.automatic.cancel")
+                    }
+                    if let decision = model.automaticDecision {
+                        Text(decision.reason).font(.caption).foregroundStyle(.secondary)
+                        if decision.needsDownload {
+                            Text("Download: \(decision.model.formattedSize). Your draft stays here until verification finishes.")
+                                .font(.caption).foregroundStyle(.secondary)
+                        }
+                    }
+                    if let progress = model.downloadProgress { ProgressView(value: progress) }
+                    else { ProgressView().controlSize(.mini) }
+                }.padding(.horizontal, 24).accessibilityIdentifier("model.automatic.preparing")
+            } else if !model.isGenerating && !audioBusy && !attachmentsBusy,
+                      let suggestion = NativeToolSuggestion.forText(model.draft) {
+                Button {
+                    prepareNavigation()
+                    reviewingTool = suggestion
+                } label: {
+                    Label("Review in \(suggestion.title)", systemImage: "arrow.up.forward.app")
+                        .font(.subheadline)
+                }.buttonStyle(.bordered).accessibilityIdentifier("tool.suggestion.\(suggestion.id)")
+            }
             if let status = model.statusMessage {
                 HStack {
                     Text(status).font(.caption).foregroundStyle(.secondary)
@@ -474,7 +523,7 @@ struct RootView: View {
     private var attachmentsBusy: Bool { transferID != nil || model.isImportingAttachments }
     private var audioBusy: Bool { voice.isStarting || voice.isRecording || voice.isFinishing || voiceSession?.controller.isActive == true }
 
-    private func prepareNavigation() { composerFocused = false; stopAudio(); cancelTransfers() }
+    private func prepareNavigation() { model.cancelAutomaticPreparation(); composerFocused = false; stopAudio(); cancelTransfers() }
     private func navigate(to section: WorkspaceSection) { prepareNavigation(); workspaceSection = section; showHistory = false }
     private func openHistory() { prepareNavigation(); showHistory = true }
     private func closeHistory() { showHistory = false }
@@ -489,6 +538,7 @@ struct RootView: View {
     }
 
     private func startVoiceConversation() {
+        model.cancelAutomaticPreparation()
         guard !attachmentsBusy, model.pendingAttachments.isEmpty else {
             model.errorMessage = "Voice conversation cannot send pending files. Your files are kept. Send or remove them, and finish or cancel importing, before starting voice."
             return
@@ -504,6 +554,7 @@ struct RootView: View {
     }
 
     private func toggleDictation() {
+        model.cancelAutomaticPreparation()
         if voice.isRecording { voice.finishRecording(); return }
         guard !voice.isStarting, !voice.isFinishing else { return }
         stopAudio()
@@ -529,6 +580,7 @@ struct RootView: View {
     }
 
     private func prepareAttachmentPicker(_ kind: AttachmentPickerRequest.Kind) {
+        model.cancelAutomaticPreparation()
         stopAudio()
         composerFocused = false
         let request = AttachmentPickerRequest(context: model.attachmentImportContext, kind: kind, limit: max(1, model.availableAttachmentSlots))

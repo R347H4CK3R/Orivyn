@@ -18,8 +18,24 @@ struct ModelManagerView: View {
         NavigationStack {
             List {
                 Section {
+                    Toggle("Automatic local model", isOn: $model.automaticModelsEnabled)
+                        .accessibilityIdentifier("model.automatic")
+                    if model.automaticModelsEnabled {
+                        Toggle("Allow cellular downloads", isOn: $model.automaticAllowsCellular)
+                            .accessibilityIdentifier("model.automatic.cellular")
+                        Text("Sending may download a verified general or coding model, up to 750 MB per request. Downloads normally require unmetered Wi-Fi or Ethernet. Cellular can use your data allowance. Network transition checks are best-effort; Low Data Mode is always blocked. Existing models are never automatically deleted.")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                    if let decision = model.automaticDecision {
+                        Text("\(decision.model.name) · \(decision.reason)").font(.caption)
+                    }
+                } header: { Text("Model routing") } footer: {
+                    Text("Opt in to choose a compatible local model for each typed request. No remote endpoint is selected automatically. Turning this off restores your manual choice. Voice uses the manual model.")
+                }
+                Section {
                     ForEach(model.providers) { option in
                         Button {
+                            model.automaticModelsEnabled = false
                             model.selectedProviderID = option.id
                             dismiss()
                         } label: {
@@ -35,7 +51,7 @@ struct ModelManagerView: View {
                         }
                         .accessibilityIdentifier("model.provider.\(option.id)")
                         .accessibilityValue(model.selectedProviderID == option.id ? "Selected" : "")
-                        .disabled(!option.isAvailable || model.isGenerating)
+                        .disabled(!option.isAvailable || model.isGenerating || model.isPreparingAutomaticModel)
                     }
                 } header: { Text("Choose a model") } footer: {
                     Text("Local models run on this iPhone. Remote models send your messages, attachment text, and saved memory to the endpoint you configure.")
@@ -92,7 +108,7 @@ struct ModelManagerView: View {
                             } else if !model.installedModels.contains(where: { $0.id == descriptor.id }) {
                                 Button { model.downloadModel(descriptor) } label: { Label("Download model", systemImage: "arrow.down.circle") }
                                     .accessibilityIdentifier("model.download.\(descriptor.id)")
-                                    .disabled(model.downloadingModelID != nil || importingBusy)
+                                    .disabled(model.downloadingModelID != nil || importingBusy || model.isPreparingAutomaticModel)
                             }
                             HStack {
                                 if let url = descriptor.sourceURL { Link("Publisher details", destination: url).font(.caption) }
@@ -104,7 +120,7 @@ struct ModelManagerView: View {
                         .padding(.vertical, 6)
                     }
                 } header: { Text("Free model catalog") } footer: {
-                    Text("Models and precision variants are all free. Downloads use internet; local inference does not. RAM guidance is an estimate, not a guarantee. iOS memory pressure and thermals vary. One local model is loaded at a time with a 2,048-token context. No automatic downloads.")
+                    Text("Models and precision variants are all free. Downloads use internet; local inference does not. RAM guidance is an estimate, not a guarantee. iOS memory pressure and thermals vary. One local model is loaded at a time with a 2,048-token context. Automatic downloads occur only after you enable Automatic and send a request.")
                 }
                 if !model.installedModels.isEmpty {
                     Section("On this iPhone") {
@@ -116,14 +132,14 @@ struct ModelManagerView: View {
                                 }
                                 Spacer()
                                 Button(role: .destructive) { removing = descriptor } label: { Image(systemName: "trash") }
-                                    .buttonStyle(.borderless).accessibilityLabel("Remove \(descriptor.name)").disabled(model.isGenerating || importingBusy)
+                                    .buttonStyle(.borderless).accessibilityLabel("Remove \(descriptor.name)").disabled(model.isGenerating || importingBusy || model.isPreparingAutomaticModel)
                             }
                         }
                     }
                 }
                 Section {
                     Button { importing = true } label: { Label("Import GGUF model", systemImage: "folder") }
-                        .disabled(importingBusy || model.downloadingModelID != nil)
+                        .disabled(importingBusy || model.downloadingModelID != nil || model.isPreparingAutomaticModel)
                     if importingBusy { ProgressView("Checking and importing model…") }
                 } footer: { Text("Choose an instruction-tuned GGUF file up to 2 GB with an embedded chat template. Compatibility and available memory vary. Only import models you trust and have permission to use.") }
             }

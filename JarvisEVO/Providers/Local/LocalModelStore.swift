@@ -41,17 +41,14 @@ actor LocalModelStore {
         return url
     }
 
-    func download(_ descriptor: LocalModelDescriptor, progress: @escaping @Sendable (Double) -> Void = { _ in }) async throws {
+    func download(_ descriptor: LocalModelDescriptor, policy: ModelDownloadPolicy = .userInitiated, progress: @escaping @Sendable (Double) -> Void = { _ in }) async throws {
         guard !installing else { throw LocalModelError.busy }
         let target = try destination(for: descriptor)
         guard let source = descriptor.downloadURL, source.scheme?.lowercased() == "https", source.user == nil, source.password == nil else { throw LocalModelError.insecureURL }
         try checkStorage(required: descriptor.byteCount * 2)
         installing = true
         defer { installing = false }
-        let configuration = URLSessionConfiguration.ephemeral
-        configuration.timeoutIntervalForRequest = 120
-        configuration.timeoutIntervalForResource = 3600
-        configuration.urlCache = nil
+        let configuration = policy.configuration()
         let session = URLSession(configuration: configuration)
         defer { session.invalidateAndCancel() }
         let delegate = ModelDownloadProgress(expectedBytes: descriptor.byteCount, progress: progress)
@@ -160,6 +157,10 @@ actor LocalModelStore {
     private func writeManifest(_ models: [LocalModelDescriptor]) throws {
         try JSONEncoder().encode(models).write(to: manifestURL, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
     }
+    func availableStorageBytes() -> Int64? {
+        try? root.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey]).volumeAvailableCapacityForImportantUsage
+    }
+
     private func checkStorage(required: Int64) throws {
         let values = try root.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey])
         if let available = values.volumeAvailableCapacityForImportantUsage, available < required + 100_000_000 {

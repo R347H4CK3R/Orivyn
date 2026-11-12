@@ -422,6 +422,11 @@ private struct LocalDeviceView: View {
                 LabeledContent("System", value: "\(UIDevice.current.systemName) \(UIDevice.current.systemVersion)")
                 LabeledContent("Processing", value: "On device")
             } footer: { Text("Orivyn cannot currently control a Mac, PC or another phone. No device has been paired.") }
+            Section("External display") {
+                NavigationLink { DeskControlView(controller: .shared) } label: {
+                    Label("Orivyn Desk", systemImage: "display")
+                }.accessibilityIdentifier("desk.open")
+            }
             Section("iOS boundaries") {
                 Text("Local models run while Orivyn is active. iOS can suspend background work and limits app memory. Signing with SideStore does not remove sandbox, entitlement or background-execution restrictions.").font(.footnote)
             }
