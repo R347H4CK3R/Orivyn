@@ -65,6 +65,26 @@ actor SQLiteConversationStore {
 
     func save(_ conversation: Conversation) throws {
         try validate(conversation)
+        let proposedImages = try validateImageIdentities(in: [conversation])
+        try database.execute("BEGIN IMMEDIATE")
+        do {
+            // Streaming checkpoints normally change only message text. Compare this row first,
+            // rather than decoding the entire history every time AppModel saves a checkpoint.
+            // Removing all images cannot introduce a new cross-conversation identity conflict.
+            if !proposedImages.isEmpty {
+                let previous = try load(id: conversation.id)
+                let previousImages = try validateImageIdentities(in: previous.map { [$0] } ?? [])
+                if proposedImages != previousImages {
+                    try validateMergedImageIdentities(replacing: [conversation])
+                }
+            }
+            try writeConversation(conversation)
+            try database.execute("COMMIT")
+        } catch { try? database.execute("ROLLBACK"); throw error }
+    }
+
+    /// The caller validates the complete proposed state and owns its write transaction.
+    private func writeConversation(_ conversation: Conversation) throws {
         let payload = try encoder.encode(conversation)
         try withStatement("INSERT INTO conversations (id,title,updated,archived,search,payload) VALUES (?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET title=excluded.title,updated=excluded.updated,archived=excluded.archived,search=excluded.search,payload=excluded.payload") { statement in
             bind(conversation.id.uuidString, to: 1, in: statement)
@@ -110,7 +130,11 @@ actor SQLiteConversationStore {
         try backup.memories.forEach(validateMemory)
         try database.execute("BEGIN IMMEDIATE")
         do {
-            for conversation in backup.conversations { try save(conversation) }
+            // Validate replacements together with untouched rows before changing either table.
+            // Do not call save here: intermediate rows may conflict while a consistent batch
+            // replaces every reference to an identity, and the transaction is already owned.
+            try validateMergedImageIdentities(replacing: backup.conversations)
+            for conversation in backup.conversations { try writeConversation(conversation) }
             for note in backup.memories { try saveMemory(note) }
             try database.execute("COMMIT")
         } catch { try? database.execute("ROLLBACK"); throw error }
@@ -157,15 +181,44 @@ actor SQLiteConversationStore {
               Set(value.messages.map(\.id)).count == value.messages.count else { throw ConversationError.tooLarge }
         for message in value.messages {
             guard message.content.utf8.count <= 1_000_000, message.attachments.count <= 20 else { throw ConversationError.tooLarge }
+            let imageIDs = message.attachments.filter(\.isImage).map(\.id)
+            guard Set(imageIDs).count == imageIDs.count else { throw ConversationError.unsafeAttachment }
             for attachment in message.attachments {
-                let parts = attachment.relativePath.split(separator: "/", omittingEmptySubsequences: false)
-                guard !attachment.relativePath.isEmpty, !attachment.relativePath.hasPrefix("/"),
-                      !attachment.relativePath.contains("\\"), !parts.contains(".."), !parts.contains("."), !parts.contains(""),
+                guard attachment.hasValidStorageBinding,
                       attachment.byteCount >= 0, attachment.byteCount <= 50_000_000,
                       attachment.name.utf8.count <= 1_024, (attachment.extractedText?.utf8.count ?? 0) <= 1_000_000
                 else { throw ConversationError.unsafeAttachment }
             }
         }
+        try validateImageIdentities(in: [value])
+    }
+    private func validateMergedImageIdentities(replacing replacements: [Conversation]) throws {
+        guard !replacements.isEmpty else { return }
+        let replacedIDs = Set(replacements.map(\.id))
+        let retained = try list(includeArchived: true).filter { !replacedIDs.contains($0.id) }
+        try validateImageIdentities(in: retained + replacements)
+    }
+
+    private struct ImageIdentity: Equatable {
+        let relativePath: String
+        let mediaType: String
+        let byteCount: Int
+    }
+
+    @discardableResult
+    private func validateImageIdentities(in conversations: [Conversation]) throws -> [UUID: ImageIdentity] {
+        var identities: [UUID: ImageIdentity] = [:]
+        for conversation in conversations {
+            for message in conversation.messages {
+                for image in message.attachments where image.isImage {
+                    let identity = ImageIdentity(relativePath: image.relativePath, mediaType: image.mediaType, byteCount: image.byteCount)
+                    if let existing = identities[image.id] {
+                        guard existing == identity else { throw ConversationError.unsafeAttachment }
+                    } else { identities[image.id] = identity }
+                }
+            }
+        }
+        return identities
     }
     private func validateMemory(_ note: MemoryNote) throws {
         guard !note.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, note.content.utf8.count <= 32_768 else { throw ConversationError.tooLarge }

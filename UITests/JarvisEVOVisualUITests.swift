@@ -1,4 +1,5 @@
 import XCTest
+import UIKit
 
 @MainActor
 final class JarvisEVOVisualUITests: XCTestCase {
@@ -25,10 +26,11 @@ final class JarvisEVOVisualUITests: XCTestCase {
     func testIdleComposerKeepsAllControlsOnOneRow() {
         let input = app.textViews["composer.input"].frame
         let attach = app.buttons["composer.attach"].frame
-        let send = app.buttons["composer.send"].frame
+        let send = app.buttons["composer.voice"].frame
         XCTAssertLessThan(abs(input.midY - attach.midY), 14)
         XCTAssertLessThan(abs(input.midY - send.midY), 14)
         XCTAssertLessThanOrEqual(max(input.maxY, max(attach.maxY, send.maxY)) - min(input.minY, min(attach.minY, send.minY)), 66)
+        assertMenuContrast(dark: false)
         capture("Reference refresh - empty light")
     }
 
@@ -105,6 +107,7 @@ final class JarvisEVOVisualUITests: XCTestCase {
         XCTAssertTrue(appearance.waitForExistence(timeout: 5))
         appearance.buttons["Dark"].tap()
         app.buttons["settings.done"].tap()
+        assertMenuContrast(dark: true)
         capture("Reference refresh - empty dark")
         let input = app.textViews["composer.input"]
         input.tap()
@@ -152,6 +155,8 @@ final class JarvisEVOVisualUITests: XCTestCase {
         XCTAssertFalse(app.staticTexts["Response failed. Choose a model and try again."].exists)
         let text = response.label + response.descendants(matching: .staticText).allElementsBoundByIndex.map(\.label).joined(separator: " ")
         XCTAssertFalse(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+        let userMessage = app.descendants(matching: .any).matching(identifier: "user.message").firstMatch
+        XCTAssertLessThan(userMessage.frame.minY, app.frame.height * 0.35, "A short transcript belongs below the toolbar, not above the composer.")
         capture("Reference refresh - genuine local conversation")
         app.terminate()
         app.launchArguments = ["--uitesting"]
@@ -162,6 +167,32 @@ final class JarvisEVOVisualUITests: XCTestCase {
         XCTAssertEqual(provider.value as? String, "Selected")
         XCTAssertTrue(installed.exists)
         app.buttons["model.done"].tap()
+    }
+
+    // Measure actual screenshot pixels inside the menu artwork, not its shadow.
+    // Original run6 glyph was ~80% grey in light appearance and fails this gate.
+    private func assertMenuContrast(dark: Bool) {
+        let screenshot = app.screenshot().image
+        guard let image = screenshot.cgImage else { return XCTFail("Missing native screenshot pixels") }
+        let button = app.buttons["history.open"].frame
+        let sx = CGFloat(image.width) / app.frame.width
+        let sy = CGFloat(image.height) / app.frame.height
+        let area = CGRect(x: (button.midX - 10.5) * sx, y: (button.midY - 10.5) * sy, width: 21 * sx, height: 21 * sy).integral
+        guard let crop = image.cropping(to: area) else { return XCTFail("Menu is outside the native screenshot") }
+        var pixels = [UInt8](repeating: 0, count: crop.width * crop.height * 4)
+        guard let context = CGContext(data: &pixels, width: crop.width, height: crop.height, bitsPerComponent: 8,
+            bytesPerRow: crop.width * 4, space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else {
+            return XCTFail("Cannot inspect menu pixels")
+        }
+        context.draw(crop, in: CGRect(x: 0, y: 0, width: crop.width, height: crop.height))
+        let highContrast = stride(from: 0, to: pixels.count, by: 4).filter {
+            let mean = (Int(pixels[$0]) + Int(pixels[$0 + 1]) + Int(pixels[$0 + 2])) / 3
+            return dark ? mean > 184 : mean < 71
+        }.count
+        let fraction = Double(highContrast) / Double(crop.width * crop.height)
+        let evidence = XCTAttachment(string: "Menu native pixel ROI \(area), high-contrast fraction \(fraction), appearance \(dark ? "dark" : "light")")
+        evidence.name = "Menu contrast measurement"; evidence.lifetime = .keepAlways; add(evidence)
+        XCTAssertGreaterThan(fraction, 0.035, "Menu strokes must remain visibly high contrast inside the native toolbar.")
     }
 
     private func capture(_ name: String) {

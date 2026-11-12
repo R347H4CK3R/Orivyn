@@ -70,6 +70,43 @@ fi
 
 ARTIFACTS="$1"
 shift
+# Seed only the explicit simulator that this native test command targets.
+# Never use the ambiguous "booted" destination or a user's photo library.
+if [[ "${1:-}" == "xcodebuild" ]]; then
+  SCRIPT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+  FIXTURE="$SCRIPT_ROOT/UITests/Fixtures/OCR-card.png"
+  SIMULATOR_ID=$(python3 - "$FIXTURE" "$@" <<'PYSEED'
+import hashlib
+from pathlib import Path
+import re
+import sys
+
+fixture = Path(sys.argv[1])
+expected = "956efa39a8e8f19c8c6d7c444cbb3b4443959fae6ceb71c785ced5df15282f4d"
+if not fixture.is_file() or fixture.is_symlink() or hashlib.sha256(fixture.read_bytes()).hexdigest() != expected:
+    raise SystemExit("The controlled Photos fixture is missing or its hash changed")
+args = sys.argv[2:]
+destinations = [args[i + 1] for i, value in enumerate(args[:-1]) if value == "-destination"]
+if len(destinations) != 1:
+    raise SystemExit("Exactly one explicit test simulator destination is required")
+match = re.fullmatch(r"platform=iOS Simulator,id=([0-9A-Fa-f]{8}(?:-[0-9A-Fa-f]{4}){3}-[0-9A-Fa-f]{12})", destinations[0])
+if not match:
+    raise SystemExit("Photos fixture requires an explicit iOS simulator UUID")
+print(match.group(1))
+PYSEED
+  )
+  xcrun simctl list devices available -j > "$ARTIFACTS/photo-seed-devices.json"
+  python3 - "$ARTIFACTS/photo-seed-devices.json" "$SIMULATOR_ID" <<'PYBOOT'
+import json
+import sys
+with open(sys.argv[1]) as source:
+    groups = json.load(source)["devices"]
+matches = [device for devices in groups.values() for device in devices if device.get("udid") == sys.argv[2]]
+if len(matches) != 1 or matches[0].get("state") != "Booted" or not matches[0].get("isAvailable"):
+    raise SystemExit("The exact native test simulator must be available and booted before adding test media")
+PYBOOT
+  xcrun simctl addmedia "$SIMULATOR_ID" "$FIXTURE" 2>&1 | tee "$ARTIFACTS/photo-seed.log"
+fi
 set +e
 "$@" 2>&1 | tee "$ARTIFACTS/native-tests.log"
 TEST_STATUSES=("${PIPESTATUS[@]}")

@@ -65,6 +65,59 @@ class NativeEvidenceRunnerTests(unittest.TestCase):
 
 
 
+class SimulatorPhotoSeedTests(unittest.TestCase):
+    simulator = "11111111-2222-3333-4444-555555555555"
+
+    def run_seed(self, *, state="Booted", destination=None, seed_status=0, native_status=0):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            artifacts = root / "artifacts"
+            artifacts.mkdir()
+            events = root / "events"
+            runner = root / "xcodebuild"
+            runner.write_text("#!/bin/bash\nprintf 'native\n' >> \"$EVENTS\"\n" + f"exit {native_status}\n")
+            runner.chmod(0o755)
+            fake = root / "xcrun"
+            devices = '{"devices":{"iOS-26":[{"udid":"' + self.simulator + '","state":"' + state + '","isAvailable":true}]}}'
+            fake.write_text("#!/bin/bash\n" +
+                "if [[ \"$1 $2\" == 'simctl list' ]]; then printf '%s\n' '" + devices + "'; exit 0; fi\n" +
+                "if [[ \"$1 $2\" == 'simctl addmedia' ]]; then printf 'seed:%s:%s\n' \"$3\" \"$4\" >> \"$EVENTS\"; exit " + str(seed_status) + "; fi\nexit 0\n")
+            fake.chmod(0o755)
+            env = dict(os.environ, PATH=str(root) + os.pathsep + os.environ["PATH"], EVENTS=str(events))
+            args = ["bash", str(SCRIPT), str(artifacts), "xcodebuild", "-destination",
+                    destination or f"platform=iOS Simulator,id={self.simulator}", "test"]
+            result = subprocess.run(args, env=env, text=True, capture_output=True)
+            return result, events.read_text().splitlines() if events.exists() else []
+
+    def test_exact_booted_simulator_is_seeded_before_native_tests(self):
+        result, events = self.run_seed()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(len(events), 2)
+        self.assertTrue(events[0].startswith(f"seed:{self.simulator}:"))
+        self.assertTrue(events[0].endswith("/UITests/Fixtures/OCR-card.png"))
+        self.assertEqual(events[1], "native")
+
+    def test_unbooted_destination_blocks_seed_and_tests(self):
+        result, events = self.run_seed(state="Shutdown")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(events, [])
+
+    def test_generic_destination_never_seeds_an_arbitrary_booted_simulator(self):
+        result, events = self.run_seed(destination="platform=iOS Simulator,name=iPhone 16 Plus")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(events, [])
+
+    def test_seed_failure_blocks_native_success(self):
+        result, events = self.run_seed(seed_status=17)
+        self.assertEqual(result.returncode, 17)
+        self.assertEqual(len(events), 1)
+
+    def test_seeding_does_not_mask_later_native_failure(self):
+        result, events = self.run_seed(native_status=65)
+        self.assertEqual(result.returncode, 65)
+        self.assertEqual(events[-1], "native")
+
+
 class EvidenceBundleTests(unittest.TestCase):
     def collect(self, root):
         return subprocess.run(["bash", str(SCRIPT), "--bundle-evidence", str(root)], capture_output=True, text=True)

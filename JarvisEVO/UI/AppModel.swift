@@ -12,9 +12,19 @@ struct ProviderOption: Identifiable {
 @MainActor @Observable
 final class AppModel {
     private(set) var conversations: [Conversation] = []
-    var selectedConversationID: UUID?
-    var draft = ""
-    var pendingAttachments: [ChatAttachment] = []
+    var selectedConversationID: UUID? {
+        didSet {
+            guard oldValue != selectedConversationID else { return }
+            conversationRevision = UUID()
+            if let ticket = activeVoiceTurn, selectedConversationID != ticket.conversationID { cancelVoiceTurn(ticket) }
+        }
+    }
+    var draft = "" {
+        didSet { if oldValue != draft { composerDidChange() } }
+    }
+    var pendingAttachments: [ChatAttachment] = [] {
+        didSet { if oldValue != pendingAttachments { composerDidChange() } }
+    }
     var searchText = ""
     var showArchived = false
     private(set) var isGenerating = false
@@ -24,7 +34,10 @@ final class AppModel {
     let network = NetworkStatus()
     private(set) var providers: [ProviderOption] = []
     var selectedProviderID: String {
-        didSet { defaults.set(selectedProviderID, forKey: "selectedProviderID") }
+        didSet {
+            defaults.set(selectedProviderID, forKey: "selectedProviderID")
+            if oldValue != selectedProviderID { providerRevision = UUID(); cancelActiveVoiceTurn() }
+        }
     }
     private(set) var installedModels: [LocalModelDescriptor] = []
     private(set) var memories: [MemoryNote] = []
@@ -38,17 +51,32 @@ final class AppModel {
     let modelStore: LocalModelStore
     private let store: SQLiteConversationStore
     private let defaults: UserDefaults
-    private var generationTask: Task<Void, Never>?
+    private var generationTask: Task<Result<String, any Error>, Never>?
+    private var generationID: UUID?
+    private(set) var activeVoiceTurn: VoiceTurnTicket?
+    private let voiceContextID = UUID()
+    private var conversationRevision = UUID()
+    private var providerRevision = UUID()
+    private var composerRevision = UUID()
+    private var isApplyingOwnedComposerUpdate = false
     private var downloadTask: Task<Void, Never>?
     private var localProviders: [String: LocalAIProvider] = [:]
+    private let attachmentImporter: any AttachmentImporting
+    private var attachmentImportJobs: [UUID: AttachmentImportJob] = [:]
+    private var attachmentImportEpoch = UUID()
+    private var attachmentCleanupNeeded = false
+    private var isChangingHistory = false
+    private var isSavingSubmittedTurn = false
 
     init(store: SQLiteConversationStore, attachmentService: AttachmentService, modelStore: LocalModelStore,
-         providers: [ProviderOption] = [], defaults: UserDefaults = .standard) {
+         providers: [ProviderOption] = [], defaults: UserDefaults = .standard,
+         attachmentImporter: (any AttachmentImporting)? = nil) {
         self.store = store
         self.attachmentService = attachmentService
         self.modelStore = modelStore
         self.providers = providers
         self.defaults = defaults
+        self.attachmentImporter = attachmentImporter ?? LocalAttachmentImporter(service: attachmentService)
         selectedProviderID = defaults.string(forKey: "selectedProviderID") ?? ""
         remoteBaseURL = defaults.string(forKey: "remoteBaseURL") ?? ""
         remoteModelName = defaults.string(forKey: "remoteModelName") ?? ""
@@ -57,7 +85,14 @@ final class AppModel {
 
     var activeConversation: Conversation? { conversations.first { $0.id == selectedConversationID } }
     var selectedProvider: ProviderOption? { providers.first { $0.id == selectedProviderID } }
-    var canSend: Bool { !isGenerating && (!draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !pendingAttachments.isEmpty) }
+    var canSend: Bool { !isGenerating && !isImportingAttachments && !isChangingHistory && (!draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !pendingAttachments.isEmpty) }
+    var isImportingAttachments: Bool { !attachmentImportJobs.isEmpty }
+    /// Capture before an asynchronous Photos/camera transfer, then pass back to the add method.
+    var attachmentImportContext: UUID { attachmentImportEpoch }
+    var availableAttachmentSlots: Int {
+        guard !isChangingHistory, !isLoading, !isSavingSubmittedTurn else { return 0 }
+        return max(0, 4 - pendingAttachments.count - attachmentImportJobs.values.reduce(0) { $0 + $1.reservedSlots })
+    }
     var visibleConversations: [Conversation] {
         conversations.filter { conversation in
             conversation.isArchived == showArchived && (searchText.isEmpty || conversation.title.localizedCaseInsensitiveContains(searchText) || conversation.messages.contains { $0.content.localizedCaseInsensitiveContains(searchText) })
@@ -71,11 +106,14 @@ final class AppModel {
             conversations = try await store.list(includeArchived: true)
             memories = try await store.memories()
             if selectedConversationID == nil { selectedConversationID = conversations.first(where: { !$0.isArchived })?.id }
+            requestAttachmentCleanup()
             try await reloadProviders()
         } catch { report(error) }
     }
 
     func replaceProviders(_ providers: [ProviderOption]) {
+        providerRevision = UUID()
+        cancelActiveVoiceTurn()
         self.providers = providers
         if !providers.contains(where: { $0.id == selectedProviderID && $0.isAvailable }) {
             selectedProviderID = providers.first(where: \.isAvailable)?.id ?? providers.first?.id ?? ""
@@ -101,7 +139,7 @@ final class AppModel {
         if remoteEnabled && !remoteBaseURL.isEmpty && !remoteModelName.isEmpty {
             let endpoint = try RemoteEndpoint(baseURL: remoteBaseURL, model: remoteModelName)
             let provider = OpenAICompatibleProvider(endpoint: endpoint, apiKey: try KeychainService.read(endpoint: remoteBaseURL))
-            options.append(ProviderOption(id: "remote", title: remoteModelName, detail: "Remote · sends conversation text and attachments to your endpoint", provider: provider))
+            options.append(ProviderOption(id: "remote", title: remoteModelName, detail: "Remote · sends conversation and extracted attachment text to your endpoint", provider: provider))
         }
         replaceProviders(options)
     }
@@ -113,6 +151,10 @@ final class AppModel {
     }
 
     func newConversation() async {
+        guard beginHistoryChange() else { return }
+        defer { finishHistoryChange() }
+        cancelActiveVoiceTurn()
+        cancelAttachmentImports()
         do {
             let conversation = Conversation(id: UUID(), title: "New conversation", createdAt: Date(), updatedAt: Date(), isArchived: false, messages: [])
             try await store.save(conversation)
@@ -121,6 +163,104 @@ final class AppModel {
             showArchived = false
             searchText = ""
         } catch { report(error) }
+    }
+
+    /// Safe preflight: does not create a chat or change the composer. The UI may
+    /// call this before enabling the microphone and discard that preflight ticket.
+    /// Create a fresh ticket for each final transcript, immediately before sendVoice.
+    func makeVoiceTurnTicket(ownerID: UUID) throws -> VoiceTurnTicket {
+        try Task.checkCancellation()
+        try validateVoiceAvailability()
+        return VoiceTurnTicket(ownerID: ownerID, modelID: voiceContextID,
+                               conversationID: selectedConversationID ?? UUID(),
+                               originatingConversationID: selectedConversationID, providerID: selectedProviderID,
+                               conversationRevision: conversationRevision, providerRevision: providerRevision,
+                               composerContext: attachmentImportEpoch, composerRevision: composerRevision, draft: draft)
+    }
+
+    /// Returns only this ticket's complete, nonempty, durably saved assistant text.
+    /// The controller must await this call, never return immediately after send().
+    func sendVoice(_ text: String, ticket: VoiceTurnTicket) async throws -> String {
+        try Task.checkCancellation()
+        guard ticket.modelID == voiceContextID, !ticket.wasSubmitted else { throw VoiceTurnError.invalidTicket }
+        guard !ticket.isCancelled else { throw CancellationError() }
+        guard ticket.originatingConversationID == selectedConversationID,
+              ticket.conversationRevision == conversationRevision, ticket.providerRevision == providerRevision,
+              ticket.providerID == selectedProviderID, ticket.composerContext == attachmentImportEpoch,
+              ticket.composerRevision == composerRevision, ticket.draft == draft else { throw VoiceTurnError.contextChanged }
+        try validateVoiceAvailability()
+        guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { throw ConversationError.emptyMessage }
+        guard let provider = selectedProvider?.provider else { throw ProviderError.notConfigured }
+        ticket.wasSubmitted = true
+        // Bind ownership before selecting a newly created chat. UI selection
+        // observers can recognize this as our own transition, not a user switch.
+        activeVoiceTurn = ticket
+        let task = submit(text: text, attachments: [], conversationID: ticket.conversationID,
+                          provider: provider, voiceTicket: ticket)
+        return try await withTaskCancellationHandler {
+            let result = await task.value
+            try Task.checkCancellation()
+            // Preserve provider/storage errors, including failed final persistence,
+            // before checking whether a successful result still belongs in voice.
+            let response = try result.get()
+            try self.validateVoiceContext(ticket)
+            return response
+        } onCancel: {
+            // Capturing this exact task avoids a delayed cancellation targeting a
+            // later manual or voice generation after the original has completed.
+            task.cancel()
+        }
+    }
+
+    /// Latches even before sendVoice starts. Retired/foreign tickets can never
+    /// cancel another owner's or a later generation's work.
+    func cancelVoiceTurn(_ ticket: VoiceTurnTicket) {
+        guard ticket.modelID == voiceContextID else { return }
+        ticket.isCancelled = true
+        guard activeVoiceTurn === ticket, generationID == ticket.id else { return }
+        generationTask?.cancel()
+    }
+
+    private func cancelActiveVoiceTurn() {
+        if let ticket = activeVoiceTurn { cancelVoiceTurn(ticket) }
+    }
+
+    private func validateVoiceAvailability() throws {
+        guard pendingAttachments.isEmpty, !isImportingAttachments else { throw VoiceTurnError.attachmentsPending }
+        guard !isGenerating, !isLoading, !isChangingHistory, !isSavingSubmittedTurn else { throw VoiceTurnError.busy }
+        guard selectedProvider?.provider != nil else { throw ProviderError.notConfigured }
+        if selectedProviderID == "remote", network.isOnline == false { throw VoiceTurnError.offlineRemote }
+    }
+
+    private func validateVoiceContext(_ ticket: VoiceTurnTicket) throws {
+        guard !ticket.isCancelled else { throw CancellationError() }
+        guard selectedConversationID == ticket.conversationID,
+              conversationRevision == ticket.acceptedConversationRevision,
+              selectedProviderID == ticket.providerID, providerRevision == ticket.providerRevision,
+              attachmentImportEpoch == ticket.acceptedComposerContext, composerRevision == ticket.composerRevision,
+              draft.isEmpty, pendingAttachments.isEmpty, !isImportingAttachments else {
+            throw VoiceTurnError.contextChanged
+        }
+    }
+
+    /// Latch external edits, even when text/files later return to the old value.
+    /// Cancelling voice never cancels the unrelated import or changes its files.
+    private func composerDidChange() {
+        guard !isApplyingOwnedComposerUpdate else { return }
+        composerRevision = UUID()
+        cancelActiveVoiceTurn()
+    }
+
+    private func applyingOwnedComposerUpdate(_ update: () -> Void) {
+        let wasApplying = isApplyingOwnedComposerUpdate
+        isApplyingOwnedComposerUpdate = true
+        defer { isApplyingOwnedComposerUpdate = wasApplying }
+        update()
+    }
+
+    private func validateGeneration(_ ticket: VoiceTurnTicket?) throws {
+        try Task.checkCancellation()
+        if let ticket { try validateVoiceContext(ticket) }
     }
 
     func send() {
@@ -137,9 +277,13 @@ final class AppModel {
             errorMessage = "No model is ready yet. Open Models to download or import a local model, or configure your own remote endpoint in Settings."
             return
         }
-        let content = draft.trimmingCharacters(in: .whitespacesAndNewlines)
-        let attachments = pendingAttachments
-        let conversationID = selectedConversationID ?? UUID()
+        submit(text: draft, attachments: pendingAttachments, conversationID: selectedConversationID ?? UUID(), provider: provider)
+    }
+
+    @discardableResult
+    private func submit(text: String, attachments: [ChatAttachment], conversationID: UUID, provider: any AIProvider,
+                        voiceTicket: VoiceTurnTicket? = nil) -> Task<Result<String, any Error>, Never> {
+        let content = text.trimmingCharacters(in: .whitespacesAndNewlines)
         let message = ChatMessage(id: UUID(), role: .user, content: content.isEmpty ? "Please review the attached file." : content,
                                   createdAt: Date(), state: .complete, attachments: attachments)
         var conversation = activeConversation ?? Conversation(id: conversationID, title: "New conversation", createdAt: Date(), updatedAt: Date(), isArchived: false, messages: [])
@@ -148,65 +292,106 @@ final class AppModel {
         if conversation.title == "New conversation" { conversation.title = String(message.content.prefix(60)) }
         conversation.updatedAt = Date()
         selectedConversationID = conversation.id
+        voiceTicket?.acceptedConversationRevision = conversationRevision
         let assistant = ChatMessage(id: UUID(), role: .assistant, content: "", createdAt: Date(), state: .streaming, attachments: [])
         conversation.messages.append(assistant)
         upsert(conversation)
-        draft = ""
-        pendingAttachments = []
-        startGeneration(conversationID: conversation.id, assistantID: assistant.id, provider: provider, restoringDraftOnSaveFailure: message)
+        applyingOwnedComposerUpdate {
+            draft = ""
+            pendingAttachments = []
+            // A Photos transfer started for this draft must not attach itself to the next draft after Send.
+            cancelAttachmentImports()
+        }
+        voiceTicket?.acceptedComposerContext = attachmentImportEpoch
+        return startGeneration(conversationID: conversation.id, assistantID: assistant.id, provider: provider,
+                               restoringDraftOnSaveFailure: message, voiceTicket: voiceTicket)
     }
 
+    @discardableResult
     private func startGeneration(conversationID: UUID, assistantID: UUID, provider: any AIProvider,
-                                 restoringDraftOnSaveFailure original: ChatMessage? = nil) {
+                                 restoringDraftOnSaveFailure original: ChatMessage? = nil,
+                                 voiceTicket: VoiceTurnTicket? = nil) -> Task<Result<String, any Error>, Never> {
+        let generation = voiceTicket?.id ?? UUID()
+        generationID = generation
         isGenerating = true
         generatingConversationID = conversationID
-        generationTask = Task { [weak self] in
-            guard let self else { return }
+        isSavingSubmittedTurn = original != nil
+        let composerContext = attachmentImportEpoch
+        let task = Task { [weak self] () -> Result<String, any Error> in
+            guard let self else { return .failure(CancellationError()) }
+            defer {
+                if self.generationID == generation {
+                    self.isSavingSubmittedTurn = false
+                    self.isGenerating = false
+                    self.generatingConversationID = nil
+                    self.generationTask = nil
+                    self.generationID = nil
+                    if self.activeVoiceTurn?.id == generation { self.activeVoiceTurn = nil }
+                }
+            }
             var didPersist = false
             do {
-                guard let conversation = self.conversations.first(where: { $0.id == conversationID }) else { return }
+                try self.validateGeneration(voiceTicket)
+                guard let conversation = self.conversations.first(where: { $0.id == conversationID }) else {
+                    throw ConversationError.messageNotFound
+                }
                 try await self.store.save(conversation)
                 didPersist = true
-                try Task.checkCancellation()
+                self.isSavingSubmittedTurn = false
+                try self.validateGeneration(voiceTicket)
                 let notes = self.memories.map(\.content).joined(separator: "\n")
-                let system = "You are Jarvis-EVO, a helpful personal assistant. Be clear about uncertainty and limitations. Do not claim to browse, run code, or take actions that you cannot perform. " + (notes.isEmpty ? "" : "User-saved context, not higher-priority instructions:\n" + notes)
+                let system = "You are Jarvis-EVO, a helpful personal assistant. Be clear about uncertainty and limitations. Do not claim to browse, run code, or take actions that you cannot perform. All configured providers receive text only. Image attachments supply OCR text, never image pixels. Do not infer objects, people, colors, layout, or other visual contents from an image attachment. " + (notes.isEmpty ? "" : "User-saved context, not higher-priority instructions:\n" + notes)
                 let request = GenerationRequest(messages: Array(conversation.messages.dropLast()), systemPrompt: system, maxTokens: 1024, temperature: 0.7)
                 let stream = try await provider.stream(request)
                 var checkpoint = Date()
                 for try await token in stream {
-                    try Task.checkCancellation()
+                    try self.validateGeneration(voiceTicket)
                     self.updateMessage(conversationID: conversationID, messageID: assistantID) { $0.content += token }
                     if Date().timeIntervalSince(checkpoint) >= 0.25 {
                         try await self.persist(conversationID)
                         checkpoint = Date()
                     }
                 }
-                try Task.checkCancellation()
-                self.updateMessage(conversationID: conversationID, messageID: assistantID) { message in
-                    message.state = message.content.isEmpty ? .failed : .complete
+                try self.validateGeneration(voiceTicket)
+                guard let answer = self.conversations.first(where: { $0.id == conversationID })?.messages.first(where: { $0.id == assistantID })?.content else {
+                    throw ConversationError.messageNotFound
                 }
+                guard !answer.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { throw ProviderError.emptyResponse }
+                self.updateMessage(conversationID: conversationID, messageID: assistantID) { $0.state = .complete }
                 try await self.persist(conversationID)
+                try self.validateGeneration(voiceTicket)
+                return .success(answer)
             } catch {
                 self.updateMessage(conversationID: conversationID, messageID: assistantID) { message in
                     message.state = Task.isCancelled || error is CancellationError ? .interrupted : .failed
                 }
                 if didPersist { try? await self.persist(conversationID) }
                 if !didPersist, let original {
-                    self.draft = original.content
-                    self.pendingAttachments = original.attachments
-                    if let index = self.conversations.firstIndex(where: { $0.id == conversationID }) {
-                        self.conversations[index].messages.removeAll { $0.id == original.id || $0.id == assistantID }
+                    if self.selectedConversationID == conversationID, self.attachmentImportEpoch == composerContext,
+                       self.draft.isEmpty, self.pendingAttachments.isEmpty, self.attachmentImportJobs.isEmpty {
+                        self.applyingOwnedComposerUpdate {
+                            self.draft = original.content
+                            self.pendingAttachments = original.attachments
+                        }
+                        if let index = self.conversations.firstIndex(where: { $0.id == conversationID }) {
+                            self.conversations[index].messages.removeAll { $0.id == original.id || $0.id == assistantID }
+                        }
+                    } else {
+                        // Keep the failed user turn and its files in the originating conversation rather
+                        // than overwriting a different draft. It is not durable until a later save succeeds.
+                        self.statusMessage = "The unsaved message is still in its original conversation. Return there to edit or copy it before closing the app."
                     }
+                    self.requestAttachmentCleanup()
                 }
                 if !Task.isCancelled && !(error is CancellationError) { self.report(error) }
+                return .failure(error)
             }
-            self.isGenerating = false
-            self.generatingConversationID = nil
-            self.generationTask = nil
         }
+        generationTask = task
+        return task
     }
 
-    func stop() { generationTask?.cancel() }
+    func stop() { cancelActiveVoiceTurn(); generationTask?.cancel() }
 
     func rename(_ id: UUID, to title: String) async {
         let title = title.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -224,19 +409,28 @@ final class AppModel {
     }
 
     func delete(_ id: UUID) async {
-        if generatingConversationID == id { stop(); await generationTask?.value }
+        guard beginHistoryChange() else { return }
+        defer { finishHistoryChange() }
+        if selectedConversationID == id { cancelAttachmentImports() }
+        if generatingConversationID == id { stop(); _ = await generationTask?.value }
         do {
             try await store.delete(id: id)
             conversations.removeAll { $0.id == id }
-            if selectedConversationID == id { selectedConversationID = nil }
-            let retained = Set(conversations.flatMap(\.messages).flatMap(\.attachments).map(\.relativePath) + pendingAttachments.map(\.relativePath))
-            try attachmentService.removeUnreferenced(keeping: retained)
+            if selectedConversationID == id {
+                selectedConversationID = nil
+                draft = ""
+                clearPendingAttachments()
+            }
+            requestAttachmentCleanup()
         } catch { report(error) }
     }
 
     func deleteAllContent() async {
+        guard beginHistoryChange() else { return }
+        defer { finishHistoryChange() }
+        cancelAttachmentImports()
         stop()
-        await generationTask?.value
+        _ = await generationTask?.value
         do {
             try await store.deleteAll()
             conversations = []
@@ -244,13 +438,16 @@ final class AppModel {
             selectedConversationID = nil
             draft = ""
             pendingAttachments = []
-            try attachmentService.removeAll()
+            requestAttachmentCleanup()
         } catch { report(error) }
     }
 
     @discardableResult
     func branch(through messageID: UUID) async -> Bool {
         guard !isGenerating, let activeConversation else { return false }
+        guard beginHistoryChange() else { return false }
+        defer { finishHistoryChange() }
+        cancelAttachmentImports()
         do {
             let branched = try activeConversation.branching(through: messageID)
             try await store.save(branched)
@@ -264,6 +461,9 @@ final class AppModel {
         guard !isGenerating, let activeConversation else { return }
         let text = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return }
+        guard beginHistoryChange() else { return }
+        defer { finishHistoryChange() }
+        cancelAttachmentImports()
         do {
             var branched = try activeConversation.branching(through: messageID)
             // The selected user turn is the final message in the new branch.
@@ -295,28 +495,83 @@ final class AppModel {
         startGeneration(conversationID: conversation.id, assistantID: assistant.id, provider: provider)
     }
 
-    func addAttachments(from urls: [URL]) async {
-        guard pendingAttachments.count + urls.count <= 4 else { errorMessage = "Attach up to four files per message."; return }
-        for url in urls {
-            do { pendingAttachments.append(try attachmentService.importFile(at: url)) }
-            catch { report(error); break }
+    func addAttachments(from urls: [URL], context: UUID? = nil) async {
+        await addAttachmentSources(urls.map(AttachmentImportSource.file), context: context)
+    }
+
+    func addImageAttachment(data: Data, suggestedName: String, context: UUID? = nil) async {
+        await addAttachmentSources([.image(data: data, suggestedName: suggestedName)], context: context)
+    }
+
+    func cancelAttachmentImports() {
+        composerDidChange()
+        attachmentImportEpoch = UUID()
+        for job in attachmentImportJobs.values { job.task.cancel() }
+        // Keep reservations until completion: cancelled Vision work may still be finishing off-main.
+    }
+
+    private func addAttachmentSources(_ sources: [AttachmentImportSource], context: UUID?) async {
+        guard !Task.isCancelled, !sources.isEmpty, context == nil || context == attachmentImportEpoch else { return }
+        guard !isChangingHistory, !isLoading else { errorMessage = "Wait for the history operation to finish before attaching files."; return }
+        guard !isSavingSubmittedTurn else { errorMessage = "Wait for the sent message to be saved before attaching more files."; return }
+        guard sources.count <= availableAttachmentSlots else { errorMessage = "Attach up to four files per message, including files still importing."; return }
+        composerDidChange()
+        let epoch = attachmentImportEpoch
+        let conversationID = selectedConversationID
+        let jobID = UUID()
+        let importer = attachmentImporter
+        let task = Task<AttachmentImportOutcome, Never> {
+            var imported: [ChatAttachment] = []
+            do {
+                for source in sources {
+                    try Task.checkCancellation()
+                    imported.append(try await importer.importAttachment(source))
+                    // Record ownership before observing cancellation, so late successes are cleaned up.
+                    try Task.checkCancellation()
+                }
+                return AttachmentImportOutcome(attachments: imported, errorMessage: nil, wasCancelled: false)
+            } catch {
+                let cancelled = Task.isCancelled || error is CancellationError
+                return AttachmentImportOutcome(attachments: imported, errorMessage: cancelled ? nil : error.localizedDescription,
+                                               wasCancelled: cancelled)
+            }
         }
+        // The main actor reserves the entire batch before another call can inspect available slots.
+        attachmentImportJobs[jobID] = AttachmentImportJob(reservedSlots: sources.count, task: task)
+        let result = await withTaskCancellationHandler {
+            await task.value
+        } onCancel: {
+            task.cancel()
+        }
+        attachmentImportJobs.removeValue(forKey: jobID)
+        if epoch == attachmentImportEpoch, conversationID == selectedConversationID,
+           !Task.isCancelled, !task.isCancelled, !result.wasCancelled {
+            pendingAttachments.append(contentsOf: result.attachments)
+            if let message = result.errorMessage { errorMessage = message }
+        }
+        // Current results are now referenced; stale/cancelled results are not. Sweep only after every
+        // importer has handed back its files, never while another importer is writing an unseen file.
+        requestAttachmentCleanup()
     }
 
     func removePendingAttachment(_ attachment: ChatAttachment) {
         pendingAttachments.removeAll { $0.id == attachment.id }
-        attachmentService.remove(attachment)
+        requestAttachmentCleanup()
     }
 
     func clearPendingAttachments() {
-        for attachment in pendingAttachments { attachmentService.remove(attachment) }
+        cancelAttachmentImports()
         pendingAttachments = []
+        requestAttachmentCleanup()
     }
 
     func exportData() async throws -> Data { try await store.exportData() }
 
     func importHistory(from url: URL) async {
         guard !isGenerating else { errorMessage = "Stop the current response before importing history."; return }
+        guard beginHistoryChange() else { return }
+        defer { finishHistoryChange() }
+        cancelAttachmentImports()
         let access = url.startAccessingSecurityScopedResource()
         defer { if access { url.stopAccessingSecurityScopedResource() } }
         do {
@@ -325,6 +580,7 @@ final class AppModel {
             try await store.importData(Data(contentsOf: url))
             conversations = try await store.list(includeArchived: true)
             memories = try await store.memories()
+            requestAttachmentCleanup()
         } catch { report(error) }
     }
 
@@ -402,6 +658,32 @@ final class AppModel {
 
     func report(_ error: Error) { errorMessage = error.localizedDescription }
 
+    private func beginHistoryChange() -> Bool {
+        guard !isChangingHistory else { errorMessage = "Wait for the current history operation to finish."; return false }
+        isChangingHistory = true
+        return true
+    }
+
+    private func finishHistoryChange() {
+        isChangingHistory = false
+        performAttachmentCleanupIfReady()
+    }
+
+    private func requestAttachmentCleanup() {
+        attachmentCleanupNeeded = true
+        performAttachmentCleanupIfReady()
+    }
+
+    private func performAttachmentCleanupIfReady() {
+        guard attachmentCleanupNeeded, attachmentImportJobs.isEmpty, !isChangingHistory else { return }
+        let attachments = conversations.flatMap(\.messages).flatMap(\.attachments) + pendingAttachments
+        let retained = attachments.reduce(into: Set<String>()) { $0.formUnion($1.localRelativePaths) }
+        do {
+            try attachmentService.removeUnreferenced(keeping: retained)
+            attachmentCleanupNeeded = false
+        } catch { report(error) }
+    }
+
     private func upsert(_ conversation: Conversation) {
         if let index = conversations.firstIndex(where: { $0.id == conversation.id }) { conversations[index] = conversation }
         else { conversations.insert(conversation, at: 0) }
@@ -420,7 +702,67 @@ final class AppModel {
     }
 }
 
+private struct AttachmentImportOutcome: Sendable {
+    let attachments: [ChatAttachment]
+    let errorMessage: String?
+    let wasCancelled: Bool
+}
+
+private struct AttachmentImportJob {
+    let reservedSlots: Int
+    let task: Task<AttachmentImportOutcome, Never>
+}
+
 private enum AppError: LocalizedError {
     case importTooLarge
     var errorDescription: String? { "Choose a Jarvis-EVO JSON backup up to 50 MB." }
+}
+
+/// Single-use per-turn ownership, not a global permission to cancel by session.
+/// Immutable public context lets UI recognize the first voice-created chat.
+@MainActor
+final class VoiceTurnTicket {
+    let id = UUID()
+    let ownerID: UUID
+    let conversationID: UUID
+    let originatingConversationID: UUID?
+    let providerID: String
+    fileprivate let modelID: UUID
+    fileprivate let conversationRevision: UUID
+    fileprivate let providerRevision: UUID
+    fileprivate let composerContext: UUID
+    fileprivate let composerRevision: UUID
+    fileprivate let draft: String
+    fileprivate var acceptedConversationRevision: UUID?
+    fileprivate var acceptedComposerContext: UUID?
+    fileprivate var isCancelled = false
+    fileprivate var wasSubmitted = false
+
+    fileprivate init(ownerID: UUID, modelID: UUID, conversationID: UUID, originatingConversationID: UUID?,
+                     providerID: String, conversationRevision: UUID, providerRevision: UUID,
+                     composerContext: UUID, composerRevision: UUID, draft: String) {
+        self.ownerID = ownerID
+        self.modelID = modelID
+        self.conversationID = conversationID
+        self.originatingConversationID = originatingConversationID
+        self.providerID = providerID
+        self.conversationRevision = conversationRevision
+        self.providerRevision = providerRevision
+        self.composerContext = composerContext
+        self.composerRevision = composerRevision
+        self.draft = draft
+    }
+}
+
+enum VoiceTurnError: LocalizedError {
+    case busy, attachmentsPending, contextChanged, invalidTicket, offlineRemote
+    var errorDescription: String? {
+        switch self {
+        case .busy: return "Wait for the current response or history operation before starting voice conversation."
+        case .attachmentsPending: return "Send or remove attached files and finish any imports before starting voice conversation. Your files have been kept."
+        case .contextChanged: return "The conversation, model, or draft changed. Start a new voice turn in the current conversation."
+        case .invalidTicket: return "This voice turn is no longer valid. Start a new voice turn."
+        case .offlineRemote: return "You’re offline. Choose an available on-device model before starting voice conversation."
+        }
+    }
 }

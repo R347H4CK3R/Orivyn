@@ -5,6 +5,8 @@ struct MessageRow: View {
     let isGenerating: Bool
     let isSpeaking: Bool
     let attachmentURL: (ChatAttachment) -> URL?
+    let attachmentPreviewURL: (ChatAttachment) -> URL?
+    @State private var previewAttachment: ChatAttachment?
     let onCopy: () -> Void
     let onReadAloud: () -> Void
     let onSelect: () -> Void
@@ -25,10 +27,11 @@ struct MessageRow: View {
                     .foregroundStyle(Color.evoUserText)
                     .background(Color.evoUserBubble, in: RoundedRectangle(cornerRadius: 24))
                     .contextMenu { actions }
+                    .accessibilityIdentifier("user.message")
                 }
             } else {
                 if !message.content.isEmpty {
-                    MarkdownContent(text: message.content)
+                    RichMessageContent(text: message.content)
                         .accessibilityIdentifier("assistant.response")
                         .contextMenu { actions }
                 } else if message.state == .streaming {
@@ -56,17 +59,14 @@ struct MessageRow: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .sheet(item: $previewAttachment) { attachment in
+            AttachmentPreviewView(attachment: attachment, originalURL: attachmentURL(attachment), previewURL: attachmentPreviewURL(attachment))
+        }
     }
 
     @ViewBuilder private var attachments: some View {
         ForEach(message.attachments) { attachment in
-            if let url = attachmentURL(attachment) {
-                ShareLink(item: url) {
-                    Label(attachment.name, systemImage: "doc.text").font(.caption).lineLimit(2)
-                }.accessibilityLabel("Share attachment \(attachment.name)")
-            } else {
-                Label("\(attachment.name) · text retained", systemImage: "doc.text").font(.caption).foregroundStyle(.secondary)
-            }
+            AttachmentTile(attachment: attachment, previewURL: attachmentPreviewURL(attachment), open: { previewAttachment = attachment })
         }
     }
 
@@ -81,51 +81,6 @@ struct MessageRow: View {
             Button("Regenerate in new branch", systemImage: "arrow.clockwise", action: onRegenerate).disabled(isGenerating)
         }
         Button("Branch from here", systemImage: "arrow.triangle.branch", action: onBranch).disabled(isGenerating)
-    }
-}
-
-private struct MarkdownContent: View {
-    let text: String
-    var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            ForEach(Array(blocks.enumerated()), id: \.offset) { _, block in
-                if block.isCode {
-                    VStack(alignment: .leading, spacing: 0) {
-                        HStack {
-                            Text(block.language.isEmpty ? "Code" : block.language).font(.caption.weight(.medium)).foregroundStyle(.secondary)
-                            Spacer()
-                            Button { UIPasteboard.general.string = block.content } label: { Label("Copy", systemImage: "doc.on.doc").font(.caption) }.buttonStyle(.plain)
-                        }.padding(12)
-                        Divider()
-                        ScrollView(.horizontal) {
-                            Text(block.content).font(.system(.subheadline, design: .monospaced)).textSelection(.enabled).padding(14)
-                        }
-                    }.background(Color.evoSurface, in: RoundedRectangle(cornerRadius: 14))
-                } else {
-                    Text(markdown(block.content)).font(.body).lineSpacing(4).textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading)
-                }
-            }
-        }
-    }
-
-    private func markdown(_ value: String) -> AttributedString {
-        (try? AttributedString(markdown: value, options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace))) ?? AttributedString(value)
-    }
-
-    private var blocks: [(content: String, isCode: Bool, language: String)] {
-        var blocks: [(String, Bool, String)] = []
-        var current: [String] = []
-        var inCode = false
-        var language = ""
-        for line in text.components(separatedBy: "\n") {
-            if line.trimmingCharacters(in: .whitespaces).hasPrefix("```") {
-                if !current.isEmpty { blocks.append((current.joined(separator: "\n"), inCode, language)); current = [] }
-                inCode.toggle()
-                language = inCode ? String(line.trimmingCharacters(in: .whitespaces).dropFirst(3)) : ""
-            } else { current.append(line) }
-        }
-        if !current.isEmpty { blocks.append((current.joined(separator: "\n"), inCode, language)) }
-        return blocks
     }
 }
 

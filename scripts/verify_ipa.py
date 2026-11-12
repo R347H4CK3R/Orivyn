@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import json
 import plistlib
+import re
 import stat
 import struct
 import unicodedata
@@ -11,6 +12,52 @@ import zipfile
 from pathlib import Path, PurePosixPath
 
 ARM64 = 0x0100000C
+DEBUG_FIXTURE_MARKERS = (
+    'RootViewRegressionFixture', 'RootViewFixtureProvider', 'root-ui-fixture',
+    '--root-view-fixture', 'CONTROLLED ROOTVIEW FIXTURE',
+)
+CANDIDATE3_RESOURCES = {
+    'katex-0.19.1.min.js': 'fa140498b8cfc8302cbe5e7cb1bdbc1f952bc38b3fa258ede09e73edbf9a74bc',
+    'KaTeX-0.19.1-LICENSE.txt': '766ccc1f306c885aa45542a9846bbd0a505b27a0374f146778171c2254ce18e3',
+}
+
+
+def _release_content(archive, app, binary, build):
+    # Inspect executable content, including literal and symbol encodings, rather
+    # than treating a DEBUG source conditional as proof of Release exclusion.
+    for marker in DEBUG_FIXTURE_MARKERS:
+        if any(marker.encode(encoding) in binary for encoding in ('utf-8', 'utf-16-le', 'utf-16-be')):
+            raise ValueError('DEBUG fixture marker remains in Release executable: ' + marker)
+    # Supported shipping CFBundleVersion: one to three ASCII numeric components,
+    # major 1...9999, optional minor/patch 0...99, canonical without leading zeroes.
+    # Development suffixes and malformed numeric forms cannot select an older gate.
+    if not isinstance(build, str) or re.fullmatch(r'[1-9][0-9]{0,3}(?:\.(?:0|[1-9][0-9]?)){0,2}', build) is None:
+        raise ValueError('Invalid app build number; cannot select required resource checks')
+    required = int(build.split('.')[0]) >= 3
+    for item in archive.infolist():
+        if not item.filename.startswith(app) or item.is_dir():
+            continue
+        relative = item.filename[len(app):]
+        if PurePosixPath(relative).name.casefold() == 'ocr-card.png':
+            raise ValueError('Test-only photo fixture is bundled in shipping app: ' + relative)
+        with archive.open(item) as stream:
+            prefix = stream.read(4)
+        if relative.casefold().endswith('.gguf') or prefix == b'GGUF':
+            raise ValueError('Bundled GGUF weights are not permitted in shipping app: ' + relative)
+    resources = {}
+    # Numeric build 3 introduced the renderer. Keep historical build 1/2 package
+    # reverification usable, while making this gate automatic in unchanged CI.
+    if required:
+        for name, expected in CANDIDATE3_RESOURCES.items():
+            try:
+                with archive.open(app + name) as stream:
+                    digest = hashlib.file_digest(stream, 'sha256').hexdigest()
+            except KeyError:
+                raise ValueError('Missing required bundled resource: ' + name) from None
+            if digest != expected:
+                raise ValueError('Bundled resource SHA-256 mismatch: ' + name)
+            resources[name] = digest
+    return required, resources
 
 def _macho(data, *, executable):
     if len(data) < 32:
@@ -85,7 +132,8 @@ def verify(path):
         binary_path = app + executable
         if binary_path not in names: raise ValueError('Executable is missing')
         if app + 'Assets.car' not in names: raise ValueError('Compiled app assets are missing')
-        minimum, dependencies = _macho(archive.read(binary_path), executable=True)
+        binary = archive.read(binary_path)
+        minimum, dependencies = _macho(binary, executable=True)
         minimum_text = f'{minimum >> 16}.{(minimum >> 8) & 255}'
         if str(info.get('MinimumOSVersion')) != minimum_text: raise ValueError('Plist and executable deployment targets differ')
         verified = set()
@@ -107,12 +155,15 @@ def verify(path):
             pending.extend(nested)
         version, build = info.get('CFBundleShortVersionString'), info.get('CFBundleVersion')
         if not version or not build: raise ValueError('Missing app version')
+        resources_required, resources = _release_content(archive, app, binary, build)
         with path.open('rb') as stream:
             digest = hashlib.file_digest(stream, 'sha256').hexdigest()
         return {'app':'Jarvis-EVO','bundle_identifier':info['CFBundleIdentifier'],'version':version,'build':build,
                 'architecture':'arm64','minimum_ios':minimum_text,'frameworks':sorted(verified),
                 'sha256':digest,'size':path.stat().st_size,
-                'verification':'package structure only; runtime and SideStore signing are separate gates'}
+                'release_fixture_markers_absent':True,'candidate3_resources_required':resources_required,
+                'bundled_resources':resources,'bundled_test_media_absent':True,
+                'verification':'package structure, executable fixture exclusion and build-specific resources only; runtime and SideStore signing are separate gates'}
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

@@ -10,14 +10,13 @@ struct JarvisEVOApp: App {
     var body: some Scene {
         WindowGroup {
             Group {
-                if let model { RootView(model: model) }
-                else if let startupError {
-                    ContentUnavailableView {
-                        Label("Could not open Jarvis-EVO", systemImage: "externaldrive.badge.exclamationmark")
-                    } description: { Text(startupError) } actions: {
-                        Button("Try again") { Task { await start() } }
-                    }
-                } else { ProgressView("Opening Jarvis-EVO…").task { await start() } }
+                #if DEBUG
+                if let fixture = RootViewRegressionFixtureHost.requestedMode {
+                    RootViewRegressionFixtureHost(mode: fixture)
+                } else { startupContent }
+                #else
+                startupContent
+                #endif
             }
             .tint(.evoAccent)
             .preferredColorScheme(appearance == "dark" ? .dark : appearance == "light" ? .light : nil)
@@ -28,6 +27,17 @@ struct JarvisEVOApp: App {
                 }
             }
         }
+    }
+
+    @ViewBuilder private var startupContent: some View {
+        if let model { RootView(model: model) }
+        else if let startupError {
+            ContentUnavailableView {
+                Label("Could not open Jarvis-EVO", systemImage: "externaldrive.badge.exclamationmark")
+            } description: { Text(startupError) } actions: {
+                Button("Try again") { Task { await start() } }
+            }
+        } else { ProgressView("Opening Jarvis-EVO…").task { await start() } }
     }
 
     @MainActor private func start() async {
