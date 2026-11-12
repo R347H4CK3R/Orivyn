@@ -1,0 +1,27 @@
+{
+  "repair_round": 1,
+  "python_fixture_and_contract_checks": {
+    "base": 12,
+    "review": 12,
+    "status": "passed; separate Python references, not production Swift"
+  },
+  "fixture_count": 74,
+  "fixture_regeneration": "byte-identical",
+  "proposed_yaml_package_product_resources": "passed",
+  "proposed_patch_dry_run": "passed; not applied",
+  "frozen_three_base_hashes_equal_pre_repair": true,
+  "native_test_methods": {
+    "OfficeReviewRegressionTests.swift": 16,
+    "OfflineDocumentReaderTests.swift": 17,
+    "OfficeAttachmentIntegrationTests.swift": 5
+  },
+  "native_tools": {
+    "swift": null,
+    "xcodebuild": null,
+    "xcodegen": null,
+    "libreoffice": null
+  },
+  "native_swift_tests": "not compiled or run",
+  "native_allocation_cancellation_and_office_exports": "pending; library exports are explicitly identified",
+  "frozen_tree_modified_by_this_work": false
+}

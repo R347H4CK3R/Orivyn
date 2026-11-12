@@ -1,0 +1,547 @@
+{
+  "scope": "Only added/changed active Office deliverables; SOURCE-MANIFEST.json is regenerated separately; snapshots are never integration inputs",
+  "changes": [
+    {
+      "path": "DESIGN-AND-TESTING.md",
+      "kind": "modified",
+      "before": {
+        "bytes": 9947,
+        "sha256": "a54acb823bdc3e05064ade2e87df39e565b956f5daa7824a8de0c205eddf34be",
+        "mode": "0o644"
+      },
+      "after": {
+        "bytes": 8127,
+        "sha256": "5d1975bc022c1cf80519258c3771c8cef94224c6f887d0e4a01509943363151c",
+        "mode": "0o644"
+      }
+    },
+    {
+      "path": "INTEGRATION.md",
+      "kind": "modified",
+      "before": {
+        "bytes": 4603,
+        "sha256": "61df4947a0078d262fb542a615ea080bac0aa233e4c2f186ca864966cf549294",
+        "mode": "0o644"
+      },
+      "after": {
+        "bytes": 4931,
+        "sha256": "a6fa2c8a67051c3b673252d2a68177b344750113b8e212d760bf446c35b99f07",
+        "mode": "0o644"
+      }
+    },
+    {
+      "path": "JarvisEVO/Services/BoundedOfficeXML.swift",
+      "kind": "modified",
+      "before": {
+        "bytes": 7219,
+        "sha256": "aea609f8256c8adb987fe4b635a3c9409d7bbdb775593abe848709230b79e568",
+        "mode": "0o644"
+      },
+      "after": {
+        "bytes": 8022,
+        "sha256": "639b917869f26efca5d4a3bb2626bb8413991667cba6bf2774c6fc0b77c96fc9",
+        "mode": "0o644"
+      }
+    },
+    {
+      "path": "JarvisEVO/Services/DelimitedDocumentReader.swift",
+      "kind": "modified",
+      "before": {
+        "bytes": 4268,
+        "sha256": "2ac58e2817b22eddba5e11a71a1d21a3a32a8885831351ad7a4693dac9ea02e7",
+        "mode": "0o644"
+      },
+      "after": {
+        "bytes": 4229,
+        "sha256": "af9c4bfe6b36b2cb3fc368da8c74d498fe72ddde1653418d6496f6403669ac2c",
+        "mode": "0o644"
+      }
+    },
+    {
+      "path": "JarvisEVO/Services/OfficeTextExtractor.swift",
+      "kind": "modified",
+      "before": {
+        "bytes": 24570,
+        "sha256": "9a04d5f1960c977bf0afa697fd4c46c0a0cbc80c6f676456ce0f3efb9e811483",
+        "mode": "0o644"
+      },
+      "after": {
+        "bytes": 31925,
+        "sha256": "2bb4215db7656dcac51ddec26525132d0c2c423193f303124875ec3aaf1ee7aa",
+        "mode": "0o644"
+      }
+    },
+    {
+      "path": "JarvisEVO/Services/OfficeZIPContainer.swift",
+      "kind": "modified",
+      "before": {
+        "bytes": 10304,
+        "sha256": "3e8bc7cb2d94df1bb645cd952d1dd9943f6dacc998a9dd300e1e97ed6c886115",
+        "mode": "0o644"
+      },
+      "after": {
+        "bytes": 10974,
+        "sha256": "f214209890b3f0d6f648a66cb482430adb55b00588ebf22066cf48f391baecdb",
+        "mode": "0o644"
+      }
+    },
+    {
+      "path": "JarvisEVO/Services/OfflineDocumentReader.swift",
+      "kind": "modified",
+      "before": {
+        "bytes": 8555,
+        "sha256": "d576c6cbbca8532d383d06b7ea95f94b2f02e6848fe01eaea403320440e8a2a0",
+        "mode": "0o644"
+      },
+      "after": {
+        "bytes": 12263,
+        "sha256": "e319c1b87432bf0aefdd4928d8f79d9c394b6aada54a002d81efbe5bf4b310a5",
+        "mode": "0o644"
+      }
+    },
+    {
+      "path": "README.md",
+      "kind": "modified",
+      "before": {
+        "bytes": 1933,
+        "sha256": "0b0e3ba181f5623ac478b3831245e67374427e58327d670ff7f8d7fe9cec01a3",
+        "mode": "0o644"
+      },
+      "after": {
+        "bytes": 2286,
+        "sha256": "67f75c6608868d1636ada7df694af633fda0597e3011d4f2c3c54acdf4803bdc",
+        "mode": "0o644"
+      }
+    },
+    {
+      "path": "Tests/OfficeAttachmentIntegrationTests.swift",
+      "kind": "modified",
+      "before": {
+        "bytes": 3508,
+        "sha256": "de60cc76f61107395b2d65e904cbf88b424e81833545cb4c08951ed57f1b0a52",
+        "mode": "0o644"
+      },
+      "after": {
+        "bytes": 4521,
+        "sha256": "068abac7f21173aaca324332a94aaeb4bef48c1436d6f33514465a28b0b4476e",
+        "mode": "0o644"
+      }
+    },
+    {
+      "path": "Tests/OfficeFixtures/array-formula.xlsx",
+      "kind": "added",
+      "before": null,
+      "after": {
+        "bytes": 2182,
+        "sha256": "c1ba80c2cbc4f846fa7f94020e410f0ec6f51521b4596e645dbc2376a478aeb2",
+        "mode": "0o644"
+      }
+    },
+    {
+      "path": "Tests/OfficeFixtures/bad-formula-range.xlsx",
+      "kind": "added",
+      "before": null,
+      "after": {
+        "bytes": 2157,
+        "sha256": "f909b2b1141ef95850c4bcf5f236e66a2dbc9a1383a4b42b00f74b3fd9f137d1",
+        "mode": "0o644"
+      }
+    },
+    {
+      "path": "Tests/OfficeFixtures/bomb.docx",
+      "kind": "modified",
+      "before": {
+        "bytes": 6079,
+        "sha256": "47a1bf9a450ce20c9d9d5f1d9041b2eb842070ed55602e0dda512183b8c79733",
+        "mode": "0o644"
+      },
+      "after": {
+        "bytes": 1047,
+        "sha256": "c157102cb05587a51d84b1f24bedc66bd31902d9ef7c700dd7a78f576aeaf41d",
+        "mode": "0o644"
+      }
+    },
+    {
+      "path": "Tests/OfficeFixtures/combining.csv",
+      "kind": "added",
+      "before": null,
+      "after": {
+        "bytes": 32768,
+        "sha256": "23d3a454f44a465e02feee7cacaf4a5f0087703c8ca828efb55141c229d74efd",
+        "mode": "0o644"
+      }
+    },
+    {
+      "path": "Tests/OfficeFixtures/combining.docx",
+      "kind": "added",
+      "before": null,
+      "after": {
+        "bytes": 33552,
+        "sha256": "66a0bb4efa24d64a15f43667911512d5126463befa697bbe1d3abb61c518af7e",
+        "mode": "0o644"
+      }
+    },
+    {
+      "path": "Tests/OfficeFixtures/deflate-level-flags.docx",
+      "kind": "added",
+      "before": null,
+      "after": {
+        "bytes": 872,
+        "sha256": "cd7d76d8796b0ae9d2c63b25b4ea79c801cf2e3079da83d15045353514c84136",
+        "mode": "0o644"
+      }
+    },
+    {
+      "path": "Tests/OfficeFixtures/empty-deflate-part.docx",
+      "kind": "added",
+      "before": null,
+      "after": {
+        "bytes": 968,
+        "sha256": "90200fdb5b2a43e9ccc0ef0afd758a2e9fe9f159e8359ceb4ad993d9c817bffe",
+        "mode": "0o644"
+      }
+    },
+    {
+      "path": "Tests/OfficeFixtures/entry-size.docx",
+      "kind": "added",
+      "before": null,
+      "after": {
+        "bytes": 36098,
+        "sha256": "fb6b64ee95d5222a881c65d5712dc5dfd185ae7d061d57d8723a72c85d46d57c",
+        "mode": "0o644"
+      }
+    },
+    {
+      "path": "Tests/OfficeFixtures/formula-anchor-outside.xlsx",
+      "kind": "added",
+      "before": null,
+      "after": {
+        "bytes": 2154,
+        "sha256": "55f9899596948ffed80606844febd01bc8d5a61a37f7470fb212db22efcebc26",
+        "mode": "0o644"
+      }
+    },
+    {
+      "path": "Tests/OfficeFixtures/inherited-styles.xlsx",
+      "kind": "added",
+      "before": null,
+      "after": {
+        "bytes": 2173,
+        "sha256": "09b2b4a110defd7836c4045461baea02563c2183ad0ab5d5829b0925a23466ba",
+        "mode": "0o644"
+      }
+    },
+    {
+      "path": "Tests/OfficeFixtures/invalid-after-cap.csv",
+      "kind": "added",
+      "before": null,
+      "after": {
+        "bytes": 1015,
+        "sha256": "3859a4580c124445f20e595900cc9ba014f3a2cdb174afdea18c3db741612ea6",
+        "mode": "0o644"
+      }
+    },
+    {
+      "path": "Tests/OfficeFixtures/invalid-after-cap.xlsx",
+      "kind": "added",
+      "before": null,
+      "after": {
+        "bytes": 61560,
+        "sha256": "01ff41931e7095597b727314f607af0c4d564793486faeca69d27717762f34cf",
+        "mode": "0o644"
+      }
+    },
+    {
+      "path": "Tests/OfficeFixtures/manifest.json",
+      "kind": "modified",
+      "before": {
+        "bytes": 6302,
+        "sha256": "9e4ed4224f330512f188d2e6e838093a0fbff2b2c9251e1b1513f88626e16787",
+        "mode": "0o644"
+      },
+      "after": {
+        "bytes": 9697,
+        "sha256": "45e9818854188a8fdd1f7bc3b950a94a7ba008e00afc32147ea7a546d3477ce2",
+        "mode": "0o644"
+      }
+    },
+    {
+      "path": "Tests/OfficeFixtures/overlap.docx",
+      "kind": "modified",
+      "before": {
+        "bytes": 872,
+        "sha256": "644b3fa98ce93475ba8b848a41c93dd0808b32d48e94b4c261f14fd3af304f5a",
+        "mode": "0o644"
+      },
+      "after": {
+        "bytes": 1087,
+        "sha256": "f372decf7adf77737bc5d51510b224d8d5a8280bf9632f45746f7e4b6d38ad3b",
+        "mode": "0o644"
+      }
+    },
+    {
+      "path": "Tests/OfficeFixtures/oversized-formula-range.xlsx",
+      "kind": "added",
+      "before": null,
+      "after": {
+        "bytes": 2163,
+        "sha256": "9fcfc469eaf97f50793c2fc86dbb2941b5cb5fb248f34bd52593e6608e2f6bc2",
+        "mode": "0o644"
+      }
+    },
+    {
+      "path": "Tests/OfficeFixtures/printer-settings.docx",
+      "kind": "added",
+      "before": null,
+      "after": {
+        "bytes": 1067,
+        "sha256": "65a2b9fc8d8db77fbbed54d8e2571a14f2ca155dda5ae5037c02328f30b92e9b",
+        "mode": "0o644"
+      }
+    },
+    {
+      "path": "Tests/OfficeFixtures/producer-openpyxl.xlsx",
+      "kind": "added",
+      "before": null,
+      "after": {
+        "bytes": 4907,
+        "sha256": "2e54de2becf31a44b3a8b4cea32c993c7db6b7e73b29e02f3bcb1def8f87ab12",
+        "mode": "0o644"
+      }
+    },
+    {
+      "path": "Tests/OfficeFixtures/producer-python-docx.docx",
+      "kind": "added",
+      "before": null,
+      "after": {
+        "bytes": 36729,
+        "sha256": "43bcbb175c3b5f63dd1325cb1a3411652e31669dcd544ad2367978bcf2af871c",
+        "mode": "0o644"
+      }
+    },
+    {
+      "path": "Tests/OfficeFixtures/producer-xlsxwriter.xlsx",
+      "kind": "added",
+      "before": null,
+      "after": {
+        "bytes": 5295,
+        "sha256": "14e9132993aaab4eacaf3e5624918b5bac397c7f39960be6c41c5d0a79ec9be0",
+        "mode": "0o644"
+      }
+    },
+    {
+      "path": "Tests/OfficeFixtures/repeated-combining.xlsx",
+      "kind": "added",
+      "before": null,
+      "after": {
+        "bytes": 61549,
+        "sha256": "35887dfd6a1b44851c00609db7a6db8b05d9b4504c9961fb5a01f99cdc4e8b6f",
+        "mode": "0o644"
+      }
+    },
+    {
+      "path": "Tests/OfficeFixtures/repeated-large-shared.xlsx",
+      "kind": "added",
+      "before": null,
+      "after": {
+        "bytes": 61550,
+        "sha256": "e290350602c4df821c4b0247d8ee9a0d09e143a00563d8ee90da9535fe01cdc4",
+        "mode": "0o644"
+      }
+    },
+    {
+      "path": "Tests/OfficeFixtures/style-zero-custom.xlsx",
+      "kind": "added",
+      "before": null,
+      "after": {
+        "bytes": 2138,
+        "sha256": "0a77a7c537b00d48ba12bec57bc465347036771b2f86a3af3896a4681406b55b",
+        "mode": "0o644"
+      }
+    },
+    {
+      "path": "Tests/OfficeFixtures/style-zero-date.xlsx",
+      "kind": "added",
+      "before": null,
+      "after": {
+        "bytes": 2139,
+        "sha256": "970a51ab02dfb9b2e021beae16f5c831d98f328394a698e7b2dab8ad65a0759a",
+        "mode": "0o644"
+      }
+    },
+    {
+      "path": "Tests/OfficeFixtures/too-many-formula-ranges.xlsx",
+      "kind": "added",
+      "before": null,
+      "after": {
+        "bytes": 3433,
+        "sha256": "b8158b5ddc8240e63216392d6e8439130d7a302dc1332d142e1db723e4775518",
+        "mode": "0o644"
+      }
+    },
+    {
+      "path": "Tests/OfficeFixtures/total-size.docx",
+      "kind": "added",
+      "before": null,
+      "after": {
+        "bytes": 263060,
+        "sha256": "7fd98a5dad7ca5e5af1554c3496d46c2aee0b35d3642d598c35a948324146562",
+        "mode": "0o644"
+      }
+    },
+    {
+      "path": "Tests/OfficeFixtures/xml-declaration-misleading.docx",
+      "kind": "added",
+      "before": null,
+      "after": {
+        "bytes": 812,
+        "sha256": "1023ccbebfe7b8b163d845fbe3155aa19a1ffc015663d99d9a74f36d4d098e94",
+        "mode": "0o644"
+      }
+    },
+    {
+      "path": "Tests/OfficeFixtures/xml-declaration-no-encoding.docx",
+      "kind": "added",
+      "before": null,
+      "after": {
+        "bytes": 796,
+        "sha256": "35faeadd6a99d6e4277fe23bb52233831211bacba75e3a29d58173301d786271",
+        "mode": "0o644"
+      }
+    },
+    {
+      "path": "Tests/OfficeFixtures/xml-declaration-spacing.docx",
+      "kind": "added",
+      "before": null,
+      "after": {
+        "bytes": 809,
+        "sha256": "624c0c78454ede32e1f85b2ff1e4619672ff422384275cb7edf4156d1d3cbb6a",
+        "mode": "0o644"
+      }
+    },
+    {
+      "path": "Tests/OfficeReviewRegressionTests.swift",
+      "kind": "added",
+      "before": null,
+      "after": {
+        "bytes": 9540,
+        "sha256": "3bf78f7175c06233e972ff98a6881cf8601a03ace1cfb1d524660e8ab1cf3f17",
+        "mode": "0o644"
+      }
+    },
+    {
+      "path": "proposed/office-integration.diff",
+      "kind": "modified",
+      "before": {
+        "bytes": 5981,
+        "sha256": "6503bc2996fe031b54221b694e4f56b8ef3b3115d7c680cdd46841fcf00d0f8e",
+        "mode": "0o644"
+      },
+      "after": {
+        "bytes": 6516,
+        "sha256": "16fe64bb4dd48af54109624241c8e2aad5ba6996bf4dcc2a15fec4512fbbde8b",
+        "mode": "0o644"
+      }
+    },
+    {
+      "path": "provenance/fixture-producers.json",
+      "kind": "added",
+      "before": null,
+      "after": {
+        "bytes": 952,
+        "sha256": "579895690d0a2929da116fedea05bf7c8c33442260e66b1c9e11653d7efe5b93",
+        "mode": "0o644"
+      }
+    },
+    {
+      "path": "python-fixture-checks.log",
+      "kind": "modified",
+      "before": {
+        "bytes": 1573,
+        "sha256": "e74721c6135fa2f5af3580108afe73c6dce71756ead939271e7507349fe45c28",
+        "mode": "0o644"
+      },
+      "after": {
+        "bytes": 1573,
+        "sha256": "a6801b0d8e08509faf9edfd1af2b79829315bcae5b850660a7614e61604983ce",
+        "mode": "0o644"
+      }
+    },
+    {
+      "path": "scripts/check_office_delivery.py",
+      "kind": "modified",
+      "before": {
+        "bytes": 11575,
+        "sha256": "ba9bb3f3d2adc7e085c406be79e59450bb620e1c0f47020a73c47016ab3c12b7",
+        "mode": "0o644"
+      },
+      "after": {
+        "bytes": 12319,
+        "sha256": "d0aa680859f00b1f68b68068d6eb80a060ad9cd86de3c1f37ecf432246d3e7a8",
+        "mode": "0o644"
+      }
+    },
+    {
+      "path": "scripts/check_review_delivery.py",
+      "kind": "added",
+      "before": null,
+      "after": {
+        "bytes": 7741,
+        "sha256": "5d93b9a210462c6925643463413a4a815156607f60cae1f430ac4a17df55d92a",
+        "mode": "0o644"
+      }
+    },
+    {
+      "path": "scripts/create_integration_patch.py",
+      "kind": "modified",
+      "before": {
+        "bytes": 4315,
+        "sha256": "dc51648826e9f78e84fe92936f42cf001e159c3f0384f93b74842c71b8b49e80",
+        "mode": "0o644"
+      },
+      "after": {
+        "bytes": 4717,
+        "sha256": "932b7faf1fc369b6c2900056ac058d4f69d745face744e678e71e76dcefc8a1a",
+        "mode": "0o644"
+      }
+    },
+    {
+      "path": "scripts/generate_fixtures.py",
+      "kind": "modified",
+      "before": {
+        "bytes": 11955,
+        "sha256": "fccbb90ede77f6be649c2b115e3583b9afe9f7051f6c7c2425542fdf68a623d6",
+        "mode": "0o644"
+      },
+      "after": {
+        "bytes": 12153,
+        "sha256": "197e8d4522db19fe495e9c28104ac0af746f557c00fb81638689b642480b56b3",
+        "mode": "0o644"
+      }
+    },
+    {
+      "path": "scripts/generate_review_fixtures.py",
+      "kind": "added",
+      "before": null,
+      "after": {
+        "bytes": 8762,
+        "sha256": "8c9385f1eeda42c2014e7d31beb5d0ab328f0be283e223edc881f8ec05cae653",
+        "mode": "0o644"
+      }
+    },
+    {
+      "path": "verification-summary.json",
+      "kind": "modified",
+      "before": {
+        "bytes": 346,
+        "sha256": "034978c84fd02eccd7cd0d2db7f34deed3d7acb538a02ad506da906addb068b4",
+        "mode": "0o644"
+      },
+      "after": {
+        "bytes": 889,
+        "sha256": "2ff2c996e362e9ffc2db2b4e9d00c92e8bc91e2a4b54669dd9dbc1e9bb27653c",
+        "mode": "0o644"
+      }
+    }
+  ]
+}

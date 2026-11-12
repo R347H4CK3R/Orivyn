@@ -5,7 +5,11 @@ import Darwin
 /// It never uploads documents, writes extracted archive files, follows links, or runs Office code.
 struct OfflineDocumentReader: Sendable {
     let limits: OfflineDocumentLimits
-    init(limits: OfflineDocumentLimits = .standard) { self.limits = limits }
+    let control: OfficeReadControl
+    init(limits: OfflineDocumentLimits = .standard, control: OfficeReadControl = OfficeReadControl()) {
+        self.limits = limits; self.control = control
+    }
+    func checkpoint(_ phase: OfficeReadPhase) throws { try control.checkpoint(phase) }
 
     func read(at url: URL) throws -> OfflineDocumentResult {
         guard let format = OfflineDocumentFormat(filenameExtension: url.pathExtension) else {
@@ -23,7 +27,7 @@ struct OfflineDocumentReader: Sendable {
         // O_NOFOLLOW and fstat operate on the same handle, avoiding a symlink check/open race.
         let fd = url.withUnsafeFileSystemRepresentation { path in
             guard let path else { return Int32(-1) }
-            return Darwin.open(path, O_RDONLY | O_NOFOLLOW | O_CLOEXEC)
+            return Darwin.open(path, O_RDONLY | O_NOFOLLOW | O_CLOEXEC | O_NONBLOCK)
         }
         guard fd >= 0 else { throw OfflineDocumentError.unsafeFile }
         let handle = FileHandle(fileDescriptor: fd, closeOnDealloc: true)
@@ -35,7 +39,7 @@ struct OfflineDocumentReader: Sendable {
         }
         var data = Data()
         while true {
-            try Task.checkCancellation()
+            try control.checkpoint(.snapshotChunk)
             let chunk = try handle.read(upToCount: min(32_768, limits.maximumCompressedBytes - data.count + 1)) ?? Data()
             if chunk.isEmpty { break }
             guard chunk.count <= limits.maximumCompressedBytes - data.count else {
@@ -53,10 +57,10 @@ struct OfflineDocumentReader: Sendable {
         guard !data.isEmpty, data.count <= limits.maximumCompressedBytes else { throw OfflineDocumentError.limit("The file exceeds the input byte limit.") }
         switch format {
         case .docx, .xlsx:
-            let package = try OfficeZIPContainer(data: data, limits: limits)
-            return try OfficeTextExtractor(package: package, limits: limits).read(format: format)
+            let package = try OfficeZIPContainer(data: data, limits: limits, control: control)
+            return try OfficeTextExtractor(package: package, limits: limits, control: control).read(format: format)
         case .csv, .tsv:
-            return try DelimitedDocumentReader.read(data, format: format, limits: limits)
+            return try DelimitedDocumentReader.read(data, format: format, limits: limits, control: control)
         }
     }
 }
@@ -103,7 +107,11 @@ struct OfflineDocumentLimits: Sendable {
     var maximumWorksheets = 32
     var maximumRows = 1_000 // Output rows across all worksheets, not sparse coordinate allocation.
     var maximumCells = 10_000 // Output cells across all worksheets.
-    var maximumOutputCharacters = 60_000
+    var maximumOutputCharacters = 60_000 // Conservatively counts rendered Unicode scalars.
+    var maximumOutputBytes = 240_000 // Includes every rendered label, separator and escape.
+    var maximumFormulaRanges = 256
+    var maximumFormulaRangeCells = 1_000_000
+    var maximumFormulaComparisons = 1_000_000 // Shared bound for range-overlap and cell-membership work.
     static let standard = OfflineDocumentLimits()
 
     /// Callers may lower limits for tests or policy, but cannot disable the hard safety ceiling.
@@ -116,7 +124,9 @@ struct OfflineDocumentLimits: Sendable {
                      (maximumXMLAttributes,s.maximumXMLAttributes), (maximumStringBytes,s.maximumStringBytes),
                      (maximumSharedStrings,s.maximumSharedStrings), (maximumWorksheets,s.maximumWorksheets),
                      (maximumRows,s.maximumRows), (maximumCells,s.maximumCells),
-                     (maximumOutputCharacters,s.maximumOutputCharacters)]
+                     (maximumOutputCharacters,s.maximumOutputCharacters), (maximumOutputBytes,s.maximumOutputBytes),
+                     (maximumFormulaRanges,s.maximumFormulaRanges), (maximumFormulaRangeCells,s.maximumFormulaRangeCells),
+                     (maximumFormulaComparisons,s.maximumFormulaComparisons)]
         guard pairs.allSatisfy({ $0.0 >= 0 && $0.0 <= $0.1 }), maximumCompressedBytes > 0,
               maximumExpansionRatio > 0 else { throw OfflineDocumentError.limit("Invalid reader limits.") }
     }
@@ -125,6 +135,8 @@ struct OfflineDocumentLimits: Sendable {
 enum OfflineDocumentError: LocalizedError {
     case unsupportedFormat, unsafeFile, invalidArchive, unsafeArchive, invalidXML, invalidPackage, invalidDelimitedText, noText
     case limit(String)
+    case rejectedAt(OfficeValidationStage)
+    case unsupportedBinaryPart
     var errorDescription: String? {
         switch self {
         case .unsupportedFormat: "This reader supports DOCX, XLSX, UTF-8 CSV and TSV only. Export old DOC/XLS files to a supported format."
@@ -136,41 +148,86 @@ enum OfflineDocumentError: LocalizedError {
         case .invalidDelimitedText: "The delimited file is not valid UTF-8 CSV/TSV. Check quotes and field boundaries."
         case .noText: "No supported document text or cell values were found. Images and scanned pages are not read by this reader."
         case .limit(let message): message
+        case .unsupportedBinaryPart: "This document contains unsupported binary parts. Export its text or values as UTF-8 text/CSV, or use a simplified DOCX/XLSX copy."
+        case .rejectedAt(let stage): stage.explanation
         }
     }
 }
 
-/// Appends only up to the output budget; never repeatedly grows an unbounded String.
+/// Finite rendering sink. It charges actual UTF-8 bytes and rendered Unicode scalars,
+/// a conservative bound on extended Characters. Overflow seals the sink, preserving a prefix.
+/// No call materializes an escaped value or a joined row before applying these budgets.
 struct OfficeTextOutput {
-    let maximum: Int
+    private let maximumScalars: Int
+    private let maximumBytes: Int
     private(set) var text = ""
-    private(set) var count = 0
+    private(set) var byteCount = 0
+    private(set) var scalarCount = 0
+    private var sealed = false
     var truncated = false
-    mutating func append(_ value: String) {
-        let remaining = maximum - count
-        let prefix = String(value.prefix(max(0, remaining)))
-        text += prefix; count += prefix.count
-        if value.count > prefix.count { truncated = true }
+    init(limits: OfflineDocumentLimits) {
+        maximumScalars = limits.maximumOutputCharacters; maximumBytes = limits.maximumOutputBytes
     }
-}
-
-/// Keep data separators and control characters visible rather than letting them impersonate rows.
-enum OfficeTextEscaping {
-    static func render(_ value: String) -> String {
-        var result = ""
+    var isFull: Bool { sealed || byteCount >= maximumBytes || scalarCount >= maximumScalars }
+    private mutating func appendScalar(_ scalar: UnicodeScalar) {
+        guard !sealed, scalarCount < maximumScalars, scalar.utf8.count <= maximumBytes - byteCount else {
+            sealed = true; truncated = true; return
+        }
+        text.unicodeScalars.append(scalar); byteCount += scalar.utf8.count; scalarCount += 1
+    }
+    mutating func append(_ value: String) {
+        guard !value.isEmpty else { return }
+        guard !isFull else { truncated = true; sealed = true; return }
+        for scalar in value.unicodeScalars {
+            appendScalar(scalar)
+            if sealed { return }
+        }
+    }
+    mutating func appendEscaped(_ value: String) {
+        guard !value.isEmpty else { return }
+        guard !isFull else { truncated = true; sealed = true; return }
         for scalar in value.unicodeScalars {
             switch scalar {
-            case "\\": result += "\\\\"
-            case "\r": result += "\\r"
-            case "\n": result += "\\n"
-            case "\t": result += "\\t"
-            case "|": result += "\\|"
+            case "\\": append("\\\\")
+            case "\r": append("\\r")
+            case "\n": append("\\n")
+            case "\t": append("\\t")
+            case "|": append("\\|")
             default:
                 if CharacterSet.controlCharacters.contains(scalar) {
-                    result += "\\u{" + String(scalar.value,radix: 16,uppercase: true) + "}"
-                } else { result.unicodeScalars.append(scalar) }
+                    append("\\u{" + String(scalar.value,radix: 16,uppercase: true) + "}")
+                } else { appendScalar(scalar) }
             }
+            if sealed { return }
         }
-        return result
+    }
+}
+
+enum OfficeValidationStage: String, Equatable, Sendable {
+    case declaredEntryBytes, declaredTotalBytes, declaredExpansionRatio
+    case streamedEntryBytes, streamedTotalBytes, streamedDeclaredBytes
+    case archiveOverlap, archiveIntegrity, formulaRange
+    var explanation: String {
+        switch self {
+        case .declaredEntryBytes, .streamedEntryBytes: "An Office part exceeds the supported expanded byte limit."
+        case .declaredTotalBytes, .streamedTotalBytes: "The Office package exceeds the supported total expanded byte limit."
+        case .declaredExpansionRatio: "The Office package has an unsafe expansion ratio."
+        case .streamedDeclaredBytes: "An Office part expands beyond its declared size."
+        case .archiveOverlap: "The Office package contains overlapping archive entries."
+        case .archiveIntegrity: "The Office package failed its size or checksum integrity check."
+        case .formulaRange: "The workbook exceeds the supported formula-range limits."
+        }
+    }
+}
+
+/// Internal dependency injection for deterministic cancellation tests. Defaults perform only
+/// Task cancellation checks; hooks cannot relax byte, structure or integrity checks.
+enum OfficeReadPhase: Sendable, Equatable { case snapshotChunk, archiveEntry, decompressedChunk, xmlNode, documentCell, delimitedChunk, stagedOriginal }
+struct OfficeReadControl: Sendable {
+    private let callback: (@Sendable (OfficeReadPhase) throws -> Void)?
+    init(_ callback: (@Sendable (OfficeReadPhase) throws -> Void)? = nil) { self.callback = callback }
+    func checkpoint(_ phase: OfficeReadPhase) throws {
+        try callback?(phase)
+        try Task.checkCancellation()
     }
 }

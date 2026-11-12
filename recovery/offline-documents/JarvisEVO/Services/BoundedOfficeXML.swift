@@ -23,28 +23,34 @@ final class OfficeXMLNode {
 
 final class BoundedOfficeXML: NSObject, XMLParserDelegate {
     private let limits: OfflineDocumentLimits
+    private let control: OfficeReadControl
     private var stack: [OfficeXMLNode] = []
     private var namespaces: [[String: String]] = [["xml":"http://www.w3.org/XML/1998/namespace"]]
     private var root: OfficeXMLNode?
     private var nodes = 0, textBytes = 0
     private var failure: Error?
-    private init(limits: OfflineDocumentLimits) { self.limits = limits }
+    private init(limits: OfflineDocumentLimits, control: OfficeReadControl) { self.limits = limits; self.control = control }
 
-    static func parse(_ data: Data, limits: OfflineDocumentLimits) throws -> OfficeXMLNode {
+    static func parse(_ data: Data, limits: OfflineDocumentLimits, control: OfficeReadControl = OfficeReadControl()) throws -> OfficeXMLNode {
         try Task.checkCancellation()
         guard data.count <= limits.maximumEntryBytes, let text = String(data: data, encoding: .utf8),
               !text.contains("\0"), !text.uppercased().contains("<!DOCTYPE"),
               !text.uppercased().contains("<!ENTITY") else { throw OfflineDocumentError.invalidXML }
-        // Only UTF-8 is accepted. Reject a declaration claiming a different encoding.
-        if text.hasPrefix("<?xml") || text.hasPrefix("\u{FEFF}<?xml") {
-            let declaration = String(text.prefix(256)).lowercased()
-            if declaration.contains("encoding"),
-               !declaration.contains("encoding=\"utf-8\""), !declaration.contains("encoding='utf-8'"),
-               !declaration.contains("encoding = \"utf-8\""), !declaration.contains("encoding = 'utf-8'") {
-                throw OfflineDocumentError.invalidXML
+        // Examine only an actual declaration. XMLParser validates the rest of its grammar.
+        // A bounded anchored attribute match allows every legal XML whitespace spelling.
+        let withoutBOM = text.hasPrefix("\u{FEFF}") ? text.dropFirst() : text[...]
+        if withoutBOM.hasPrefix("<?xml"), withoutBOM.dropFirst(5).first.map({ " \t\r\n".contains($0) }) == true {
+            guard let end = withoutBOM.range(of: "?>"), withoutBOM[..<end.upperBound].utf8.count <= 1_024 else { throw OfflineDocumentError.invalidXML }
+            let declaration = String(withoutBOM[..<end.upperBound])
+            let pattern = #"[ \t\r\n]encoding[ \t\r\n]*=[ \t\r\n]*(["'])([A-Za-z][A-Za-z0-9._-]*)\1"#
+            let regex = try NSRegularExpression(pattern: pattern)
+            let matches = regex.matches(in: declaration,range: NSRange(declaration.startIndex...,in: declaration))
+            guard matches.count <= 1 else { throw OfflineDocumentError.invalidXML }
+            if let match = matches.first, let range = Range(match.range(at: 2),in: declaration) {
+                guard declaration[range].lowercased() == "utf-8" else { throw OfflineDocumentError.invalidXML }
             }
         }
-        let delegate = BoundedOfficeXML(limits: limits)
+        let delegate = BoundedOfficeXML(limits: limits, control: control)
         let parser = XMLParser(data: data)
         parser.shouldProcessNamespaces = false // Resolve qualified attributes explicitly as well as elements.
         parser.shouldResolveExternalEntities = false
@@ -67,7 +73,7 @@ final class BoundedOfficeXML: NSObject, XMLParserDelegate {
     }
     func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?,
                 qualifiedName qName: String?, attributes attributeDict: [String: String] = [:]) {
-        do { try Task.checkCancellation() } catch { stop(parser,error); return }
+        do { try control.checkpoint(.xmlNode) } catch { stop(parser,error); return }
         nodes += 1
         guard nodes <= limits.maximumXMLNodes, stack.count < limits.maximumXMLDepth,
               attributeDict.count <= limits.maximumXMLAttributes else {

@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 """Deterministic tiny synthetic Office packages. No third-party documents/data."""
+if __name__ == '__main__':
+    import runpy
+    from pathlib import Path
+    runpy.run_path(str(Path(__file__).with_name('generate_review_fixtures.py')),run_name='__main__')
+    raise SystemExit(0)
 import io, json, struct, zipfile, hashlib
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]/'Tests'/'OfficeFixtures'

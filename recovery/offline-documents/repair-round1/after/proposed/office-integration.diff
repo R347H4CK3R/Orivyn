@@ -1,0 +1,114 @@
+--- a/JarvisEVO/Services/AttachmentService.swift
++++ b/JarvisEVO/Services/AttachmentService.swift
+@@ -8,8 +8,10 @@
+     static let maximumExtractedCharacters = 60_000
+     let directory: URL
+     private let imageService: ImageAttachmentService
++    private let officeReader: OfflineDocumentReader
+ 
+-    init(directory: URL) throws {
++    init(directory: URL, officeReader: OfflineDocumentReader = OfflineDocumentReader()) throws {
++        self.officeReader = officeReader
+         imageService = try ImageAttachmentService(directory: directory)
+         self.directory = imageService.directory
+     }
+@@ -24,18 +26,32 @@
+         }
+         let type = values.contentType ?? UTType(filenameExtension: source.pathExtension)
+         if type?.conforms(to: .image) == true { return chatAttachment(from: try imageService.importFile(at: source)) }
++        let officeFormat = OfflineDocumentFormat(filenameExtension: source.pathExtension)
++        // Old binary/macro formats are not plain text, even if a provider reports a broad text type.
++        guard !["doc", "xls", "docm", "xlsm", "xlsb"].contains(source.pathExtension.lowercased()) else { throw AttachmentError.unsupportedType }
+         let isPDF = type?.conforms(to: .pdf) == true
+         let isText = type?.conforms(to: .text) == true || type?.conforms(to: .json) == true
+-        guard isPDF || isText else { throw AttachmentError.unsupportedType }
++        guard isPDF || isText || officeFormat != nil else { throw AttachmentError.unsupportedType }
+         let id = UUID()
+-        let filename = id.uuidString + (isPDF ? ".pdf" : ".txt")
++        let filename = id.uuidString + (officeFormat.map { "." + $0.rawValue } ?? (isPDF ? ".pdf" : ".txt"))
+         let destination = directory.appendingPathComponent(filename, isDirectory: false)
+-        try FileManager.default.copyItem(at: source, to: destination)
+         do {
++            if officeFormat != nil {
++                // Keep the exact bounded immutable snapshot as the private original. No second
++                // source read can swap content between size checking, staging and extraction.
++                let snapshot = try officeReader.boundedSnapshot(at: source)
++                try snapshot.write(to: destination, options: .atomic)
++                try officeReader.checkpoint(.stagedOriginal)
++            } else {
++                try FileManager.default.copyItem(at: source, to: destination)
++            }
+             let actualSize = try destination.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
+             guard actualSize > 0, actualSize <= Self.maximumBytes else { throw AttachmentError.invalidSize }
+             var extracted: String
+-            if isPDF {
++            if let officeFormat {
++                let snapshot = try officeReader.boundedSnapshot(at: destination)
++                extracted = try officeReader.read(data: snapshot, format: officeFormat).modelContext
++            } else if isPDF {
+                 guard let document = PDFDocument(url: destination), !document.isLocked else { throw AttachmentError.unreadablePDF }
+                 extracted = ""
+                 for index in 0..<min(document.pageCount, 500) {
+@@ -54,7 +70,7 @@
+             }
+             try Task.checkCancellation()
+             return ChatAttachment(id: id, name: String(source.lastPathComponent.prefix(200)), relativePath: filename,
+-                                  mediaType: isPDF ? "application/pdf" : "text/plain", byteCount: actualSize, extractedText: extracted)
++                                  mediaType: officeFormat?.mediaType ?? (isPDF ? "application/pdf" : "text/plain"), byteCount: actualSize, extractedText: extracted)
+         } catch {
+             try? FileManager.default.removeItem(at: destination)
+             throw error
+@@ -143,7 +159,7 @@
+     var errorDescription: String? {
+         switch self {
+         case .invalidSize: return "Choose a nonempty file up to 10 MB."
+-        case .unsupportedType: return "Choose a PDF, UTF-8 text file, or JPEG, PNG, HEIC, or HEIF image. Images provide recognized text only to current models."
++        case .unsupportedType: return "Choose a PDF, DOCX, XLSX, UTF-8 text, CSV, TSV, or JPEG, PNG, HEIC, or HEIF image. Office files provide bounded text and cached values, not exact layout or executed formulas. Images provide recognized text only to current models."
+         case .unreadablePDF: return "This PDF is locked or could not be read."
+         case .noExtractableText: return "This PDF has no selectable text. Scanned PDFs need OCR before attaching."
+         case .notUTF8: return "This text file is not UTF-8. Export it as UTF-8 and try again."
+--- a/JarvisEVO/UI/AttachmentViews.swift
++++ b/JarvisEVO/UI/AttachmentViews.swift
+@@ -60,7 +60,9 @@
+     let complete: (Result<[URL], any Error>) -> Void
+     func makeCoordinator() -> Coordinator { Coordinator(complete: complete) }
+     func makeUIViewController(context: Context) -> UIDocumentPickerViewController {
+-        let picker = UIDocumentPickerViewController(forOpeningContentTypes: [.pdf, .plainText, .json, .sourceCode, .jpeg, .png, .heic, .heif], asCopy: false)
++        let officeTypes = ["docx", "xlsx", "csv", "tsv"].compactMap { UTType(filenameExtension: $0) }
++        let types: [UTType] = [.pdf, .plainText, .json, .sourceCode, .jpeg, .png, .heic, .heif] + officeTypes
++        let picker = UIDocumentPickerViewController(forOpeningContentTypes: types, asCopy: false)
+         picker.allowsMultipleSelection = true
+         picker.delegate = context.coordinator
+         return picker
+--- a/project.yml
++++ b/project.yml
+@@ -13,6 +13,9 @@
+     CURRENT_PROJECT_VERSION: 3
+     SWIFT_STRICT_CONCURRENCY: complete
+ packages:
++  ZIPFoundation:
++    url: https://github.com/weichsel/ZIPFoundation.git
++    revision: 22787ffb59de99e5dc1fbfe80b19c97a904ad48d
+   LlamaRuntime:
+     path: Packages/LlamaRuntime
+ targets:
+@@ -28,6 +31,8 @@
+         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+         GENERATE_INFOPLIST_FILE: YES
+     dependencies:
++      - package: ZIPFoundation
++        product: ZIPFoundation
+       - sdk: libsqlite3.tbd
+       - package: LlamaRuntime
+         product: LlamaRuntime
+@@ -36,6 +41,10 @@
+     platform: iOS
+     sources:
+       - path: Tests
++        excludes: [OfficeFixtures]
++      - path: Tests/OfficeFixtures
++        type: folder
++        buildPhase: resources
+       - path: .cache/test-models/qwen2.5-0.5b-instruct-q4_k_m.gguf
+         buildPhase: resources
+         optional: true

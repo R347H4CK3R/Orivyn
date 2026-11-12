@@ -1,0 +1,1807 @@
+--- a/DESIGN-AND-TESTING.md
++++ b/DESIGN-AND-TESTING.md
+@@ -1,61 +1,38 @@
+-# Design and testing report
++# Design and testing: review repair round 1
+ 
+-## Outcome and verification boundary
++**Status: implementation repaired for independent re-review, not native-validated or integrated.** Only this isolated Office workspace was changed. Main candidate, AppModel, Conversation, active configuration, current app tests/scripts, CI and repositories were not modified. The existing integration diff remains a proposal.
+ 
+-The implementation is ready for independent source review and later native integration. It is **not a shipping/passing native candidate**. This Linux host has no `swift`, `xcodebuild`, or `xcodegen`. The Swift sources, Foundation/XMLParser delegate behavior, Apple Compression/ZIPFoundation execution, XCTest resource discovery, native picker, preview, and iOS strict-concurrency build have **not** been compiled or exercised here.
++## Review fixes
+ 
+-Verified on the authoring host:
++- **I1:** All formats render incrementally into one finite sink. No XLSX/CSV row string array, joined row, or complete escaped shared-string copy is constructed. Labels, separators, annotations and escape expansion count toward **240,000 rendered UTF-8 bytes** and **60,000 rendered Unicode scalars**, the latter a conservative bound on Swift Characters. Overflow seals the sink, preserving a prefix. After saturation all bounded input/cell validation continues, but repeated values are not rendered. Custom format metadata also shares raw String storage rather than interpolating one large format label per style. Native tests cover a 61,550-byte XLSX with 10,000 references to one 32-KiB string (the former path implied 327,680,000 repeated value bytes), combining marks, escapes, every supported format, and memory/time metrics.
++- **I2:** Every numeric cell resolves explicit `s` or default index 0. Date/custom styles therefore behave identically for omitted and explicit `s="0"`. Row/column inherited formatting is deliberately not guessed. Its metadata is validated; affected omitted-cell numeric values and frontloaded notes say the inherited format is unresolved. Explicit cell styles still apply.
++- **I3:** Formula array/shared/data-table result rectangles are collected before output. Followers with stored values are labeled cached; present follower cells without caches are labeled unavailable. Nothing is evaluated or filled into absent cells. Caps: **256 sparse rectangles per worksheet**, **1,000,000 cells per rectangle**, **1,000,000 total potential range-overlap/cell-membership comparisons across the workbook**. Coordinates, anchors, ordering and overlapping ranges are validated; no range is enumerated or converted into a dense grid. Unsupported/malformed/excessive range metadata fails honestly.
++- **I4:** Named attack fixtures now reach named error stages: entry bytes, total bytes, expansion ratio, overlapping data intervals, actual streamed size and CRC integrity. The bomb uses an inert `.dat` name. The overlap fixture has mutually consistent local/central records and a valid embedded local header; it reaches the interval gate. XCTest asserts exact `OfficeValidationStage` cases. Deterministic native cancellation tests cancel the actual current Task at decompression/cell checkpoints, after private staging and during importer extraction, and assert staged-copy cleanup. These are prepared tests, not executed evidence.
++- **M1:** File open adds `O_NONBLOCK` before same-handle fstat. The FIFO test keeps a guard writer open so even a regressed blocking implementation cannot hang the test runner; static checks also require the nonblocking flag.
++- **M2:** UTF-8 declaration detection examines only a bounded actual XML declaration through `?>`, with XML whitespace and quote grammar for its encoding attribute. XMLParser still validates full grammar. Legal spacing, no-encoding declarations with later `encoding` content, and misleading comments are fixtures.
++- **M3:** Defined Deflate level bits are accepted only for Deflate. A bounded empty Deflate stream is permitted and must produce exactly zero bytes and CRC zero. Unknown/encryption flags and zero-input Deflate streams remain rejected. Empty-callback/progress limits remain in place.
++- **M4:** Only `word/printerSettings/printerSettings[0-9]+.bin` and the corresponding `xl/` names get an inert-part exception. Their real bytes and CRC are bounded/checked, never interpreted. Notes disclose ignored printer settings. VBA/ActiveX/OLE embedding names remain rejected. Other unknown binary parts produce an honest unsupported-part error and text/CSV/simplified-copy workaround. The printer fixture is synthetic, not a claim of native printer-settings interoperability.
+ 
+-1. 12 independent Python fixture/contract checks pass. These check the synthetic fixture bytes, a separate ZIP32 metadata oracle with zlib streamed-size/CRC checks, XML attack intent, valid DOCX/XLSX contents, actual formula/type coverage, relationship attack intent, CSV semantics, source guard presence, dependency provenance, native-test fixture references, and unchanged frozen patch inputs. **The Python oracle is not the Swift implementation.**
+-2. The proposed XcodeGen YAML parses and asserts the exact package commit, product dependency, and test-folder resource wiring.
+-3. `git apply --check proposed/office-integration.diff` passes against the frozen input tree, without applying it.
+-4. Official ZIPFoundation tag 0.9.20 resolves to commit `22787ffb59de99e5dc1fbfe80b19c97a904ad48d`. License and exact public APIs were read via the read-only GitHub connector. This is dependency/API provenance, not a native package build.
+-5. Generated fixtures are deterministic, locally synthetic, and contain no user documents or credentials. No runtime network access, document upload, account setup, paid service, CI job, repository write, or user contact was used.
++## Existing safety boundary preserved
+ 
+-The native XCTest sources and initial 29 real ZIP/XML/text fixtures were written before the production services. Native red/green execution was unavailable. Coverage was expanded to 49 fixtures during implementation. The Python checks initially exposed two incorrect checker assumptions (a temporary symlink name was mistaken for a bundled fixture, and a long XML string was expected to fail the ZIP ratio before its actual XML-string limit); both checker expectations were corrected using measured bytes and rerun successfully. No native success is inferred from this.
++Official MIT ZIPFoundation **0.9.20**, immutable commit **22787ffb59de99e5dc1fbfe80b19c97a904ad48d**, performs decompression. The strict ZIP32 gate is metadata validation, not a home-grown compression codec. Every entry is streamed, including ignored parts. No filesystem archive extraction, document upload, network runtime, process execution or formula execution exists.
+ 
+-## Architecture
++Input is a user-selected regular local file/private staged snapshot, at most 10 MiB, opened with O_NOFOLLOW/O_NONBLOCK and fstat on the same handle. ZIP limits remain 512 entries, 4 MiB per expanded part, 32 MiB total and 200:1 per-entry expansion, with exact observed size and CRC checks. XML still rejects DTD/entities, disables external resolution and bounds per-part depth 64, nodes 80,000, text 2 MiB, attributes 32 and string bytes 32 KiB. Shared strings are capped at 20,000 and worksheets at 32. Output rows/cells remain capped at 1,000/10,000 across sheets.
+ 
+-- `OfflineDocumentReader.swift`: format/result/error/limit API, O_NOFOLLOW + fstat + chunk-bounded local input snapshot, output budget, visible escaping of control characters.
+-- `OfficeZIPContainer.swift`: strict ZIP32 metadata preflight, then official ZIPFoundation in-memory Archive + streaming consumer. No archive entry is extracted to the filesystem. Every entry, including ignored binary/image parts, is streamed under real-byte and CRC checks; only XML/relationship bytes are retained.
+-- `BoundedOfficeXML.swift`: UTF-8-only, no-DTD/no-entity XML parser. Resolves qualified element and attribute namespaces explicitly. Bounded nodes/depth/text/attributes/string lengths. External entity callbacks abort; no remote resolution exists.
+-- `OfficeTextExtractor.swift`: contained OPC relationship resolution plus known main content types. DOCX body paragraphs/tables; XLSX sheet names, sparse row/cell coordinates, shared/inline/rich/escaped strings, numbers, booleans, errors, dates, and stored formula caches. No formula expression is executed or used to invent a value.
+-- `DelimitedDocumentReader.swift`: strict quote-state UTF-8 CSV/TSV parser, embedded newlines/quotes, trailing empty fields, explicit row/column labels. Retains bounded output while validating the entire bounded input. It does not infer a header row or evaluate leading `=` text.
++Relationships resolve only to package dictionary keys. Canonical contained parent references and rooted OPC part URIs are supported; OS/archive absolute paths, traversal outside the package, URI ambiguity and missing targets fail. External hyperlinks are omitted; other external relationships fail. DOCX is body text/tables only. XLSX keeps raw numbers, typed values, serials/1900 or 1904 epochs, custom-format annotations and clearly labeled stored caches. CSV/TSV is strict UTF-8 quoted data. Images/scanned pages, exact layout, Office execution, old DOC/XLS, macro-enabled and unusual unsupported profiles remain outside scope.
+ 
+-### Alternatives considered
++## Available evidence
+ 
+-- Hand-written ZIP decompression: rejected. It duplicates a security-sensitive codec and contradicts the brief.
+-- Heavy Office-rendering/parser framework or web conversion: rejected. It adds a large runtime/dependency surface or uploads selected content, and is unnecessary for the existing text-only model.
+-- Official MIT ZIPFoundation + a strict metadata gate + bounded Foundation XML extraction: chosen. The metadata gate is needed because encryption is not public on Entry, iteration can omit unsupported/encrypted records, and extract returns a calculated CRC that callers must compare themselves.
++- **24/24 independent Python checks pass:** original 12 fixture/security-contract checks plus 12 review-regression checks. Their ZIP/zlib/XML/rendering references validate fixture intent and source contracts; **they do not execute Swift**.
++- **74** small-on-disk synthetic/library-exported fixtures; deterministic regeneration and SHA-256 inventory verified. Specific large-expanded attacks fail in metadata preflight and are not decompressed by the oracle.
++- Library exports: **python-docx 1.2.0**, **openpyxl 3.1.5**, **XlsxWriter 3.2.9**. Producer XML/parts remain intact except fixed core created/modified timestamps; ZIP metadata/compression is normalized. Exact provenance is `provenance/fixture-producers.json`. The exported files are independently readable with installed libraries and pass the separate ZIP oracle.
++- Proposed XcodeGen YAML/package/resource assertions and `git apply --check` against the unchanged three frozen inputs pass.
++- Exact local 73-file pre-repair snapshot and hashes: `repair-round1/before/` and `before-manifest.json`. Focused changed/new after copies, text diff, manifests and review mapping accompany this report.
+ 
+-## Safety profile and ceilings
++The added static rendering check initially matched the unrelated bounded OPC path-component accumulator named `parts`; its scope was narrowed to the rendering methods. This was a checker false positive, not a passing Swift test. Final checks were rerun.
+ 
+-Hard ceilings cannot be raised through the API; callers may only lower them:
++## Mandatory remaining gate
+ 
+-- Input snapshot: nonempty regular file, 10 MiB maximum, 32 KiB file-read chunks, no final-component symlinks.
+-- ZIP: 512 entries; 4 MiB per expanded entry; 32 MiB expanded total; maximum 200:1 expansion per entry; stored/deflate ZIP32 only.
+-- Decompression: 16 KiB buffers, real callback-byte checks against both declared and hard sizes, exact observed final size and CRC match, bounded callback count and at most eight consecutive empty callbacks, cancellation checks.
+-- XML per processed part: depth 64, 80,000 nodes, 2 MiB text, 32 attributes per node, 32 KiB individual string, at most 32 namespace bindings. All parts remain under the ZIP total bound. XML parts not used for document extraction are never parsed or executed.
+-- Workbook: 20,000 shared strings, 32 worksheets. Output is limited to 1,000 rows and 10,000 cells across sheets, plus 60,000 text characters. Huge sparse coordinates do not allocate grids. Invalid, duplicate or decreasing row/cell coordinates are rejected.
+-- CSV/TSV: same 10 MiB input, 32 KiB field, 1,000 output rows, 10,000 output cells, and 60,000 output characters. Oversized fields fail; omitted output is explicitly marked truncated.
++This host has **no Swift, Xcode or Word/Excel/LibreOffice**. None of the **38 native XCTest method sources**, including allocation/time/cancellation/FIFO tests, has been compiled or executed. There is no native memory peak, latency, cancellation or interoperability claim. Library exports improve coverage but are not native Office-application exports. Native Office/LibreOffice interoperability and actual printer-settings exports remain pending.
+ 
+-ZIP preflight rejects encryption, unsupported flags/methods, ZIP64/multi-disk, unsafe/absolute/archive paths, percent/URI/backslash ambiguity, duplicate/case-colliding names, symlinks and special Unix file types, local/central disagreements, overlap/gaps, malformed extras/descriptors, resource bombs, executable Office parts such as VBA/ActiveX/OLE binary embeddings, and integrity mismatches. It checks metadata only; it does not implement compression. ZIPFoundation decodes the stream. This is a deliberately strict supported profile, not a complete Office/ZIP conformance validator.
+-
+-Internal relationships resolve to package dictionary keys, never filesystem/network locations. Rooted **OPC part URIs** such as `/xl/workbook.xml` are safely stripped to a package key, not treated as OS absolute paths. Relative parent segments are allowed only when the canonical result stays within the package, so ordinary `../styles.xml` references can work while package-root escapes fail. Percent encoding, schemes, query/fragment ambiguity and missing targets fail. External hyperlinks are ignored and disclosed; other external relationships (including external worksheets/images) fail.
+-
+-## Honest text semantics
+-
+-- Notes precede content in `modelContext`, so the current 20,000-character per-document prompt cap retains the limitations. The existing 60,000-character saved extraction cap remains unchanged in the proposal. Result truncation is explicit, and the older AttachmentService truncation marker still applies when its combined notes/text cap is reached.
+-- DOCX: meaningful paragraph breaks, tabs, line breaks and table rows/cells. Body-only transitional WordprocessingML. No claim of exact layout, list numbering, image/scanned content, headers/footers, comments, footnotes, text boxes, drawings, deleted text or field instructions.
+-- XLSX: transitional SpreadsheetML worksheet values, including hidden sheets and rows with labels. Shared/inline rich strings exclude phonetic annotations. `_xHHHH_` UTF-16 escapes are decoded once; literal underscore escape sequences and surrogate pairs are handled, invalid UTF-16 is rejected.
+-- Numeric spelling is retained rather than round-tripped through floating point. Nonfinite/invalid numeric caches fail. Boolean, error and ISO date cells are labeled. Date/time-formatted numeric values retain their raw serial, workbook 1900/1904 epoch and format identifier. Excel serial 60 is not converted into a fabricated Gregorian date. Custom number formats stay annotations, without assuming every custom format is a date.
+-- Formula caches are labeled cached/may be stale. Missing caches are labeled unavailable, including shared-string formulas. An explicitly empty cached string is distinguished from a missing numeric cache. Formula bodies are not emitted as computed facts or executed.
+-- Charts, images, scanned pages, merges, filters and formatted layouts are not interpreted. Non-worksheet sheets, old binary DOC/XLS, macro-enabled variants, UTF-16 Office XML, non-ASCII archive entry names, unsigned ZIP descriptors and unusual ZIP profiles fail honestly rather than being claimed supported. This conservative reader can reject otherwise legitimate documents containing unsupported embedded/printer binary parts or linked content.
+-
+-## Original-attachment compatibility
+-
+-The proposal preserves a random UUID filename and an exact bounded private original snapshot with its real `.docx/.xlsx/.csv/.tsv` extension and MIME type. Extraction failure removes the staged original. Original source access remains within the selected file's existing security-scope grant. The serial importer actor, cancellation/ownership pipeline, image provenance, preview behavior, and ChatAttachment Codable schema are unchanged. No AppModel or Conversation change is proposed. Existing PDF/text/image routes remain available.
+-
+-## Required next gate
+-
+-An independent review and native Swift 6/iOS 26 compilation/test run are required before integration is considered validated. Run both new XCTest classes plus existing attachment, picker ownership, image provenance, persistence/history, prompt/context and app/UI regressions. Confirm test-folder bundle lookup, exact original bytes after source removal, repeated imports, cancellation/cleanup, native picker availability and preview. No native test count or runtime performance/safety guarantee is asserted here.
++After independent re-review, integrate only into an authorized non-frozen checkout, resolve the exact dependency, compile Swift 6/iOS 26, verify test-bundle resource lookup, and run all three new classes plus existing attachment/picker/image/history/prompt/app regressions. Measure the repeated-shared-string fixture and cancellation/cleanup behavior on a verified simulator/device. Do not promote Python checks or patch dry-runs to native passing evidence.
+--- a/INTEGRATION.md
++++ b/INTEGRATION.md
+@@ -9,13 +9,13 @@
+    - `BoundedOfficeXML.swift`
+    - `OfficeTextExtractor.swift`
+    - `DelimitedDocumentReader.swift`
+-3. Copy the two new XCTest files into `Tests/`, and the entire `Tests/OfficeFixtures/` folder into the same relative location. Do not overwrite old tests. These fixtures belong to the **test bundle only**, not the production app.
++3. Copy the three new XCTest files into `Tests/`, and the entire `Tests/OfficeFixtures/` folder into the same relative location. Do not overwrite old tests. These fixtures belong to the **test bundle only**, not the production app.
+ 4. Review and apply `proposed/office-integration.diff` to the chosen non-frozen integration checkout. It changes only:
+    - AttachmentService: recognize four supported extensions; stage an exact bounded immutable local snapshot under UUID + real extension; extract format notes/text; preserve the existing return/schema and failed-import cleanup.
+    - FileAttachmentPicker: add extension-derived DOCX/XLSX/CSV/TSV UTTypes without broadening the picker to arbitrary data.
+    - XcodeGen: add the pinned package/product and test folder resources.
+ 5. Copy `provenance/ZIPFoundation-LICENSE.txt` into `ThirdPartyNotices/ZIPFoundation-LICENSE.txt`. Preserve the MIT notice in redistributed source/binary notices using the project's existing third-party notice procedure. API snapshots in provenance are review evidence, not files to compile into the app.
+-6. Resolve/generate/build using the project's normal XcodeGen/native workflow. Verify Package.resolved actually records the commit below, then run the two new XCTest classes and the existing attachment/picker/image/history/app regressions. Use a currently verified local iOS simulator destination, not a guessed simulator name. This authoring host cannot execute these steps.
++6. Resolve/generate/build using the project's normal XcodeGen/native workflow. Verify Package.resolved actually records the commit below, then run all three new XCTest classes and the existing attachment/picker/image/history/app regressions. Use a currently verified local iOS simulator destination, not a guessed simulator name. This authoring host cannot execute these steps.
+ 
+ ## Exact dependency wiring
+ 
+@@ -63,7 +63,7 @@
+ // Preserve the bounded original bytes with format.rawValue extension and format.mediaType.
+ ```
+ 
+-The proposal uses `boundedSnapshot(at:)` when staging, then `read(data:format:)` from the private original. Neither method uploads, runs Office code, or extracts archive entries into filesystem paths. Security-scoped URL access remains owned by AttachmentService's existing import method.
++The proposal uses an injected immutable `OfflineDocumentReader` (default normal reader) and `boundedSnapshot(at:)` when staging, then `read(data:format:)` from the private original. The internal post-stage checkpoint preserves real Task cancellation/cleanup and makes regression tests deterministic; its default only checks Task cancellation. No runtime setting or user-facing hook is added. Neither method uploads, runs Office code, or extracts archive entries into filesystem paths. Security-scoped URL access remains owned by AttachmentService's existing import method.
+ 
+ No new Codable property is required. `ChatAttachment` and `ChatMessage.promptContent` remain backward compatible; the latter already treats document text as untrusted. Limitation and cache/truncation notices are frontloaded in `modelContext` so the existing prompt cap does not hide them.
+ 
+@@ -72,6 +72,7 @@
+ ```sh
+ python scripts/generate_fixtures.py
+ python scripts/check_office_delivery.py
++python scripts/check_review_delivery.py
+ cd /workspace/shared/Jarvis-EVO-recovery-next
+ git apply --check /workspace/shared/Jarvis-EVO-office-work/proposed/office-integration.diff
+ ```
+--- a/JarvisEVO/Services/BoundedOfficeXML.swift
++++ b/JarvisEVO/Services/BoundedOfficeXML.swift
+@@ -23,28 +23,34 @@
+ 
+ final class BoundedOfficeXML: NSObject, XMLParserDelegate {
+     private let limits: OfflineDocumentLimits
++    private let control: OfficeReadControl
+     private var stack: [OfficeXMLNode] = []
+     private var namespaces: [[String: String]] = [["xml":"http://www.w3.org/XML/1998/namespace"]]
+     private var root: OfficeXMLNode?
+     private var nodes = 0, textBytes = 0
+     private var failure: Error?
+-    private init(limits: OfflineDocumentLimits) { self.limits = limits }
++    private init(limits: OfflineDocumentLimits, control: OfficeReadControl) { self.limits = limits; self.control = control }
+ 
+-    static func parse(_ data: Data, limits: OfflineDocumentLimits) throws -> OfficeXMLNode {
++    static func parse(_ data: Data, limits: OfflineDocumentLimits, control: OfficeReadControl = OfficeReadControl()) throws -> OfficeXMLNode {
+         try Task.checkCancellation()
+         guard data.count <= limits.maximumEntryBytes, let text = String(data: data, encoding: .utf8),
+               !text.contains("\0"), !text.uppercased().contains("<!DOCTYPE"),
+               !text.uppercased().contains("<!ENTITY") else { throw OfflineDocumentError.invalidXML }
+-        // Only UTF-8 is accepted. Reject a declaration claiming a different encoding.
+-        if text.hasPrefix("<?xml") || text.hasPrefix("\u{FEFF}<?xml") {
+-            let declaration = String(text.prefix(256)).lowercased()
+-            if declaration.contains("encoding"),
+-               !declaration.contains("encoding=\"utf-8\""), !declaration.contains("encoding='utf-8'"),
+-               !declaration.contains("encoding = \"utf-8\""), !declaration.contains("encoding = 'utf-8'") {
+-                throw OfflineDocumentError.invalidXML
++        // Examine only an actual declaration. XMLParser validates the rest of its grammar.
++        // A bounded anchored attribute match allows every legal XML whitespace spelling.
++        let withoutBOM = text.hasPrefix("\u{FEFF}") ? text.dropFirst() : text[...]
++        if withoutBOM.hasPrefix("<?xml"), withoutBOM.dropFirst(5).first.map({ " \t\r\n".contains($0) }) == true {
++            guard let end = withoutBOM.range(of: "?>"), withoutBOM[..<end.upperBound].utf8.count <= 1_024 else { throw OfflineDocumentError.invalidXML }
++            let declaration = String(withoutBOM[..<end.upperBound])
++            let pattern = #"[ \t\r\n]encoding[ \t\r\n]*=[ \t\r\n]*(["'])([A-Za-z][A-Za-z0-9._-]*)\1"#
++            let regex = try NSRegularExpression(pattern: pattern)
++            let matches = regex.matches(in: declaration,range: NSRange(declaration.startIndex...,in: declaration))
++            guard matches.count <= 1 else { throw OfflineDocumentError.invalidXML }
++            if let match = matches.first, let range = Range(match.range(at: 2),in: declaration) {
++                guard declaration[range].lowercased() == "utf-8" else { throw OfflineDocumentError.invalidXML }
+             }
+         }
+-        let delegate = BoundedOfficeXML(limits: limits)
++        let delegate = BoundedOfficeXML(limits: limits, control: control)
+         let parser = XMLParser(data: data)
+         parser.shouldProcessNamespaces = false // Resolve qualified attributes explicitly as well as elements.
+         parser.shouldResolveExternalEntities = false
+@@ -67,7 +73,7 @@
+     }
+     func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?,
+                 qualifiedName qName: String?, attributes attributeDict: [String: String] = [:]) {
+-        do { try Task.checkCancellation() } catch { stop(parser,error); return }
++        do { try control.checkpoint(.xmlNode) } catch { stop(parser,error); return }
+         nodes += 1
+         guard nodes <= limits.maximumXMLNodes, stack.count < limits.maximumXMLDepth,
+               attributeDict.count <= limits.maximumXMLAttributes else {
+--- a/JarvisEVO/Services/DelimitedDocumentReader.swift
++++ b/JarvisEVO/Services/DelimitedDocumentReader.swift
+@@ -3,42 +3,39 @@
+ /// RFC-4180-style UTF-8 delimited records (CSV comma or TSV tab), never spreadsheet evaluation.
+ /// Fully validates the bounded input, while retaining only a bounded number of rows/cells.
+ enum DelimitedDocumentReader {
+-    static func read(_ data: Data, format: OfflineDocumentFormat, limits: OfflineDocumentLimits) throws -> OfflineDocumentResult {
++    static func read(_ data: Data, format: OfflineDocumentFormat, limits: OfflineDocumentLimits, control: OfficeReadControl = OfficeReadControl()) throws -> OfflineDocumentResult {
+         guard format == .csv || format == .tsv, var text = String(data: data,encoding: .utf8),
+               !text.contains("\0") else { throw OfflineDocumentError.invalidDelimitedText }
+         if text.hasPrefix("\u{FEFF}") { text.removeFirst() }
+         let delimiter: UnicodeScalar = format == .csv ? "," : "\t"
+         let scalars = text.unicodeScalars
+-        var index = scalars.startIndex, field = "", fieldBytes = 0, row = [String]()
++        var index = scalars.startIndex, field = "", fieldBytes = 0, columnNumber = 0
+         var quoted = false, afterQuote = false, fieldStarted = false, pendingRecord = false
+         var rowNumber = 0, totalCells = 0, iterations = 0, hasValue = false
+-        var output = OfficeTextOutput(maximum: limits.maximumOutputCharacters)
+-        func escaped(_ value: String) -> String {
+-            OfficeTextEscaping.render(value)
+-        }
++        var output = OfficeTextOutput(limits: limits), wroteRow = false
+         func add(_ scalar: UnicodeScalar) throws {
+             let bytes = scalar.utf8.count
+             guard bytes <= limits.maximumStringBytes - fieldBytes else { throw OfflineDocumentError.limit("A delimited field exceeds the string limit.") }
+             field.unicodeScalars.append(scalar); fieldBytes += bytes
+         }
+         func finishField() {
+-            totalCells += 1
++            totalCells += 1; columnNumber += 1
+             if !field.isEmpty { hasValue = true }
+-            if rowNumber < limits.maximumRows, totalCells <= limits.maximumCells { row.append(field) }
+-            else { output.truncated = true }
++            if rowNumber < limits.maximumRows, totalCells <= limits.maximumCells, !output.isFull {
++                if !wroteRow { output.append("Row " + String(rowNumber+1) + ": "); wroteRow = true }
++                else { output.append(" | ") }
++                output.append(OfficeTextExtractor.columnName(columnNumber)); output.append("="); output.appendEscaped(field)
++            } else { output.truncated = true }
+             field = ""; fieldBytes = 0; fieldStarted = false; afterQuote = false
+         }
+         func finishRecord() {
+             finishField(); rowNumber += 1
+-            if rowNumber <= limits.maximumRows, !row.isEmpty {
+-                let parts = row.enumerated().map { "\(OfficeTextExtractor.columnName($0.offset+1))=\(escaped($0.element))" }
+-                output.append("Row \(rowNumber): " + parts.joined(separator: " | ") + "\n")
+-            } else { output.truncated = true }
+-            row.removeAll(keepingCapacity: true); pendingRecord = false
++            if wroteRow { output.append("\n") }
++            columnNumber = 0; wroteRow = false; pendingRecord = false
+         }
+         while index < scalars.endIndex {
+             iterations += 1
+-            if iterations % 4_096 == 0 { try Task.checkCancellation() }
++            if iterations % 4_096 == 0 { try control.checkpoint(.delimitedChunk) }
+             let scalar = scalars[index]
+             index = scalars.index(after: index)
+             if quoted {
+@@ -62,7 +59,7 @@
+             }
+         }
+         guard !quoted else { throw OfflineDocumentError.invalidDelimitedText }
+-        if pendingRecord || !field.isEmpty || !row.isEmpty { finishRecord() }
++        if pendingRecord || !field.isEmpty || columnNumber > 0 { finishRecord() }
+         guard hasValue else { throw OfflineDocumentError.noText }
+         let notes = ["Text only. Delimited values are preserved as text; formulas and Office code are not executed. Quotes follow CSV rules; embedded line breaks, tabs, backslashes and column separators are escaped. The first row is not assumed to be a header. Delimiter: \(format == .csv ? "comma" : "tab")."]
+         return OfflineDocumentResult(format: format,text: output.text,notes: notes,wasTruncated: output.truncated)
+--- a/JarvisEVO/Services/OfficeTextExtractor.swift
++++ b/JarvisEVO/Services/OfficeTextExtractor.swift
+@@ -16,6 +16,7 @@
+ struct OfficeTextExtractor {
+     let package: OfficeZIPContainer
+     let limits: OfflineDocumentLimits
++    let control: OfficeReadControl
+ 
+     func read(format: OfflineDocumentFormat) throws -> OfflineDocumentResult {
+         let graph = try relationships()
+@@ -38,6 +39,9 @@
+             }
+         }
+         var notes = ["Text only. Original layout, charts, images, scanned pages and embedded objects are not interpreted. Office code and formulas are not executed."]
++        if package.names.contains(where: { $0.lowercased().contains("/printersettings/") }) {
++            notes.append("Printer settings are ignored; their bounded bytes and checksum are checked but never interpreted.")
++        }
+         if graph.values.contains(where: { $0.values.contains(where: \.external) }) {
+             notes.append("External hyperlinks are omitted and never opened.")
+         }
+@@ -53,7 +57,7 @@
+     }
+     private func xml(_ name: String) throws -> OfficeXMLNode {
+         guard let data = package.parts[name] else { throw OfflineDocumentError.invalidPackage }
+-        return try BoundedOfficeXML.parse(data,limits: limits)
++        return try BoundedOfficeXML.parse(data,limits: limits,control: control)
+     }
+ 
+     /// OPC relationships resolve only to package keys, never file URLs. Relative parent segments
+@@ -111,36 +115,45 @@
+ 
+     private func word(_ path: String, notes: [String]) throws -> OfflineDocumentResult {
+         let root = try xml(path), ns = OfficeNS.word
+-        guard root.name == "document", root.namespace == ns, root.children("body",in: ns).count == 1, let body = root.first("body",in: ns) else { throw OfflineDocumentError.invalidPackage }
+-        var output = OfficeTextOutput(maximum: limits.maximumOutputCharacters)
+-        func paragraph(_ node: OfficeXMLNode) -> String {
+-            guard node.namespace == ns else { return "" }
+-            if ["del","moveFrom","drawing","pict","object","txbxContent","instrText","delText"].contains(node.name) { return "" }
++        guard root.name == "document", root.namespace == ns, root.children("body",in: ns).count == 1,
++              let body = root.first("body",in: ns) else { throw OfflineDocumentError.invalidPackage }
++        var output = OfficeTextOutput(limits: limits), hasText = false
++        func inline(_ node: OfficeXMLNode) throws {
++            try control.checkpoint(.documentCell)
++            guard node.namespace == ns else { return }
++            if ["del","moveFrom","drawing","pict","object","txbxContent","instrText","delText"].contains(node.name) { return }
+             switch node.name {
+-            case "t": return node.text
+-            case "tab": return "\t"
+-            case "br","cr": return "\n"
+-            default: return node.children.map(paragraph).joined()
++            case "t":
++                if node.text.unicodeScalars.contains(where: { !CharacterSet.whitespacesAndNewlines.contains($0) }) { hasText = true }
++                output.append(node.text)
++            case "tab": output.append("\t")
++            case "br","cr": output.append("\n")
++            default: for child in node.children { try inline(child) }
+             }
+         }
+         func blocks(_ node: OfficeXMLNode) throws {
+-            try Task.checkCancellation()
++            try control.checkpoint(.documentCell)
+             guard node.namespace == ns else { return }
+             if ["del","moveFrom","drawing","pict","object","txbxContent"].contains(node.name) { return }
+-            if node.name == "p" { output.append(paragraph(node) + "\n"); return }
++            if node.name == "p" { try inline(node); output.append("\n"); return }
+             if node.name == "tbl" {
+                 for row in node.children("tr",in: ns) {
+-                    let cells = row.children("tc",in: ns).map { cell in
+-                        cell.children.map(paragraph).filter { !$0.isEmpty }.joined(separator: " / ")
++                    for (index,cell) in row.children("tc",in: ns).enumerated() {
++                        if index > 0 { output.append(" | ") }
++                        var paragraphs = 0
++                        for child in cell.children where child.namespace == ns && ["p","tbl","sdt"].contains(child.name) {
++                            if paragraphs > 0 { output.append(" / ") }
++                            try inline(child); paragraphs += 1
++                        }
+                     }
+-                    output.append(cells.joined(separator: " | ") + "\n")
++                    output.append("\n")
+                 }
+                 return
+             }
+             for child in node.children { try blocks(child) }
+         }
+         try blocks(body)
+-        guard !output.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { throw OfflineDocumentError.noText }
++        guard hasText else { throw OfflineDocumentError.noText }
+         return OfflineDocumentResult(format: .docx,text: output.text,notes: notes,wasTruncated: output.truncated)
+     }
+ 
+@@ -152,7 +165,8 @@
+         let epochValue = root.first("workbookPr",in: ns)?.attribute("date1904") ?? "0"
+         guard ["0","1","true","false"].contains(epochValue) else { throw OfflineDocumentError.invalidPackage }
+         let epoch = ["1","true"].contains(epochValue) ? "1904" : "1900"
+-        var strings = [String](), styles = [""], formatCodes = [Int:String]()
++        var strings = [String](), styles: [OfficeNumberFormat] = [.general], formatCodes = [Int:String]()
++        var resultNotes = notes
+         func typedPart(_ type: String) throws -> String? {
+             let matches = rels.values.filter { $0.type == OfficeNS.officeRelationship + "/" + type }
+             guard matches.count <= 1, !matches.contains(where: \.external) else { throw OfflineDocumentError.invalidPackage }
+@@ -181,7 +195,8 @@
+             let style = try xml(stylePath)
+             guard style.name == "styleSheet", style.namespace == ns else { throw OfflineDocumentError.invalidPackage }
+             for fmt in style.first("numFmts",in: ns)?.children("numFmt",in: ns) ?? [] {
+-                guard let id = fmt.attribute("numFmtId").flatMap(Int.init), id >= 164, formatCodes[id] == nil, let code = fmt.attribute("formatCode") else { throw OfflineDocumentError.invalidPackage }
++                guard let id = fmt.attribute("numFmtId").flatMap(Int.init), id >= 164, formatCodes[id] == nil,
++                      let code = fmt.attribute("formatCode") else { throw OfflineDocumentError.invalidPackage }
+                 formatCodes[id] = code
+             }
+             let xfs = style.first("cellXfs",in: ns)?.children("xf",in: ns) ?? []
+@@ -189,12 +204,15 @@
+             for xf in xfs {
+                 guard let id = Int(xf.attribute("numFmtId") ?? "0"), id >= 0 else { throw OfflineDocumentError.invalidPackage }
+                 if (14...22).contains(id) || (27...36).contains(id) || (45...47).contains(id) || (50...58).contains(id) {
+-                    styles.append("date/time format #\(id)")
+-                } else if let code = formatCodes[id] { styles.append("format \(code)") }
+-                else { styles.append("") }
+-            }
+-        }
+-        var output = OfficeTextOutput(maximum: limits.maximumOutputCharacters), rowsSeen = 0, cellsSeen = 0
++                    styles.append(.date(id))
++                } else if let code = formatCodes[id] { styles.append(.custom(code)) }
++                else {
++                    guard id < 164 else { throw OfflineDocumentError.invalidPackage }
++                    styles.append(.general)
++                }
++            }
++        }
++        var output = OfficeTextOutput(limits: limits), rowsSeen = 0, cellsSeen = 0, formulaComparisons = 0
+         var sheetIDs = Set<String>(), sheetNames = Set<String>(), sheetTargets = Set<String>(), numericSheetIDs = Set<Int>(), hasValue = false
+         let sheetNodes = sheets.children("sheet",in: ns)
+         guard !sheetNodes.isEmpty, sheetNodes.count <= limits.maximumWorksheets else { throw OfflineDocumentError.limit("The workbook has no sheets or too many worksheets.") }
+@@ -207,104 +225,178 @@
+                   sheetTargets.insert(relation.target).inserted else { throw OfflineDocumentError.invalidPackage }
+             let state = sheet.attribute("state") ?? "visible"
+             guard ["visible","hidden","veryHidden"].contains(state) else { throw OfflineDocumentError.invalidPackage }
+-            output.append("Worksheet: \(escaped(try Self.decodeSpreadsheetString(name)))\(state == "visible" ? "" : " (\(state))")\n")
++            output.append("Worksheet: "); output.appendEscaped(try Self.decodeSpreadsheetString(name))
++            if state != "visible" { output.append(" (" + state + ")") }; output.append("\n")
+             let worksheet = try xml(relation.target)
+             guard worksheet.name == "worksheet", worksheet.namespace == ns,
+                   worksheet.children("sheetData",in: ns).count <= 1 else { throw OfflineDocumentError.invalidPackage }
+             guard let data = worksheet.first("sheetData",in: ns) else { continue }
++            let formulaRanges = try collectFormulaRanges(data,comparisons: &formulaComparisons)
++            let columns = worksheet.first("cols",in: ns)?.children("col",in: ns) ?? []
++            var hasColumnStyles = false
++            for column in columns {
++                if let rawStyle = column.attribute("style") {
++                    guard let index = Int(rawStyle), index >= 0, index < styles.count,
++                          let low = column.attribute("min").flatMap(Int.init), let high = column.attribute("max").flatMap(Int.init),
++                          low > 0, low <= high, high <= 16_384 else { throw OfflineDocumentError.invalidPackage }
++                    hasColumnStyles = true
++                }
++            }
++            let hasRowStyles = data.children("row",in: ns).contains { $0.attribute("s") != nil || ["1","true"].contains($0.attribute("customFormat") ?? "0") }
++            if hasColumnStyles || hasRowStyles {
++                let warning = "Some row/column inherited number formats are unresolved. Omitted cell formats on affected sheets/rows are labeled unresolved; raw values are preserved without guessing style precedence."
++                if !resultNotes.contains(warning) { resultNotes.append(warning) }
++                output.append("[Row/column inherited number formats are unresolved on this sheet.]\n")
++            }
+             var previousRow = 0
+             for row in data.children("row",in: ns) {
+-                try Task.checkCancellation()
+-                let rowNumber: Int
+-                if let rawRow = row.attribute("r") {
+-                    guard let parsed = Int(rawRow), String(parsed) == rawRow else { throw OfflineDocumentError.invalidPackage }
+-                    rowNumber = parsed
+-                } else { rowNumber = previousRow + 1 }
+-                guard rowNumber > previousRow, rowNumber <= 1_048_576 else { throw OfflineDocumentError.invalidPackage }
++                try control.checkpoint(.documentCell)
++                let rowNumber = try Self.rowNumber(row,previous: previousRow)
+                 previousRow = rowNumber; rowsSeen += 1
+-                let hidden = row.attribute("hidden") ?? "0"
+-                guard ["0","1","true","false"].contains(hidden) else { throw OfflineDocumentError.invalidPackage }
+-                var parts = [String](), previousColumn = 0
++                let hidden = row.attribute("hidden") ?? "0", custom = row.attribute("customFormat") ?? "0"
++                guard ["0","1","true","false"].contains(hidden), ["0","1","true","false"].contains(custom) else { throw OfflineDocumentError.invalidPackage }
++                if let rawStyle = row.attribute("s") {
++                    guard let index = Int(rawStyle), index >= 0, index < styles.count else { throw OfflineDocumentError.invalidPackage }
++                }
++                let inherited = hasColumnStyles || row.attribute("s") != nil || ["1","true"].contains(custom)
++                var previousColumn = 0, wroteRow = false
+                 for cell in row.children("c",in: ns) {
+-                    try Task.checkCancellation()
+-                    let coordinate: (column: Int,row: Int,label: String)
+-                    if let ref = cell.attribute("r") { coordinate = try Self.coordinate(ref) }
+-                    else { coordinate = (previousColumn+1,rowNumber,Self.columnName(previousColumn+1)+String(rowNumber)) }
+-                    guard coordinate.row == rowNumber, coordinate.column > previousColumn, coordinate.column <= 16_384 else { throw OfflineDocumentError.invalidPackage }
++                    try control.checkpoint(.documentCell)
++                    let coordinate = try Self.cellCoordinate(cell,row: rowNumber,previousColumn: previousColumn)
+                     previousColumn = coordinate.column; cellsSeen += 1
+                     let type = cell.attribute("t") ?? "n"
+                     let values = cell.children("v",in: ns), formulas = cell.children("f",in: ns), inline = cell.children("is",in: ns)
+                     guard values.count <= 1, formulas.count <= 1, inline.count <= 1 else { throw OfflineDocumentError.invalidPackage }
+-                    let raw = values.first?.text, formula = !formulas.isEmpty
+-                    let hasCache = raw != nil && (raw?.isEmpty == false || type == "str")
++                    guard formulaRanges.count <= limits.maximumFormulaComparisons - formulaComparisons else { throw OfflineDocumentError.rejectedAt(.formulaRange) }
++                    formulaComparisons += formulaRanges.count
++                    let formula = !formulas.isEmpty || formulaRanges.contains { $0.contains(column: coordinate.column,row: coordinate.row) }
++                    let raw = values.first?.text
++                    let hasCache = type == "inlineStr" ? !inline.isEmpty : raw != nil && (raw?.isEmpty == false || type == "str")
++                    let styleText = cell.attribute("s")
++                    guard let styleIndex = Int(styleText ?? "0"), styleIndex >= 0, styleIndex < styles.count else { throw OfflineDocumentError.invalidPackage }
++                    let unresolvedStyle = styleText == nil && inherited
+                     let value: String
+                     if formula && !hasCache {
+-                        guard ["s","n","b","e","d","str"].contains(type), inline.isEmpty else { throw OfflineDocumentError.invalidPackage }
++                        guard ["s","n","b","e","d","str","inlineStr"].contains(type), inline.isEmpty else { throw OfflineDocumentError.invalidPackage }
+                         value = ""
+                     } else {
+-                    switch type {
+-                    case "s":
+-                        guard inline.isEmpty else { throw OfflineDocumentError.invalidPackage }
+-                        if formula && (raw == nil || raw == "") { value = "" }
+-                        else {
+-                            guard let index = raw.flatMap(Int.init), index >= 0, index < strings.count else { throw OfflineDocumentError.invalidPackage }
+-                            value = strings[index]
++                        switch type {
++                        case "s":
++                            guard inline.isEmpty, let index = raw.flatMap(Int.init), index >= 0, index < strings.count else { throw OfflineDocumentError.invalidPackage }
++                            value = strings[index] // Shared storage, not a newly rendered/escaped copy.
++                        case "inlineStr":
++                            guard formulas.isEmpty, values.isEmpty, let isNode = inline.first else { throw OfflineDocumentError.invalidPackage }
++                            value = try richText(isNode)
++                        case "b":
++                            guard inline.isEmpty, raw == nil || ["0","1"].contains(raw!) else { throw OfflineDocumentError.invalidPackage }
++                            value = raw.map { $0 == "1" ? "TRUE" : "FALSE" } ?? ""
++                        case "e": guard inline.isEmpty else { throw OfflineDocumentError.invalidPackage }; value = raw ?? ""
++                        case "d":
++                            guard inline.isEmpty, raw == nil || Self.isISODate(raw!) else { throw OfflineDocumentError.invalidPackage }
++                            value = raw ?? ""
++                        case "str": guard inline.isEmpty else { throw OfflineDocumentError.invalidPackage }; value = try Self.decodeSpreadsheetString(raw ?? "")
++                        case "n":
++                            guard inline.isEmpty else { throw OfflineDocumentError.invalidPackage }
++                            if let raw, !raw.isEmpty {
++                                guard let number = Double(raw), number.isFinite, raw.utf8.count <= 128,
++                                      raw.utf8.allSatisfy({ (48...57).contains($0) || [43,45,46,69,101].contains($0) }) else { throw OfflineDocumentError.invalidPackage }
++                            }
++                            value = raw ?? ""
++                        default: throw OfflineDocumentError.invalidPackage
+                         }
+-                    case "inlineStr":
+-                        guard !formula, values.isEmpty, let isNode = inline.first else { throw OfflineDocumentError.invalidPackage }
+-                        value = try richText(isNode)
+-                    case "b":
+-                        guard inline.isEmpty, raw == nil || ["0","1"].contains(raw!) else { throw OfflineDocumentError.invalidPackage }
+-                        value = raw.map { $0 == "1" ? "TRUE" : "FALSE" } ?? ""
+-                    case "e":
+-                        guard inline.isEmpty else { throw OfflineDocumentError.invalidPackage }
+-                        value = raw.map { "[error: \($0)]" } ?? ""
+-                    case "d":
+-                        guard inline.isEmpty, raw == nil || Self.isISODate(raw!) else { throw OfflineDocumentError.invalidPackage }
+-                        // ISO dates are kept verbatim; the model is not given an invented conversion.
+-                        value = raw.map { "\($0) [ISO date stored by workbook]" } ?? ""
+-                    case "str":
+-                        guard inline.isEmpty else { throw OfflineDocumentError.invalidPackage }
+-                        value = try Self.decodeSpreadsheetString(raw ?? "")
+-                    case "n":
+-                        guard inline.isEmpty else { throw OfflineDocumentError.invalidPackage }
+-                        if let raw, !raw.isEmpty {
+-                            guard let number = Double(raw), number.isFinite, raw.utf8.count <= 128,
+-                                  raw.utf8.allSatisfy({ (48...57).contains($0) || [43,45,46,69,101].contains($0) }) else { throw OfflineDocumentError.invalidPackage }
+-                            if let styleText = cell.attribute("s") {
+-                                guard let index = Int(styleText), index >= 0, index < styles.count else { throw OfflineDocumentError.invalidPackage }
+-                                let style = styles[index]
+-                                if style.hasPrefix("date/time") {
+-                                    value = "\(raw) [serial \(raw); \(epoch) epoch; \(style)]"
+-                                } else {
+-                                    value = style.isEmpty ? raw : "\(raw) [\(style); \(epoch) date epoch if interpreted as a date]"
+-                                }
+-                            } else { value = raw }
+-                        } else { value = "" }
+-                    default: throw OfflineDocumentError.invalidPackage
+                     }
++                    if formula || !value.isEmpty { hasValue = true }
++                    guard rowsSeen <= limits.maximumRows, cellsSeen <= limits.maximumCells, !output.isFull else {
++                        output.truncated = true; continue // Still validate every bounded cell, but do not render it.
+                     }
+-                    if let styleText = cell.attribute("s") {
+-                        guard let index = Int(styleText), index >= 0, index < styles.count else { throw OfflineDocumentError.invalidPackage }
++                    if !wroteRow {
++                        output.append("Row " + String(rowNumber)); if ["1","true"].contains(hidden) { output.append(" (hidden)") }
++                        output.append(": "); wroteRow = true
++                    } else { output.append(" | ") }
++                    output.append(coordinate.label); output.append("=")
++                    if formula && !hasCache { output.append("[formula cache unavailable]"); continue }
++                    if formula { output.append("[cached formula value: ") }
++                    if type == "e" { output.append("[error: ") }
++                    output.appendEscaped(value)
++                    if type == "e" { output.append("]") }
++                    if type == "d", !value.isEmpty { output.append(" [ISO date stored by workbook]") }
++                    if type == "n", !value.isEmpty {
++                        if unresolvedStyle {
++                            output.append(" [inherited number format unresolved; " + epoch + " date epoch]")
++                        } else {
++                            switch styles[styleIndex] {
++                            case .general: break
++                            case .date(let formatID):
++                                output.append(" [serial "); output.appendEscaped(value)
++                                output.append("; " + epoch + " epoch; date/time format #" + String(formatID) + "]")
++                            case .custom(let code):
++                                output.append(" [format "); output.appendEscaped(code)
++                                output.append("; " + epoch + " date epoch if interpreted as a date]")
++                            }
++                        }
+                     }
+-                    let rendered = formula ? (hasCache ? "[cached formula value: \(escaped(value))]" : "[formula cache unavailable]") : escaped(value)
+-                    if !rendered.isEmpty { hasValue = true }
+-                    if rowsSeen <= limits.maximumRows, cellsSeen <= limits.maximumCells {
+-                        parts.append("\(coordinate.label)=\(rendered)")
+-                    } else { output.truncated = true }
+-                }
+-                if rowsSeen <= limits.maximumRows, !parts.isEmpty {
+-                    output.append("Row \(rowNumber)\(["1","true"].contains(hidden) ? " (hidden)" : ""): " + parts.joined(separator: " | ") + "\n")
+-                } else if rowsSeen > limits.maximumRows { output.truncated = true }
++                    if formula { output.append("]") }
++                }
++                if wroteRow { output.append("\n") }
++                if rowsSeen > limits.maximumRows { output.truncated = true }
+             }
+         }
+         guard hasValue else { throw OfflineDocumentError.noText }
+-        return OfflineDocumentResult(format: .xlsx,text: output.text,notes: notes,wasTruncated: output.truncated)
+-    }
+-
+-    private func escaped(_ value: String) -> String {
+-        OfficeTextEscaping.render(value)
+-    }
++        return OfflineDocumentResult(format: .xlsx,text: output.text,notes: resultNotes,wasTruncated: output.truncated)
++    }
++
++    /// At most 256 sparse rectangles, each at most 1,000,000 cells. Never enumerate a range.
++    /// XML node limits bound stored cells. A shared maximumFormulaComparisons counter also
++    /// caps combined range-overlap and cell-membership work across the entire workbook.
++    private func collectFormulaRanges(_ data: OfficeXMLNode, comparisons: inout Int) throws -> [OfficeFormulaRange] {
++        let ns = OfficeNS.sheet
++        var result = [OfficeFormulaRange](), previousRow = 0
++        for row in data.children("row",in: ns) {
++            let number = try Self.rowNumber(row,previous: previousRow); previousRow = number
++            var previousColumn = 0
++            for cell in row.children("c",in: ns) {
++                try control.checkpoint(.documentCell)
++                let coordinate = try Self.cellCoordinate(cell,row: number,previousColumn: previousColumn); previousColumn = coordinate.column
++                let formulas = cell.children("f",in: ns)
++                guard formulas.count <= 1 else { throw OfflineDocumentError.invalidPackage }
++                guard let formula = formulas.first else { continue }
++                let type = formula.attribute("t") ?? "normal"
++                guard ["normal","array","dataTable","shared"].contains(type) else { throw OfflineDocumentError.invalidPackage }
++                guard let reference = formula.attribute("ref") else {
++                    guard type != "array", type != "dataTable" else { throw OfflineDocumentError.invalidPackage }
++                    continue
++                }
++                guard type != "normal", reference.utf8.count <= 21 else { throw OfflineDocumentError.invalidPackage }
++                let pieces = reference.split(separator: ":",omittingEmptySubsequences: false)
++                guard pieces.count == 1 || pieces.count == 2 else { throw OfflineDocumentError.invalidPackage }
++                let low = try Self.coordinate(String(pieces[0])), high = try Self.coordinate(String(pieces.last!))
++                guard low.column <= high.column, low.row <= high.row else { throw OfflineDocumentError.invalidPackage }
++                let range = OfficeFormulaRange(lowColumn: low.column,highColumn: high.column,lowRow: low.row,highRow: high.row)
++                guard range.contains(column: coordinate.column,row: coordinate.row) else { throw OfflineDocumentError.invalidPackage }
++                guard result.count < limits.maximumFormulaRanges,
++                      (high.column-low.column+1)*(high.row-low.row+1) <= limits.maximumFormulaRangeCells else { throw OfflineDocumentError.rejectedAt(.formulaRange) }
++                guard result.count <= limits.maximumFormulaComparisons - comparisons else { throw OfflineDocumentError.rejectedAt(.formulaRange) }
++                comparisons += result.count
++                guard !result.contains(where: { $0.overlaps(range) }) else { throw OfflineDocumentError.invalidPackage }
++                result.append(range)
++            }
++        }
++        return result
++    }
++    private static func rowNumber(_ row: OfficeXMLNode, previous: Int) throws -> Int {
++        let number: Int
++        if let raw = row.attribute("r") {
++            guard let parsed = Int(raw), String(parsed) == raw else { throw OfflineDocumentError.invalidPackage }; number = parsed
++        } else { number = previous + 1 }
++        guard number > previous, number <= 1_048_576 else { throw OfflineDocumentError.invalidPackage }; return number
++    }
++    private static func cellCoordinate(_ cell: OfficeXMLNode,row: Int,previousColumn: Int) throws -> (column: Int,row: Int,label: String) {
++        let result: (column: Int,row: Int,label: String)
++        if let ref = cell.attribute("r") { result = try coordinate(ref) }
++        else { result = (previousColumn+1,row,columnName(previousColumn+1)+String(row)) }
++        guard result.row == row, result.column > previousColumn, result.column <= 16_384 else { throw OfflineDocumentError.invalidPackage }; return result
++    }
++
+     private static func decodeSpreadsheetString(_ raw: String) throws -> String {
+         // SpreadsheetML ST_Xstring escapes UTF-16 units as _xHHHH_. Decode from the
+         // ORIGINAL sequence once, so _x005F_x0041_ correctly stays the literal _x0041_.
+@@ -364,3 +456,10 @@
+         return result
+     }
+ }
++
++private enum OfficeNumberFormat { case general, date(Int), custom(String) }
++private struct OfficeFormulaRange {
++    let lowColumn: Int, highColumn: Int, lowRow: Int, highRow: Int
++    func contains(column: Int,row: Int) -> Bool { column >= lowColumn && column <= highColumn && row >= lowRow && row <= highRow }
++    func overlaps(_ other: Self) -> Bool { lowColumn <= other.highColumn && highColumn >= other.lowColumn && lowRow <= other.highRow && highRow >= other.lowRow }
++}
+--- a/JarvisEVO/Services/OfficeZIPContainer.swift
++++ b/JarvisEVO/Services/OfficeZIPContainer.swift
+@@ -8,14 +8,14 @@
+     let parts: [String: Data]
+     let names: Set<String>
+ 
+-    init(data: Data, limits: OfflineDocumentLimits) throws {
++    init(data: Data, limits: OfflineDocumentLimits, control: OfficeReadControl = OfficeReadControl()) throws {
+         let metadata = try OfficeZIPPreflight.read(data, limits: limits)
+         let archive: Archive
+         do { archive = try Archive(data: data, accessMode: .read) }
+         catch { throw OfflineDocumentError.invalidArchive }
+         var entries = [Entry]()
+         for entry in archive {
+-            try Task.checkCancellation()
++            try control.checkpoint(.archiveEntry)
+             guard entries.count < limits.maximumEntries else { throw OfflineDocumentError.invalidArchive }
+             entries.append(entry)
+         }
+@@ -30,22 +30,20 @@
+             var content = Data(), actual = 0, calls = 0, emptyCalls = 0
+             // The callback limits REAL bytes, even if an attacker lies in ZIP metadata.
+             let crc = try archive.extract(entry, bufferSize: 16_384, skipCRC32: false) { chunk in
+-                try Task.checkCancellation()
++                try control.checkpoint(.decompressedChunk)
+                 calls += 1
+                 emptyCalls = chunk.isEmpty ? emptyCalls + 1 : 0
+-                guard emptyCalls <= 8, calls <= (limits.maximumEntryBytes / 16_384) + 1_024,
+-                      chunk.count <= limits.maximumEntryBytes - actual,
+-                      chunk.count <= limits.maximumExpandedBytes - total,
+-                      chunk.count <= m.expanded - actual else {
+-                    throw OfflineDocumentError.limit("The Office package exceeds its streamed extraction limits.")
+-                }
++                guard emptyCalls <= 8, calls <= (limits.maximumEntryBytes / 16_384) + 1_024 else { throw OfflineDocumentError.invalidArchive }
++                guard chunk.count <= limits.maximumEntryBytes - actual else { throw OfflineDocumentError.rejectedAt(.streamedEntryBytes) }
++                guard chunk.count <= limits.maximumExpandedBytes - total else { throw OfflineDocumentError.rejectedAt(.streamedTotalBytes) }
++                guard chunk.count <= m.expanded - actual else { throw OfflineDocumentError.rejectedAt(.streamedDeclaredBytes) }
+                 actual += chunk.count; total += chunk.count
+                 guard actual <= max(1, m.compressed) * limits.maximumExpansionRatio else {
+-                    throw OfflineDocumentError.limit("The Office package has an unsafe expansion ratio.")
++                    throw OfflineDocumentError.rejectedAt(.declaredExpansionRatio)
+                 }
+                 if keep { content.append(chunk) }
+             }
+-            guard actual == m.expanded, crc == m.crc else { throw OfflineDocumentError.invalidArchive }
++            guard actual == m.expanded, crc == m.crc else { throw OfflineDocumentError.rejectedAt(.archiveIntegrity) }
+             if keep && !m.isDirectory { saved[entry.path] = content }
+         }
+         parts = saved
+@@ -102,7 +100,7 @@
+             let crc = try u32(p+16), compressed = try u32(p+20), expanded = try u32(p+24)
+             let n = try u16(p+28), e = try u16(p+30), c = try u16(p+32), disk = try u16(p+34)
+             let attributes = try u32(p+38), local = try u32(p+42)
+-            guard version <= 20, flags & ~0x0808 == 0, [0,8].contains(method), disk == 0,
++            guard version <= 20, flags & ~(method == 8 ? 0x080e : 0x0808) == 0, [0,8].contains(method), disk == 0,
+                   compressed < 0xffffffff, expanded < 0xffffffff, local < 0xffffffff,
+                   n > 0, n <= 255, p + 46 + n + e + c <= end else { throw OfflineDocumentError.invalidArchive }
+             let rawName = Array(b[(p+46)..<(p+46+n)])
+@@ -114,14 +112,15 @@
+             guard ![3,19].contains(os) || mode == 0 || mode == (directory ? 0x4000 : 0x8000),
+                   attributes & 0x10 == 0 || directory else { throw OfflineDocumentError.unsafeArchive }
+             let lower = name.lowercased()
+-            guard !lower.hasSuffix(".bin"), !lower.contains("/embeddings/"), !lower.contains("/activex/"),
++            guard !lower.contains("/embeddings/"), !lower.contains("/activex/"),
+                   !lower.contains("vbaproject"), !lower.contains("macrosheets/") else { throw OfflineDocumentError.unsafeArchive }
+-            guard expanded <= limits.maximumEntryBytes, expanded <= limits.maximumExpandedBytes - expandedTotal,
+-                  expanded <= max(1,compressed) * limits.maximumExpansionRatio,
+-                  compressed <= data.count, (method != 0 || compressed == expanded),
+-                  (expanded != 0 || compressed == 0), (!directory || (compressed == 0 && expanded == 0 && method == 0 && crc == 0)) else {
+-                throw OfflineDocumentError.limit("The Office package exceeds its entry, total byte, or expansion limits.")
+-            }
++            let inertPrinter = lower.range(of: #"^(word|xl)/printersettings/printersettings[0-9]+\.bin$"#,options: .regularExpression) != nil
++            guard !lower.hasSuffix(".bin") || inertPrinter else { throw OfflineDocumentError.unsupportedBinaryPart }
++            guard expanded <= limits.maximumEntryBytes else { throw OfflineDocumentError.rejectedAt(.declaredEntryBytes) }
++            guard expanded <= limits.maximumExpandedBytes - expandedTotal else { throw OfflineDocumentError.rejectedAt(.declaredTotalBytes) }
++            guard expanded <= max(1,compressed) * limits.maximumExpansionRatio else { throw OfflineDocumentError.rejectedAt(.declaredExpansionRatio) }
++            guard compressed <= data.count, (method != 0 || compressed == expanded),
++                  (method != 8 || compressed > 0), (!directory || (compressed == 0 && expanded == 0 && method == 0 && crc == 0)) else { throw OfflineDocumentError.invalidArchive }
+             expandedTotal += expanded
+             try checkExtra(p+46+n,e)
+             guard local <= centralStart - 30, try u32(local) == 0x04034b50,
+@@ -148,6 +147,7 @@
+         guard p == end else { throw OfflineDocumentError.invalidArchive }
+         var cursor = 0
+         for r in ranges.sorted(by: { $0.lowerBound < $1.lowerBound }) {
++            guard r.lowerBound >= cursor else { throw OfflineDocumentError.rejectedAt(.archiveOverlap) }
+             guard r.lowerBound == cursor, r.upperBound > cursor else { throw OfflineDocumentError.invalidArchive }
+             cursor = r.upperBound
+         }
+--- a/JarvisEVO/Services/OfflineDocumentReader.swift
++++ b/JarvisEVO/Services/OfflineDocumentReader.swift
+@@ -5,7 +5,11 @@
+ /// It never uploads documents, writes extracted archive files, follows links, or runs Office code.
+ struct OfflineDocumentReader: Sendable {
+     let limits: OfflineDocumentLimits
+-    init(limits: OfflineDocumentLimits = .standard) { self.limits = limits }
++    let control: OfficeReadControl
++    init(limits: OfflineDocumentLimits = .standard, control: OfficeReadControl = OfficeReadControl()) {
++        self.limits = limits; self.control = control
++    }
++    func checkpoint(_ phase: OfficeReadPhase) throws { try control.checkpoint(phase) }
+ 
+     func read(at url: URL) throws -> OfflineDocumentResult {
+         guard let format = OfflineDocumentFormat(filenameExtension: url.pathExtension) else {
+@@ -23,7 +27,7 @@
+         // O_NOFOLLOW and fstat operate on the same handle, avoiding a symlink check/open race.
+         let fd = url.withUnsafeFileSystemRepresentation { path in
+             guard let path else { return Int32(-1) }
+-            return Darwin.open(path, O_RDONLY | O_NOFOLLOW | O_CLOEXEC)
++            return Darwin.open(path, O_RDONLY | O_NOFOLLOW | O_CLOEXEC | O_NONBLOCK)
+         }
+         guard fd >= 0 else { throw OfflineDocumentError.unsafeFile }
+         let handle = FileHandle(fileDescriptor: fd, closeOnDealloc: true)
+@@ -35,7 +39,7 @@
+         }
+         var data = Data()
+         while true {
+-            try Task.checkCancellation()
++            try control.checkpoint(.snapshotChunk)
+             let chunk = try handle.read(upToCount: min(32_768, limits.maximumCompressedBytes - data.count + 1)) ?? Data()
+             if chunk.isEmpty { break }
+             guard chunk.count <= limits.maximumCompressedBytes - data.count else {
+@@ -53,10 +57,10 @@
+         guard !data.isEmpty, data.count <= limits.maximumCompressedBytes else { throw OfflineDocumentError.limit("The file exceeds the input byte limit.") }
+         switch format {
+         case .docx, .xlsx:
+-            let package = try OfficeZIPContainer(data: data, limits: limits)
+-            return try OfficeTextExtractor(package: package, limits: limits).read(format: format)
++            let package = try OfficeZIPContainer(data: data, limits: limits, control: control)
++            return try OfficeTextExtractor(package: package, limits: limits, control: control).read(format: format)
+         case .csv, .tsv:
+-            return try DelimitedDocumentReader.read(data, format: format, limits: limits)
++            return try DelimitedDocumentReader.read(data, format: format, limits: limits, control: control)
+         }
+     }
+ }
+@@ -103,7 +107,11 @@
+     var maximumWorksheets = 32
+     var maximumRows = 1_000 // Output rows across all worksheets, not sparse coordinate allocation.
+     var maximumCells = 10_000 // Output cells across all worksheets.
+-    var maximumOutputCharacters = 60_000
++    var maximumOutputCharacters = 60_000 // Conservatively counts rendered Unicode scalars.
++    var maximumOutputBytes = 240_000 // Includes every rendered label, separator and escape.
++    var maximumFormulaRanges = 256
++    var maximumFormulaRangeCells = 1_000_000
++    var maximumFormulaComparisons = 1_000_000 // Shared bound for range-overlap and cell-membership work.
+     static let standard = OfflineDocumentLimits()
+ 
+     /// Callers may lower limits for tests or policy, but cannot disable the hard safety ceiling.
+@@ -116,7 +124,9 @@
+                      (maximumXMLAttributes,s.maximumXMLAttributes), (maximumStringBytes,s.maximumStringBytes),
+                      (maximumSharedStrings,s.maximumSharedStrings), (maximumWorksheets,s.maximumWorksheets),
+                      (maximumRows,s.maximumRows), (maximumCells,s.maximumCells),
+-                     (maximumOutputCharacters,s.maximumOutputCharacters)]
++                     (maximumOutputCharacters,s.maximumOutputCharacters), (maximumOutputBytes,s.maximumOutputBytes),
++                     (maximumFormulaRanges,s.maximumFormulaRanges), (maximumFormulaRangeCells,s.maximumFormulaRangeCells),
++                     (maximumFormulaComparisons,s.maximumFormulaComparisons)]
+         guard pairs.allSatisfy({ $0.0 >= 0 && $0.0 <= $0.1 }), maximumCompressedBytes > 0,
+               maximumExpansionRatio > 0 else { throw OfflineDocumentError.limit("Invalid reader limits.") }
+     }
+@@ -125,6 +135,8 @@
+ enum OfflineDocumentError: LocalizedError {
+     case unsupportedFormat, unsafeFile, invalidArchive, unsafeArchive, invalidXML, invalidPackage, invalidDelimitedText, noText
+     case limit(String)
++    case rejectedAt(OfficeValidationStage)
++    case unsupportedBinaryPart
+     var errorDescription: String? {
+         switch self {
+         case .unsupportedFormat: "This reader supports DOCX, XLSX, UTF-8 CSV and TSV only. Export old DOC/XLS files to a supported format."
+@@ -136,41 +148,86 @@
+         case .invalidDelimitedText: "The delimited file is not valid UTF-8 CSV/TSV. Check quotes and field boundaries."
+         case .noText: "No supported document text or cell values were found. Images and scanned pages are not read by this reader."
+         case .limit(let message): message
+-        }
+-    }
+-}
+-
+-/// Appends only up to the output budget; never repeatedly grows an unbounded String.
++        case .unsupportedBinaryPart: "This document contains unsupported binary parts. Export its text or values as UTF-8 text/CSV, or use a simplified DOCX/XLSX copy."
++        case .rejectedAt(let stage): stage.explanation
++        }
++    }
++}
++
++/// Finite rendering sink. It charges actual UTF-8 bytes and rendered Unicode scalars,
++/// a conservative bound on extended Characters. Overflow seals the sink, preserving a prefix.
++/// No call materializes an escaped value or a joined row before applying these budgets.
+ struct OfficeTextOutput {
+-    let maximum: Int
++    private let maximumScalars: Int
++    private let maximumBytes: Int
+     private(set) var text = ""
+-    private(set) var count = 0
++    private(set) var byteCount = 0
++    private(set) var scalarCount = 0
++    private var sealed = false
+     var truncated = false
++    init(limits: OfflineDocumentLimits) {
++        maximumScalars = limits.maximumOutputCharacters; maximumBytes = limits.maximumOutputBytes
++    }
++    var isFull: Bool { sealed || byteCount >= maximumBytes || scalarCount >= maximumScalars }
++    private mutating func appendScalar(_ scalar: UnicodeScalar) {
++        guard !sealed, scalarCount < maximumScalars, scalar.utf8.count <= maximumBytes - byteCount else {
++            sealed = true; truncated = true; return
++        }
++        text.unicodeScalars.append(scalar); byteCount += scalar.utf8.count; scalarCount += 1
++    }
+     mutating func append(_ value: String) {
+-        let remaining = maximum - count
+-        let prefix = String(value.prefix(max(0, remaining)))
+-        text += prefix; count += prefix.count
+-        if value.count > prefix.count { truncated = true }
+-    }
+-}
+-
+-/// Keep data separators and control characters visible rather than letting them impersonate rows.
+-enum OfficeTextEscaping {
+-    static func render(_ value: String) -> String {
+-        var result = ""
++        guard !value.isEmpty else { return }
++        guard !isFull else { truncated = true; sealed = true; return }
++        for scalar in value.unicodeScalars {
++            appendScalar(scalar)
++            if sealed { return }
++        }
++    }
++    mutating func appendEscaped(_ value: String) {
++        guard !value.isEmpty else { return }
++        guard !isFull else { truncated = true; sealed = true; return }
+         for scalar in value.unicodeScalars {
+             switch scalar {
+-            case "\\": result += "\\\\"
+-            case "\r": result += "\\r"
+-            case "\n": result += "\\n"
+-            case "\t": result += "\\t"
+-            case "|": result += "\\|"
++            case "\\": append("\\\\")
++            case "\r": append("\\r")
++            case "\n": append("\\n")
++            case "\t": append("\\t")
++            case "|": append("\\|")
+             default:
+                 if CharacterSet.controlCharacters.contains(scalar) {
+-                    result += "\\u{" + String(scalar.value,radix: 16,uppercase: true) + "}"
+-                } else { result.unicodeScalars.append(scalar) }
++                    append("\\u{" + String(scalar.value,radix: 16,uppercase: true) + "}")
++                } else { appendScalar(scalar) }
+             }
+-        }
+-        return result
+-    }
+-}
++            if sealed { return }
++        }
++    }
++}
++
++enum OfficeValidationStage: String, Equatable, Sendable {
++    case declaredEntryBytes, declaredTotalBytes, declaredExpansionRatio
++    case streamedEntryBytes, streamedTotalBytes, streamedDeclaredBytes
++    case archiveOverlap, archiveIntegrity, formulaRange
++    var explanation: String {
++        switch self {
++        case .declaredEntryBytes, .streamedEntryBytes: "An Office part exceeds the supported expanded byte limit."
++        case .declaredTotalBytes, .streamedTotalBytes: "The Office package exceeds the supported total expanded byte limit."
++        case .declaredExpansionRatio: "The Office package has an unsafe expansion ratio."
++        case .streamedDeclaredBytes: "An Office part expands beyond its declared size."
++        case .archiveOverlap: "The Office package contains overlapping archive entries."
++        case .archiveIntegrity: "The Office package failed its size or checksum integrity check."
++        case .formulaRange: "The workbook exceeds the supported formula-range limits."
++        }
++    }
++}
++
++/// Internal dependency injection for deterministic cancellation tests. Defaults perform only
++/// Task cancellation checks; hooks cannot relax byte, structure or integrity checks.
++enum OfficeReadPhase: Sendable, Equatable { case snapshotChunk, archiveEntry, decompressedChunk, xmlNode, documentCell, delimitedChunk, stagedOriginal }
++struct OfficeReadControl: Sendable {
++    private let callback: (@Sendable (OfficeReadPhase) throws -> Void)?
++    init(_ callback: (@Sendable (OfficeReadPhase) throws -> Void)? = nil) { self.callback = callback }
++    func checkpoint(_ phase: OfficeReadPhase) throws {
++        try callback?(phase)
++        try Task.checkCancellation()
++    }
++}
+--- a/README.md
++++ b/README.md
+@@ -4,13 +4,15 @@
+ 
+ - `JarvisEVO/Services/`: five new Swift production files.
+ - `Tests/OfflineDocumentReaderTests.swift`: reader XCTest sources using actual synthetic packages.
++- `Tests/OfficeReviewRegressionTests.swift`: byte/memory/style/formula-range/stage/cancellation/FIFO/compatibility regression sources.
+ - `Tests/OfficeAttachmentIntegrationTests.swift`: private-original/prompt/history/cleanup integration tests for the proposed patch.
+-- `Tests/OfficeFixtures/`: 49 deterministic tiny benign/adversarial fixtures and SHA-256 manifest. The ZIP-bomb fixture is small on disk and declares a 5 MiB repeated payload; production preflight rejects it before decompression.
++- `Tests/OfficeFixtures/`: 74 deterministic small-on-disk benign/adversarial/library-exported fixtures and SHA-256 manifest. The ZIP-bomb fixture is small on disk and declares a 5 MiB repeated payload; production preflight rejects it before decompression.
+ - `proposed/office-integration.diff`: **proposal only**, for AttachmentService, file-picker types, and XcodeGen wiring.
+ - `INTEGRATION.md`: exact steps and required native verification.
+ - `DESIGN-AND-TESTING.md`: behavior, limits, remaining validation, and Linux evidence.
+ - `provenance/`: official ZIPFoundation 0.9.20 MIT license, verified commit/API provenance and source snapshots.
+-- `SOURCE-MANIFEST.json`: SHA-256 file inventory and frozen input hashes.
++- `SOURCE-MANIFEST.json`: current active-file SHA-256 inventory, frozen input hashes and repair-package pointers.
++- `repair-round1/`: exact local before snapshot, focused after copies/diff, review mapping and check logs.
+ 
+ Public-facing capability: locally selected DOCX/XLSX text and stored cell values; UTF-8 CSV/TSV structured rows. No exact layout, image/scanned-page reading, formula evaluation, old DOC/XLS support, or remote runtime service.
+ 
+@@ -21,6 +23,7 @@
+ ```
+ python scripts/generate_fixtures.py
+ python scripts/check_office_delivery.py
++python scripts/check_review_delivery.py
+ ```
+ 
+-Neither command executes Swift or demonstrates that the iOS application builds.
++These commands do not execute Swift or demonstrates that the iOS application builds.
+--- a/Tests/OfficeAttachmentIntegrationTests.swift
++++ b/Tests/OfficeAttachmentIntegrationTests.swift
+@@ -48,6 +48,23 @@
+         service.remove(a)
+         XCTAssertNotNil(service.url(for: b))
+     }
++    func testCancellationAfterStagingAndDuringExtractionRemovesOwnedOriginal() async throws {
++        let source = try fixture("paragraphs-tables.docx")
++        for phase in [OfficeReadPhase.stagedOriginal,.decompressedChunk] {
++            let reader = OfflineDocumentReader(control: OfficeReadControl { current in
++                if current == phase { withUnsafeCurrentTask { $0?.cancel() } }
++            })
++            let owned = try AttachmentService(directory: service.directory,officeReader: reader)
++            let before = try FileManager.default.contentsOfDirectory(atPath: service.directory.path)
++            let cancelled = await Task.detached {
++                do { _ = try owned.importFile(at: source); return false }
++                catch is CancellationError { return true }
++                catch { return false }
++            }.value
++            XCTAssertTrue(cancelled)
++            XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: service.directory.path),before)
++        }
++    }
+     func testOldHistoryStillDecodesWithoutNewFields() throws {
+         let json = #"{"id":"DC6EE924-6307-46F8-A232-BEFEB4B4F733","name":"notes.txt","relativePath":"notes.txt","mediaType":"text/plain","byteCount":5,"extractedText":"hello"}"#
+         let old = try JSONDecoder().decode(ChatAttachment.self,from: Data(json.utf8))
+--- /dev/null
++++ b/Tests/OfficeFixtures/combining.csv
+@@ -0,0 +1 @@
++á́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́
+--- /dev/null
++++ b/Tests/OfficeFixtures/invalid-after-cap.csv
+@@ -0,0 +1 @@
++aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,"unterminated
+--- a/Tests/OfficeFixtures/manifest.json
++++ b/Tests/OfficeFixtures/manifest.json
+@@ -3,6 +3,10 @@
+     "bytes": 976,
+     "sha256": "db86966d2d62565f567e699337e8fa27cb0fb44c5eff4465742b34b48017956c"
+   },
++  "array-formula.xlsx": {
++    "bytes": 2182,
++    "sha256": "c1ba80c2cbc4f846fa7f94020e410f0ec6f51521b4596e645dbc2376a478aeb2"
++  },
+   "backslash.docx": {
+     "bytes": 972,
+     "sha256": "58f3d0430799d98dcaf33fa6827c8624184c0cb1a85d40e47599841b06d1dea3"
+@@ -19,6 +23,10 @@
+     "bytes": 2147,
+     "sha256": "bfb3544596fc7eb732e30a7ce3b4e09463128e9fe8b9cf2a1224dfcbc430449a"
+   },
++  "bad-formula-range.xlsx": {
++    "bytes": 2157,
++    "sha256": "f909b2b1141ef95850c4bcf5f236e66a2dbc9a1383a4b42b00f74b3fd9f137d1"
++  },
+   "bad-shared-index.xlsx": {
+     "bytes": 2141,
+     "sha256": "9ce9a7866a0667635b7aee190e5d5918c97e4e6be5435b686df34d9001de8328"
+@@ -28,8 +36,8 @@
+     "sha256": "ff599f4ada05922e094eadd29f6ad6f9a5ee40eecd798152996e96942a789f64"
+   },
+   "bomb.docx": {
+-    "bytes": 6079,
+-    "sha256": "47a1bf9a450ce20c9d9d5f1d9041b2eb842070ed55602e0dda512183b8c79733"
++    "bytes": 1047,
++    "sha256": "c157102cb05587a51d84b1f24bedc66bd31902d9ef7c700dd7a78f576aeaf41d"
+   },
+   "cache-types.xlsx": {
+     "bytes": 2252,
+@@ -39,6 +47,14 @@
+     "bytes": 990,
+     "sha256": "4d1f2cc3563cba33279da19ead5582436013e58caf5837d8212370715f13b831"
+   },
++  "combining.csv": {
++    "bytes": 32768,
++    "sha256": "23d3a454f44a465e02feee7cacaf4a5f0087703c8ca828efb55141c229d74efd"
++  },
++  "combining.docx": {
++    "bytes": 33552,
++    "sha256": "66a0bb4efa24d64a15f43667911512d5126463befa697bbe1d3abb61c518af7e"
++  },
+   "date1904.xlsx": {
+     "bytes": 2253,
+     "sha256": "136c4fd025343c71d89b4f0aa47403d94757fb8997ad7b0e5235fdb1e36e6a89"
+@@ -47,6 +63,10 @@
+     "bytes": 1872,
+     "sha256": "5683f44476f56abc379f649c0ac317dc269632c952c5385a8c4977a8c3a34fd7"
+   },
++  "deflate-level-flags.docx": {
++    "bytes": 872,
++    "sha256": "cd7d76d8796b0ae9d2c63b25b4ea79c801cf2e3079da83d15045353514c84136"
++  },
+   "depth.docx": {
+     "bytes": 751,
+     "sha256": "71d5e27163d1d29897eb314a2059d3dae64684df02258e6e196d6abc154d2fa8"
+@@ -63,6 +83,10 @@
+     "bytes": 990,
+     "sha256": "b1e7f02ac9b0fadea8de62f718cad79b447dba4c3dff6d4e146d6251d94fb89c"
+   },
++  "empty-deflate-part.docx": {
++    "bytes": 968,
++    "sha256": "90200fdb5b2a43e9ccc0ef0afd758a2e9fe9f159e8359ceb4ad993d9c817bffe"
++  },
+   "empty.docx": {
+     "bytes": 735,
+     "sha256": "65a9415ea86a4d1dc680f00269b7cf00d9fda85255edd3387ee66d68e77a621d"
+@@ -75,6 +99,10 @@
+     "bytes": 802,
+     "sha256": "a4019a43d31694221e54a767c3c9910ee8661d83244e4354b89efe243ad4a74d"
+   },
++  "entry-size.docx": {
++    "bytes": 36098,
++    "sha256": "fb6b64ee95d5222a881c65d5712dc5dfd185ae7d061d57d8723a72c85d46d57c"
++  },
+   "escaped-strings.xlsx": {
+     "bytes": 2264,
+     "sha256": "6270f76e88daf78c2243d906d60f9a96de1f9cf09a70a40207f12fd45d6297ab"
+@@ -87,9 +115,25 @@
+     "bytes": 872,
+     "sha256": "fad39b02fe404b9a81ec3ff0519c5f1b34bf73f7e6bcadaf9ca0a51e91a97079"
+   },
++  "formula-anchor-outside.xlsx": {
++    "bytes": 2154,
++    "sha256": "55f9899596948ffed80606844febd01bc8d5a61a37f7470fb212db22efcebc26"
++  },
+   "header-mismatch.docx": {
+     "bytes": 872,
+     "sha256": "26d1258c8f321b561714a370ed8b1ca02d3c280d29d2f9adc70159eecd9dc519"
++  },
++  "inherited-styles.xlsx": {
++    "bytes": 2173,
++    "sha256": "09b2b4a110defd7836c4045461baea02563c2183ad0ab5d5829b0925a23466ba"
++  },
++  "invalid-after-cap.csv": {
++    "bytes": 1015,
++    "sha256": "3859a4580c124445f20e595900cc9ba014f3a2cdb174afdea18c3db741612ea6"
++  },
++  "invalid-after-cap.xlsx": {
++    "bytes": 61560,
++    "sha256": "01ff41931e7095597b727314f607af0c4d564793486faeca69d27717762f34cf"
+   },
+   "invalid-surrogate.xlsx": {
+     "bytes": 2240,
+@@ -128,8 +172,12 @@
+     "sha256": "2e5f40a69753d970e8530f5107aae76efa2de330506f8e3f100690b20eb6a70c"
+   },
+   "overlap.docx": {
+-    "bytes": 872,
+-    "sha256": "644b3fa98ce93475ba8b848a41c93dd0808b32d48e94b4c261f14fd3af304f5a"
++    "bytes": 1087,
++    "sha256": "f372decf7adf77737bc5d51510b224d8d5a8280bf9632f45746f7e4b6d38ad3b"
++  },
++  "oversized-formula-range.xlsx": {
++    "bytes": 2163,
++    "sha256": "9fcfc469eaf97f50793c2fc86dbb2941b5cb5fb248f34bd52593e6608e2f6bc2"
+   },
+   "paragraphs-tables.docx": {
+     "bytes": 872,
+@@ -139,6 +187,22 @@
+     "bytes": 986,
+     "sha256": "7eabe9c421d7acf64ea9e1e36b48afb766145e7741d89406194fb142b10a2203"
+   },
++  "printer-settings.docx": {
++    "bytes": 1067,
++    "sha256": "65a2b9fc8d8db77fbbed54d8e2571a14f2ca155dda5ae5037c02328f30b92e9b"
++  },
++  "producer-openpyxl.xlsx": {
++    "bytes": 4907,
++    "sha256": "2e54de2becf31a44b3a8b4cea32c993c7db6b7e73b29e02f3bcb1def8f87ab12"
++  },
++  "producer-python-docx.docx": {
++    "bytes": 36729,
++    "sha256": "43bcbb175c3b5f63dd1325cb1a3411652e31669dcd544ad2367978bcf2af871c"
++  },
++  "producer-xlsxwriter.xlsx": {
++    "bytes": 5295,
++    "sha256": "14e9132993aaab4eacaf3e5624918b5bac397c7f39960be6c41c5d0a79ec9be0"
++  },
+   "quote-in-bare.csv": {
+     "bytes": 6,
+     "sha256": "748bef41da40296ba8e71bb44293eb2aaf4eaa4a3851b512904d6f64375f5b2a"
+@@ -147,6 +211,14 @@
+     "bytes": 2240,
+     "sha256": "45bd3ff002e8c0c6239ddfe7d8df395bb7af4c32b2b90bd1cf17e2dd5c3f5175"
+   },
++  "repeated-combining.xlsx": {
++    "bytes": 61549,
++    "sha256": "35887dfd6a1b44851c00609db7a6db8b05d9b4504c9961fb5a01f99cdc4e8b6f"
++  },
++  "repeated-large-shared.xlsx": {
++    "bytes": 61550,
++    "sha256": "e290350602c4df821c4b0247d8ee9a0d09e143a00563d8ee90da9535fe01cdc4"
++  },
+   "rooted-target.xlsx": {
+     "bytes": 2278,
+     "sha256": "5c0ebfdceb734e56dbdb2fa2d6b22572829fab30d513318c8af24e24a2b0f0cd"
+@@ -163,9 +235,25 @@
+     "bytes": 18,
+     "sha256": "228a4bff9c91e5e838129bd74709c370313c48a627c9fea469207f823df0c558"
+   },
++  "style-zero-custom.xlsx": {
++    "bytes": 2138,
++    "sha256": "0a77a7c537b00d48ba12bec57bc465347036771b2f86a3af3896a4681406b55b"
++  },
++  "style-zero-date.xlsx": {
++    "bytes": 2139,
++    "sha256": "970a51ab02dfb9b2e021beae16f5c831d98f328394a698e7b2dab8ad65a0759a"
++  },
+   "symlink.docx": {
+     "bytes": 872,
+     "sha256": "cafb0c5199ffa6e391db7140807526886779ad03f9a14f450efa77f124a61b44"
++  },
++  "too-many-formula-ranges.xlsx": {
++    "bytes": 3433,
++    "sha256": "b8158b5ddc8240e63216392d6e8439130d7a302dc1332d142e1db723e4775518"
++  },
++  "total-size.docx": {
++    "bytes": 263060,
++    "sha256": "7fd98a5dad7ca5e5af1554c3496d46c2aee0b35d3642d598c35a948324146562"
+   },
+   "traversal.docx": {
+     "bytes": 972,
+@@ -191,6 +279,18 @@
+     "bytes": 802,
+     "sha256": "5fcd18fb490a1862169d9fd82897e796af51b5719e5b3db9e9b5fb68299330a4"
+   },
++  "xml-declaration-misleading.docx": {
++    "bytes": 812,
++    "sha256": "1023ccbebfe7b8b163d845fbe3155aa19a1ffc015663d99d9a74f36d4d098e94"
++  },
++  "xml-declaration-no-encoding.docx": {
++    "bytes": 796,
++    "sha256": "35faeadd6a99d6e4277fe23bb52233831211bacba75e3a29d58173301d786271"
++  },
++  "xml-declaration-spacing.docx": {
++    "bytes": 809,
++    "sha256": "624c0c78454ede32e1f85b2ff1e4619672ff422384275cb7edf4156d1d3cbb6a"
++  },
+   "zip64.docx": {
+     "bytes": 872,
+     "sha256": "a17ac05813d20d7e247dea2a3d6b24c5f8598c9c5078770064e9a8d2a2d02d28"
+--- /dev/null
++++ b/Tests/OfficeReviewRegressionTests.swift
+@@ -0,0 +1,160 @@
++import XCTest
++import Darwin
++@testable import JarvisEVO
++
++/// Review-round regression sources. Native compilation/execution remains mandatory.
++final class OfficeReviewRegressionTests: XCTestCase {
++    private func fixture(_ name: String) throws -> URL {
++        try XCTUnwrap(Bundle(for: Self.self).url(forResource: name,withExtension: nil,subdirectory: "OfficeFixtures"))
++    }
++    private func read(_ name: String, limits: OfflineDocumentLimits = .standard) throws -> OfflineDocumentResult {
++        try OfflineDocumentReader(limits: limits).read(at: fixture(name))
++    }
++    private func expectStage(_ name: String,_ expected: OfficeValidationStage,limits: OfflineDocumentLimits = .standard) throws {
++        do { _ = try read(name,limits: limits); XCTFail("Expected \(expected) from \(name)") }
++        catch let error as OfflineDocumentError {
++            guard case .rejectedAt(let stage) = error else { return XCTFail("Wrong error for \(name): \(error)") }
++            XCTAssertEqual(stage,expected,name)
++        }
++    }
++    func testRepeatedLargeSharedStringsHaveBoundedRenderedUTF8IncludingLabelsAndEscapes() throws {
++        var limits = OfflineDocumentLimits.standard
++        limits.maximumOutputBytes = 4_096
++        let result = try read("repeated-large-shared.xlsx",limits: limits)
++        XCTAssertLessThanOrEqual(result.text.utf8.count,limits.maximumOutputBytes)
++        XCTAssertLessThanOrEqual(result.text.count,limits.maximumOutputCharacters)
++        XCTAssertTrue(result.wasTruncated)
++        XCTAssertTrue(result.text.hasPrefix("Worksheet:"))
++        XCTAssertTrue(result.text.contains("Row 1: A1="))
++    }
++    func testCombiningMarksAndEmojiAreUTF8BoundedForEveryFormat() throws {
++        var limits = OfflineDocumentLimits.standard
++        limits.maximumOutputBytes = 97
++        for name in ["repeated-combining.xlsx","combining.docx","combining.csv"] {
++            let result = try read(name,limits: limits)
++            XCTAssertLessThanOrEqual(result.text.utf8.count,97,name)
++            XCTAssertTrue(result.wasTruncated,name)
++            XCTAssertEqual(String(data: Data(result.text.utf8),encoding: .utf8),result.text)
++        }
++        var sink = OfficeTextOutput(limits: limits)
++        sink.appendEscaped("\n\t|\\" + String(repeating: "😀",count: 100))
++        XCTAssertLessThanOrEqual(sink.text.utf8.count,97)
++        XCTAssertTrue(sink.truncated)
++        XCTAssertTrue(sink.text.hasPrefix("\\n\\t\\|\\\\"))
++    }
++    func testFillingSinkSealsItAndDoesNotAppendLaterLabels() {
++        var limits = OfflineDocumentLimits.standard; limits.maximumOutputBytes = 5
++        var sink = OfficeTextOutput(limits: limits)
++        sink.append("abc😀")
++        sink.append("SHOULD NOT APPEAR")
++        XCTAssertEqual(sink.text,"abc"); XCTAssertTrue(sink.truncated)
++    }
++    func testOutputSaturationDoesNotSkipRemainingInputValidation() throws {
++        var limits = OfflineDocumentLimits.standard; limits.maximumOutputBytes = 97
++        do { _ = try read("invalid-after-cap.xlsx",limits: limits); XCTFail("Late invalid shared string was skipped") }
++        catch OfflineDocumentError.invalidPackage { }
++        do { _ = try read("invalid-after-cap.csv",limits: limits); XCTFail("Late invalid quote was skipped") }
++        catch OfflineDocumentError.invalidDelimitedText { }
++    }
++    func testRepeatedSharedStringAllocationAndTimeMetrics() throws {
++        let data = try Data(contentsOf: fixture("repeated-large-shared.xlsx"))
++        let options = XCTMeasureOptions(); options.iterationCount = 3
++        measure(metrics: [XCTMemoryMetric(),XCTClockMetric()],options: options) {
++            do {
++                let result = try OfflineDocumentReader().read(data: data,format: .xlsx)
++                XCTAssertLessThanOrEqual(result.text.utf8.count,OfflineDocumentLimits.standard.maximumOutputBytes)
++            } catch { XCTFail("Unexpected extraction error: \(error)") }
++        }
++    }
++    func testOmittedAndExplicitStyleZeroAreEquivalentForDatesAndCustomFormats() throws {
++        for name in ["style-zero-date.xlsx","style-zero-custom.xlsx"] {
++            let result = try read(name)
++            let line = try XCTUnwrap(result.text.split(separator: "\n").first(where: { $0.hasPrefix("Row 1:") }))
++            let values = line.components(separatedBy: " | ")
++            guard values.count == 2 else { XCTFail("Expected two style comparison cells"); continue }
++            XCTAssertEqual(values[0].components(separatedBy: "A1=").last,values[1].components(separatedBy: "B1=").last)
++            XCTAssertTrue(result.text.contains(name.contains("date") ? "serial 60" : "format yyyy-mm-dd"))
++        }
++    }
++    func testInheritedFormatsAreExplicitlyUnresolvedRatherThanAssumedGeneral() throws {
++        let r = try read("inherited-styles.xlsx")
++        XCTAssertTrue(r.modelContext.contains("inherited number formats are unresolved"))
++        XCTAssertTrue(r.text.contains("A1=60 [inherited number format unresolved"))
++        XCTAssertTrue(r.text.contains("B1=60 [serial 60")) // An explicit cell format is still applied.
++    }
++    func testArrayFollowerCachesAndMissingCachesAreLabeledWithoutExecutingFormula() throws {
++        let r = try read("array-formula.xlsx")
++        XCTAssertTrue(r.text.contains("A1=[cached formula value: 3]"))
++        XCTAssertTrue(r.text.contains("A2=[cached formula value: 4]"))
++        XCTAssertTrue(r.text.contains("A3=[formula cache unavailable]"))
++        XCTAssertFalse(r.text.contains("SUM("))
++        XCTAssertFalse(r.text.contains("Row 2: A2=4"))
++    }
++    func testFormulaRangeMetadataIsBoundedAndValidated() throws {
++        try expectStage("oversized-formula-range.xlsx",.formulaRange)
++        try expectStage("too-many-formula-ranges.xlsx",.formulaRange)
++        for n in ["bad-formula-range.xlsx","formula-anchor-outside.xlsx"] { XCTAssertThrowsError(try read(n),n) }
++        var l = OfflineDocumentLimits.standard; l.maximumFormulaRanges = 0
++        try expectStage("array-formula.xlsx",.formulaRange,limits: l)
++        l = .standard; l.maximumFormulaComparisons = 1
++        try expectStage("array-formula.xlsx",.formulaRange,limits: l)
++    }
++    func testAdversarialFixturesReachTheirNamedValidationStages() throws {
++        for (name,stage) in [("entry-size.docx",OfficeValidationStage.declaredEntryBytes),
++                             ("total-size.docx",.declaredTotalBytes),
++                             ("bomb.docx",.declaredExpansionRatio),
++                             ("overlap.docx",.archiveOverlap),
++                             ("forged-small-size.docx",.streamedDeclaredBytes),
++                             ("bad-crc.docx",.archiveIntegrity)] {
++            try expectStage(name,stage)
++        }
++    }
++    func testCancellationDuringDecompressionAndCellValidationIsDeterministic() async throws {
++        let data = try Data(contentsOf: fixture("repeated-large-shared.xlsx"))
++        for phase in [OfficeReadPhase.decompressedChunk,.documentCell] {
++            let cancelled = await Task.detached {
++                let reader = OfflineDocumentReader(control: OfficeReadControl { current in
++                    if current == phase { withUnsafeCurrentTask { $0?.cancel() } }
++                })
++                do { _ = try reader.read(data: data,format: .xlsx); return false }
++                catch is CancellationError { return true }
++                catch { return false }
++            }.value
++            XCTAssertTrue(cancelled,"No cancellation at \(phase)")
++        }
++    }
++    func testFIFOIsRejectedWithoutBlockingTheTestProcess() throws {
++        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
++        try FileManager.default.createDirectory(at: root,withIntermediateDirectories: true)
++        defer { try? FileManager.default.removeItem(at: root) }
++        let fifo = root.appendingPathComponent("pipe.docx")
++        XCTAssertEqual(mkfifo(fifo.path,0o600),0)
++        // Keep a nonblocking RDWR guard open. Even a regressed blocking reader cannot hang this test.
++        let guardFD = Darwin.open(fifo.path,O_RDWR | O_NONBLOCK | O_CLOEXEC)
++        guard guardFD >= 0 else { return XCTFail("Cannot open nonblocking FIFO guard") }
++        defer { if guardFD >= 0 { Darwin.close(guardFD) } }
++        XCTAssertThrowsError(try OfflineDocumentReader().read(at: fifo))
++    }
++    func testLegalXMLDeclarationSpacingAndContentDoNotAffectEncodingDetection() throws {
++        for n in ["xml-declaration-spacing.docx","xml-declaration-no-encoding.docx"] {
++            XCTAssertTrue(try read(n).text.contains("encoding information"),n)
++        }
++        XCTAssertThrowsError(try read("xml-declaration-misleading.docx"))
++    }
++    func testSafeDeflateFlagsAndEmptyAncillaryStreamsRemainBounded() throws {
++        for n in ["deflate-level-flags.docx","empty-deflate-part.docx"] {
++            XCTAssertTrue(try read(n).text.contains("Hello café"),n)
++        }
++    }
++    func testPrinterSettingsAreInertButMacrosRemainRejected() throws {
++        let r = try read("printer-settings.docx")
++        XCTAssertTrue(r.text.contains("Hello café"))
++        XCTAssertTrue(r.modelContext.contains("Printer settings"))
++        XCTAssertThrowsError(try read("macro.docx"))
++    }
++    func testLibraryProducerExportsHaveUsefulContent() throws {
++        XCTAssertTrue(try read("producer-python-docx.docx").text.contains("Library exported paragraph"))
++        XCTAssertTrue(try read("producer-openpyxl.xlsx").text.contains("42"))
++        XCTAssertTrue(try read("producer-xlsxwriter.xlsx").text.contains("cached formula value: 7"))
++    }
++}
+--- a/proposed/office-integration.diff
++++ b/proposed/office-integration.diff
+@@ -1,6 +1,18 @@
+ --- a/JarvisEVO/Services/AttachmentService.swift
+ +++ b/JarvisEVO/Services/AttachmentService.swift
+-@@ -24,18 +24,31 @@
++@@ -8,8 +8,10 @@
++     static let maximumExtractedCharacters = 60_000
++     let directory: URL
++     private let imageService: ImageAttachmentService
+++    private let officeReader: OfflineDocumentReader
++ 
++-    init(directory: URL) throws {
+++    init(directory: URL, officeReader: OfflineDocumentReader = OfflineDocumentReader()) throws {
+++        self.officeReader = officeReader
++         imageService = try ImageAttachmentService(directory: directory)
++         self.directory = imageService.directory
++     }
++@@ -24,18 +26,32 @@
+          }
+          let type = values.contentType ?? UTType(filenameExtension: source.pathExtension)
+          if type?.conforms(to: .image) == true { return chatAttachment(from: try imageService.importFile(at: source)) }
+@@ -20,8 +32,9 @@
+ +            if officeFormat != nil {
+ +                // Keep the exact bounded immutable snapshot as the private original. No second
+ +                // source read can swap content between size checking, staging and extraction.
+-+                let snapshot = try OfflineDocumentReader().boundedSnapshot(at: source)
+++                let snapshot = try officeReader.boundedSnapshot(at: source)
+ +                try snapshot.write(to: destination, options: .atomic)
+++                try officeReader.checkpoint(.stagedOriginal)
+ +            } else {
+ +                try FileManager.default.copyItem(at: source, to: destination)
+ +            }
+@@ -30,13 +43,13 @@
+              var extracted: String
+ -            if isPDF {
+ +            if let officeFormat {
+-+                let snapshot = try OfflineDocumentReader().boundedSnapshot(at: destination)
+-+                extracted = try OfflineDocumentReader().read(data: snapshot, format: officeFormat).modelContext
+++                let snapshot = try officeReader.boundedSnapshot(at: destination)
+++                extracted = try officeReader.read(data: snapshot, format: officeFormat).modelContext
+ +            } else if isPDF {
+                  guard let document = PDFDocument(url: destination), !document.isLocked else { throw AttachmentError.unreadablePDF }
+                  extracted = ""
+                  for index in 0..<min(document.pageCount, 500) {
+-@@ -54,7 +67,7 @@
++@@ -54,7 +70,7 @@
+              }
+              try Task.checkCancellation()
+              return ChatAttachment(id: id, name: String(source.lastPathComponent.prefix(200)), relativePath: filename,
+@@ -45,7 +58,7 @@
+          } catch {
+              try? FileManager.default.removeItem(at: destination)
+              throw error
+-@@ -143,7 +156,7 @@
++@@ -143,7 +159,7 @@
+      var errorDescription: String? {
+          switch self {
+          case .invalidSize: return "Choose a nonempty file up to 10 MB."
+--- /dev/null
++++ b/provenance/fixture-producers.json
+@@ -0,0 +1,20 @@
++{
++  "producer-python-docx.docx": {
++    "producer": "python-docx",
++    "version": "1.2.0",
++    "normalization": "ZIP metadata timestamps/permissions/compression normalized; core created/modified timestamps fixed to 2020-01-01. Other producer-emitted XML/parts unchanged.",
++    "native_office_application_used": false
++  },
++  "producer-openpyxl.xlsx": {
++    "producer": "openpyxl",
++    "version": "3.1.5",
++    "normalization": "ZIP metadata timestamps/permissions/compression normalized; core created/modified timestamps fixed to 2020-01-01. Other producer-emitted XML/parts unchanged.",
++    "native_office_application_used": false
++  },
++  "producer-xlsxwriter.xlsx": {
++    "producer": "XlsxWriter",
++    "version": "3.2.9",
++    "normalization": "ZIP metadata timestamps/permissions/compression normalized; core created/modified timestamps fixed to 2020-01-01. Other producer-emitted XML/parts unchanged.",
++    "native_office_application_used": false
++  }
++}
+--- a/python-fixture-checks.log
++++ b/python-fixture-checks.log
+@@ -12,6 +12,6 @@
+ test_xml_attacks_are_real (__main__.FixtureChecks.test_xml_attacks_are_real) ... ok
+ 
+ ----------------------------------------------------------------------
+-Ran 12 tests in 0.014s
++Ran 12 tests in 0.015s
+ 
+ OK
+--- a/scripts/check_office_delivery.py
++++ b/scripts/check_office_delivery.py
+@@ -37,7 +37,7 @@
+       crc,compressed,expanded=u32(p+16),u32(p+20),u32(p+24)
+       n,e,c,disk=u16(p+28),u16(p+30),u16(p+32),u16(p+34)
+       attr,local=u32(p+38),u32(p+42)
+-      if version>20 or flags & ~0x0808 or method not in [0,8] or disk or not 0<n<=255 or p+46+n+e+c>end:raise Rejected('unsupported ZIP profile')
++      if version>20 or flags & ~(0x080e if method==8 else 0x0808) or method not in [0,8] or disk or not 0<n<=255 or p+46+n+e+c>end:raise Rejected('unsupported ZIP profile')
+       raw=data[p+46:p+46+n]
+       if not all(32<=b<127 for b in raw):raise Rejected('name encoding')
+       name=raw.decode();parts=name.removesuffix('/').split('/');directory=name.endswith('/')
+@@ -45,8 +45,12 @@
+       folded.add(name.lower());mode=(attr>>16)&0xf000
+       if ((made>>8) in [3,19] and mode not in [0,0x4000 if directory else 0x8000]) or (attr&0x10 and not directory):raise Rejected('link/type')
+       lower=name.lower()
+-      if lower.endswith('.bin') or any(x in lower for x in ['/embeddings/','/activex/','vbaproject','macrosheets/']):raise Rejected('executable part')
+-      if expanded>4*1024*1024 or total+expanded>32*1024*1024 or expanded>max(1,compressed)*200 or compressed>len(data) or (method==0 and expanded!=compressed) or (expanded==0 and compressed!=0) or (directory and (compressed or expanded or method or crc)):raise Rejected('declared resource bound')
++      if any(x in lower for x in ['/embeddings/','/activex/','vbaproject','macrosheets/']):raise Rejected('executable part')
++      if lower.endswith('.bin') and not re.fullmatch(r'(word|xl)/printersettings/printersettings[0-9]+\.bin',lower):raise Rejected('unsupported binary part')
++      if expanded>4*1024*1024:raise Rejected('declaredEntryBytes')
++      if total+expanded>32*1024*1024:raise Rejected('declaredTotalBytes')
++      if expanded>max(1,compressed)*200:raise Rejected('declaredExpansionRatio')
++      if compressed>len(data) or (method==0 and expanded!=compressed) or (method==8 and compressed==0) or (directory and (compressed or expanded or method or crc)):raise Rejected('ZIP sizes/profile')
+       total+=expanded;extra(p+46+n,e)
+       if local>start-30 or u32(local)!=0x04034b50 or u16(local+4)!=version or u16(local+6)!=flags or u16(local+8)!=method or u16(local+26)!=n:raise Rejected('local mismatch')
+       le=u16(local+28);content=local+30+n+le
+@@ -60,7 +64,8 @@
+     if p!=end:raise Rejected('central end')
+     cursor=0
+     for a,b in sorted(ranges):
+-      if a!=cursor or b<=cursor:raise Rejected('overlap or gap')
++      if a<cursor:raise Rejected('archiveOverlap')
++      if a!=cursor or b<=cursor:raise Rejected('gap')
+       cursor=b
+     if cursor!=start:raise Rejected('local end')
+     return result
+@@ -71,7 +76,9 @@
+       payload=data[offset:offset+compressed];actual=0;checksum=0;chunks=[]
+       def consume(chunk):
+         nonlocal actual,total,checksum
+-        if len(chunk)>min(4*1024*1024-actual,32*1024*1024-total,expanded-actual):raise Rejected('actual streamed bytes')
++        if len(chunk)>4*1024*1024-actual:raise Rejected('streamedEntryBytes')
++        if len(chunk)>32*1024*1024-total:raise Rejected('streamedTotalBytes')
++        if len(chunk)>expanded-actual:raise Rejected('streamedDeclaredBytes')
+         actual+=len(chunk);total+=len(chunk);checksum=zlib.crc32(chunk,checksum)
+         if name.endswith(('.xml','.rels')):chunks.append(chunk)
+       if method==0:
+@@ -84,7 +91,7 @@
+           if not pending and not chunk:raise Rejected('no decoder progress')
+         else:raise Rejected('callback bound')
+         if not decoder.eof:raise Rejected('deflate end')
+-      if actual!=expanded or checksum!=crc:raise Rejected('actual bytes/CRC')
++      if actual!=expanded or checksum!=crc:raise Rejected('archiveIntegrity')
+       result[name]=b''.join(chunks)
+     return result
+ 
+@@ -92,6 +99,10 @@
+     try:text=data.decode('utf8')
+     except UnicodeError as e:raise Rejected('encoding') from e
+     if '\0' in text or '<!DOCTYPE' in text.upper() or '<!ENTITY' in text.upper():raise Rejected('entities/encoding')
++    declaration=re.match(r'\ufeff?<\?xml(?=[ \t\r\n])(.{0,1024}?)\?>',text,re.S)
++    if declaration:
++      enc=re.search(r'''[ \t\r\n]encoding[ \t\r\n]*=[ \t\r\n]*(["'])([A-Za-z][A-Za-z0-9._-]*)\1''',declaration.group())
++      if enc and enc.group(2).lower()!='utf-8':raise Rejected('encoding')
+     try:root=ET.fromstring(data)
+     except ET.ParseError as e:raise Rejected('XML grammar') from e
+     nodes=0;textbytes=0
+@@ -107,7 +118,7 @@
+ 
+ class FixtureChecks(unittest.TestCase):
+     def test_manifest_bytes_and_hashes(self):
+-      m=json.loads((FIX/'manifest.json').read_text());self.assertEqual(len(m),49)
++      m=json.loads((FIX/'manifest.json').read_text());self.assertEqual(len(m),74)
+       for n,a in m.items():
+         d=(FIX/n).read_bytes();self.assertEqual(len(d),a['bytes'],n);self.assertEqual(hashlib.sha256(d).hexdigest(),a['sha256'],n)
+     def test_benign_zip_and_streaming_profiles(self):
+@@ -147,8 +158,8 @@
+       with self.assertRaises(csv.Error):list(csv.reader(io.StringIO((FIX/'bad.csv').read_text()),strict=True))
+     def test_native_test_fixture_references_are_resolvable(self):
+       source='\n'.join(p.read_text() for p in (ROOT/'Tests').glob('*.swift'))
+-      names=set(re.findall(r'"([^"\n]+\.(?:docx|xlsx|csv|tsv))"',source)) - {'link.docx'}
+-      self.assertGreaterEqual(len(names),49)
++      names=set(re.findall(r'"([^"\n]+\.(?:docx|xlsx|csv|tsv))"',source)) - {'link.docx','pipe.docx'}
++      self.assertGreaterEqual(len(names),74)
+       for n in names:self.assertTrue((FIX/n).is_file(),n)
+     def test_production_security_contracts_and_no_remote_execution_surface(self):
+       sources={p.name:p.read_text() for p in (ROOT/'JarvisEVO/Services').glob('*.swift')};all_source='\n'.join(sources.values())
+--- /dev/null
++++ b/scripts/check_review_delivery.py
+@@ -0,0 +1,84 @@
++#!/usr/bin/env python3
++"""Review-specific independent Python evidence. Does not execute Swift or native Office."""
++from pathlib import Path
++import hashlib, json, re, runpy, unittest, zipfile, io, datetime
++R=Path(__file__).resolve().parents[1];F=R/'Tests/OfficeFixtures'
++base=runpy.run_path(str(R/'scripts/check_office_delivery.py'))
++metadata,stream_oracle,bounded_xml,Rejected=[base[k] for k in ['metadata','stream_oracle','bounded_xml','Rejected']]
++def parts(name):
++ d=(F/name).read_bytes();return stream_oracle(d,metadata(d))
++S='{http://schemas.openxmlformats.org/spreadsheetml/2006/main}'
++class ReviewChecks(unittest.TestCase):
++ def test_stage_specific_adversarial_fixtures(self):
++  expected={'entry-size.docx':'declaredEntryBytes','total-size.docx':'declaredTotalBytes','bomb.docx':'declaredExpansionRatio','overlap.docx':'archiveOverlap','forged-small-size.docx':'streamedDeclaredBytes','bad-crc.docx':'archiveIntegrity'}
++  for name,stage in expected.items():
++   with self.subTest(name=name),self.assertRaisesRegex(Rejected,'^'+stage+'$'):parts(name)
++ def test_safe_deflate_and_printer_profiles_are_real(self):
++  for name in ['deflate-level-flags.docx','empty-deflate-part.docx','printer-settings.docx']:
++   p=parts(name);self.assertIn(b'Hello caf',p['word/document.xml'])
++  d=(F/'empty-deflate-part.docx').read_bytes();m=metadata(d)['empty.dat'];self.assertGreater(m[1],0);self.assertEqual(m[2],0)
++  with self.assertRaisesRegex(Rejected,'executable part'):parts('macro.docx')
++ def test_repeated_string_fixture_reaches_document_layer_and_is_high_amplification(self):
++  p=parts('repeated-large-shared.xlsx');shared=bounded_xml(p['xl/sharedStrings.xml']);sheet=bounded_xml(p['xl/worksheets/sheet1.xml'])
++  value=shared.find('.//'+S+'t').text;cells=sheet.findall('.//'+S+'c')
++  self.assertEqual(len(value.encode()),32768);self.assertEqual(len(cells),10000);self.assertEqual(len(value.encode())*len(cells),327680000)
++  self.assertLess((F/'repeated-large-shared.xlsx').stat().st_size,100000)
++ def test_combining_fixtures_are_not_zip_bombs_or_oversized_strings(self):
++  for name,path in [('repeated-combining.xlsx','xl/sharedStrings.xml'),('combining.docx','word/document.xml')]:
++   p=parts(name);bounded_xml(p[path])
++  for name in ['repeated-combining.xlsx','combining.docx','combining.csv']:self.assertTrue((F/name).exists())
++ def test_byte_sink_reference_charges_escapes_and_stops_without_repeated_value_copies(self):
++  # Separate bounded oracle, not execution of the Swift sink. It retains no rendered rows.
++  source='\n\t|\\'+('a'+'\u0301'*16383)
++  out=bytearray();scalars=0;sealed=False
++  for _ in range(10000):
++   for scalar in source:
++    token={'\n':'\\n','\t':'\\t','|':'\\|','\\':'\\\\'}.get(scalar,scalar)
++    for c in token:
++     b=c.encode()
++     if scalars>=60000 or len(b)>97-len(out):sealed=True;break
++     out.extend(b);scalars+=1
++    if sealed:break
++   if sealed:break
++  self.assertTrue(sealed);self.assertLessEqual(len(out),97);out.decode('utf8');self.assertTrue(out.startswith(b'\\n\\t\\|\\\\'))
++ def test_style_zero_and_inherited_style_metadata_is_real(self):
++  for n,id in [('style-zero-date.xlsx','14'),('style-zero-custom.xlsx','164')]:
++   p=parts(n);root=bounded_xml(p['xl/styles.xml']);self.assertEqual(root.find(S+'cellXfs')[0].get('numFmtId'),id)
++   cells=bounded_xml(p['xl/worksheets/sheet1.xml']).findall('.//'+S+'c');self.assertIsNone(cells[0].get('s'));self.assertEqual(cells[1].get('s'),'0')
++  p=parts('inherited-styles.xlsx');root=bounded_xml(p['xl/worksheets/sheet1.xml']);self.assertIsNotNone(root.find(S+'cols')[0].get('style'));self.assertEqual(root.find('.//'+S+'row').get('customFormat'),'1')
++ def test_sparse_array_formula_and_malicious_ranges_are_real(self):
++  root=bounded_xml(parts('array-formula.xlsx')['xl/worksheets/sheet1.xml']);cells=root.findall('.//'+S+'c')
++  self.assertEqual(cells[0].find(S+'f').get('ref'),'A1:A3');self.assertIsNone(cells[1].find(S+'f'));self.assertEqual(cells[1].find(S+'v').text,'4');self.assertIsNone(cells[2].find(S+'v'))
++  many=bounded_xml(parts('too-many-formula-ranges.xlsx')['xl/worksheets/sheet1.xml']).findall('.//'+S+'f');self.assertEqual(len(many),257)
++  ref=bounded_xml(parts('oversized-formula-range.xlsx')['xl/worksheets/sheet1.xml']).find('.//'+S+'f').get('ref');self.assertEqual(ref,'A1:XFD1048576')
++ def test_xml_declarations_are_tested_in_actual_parts(self):
++  for n in ['xml-declaration-spacing.docx','xml-declaration-no-encoding.docx']:bounded_xml(parts(n)['word/document.xml'])
++  with self.assertRaisesRegex(Rejected,'encoding'):bounded_xml(parts('xml-declaration-misleading.docx')['word/document.xml'])
++ def test_library_export_provenance_and_readability(self):
++  import docx,openpyxl
++  self.assertIn('Library exported paragraph',' '.join(p.text for p in docx.Document(F/'producer-python-docx.docx').paragraphs))
++  book=openpyxl.load_workbook(F/'producer-openpyxl.xlsx',data_only=True);self.assertEqual(book.active['A2'].value,42)
++  cached=openpyxl.load_workbook(F/'producer-xlsxwriter.xlsx',data_only=True);self.assertEqual(cached.active['A2'].value,7)
++  provenance=json.loads((R/'provenance/fixture-producers.json').read_text());self.assertEqual(len(provenance),3)
++  for n,p in provenance.items():self.assertFalse(p['native_office_application_used']);parts(n)
++ def test_source_has_no_full_row_or_full_value_rendering_and_uses_finite_ranges(self):
++  extraction=(R/'JarvisEVO/Services/OfficeTextExtractor.swift').read_text();csv=(R/'JarvisEVO/Services/DelimitedDocumentReader.swift').read_text();sink=(R/'JarvisEVO/Services/OfflineDocumentReader.swift').read_text()
++  rendering=extraction.split('    private func word(',1)[1].split('    private func collectFormulaRanges',1)[0]
++  self.assertNotIn('parts.append(',rendering);self.assertNotIn('parts.joined(',rendering);self.assertNotIn('OfficeTextEscaping.render',extraction+csv)
++  self.assertNotIn('row.enumerated().map',csv);self.assertIn('appendEscaped(value)',extraction)
++  self.assertIn('scalar.utf8.count <= maximumBytes - byteCount',sink);self.assertIn('maximumOutputBytes = 240_000',sink)
++  self.assertIn('maximumFormulaRanges = 256',sink);self.assertIn('maximumFormulaRangeCells = 1_000_000',sink);self.assertIn('maximumFormulaComparisons = 1_000_000',sink)
++  self.assertIn('result.count < limits.maximumFormulaRanges',extraction);self.assertIn('formulaRanges.contains',extraction);self.assertIn('limits.maximumFormulaComparisons - formulaComparisons',extraction)
++  self.assertIn('Int(styleText ?? "0")',extraction);self.assertIn('inherited number formats are unresolved',extraction)
++ def test_cancellation_and_fifo_contracts_are_present(self):
++  source='\n'.join(p.read_text() for p in (R/'JarvisEVO/Services').glob('*.swift'))
++  self.assertIn('O_CLOEXEC | O_NONBLOCK',source);self.assertIn('try callback?(phase)',source);self.assertIn('try Task.checkCancellation()',source)
++  tests='\n'.join(p.read_text() for p in (R/'Tests').glob('*.swift'))
++  self.assertIn('withUnsafeCurrentTask { $0?.cancel() }',tests);self.assertIn('CancellationAfterStaging',tests);self.assertIn('XCTMemoryMetric()',tests)
++  patch=(R/'proposed/office-integration.diff').read_text();self.assertIn('officeReader.checkpoint(.stagedOriginal)',patch);self.assertIn('officeReader: OfflineDocumentReader',patch)
++ def test_before_manifest_stays_exact(self):
++  before=R/'repair-round1/before';m=json.loads((R/'repair-round1/before-manifest.json').read_text())
++  for name,a in m.items():d=(before/name).read_bytes();self.assertEqual(len(d),a['bytes']);self.assertEqual(hashlib.sha256(d).hexdigest(),a['sha256'])
++  old=json.loads((before/'proposed/base-source-sha256.json').read_text());self.assertEqual(old,json.loads((R/'proposed/base-source-sha256.json').read_text()))
++
++if __name__=='__main__':unittest.main(verbosity=2)
+--- a/scripts/create_integration_patch.py
++++ b/scripts/create_integration_patch.py
+@@ -11,6 +11,8 @@
+     references[path]=hashlib.sha256(before.encode()).hexdigest()
+     patch.extend(difflib.unified_diff(before.splitlines(True),after.splitlines(True),fromfile='a/'+path,tofile='b/'+path))
+ def attachment(s):
++    s=s.replace('    private let imageService: ImageAttachmentService','    private let imageService: ImageAttachmentService\n    private let officeReader: OfflineDocumentReader')
++    s=s.replace('    init(directory: URL) throws {','    init(directory: URL, officeReader: OfflineDocumentReader = OfflineDocumentReader()) throws {\n        self.officeReader = officeReader')
+     s=s.replace('        let isPDF = type?.conforms(to: .pdf) == true','''        let officeFormat = OfflineDocumentFormat(filenameExtension: source.pathExtension)
+         // Old binary/macro formats are not plain text, even if a provider reports a broad text type.
+         guard !["doc", "xls", "docm", "xlsm", "xlsb"].contains(source.pathExtension.lowercased()) else { throw AttachmentError.unsupportedType }
+@@ -22,15 +24,16 @@
+             if officeFormat != nil {
+                 // Keep the exact bounded immutable snapshot as the private original. No second
+                 // source read can swap content between size checking, staging and extraction.
+-                let snapshot = try OfflineDocumentReader().boundedSnapshot(at: source)
++                let snapshot = try officeReader.boundedSnapshot(at: source)
+                 try snapshot.write(to: destination, options: .atomic)
++                try officeReader.checkpoint(.stagedOriginal)
+             } else {
+                 try FileManager.default.copyItem(at: source, to: destination)
+             }''')
+     s=s.replace('''            if isPDF {
+                 guard let document''','''            if let officeFormat {
+-                let snapshot = try OfflineDocumentReader().boundedSnapshot(at: destination)
+-                extracted = try OfflineDocumentReader().read(data: snapshot, format: officeFormat).modelContext
++                let snapshot = try officeReader.boundedSnapshot(at: destination)
++                extracted = try officeReader.read(data: snapshot, format: officeFormat).modelContext
+             } else if isPDF {
+                 guard let document''')
+     s=s.replace('mediaType: isPDF ? "application/pdf" : "text/plain"','mediaType: officeFormat?.mediaType ?? (isPDF ? "application/pdf" : "text/plain")')
+--- a/scripts/generate_fixtures.py
++++ b/scripts/generate_fixtures.py
+@@ -1,5 +1,10 @@
+ #!/usr/bin/env python3
+ """Deterministic tiny synthetic Office packages. No third-party documents/data."""
++if __name__ == '__main__':
++    import runpy
++    from pathlib import Path
++    runpy.run_path(str(Path(__file__).with_name('generate_review_fixtures.py')),run_name='__main__')
++    raise SystemExit(0)
+ import io, json, struct, zipfile, hashlib
+ from pathlib import Path
+ ROOT=Path(__file__).resolve().parents[1]/'Tests'/'OfficeFixtures'
+--- /dev/null
++++ b/scripts/generate_review_fixtures.py
+@@ -0,0 +1,97 @@
++#!/usr/bin/env python3
++"""Review regressions; actual tiny ZIP/XML inputs, plus library-produced interoperability files.
++No Word, Excel or LibreOffice process is used or claimed. ZIP timestamps are normalized.
++"""
++from pathlib import Path
++import io, json, struct, zipfile, hashlib, random, runpy, datetime, re
++from xml.sax.saxutils import escape
++ROOT=Path(__file__).resolve().parents[1]; FIX=ROOT/'Tests/OfficeFixtures'
++base=runpy.run_path(str(ROOT/'scripts/generate_fixtures.py'))
++package=base['package'];W,S,R,P=base['W'],base['S'],base['R'],base['P']
++def write(name,files,stored=()):
++ b=io.BytesIO()
++ with zipfile.ZipFile(b,'w') as z:
++  for path,content in files.items():
++   zi=zipfile.ZipInfo(path,date_time=(2020,1,1,0,0,0));zi.create_system=3;zi.external_attr=0o100600<<16
++   zi.compress_type=zipfile.ZIP_STORED if path in stored else zipfile.ZIP_DEFLATED
++   z.writestr(zi,content.encode() if isinstance(content,str) else content)
++ (FIX/name).write_bytes(b.getvalue())
++def sheet(cells):return f'<worksheet xmlns="{S}"><sheetData>{cells}</sheetData></worksheet>'
++def col(n):
++ out=''
++ while n:n,r=divmod(n-1,26);out=chr(65+r)+out
++ return out
++rng=random.Random(9371)
++large=''.join(rng.choice('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789|\\') for _ in range(32768))
++refs=''.join(f'<c r="{col(i)}1" t="s"><v>0</v></c>' for i in range(1,10001))
++for name,value in [('repeated-large-shared.xlsx',large),('repeated-combining.xlsx','a'+'\u0301'*16383)]:
++ files=package('xlsx',**{'xl/sharedStrings.xml':f'<sst xmlns="{S}"><si><t>{escape(value)}</t></si></sst>', 'xl/worksheets/sheet1.xml':sheet(f'<row r="1">{refs}</row>')})
++ write(name,files,stored=('xl/sharedStrings.xml',))
++combining='a'+'\u0301'*16383
++write('combining.docx',package('docx',**{'word/document.xml':f'<w:document xmlns:w="{W}"><w:body><w:p><w:r><w:t>{combining}</w:t></w:r></w:p></w:body></w:document>'}),stored=('word/document.xml',))
++(FIX/'combining.csv').write_text(combining+'\n',encoding='utf8')
++for name,fmt in [('style-zero-date.xlsx',14),('style-zero-custom.xlsx',164)]:
++ style=f'<styleSheet xmlns="{S}"><numFmts count="1"><numFmt numFmtId="164" formatCode="yyyy-mm-dd"/></numFmts><cellXfs count="1"><xf numFmtId="{fmt}"/></cellXfs></styleSheet>'
++ write(name,package('xlsx',**{'xl/styles.xml':style,'xl/worksheets/sheet1.xml':sheet('<row r="1"><c r="A1"><v>60</v></c><c r="B1" s="0"><v>60</v></c></row>')}))
++write('inherited-styles.xlsx',package('xlsx',**{'xl/worksheets/sheet1.xml':f'<worksheet xmlns="{S}"><cols><col min="1" max="1" style="1"/></cols><sheetData><row r="1" s="1" customFormat="1"><c r="A1"><v>60</v></c><c r="B1" s="1"><v>60</v></c></row></sheetData></worksheet>'}))
++array=sheet('<row r="1"><c r="A1"><f t="array" ref="A1:A3">SUM(1,2)</f><v>3</v></c></row><row r="2"><c r="A2"><v>4</v></c></row><row r="3"><c r="A3"/></row>')
++write('array-formula.xlsx',package('xlsx',**{'xl/worksheets/sheet1.xml':array}))
++for name,reference in [('oversized-formula-range.xlsx','A1:XFD1048576'),('bad-formula-range.xlsx','A1:XFE1'),('formula-anchor-outside.xlsx','B1:B2')]:
++ write(name,package('xlsx',**{'xl/worksheets/sheet1.xml':sheet(f'<row r="1"><c r="A1"><f t="array" ref="{reference}">1</f><v>1</v></c></row>')}))
++many=''.join(f'<c r="{col(i)}1"><f t="array" ref="{col(i)}1">1</f><v>1</v></c>' for i in range(1,258))
++write('too-many-formula-ranges.xlsx',package('xlsx',**{'xl/worksheets/sheet1.xml':sheet(f'<row r="1">{many}</row>')}))
++bad_refs=refs.rsplit('<v>0</v>',1);bad_refs='<v>999</v>'.join(bad_refs)
++write('invalid-after-cap.xlsx',package('xlsx',**{'xl/sharedStrings.xml':f'<sst xmlns="{S}"><si><t>{escape(large)}</t></si></sst>','xl/worksheets/sheet1.xml':sheet(f'<row r="1">{bad_refs}</row>')}),stored=('xl/sharedStrings.xml',))
++(FIX/'invalid-after-cap.csv').write_text(('a'*1000)+',"unterminated\n',encoding='utf8')
++# Each named boundary is isolated: inert file names, legal earlier metadata, distinct stages.
++block=random.Random(1647).randbytes(4096)
++files=package('docx');files['unused.dat']=block*1280;write('entry-size.docx',files)
++files=package('docx')
++for i in range(9):files[f'unused{i}.dat']=block*1024
++write('total-size.docx',files)
++files=package('docx');files['unused.dat']=b'A'*65536;write('bomb.docx',files)
++# Nested LOCAL HEADER inside a stored outer payload. Both central records match their own
++# local headers and sizes; only the final interval-overlap check rejects this archive.
++inner_name=b'nested.dat';inner_data=b'inner fixture';inner_crc=__import__('zlib').crc32(inner_data)
++inner=struct.pack('<IHHHHHIIIHH',0x04034b50,20,0,0,0,0,inner_crc,len(inner_data),len(inner_data),len(inner_name),0)+inner_name+inner_data
++files=package('docx');files['outer.dat']=b'prefix'+inner+b'suffix';write('overlap.docx',files,stored=('outer.dat',))
++data=(FIX/'overlap.docx').read_bytes()
++with zipfile.ZipFile(io.BytesIO(data)) as z:info=z.getinfo('outer.dat')
++local=info.header_offset;offset=local+30+len(info.filename.encode())+6
++record=struct.pack('<IHHHHHHIIIHHHHHII',0x02014b50,0x314,20,0,0,0,0,inner_crc,len(inner_data),len(inner_data),len(inner_name),0,0,0,0,0o100600<<16,offset)+inner_name
++end=len(data)-22;count,central_size,central_start=struct.unpack_from('<HII',data,end+10)
++new_end=struct.pack('<IHHHHIIH',0x06054b50,0,0,count+1,count+1,central_size+len(record),central_start,0)
++(FIX/'overlap.docx').write_bytes(data[:end]+record+new_end)
++for name,decl in [('xml-declaration-spacing.docx','<?xml version = "1.0" encoding ="UTF-8"?>'),('xml-declaration-no-encoding.docx','<?xml version="1.0"?>'),('xml-declaration-misleading.docx','<?xml version="1.0" encoding="ISO-8859-1"?>')]:
++ xml=decl+'<!-- unrelated encoding=\'utf-8\' -->'+f'<w:document xmlns:w="{W}"><w:body><w:p><w:r><w:t>encoding information</w:t></w:r></w:p></w:body></w:document>'
++ write(name,package('docx',**{'word/document.xml':xml}))
++data=bytearray((FIX/'paragraphs-tables.docx').read_bytes());end=len(data)-22;p=struct.unpack_from('<I',data,end+16)[0]
++for _ in range(struct.unpack_from('<H',data,end+10)[0]):
++ local=struct.unpack_from('<I',data,p+42)[0]
++ for at in [p+8,local+6]:struct.pack_into('<H',data,at,struct.unpack_from('<H',data,at)[0]|2)
++ n,e,c=struct.unpack_from('<HHH',data,p+28);p+=46+n+e+c
++(FIX/'deflate-level-flags.docx').write_bytes(data)
++files=package('docx');files['empty.dat']=b'';write('empty-deflate-part.docx',files)
++files=package('docx');files['word/printerSettings/printerSettings1.bin']=b'opaque inert synthetic printer data';write('printer-settings.docx',files)
++# Library-produced files. ZIP timestamp normalization leaves document XML exactly as emitted
++# except deterministic core-property timestamps, which do not change document contents.
++import docx, openpyxl, xlsxwriter
++fixed=datetime.datetime(2020,1,1)
++provenance={}
++def normalize(name,raw,producer,version):
++ out={}
++ with zipfile.ZipFile(io.BytesIO(raw)) as z:
++  for item in z.infolist():
++   content=z.read(item)
++   if item.filename=='docProps/core.xml':
++    content=re.sub(rb'(<dcterms:(?:created|modified)[^>]*>)[^<]*(</dcterms:(?:created|modified)>)',rb'\g<1>2020-01-01T00:00:00Z\g<2>',content)
++   out[item.filename]=content
++ write(name,out)
++ provenance[name]={'producer':producer,'version':version,'normalization':'ZIP metadata timestamps/permissions/compression normalized; core created/modified timestamps fixed to 2020-01-01. Other producer-emitted XML/parts unchanged.','native_office_application_used':False}
++d=docx.Document();d.core_properties.created=fixed;d.core_properties.modified=fixed;d.add_paragraph('Library exported paragraph');table=d.add_table(rows=1,cols=2);table.cell(0,0).text='Fruit';table.cell(0,1).text='Kiwi';b=io.BytesIO();d.save(b);normalize('producer-python-docx.docx',b.getvalue(),'python-docx',docx.__version__)
++w=openpyxl.Workbook();w.properties.created=fixed;w.properties.modified=fixed;w.active.title='Library sheet';w.active.append(['Value','Date']);w.active.append([42,datetime.datetime(2026,11,12)]);b=io.BytesIO();w.save(b);normalize('producer-openpyxl.xlsx',b.getvalue(),'openpyxl',openpyxl.__version__)
++b=io.BytesIO();w=xlsxwriter.Workbook(b,{'in_memory':True});w.set_properties({'created':fixed});ws=w.add_worksheet('Library cache');ws.write('A1','Library exported spreadsheet');ws.write_formula('A2','=3+4',None,7);w.close();normalize('producer-xlsxwriter.xlsx',b.getvalue(),'XlsxWriter',xlsxwriter.__version__)
++(ROOT/'provenance/fixture-producers.json').write_text(json.dumps(provenance,indent=2)+'\n')
++manifest={p.name:{'bytes':p.stat().st_size,'sha256':hashlib.sha256(p.read_bytes()).hexdigest()} for p in sorted(FIX.iterdir()) if p.is_file() and p.name!='manifest.json'}
++(FIX/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
++print(f'Review fixtures complete: {len(manifest)} total files; library producer provenance saved.')
+--- a/verification-summary.json
++++ b/verification-summary.json
+@@ -1,13 +1,27 @@
+ {
+-  "python_scripts_ast": "passed",
+-  "fixture_regeneration_deterministic": "passed",
+-  "fixture_count": 49,
+-  "proposed_yaml_and_wiring": "passed",
++  "repair_round": 1,
++  "python_fixture_and_contract_checks": {
++    "base": 12,
++    "review": 12,
++    "status": "passed; separate Python references, not production Swift"
++  },
++  "fixture_count": 74,
++  "fixture_regeneration": "byte-identical",
++  "proposed_yaml_package_product_resources": "passed",
++  "proposed_patch_dry_run": "passed; not applied",
++  "frozen_three_base_hashes_equal_pre_repair": true,
++  "native_test_methods": {
++    "OfficeReviewRegressionTests.swift": 16,
++    "OfflineDocumentReaderTests.swift": 17,
++    "OfficeAttachmentIntegrationTests.swift": 5
++  },
+   "native_tools": {
+     "swift": null,
+     "xcodebuild": null,
+-    "xcodegen": null
++    "xcodegen": null,
++    "libreoffice": null
+   },
+-  "native_swift_tests": "not run; no Swift/Xcode available",
++  "native_swift_tests": "not compiled or run",
++  "native_allocation_cancellation_and_office_exports": "pending; library exports are explicitly identified",
+   "frozen_tree_modified_by_this_work": false
+ }

@@ -8,14 +8,14 @@ struct OfficeZIPContainer {
     let parts: [String: Data]
     let names: Set<String>
 
-    init(data: Data, limits: OfflineDocumentLimits) throws {
+    init(data: Data, limits: OfflineDocumentLimits, control: OfficeReadControl = OfficeReadControl()) throws {
         let metadata = try OfficeZIPPreflight.read(data, limits: limits)
         let archive: Archive
         do { archive = try Archive(data: data, accessMode: .read) }
         catch { throw OfflineDocumentError.invalidArchive }
         var entries = [Entry]()
         for entry in archive {
-            try Task.checkCancellation()
+            try control.checkpoint(.archiveEntry)
             guard entries.count < limits.maximumEntries else { throw OfflineDocumentError.invalidArchive }
             entries.append(entry)
         }
@@ -30,22 +30,20 @@ struct OfficeZIPContainer {
             var content = Data(), actual = 0, calls = 0, emptyCalls = 0
             // The callback limits REAL bytes, even if an attacker lies in ZIP metadata.
             let crc = try archive.extract(entry, bufferSize: 16_384, skipCRC32: false) { chunk in
-                try Task.checkCancellation()
+                try control.checkpoint(.decompressedChunk)
                 calls += 1
                 emptyCalls = chunk.isEmpty ? emptyCalls + 1 : 0
-                guard emptyCalls <= 8, calls <= (limits.maximumEntryBytes / 16_384) + 1_024,
-                      chunk.count <= limits.maximumEntryBytes - actual,
-                      chunk.count <= limits.maximumExpandedBytes - total,
-                      chunk.count <= m.expanded - actual else {
-                    throw OfflineDocumentError.limit("The Office package exceeds its streamed extraction limits.")
-                }
+                guard emptyCalls <= 8, calls <= (limits.maximumEntryBytes / 16_384) + 1_024 else { throw OfflineDocumentError.invalidArchive }
+                guard chunk.count <= limits.maximumEntryBytes - actual else { throw OfflineDocumentError.rejectedAt(.streamedEntryBytes) }
+                guard chunk.count <= limits.maximumExpandedBytes - total else { throw OfflineDocumentError.rejectedAt(.streamedTotalBytes) }
+                guard chunk.count <= m.expanded - actual else { throw OfflineDocumentError.rejectedAt(.streamedDeclaredBytes) }
                 actual += chunk.count; total += chunk.count
                 guard actual <= max(1, m.compressed) * limits.maximumExpansionRatio else {
-                    throw OfflineDocumentError.limit("The Office package has an unsafe expansion ratio.")
+                    throw OfflineDocumentError.rejectedAt(.declaredExpansionRatio)
                 }
                 if keep { content.append(chunk) }
             }
-            guard actual == m.expanded, crc == m.crc else { throw OfflineDocumentError.invalidArchive }
+            guard actual == m.expanded, crc == m.crc else { throw OfflineDocumentError.rejectedAt(.archiveIntegrity) }
             if keep && !m.isDirectory { saved[entry.path] = content }
         }
         parts = saved
@@ -102,7 +100,7 @@ private enum OfficeZIPPreflight {
             let crc = try u32(p+16), compressed = try u32(p+20), expanded = try u32(p+24)
             let n = try u16(p+28), e = try u16(p+30), c = try u16(p+32), disk = try u16(p+34)
             let attributes = try u32(p+38), local = try u32(p+42)
-            guard version <= 20, flags & ~0x0808 == 0, [0,8].contains(method), disk == 0,
+            guard version <= 20, flags & ~(method == 8 ? 0x080e : 0x0808) == 0, [0,8].contains(method), disk == 0,
                   compressed < 0xffffffff, expanded < 0xffffffff, local < 0xffffffff,
                   n > 0, n <= 255, p + 46 + n + e + c <= end else { throw OfflineDocumentError.invalidArchive }
             let rawName = Array(b[(p+46)..<(p+46+n)])
@@ -114,14 +112,15 @@ private enum OfficeZIPPreflight {
             guard ![3,19].contains(os) || mode == 0 || mode == (directory ? 0x4000 : 0x8000),
                   attributes & 0x10 == 0 || directory else { throw OfflineDocumentError.unsafeArchive }
             let lower = name.lowercased()
-            guard !lower.hasSuffix(".bin"), !lower.contains("/embeddings/"), !lower.contains("/activex/"),
+            guard !lower.contains("/embeddings/"), !lower.contains("/activex/"),
                   !lower.contains("vbaproject"), !lower.contains("macrosheets/") else { throw OfflineDocumentError.unsafeArchive }
-            guard expanded <= limits.maximumEntryBytes, expanded <= limits.maximumExpandedBytes - expandedTotal,
-                  expanded <= max(1,compressed) * limits.maximumExpansionRatio,
-                  compressed <= data.count, (method != 0 || compressed == expanded),
-                  (expanded != 0 || compressed == 0), (!directory || (compressed == 0 && expanded == 0 && method == 0 && crc == 0)) else {
-                throw OfflineDocumentError.limit("The Office package exceeds its entry, total byte, or expansion limits.")
-            }
+            let inertPrinter = lower.range(of: #"^(word|xl)/printersettings/printersettings[0-9]+\.bin$"#,options: .regularExpression) != nil
+            guard !lower.hasSuffix(".bin") || inertPrinter else { throw OfflineDocumentError.unsupportedBinaryPart }
+            guard expanded <= limits.maximumEntryBytes else { throw OfflineDocumentError.rejectedAt(.declaredEntryBytes) }
+            guard expanded <= limits.maximumExpandedBytes - expandedTotal else { throw OfflineDocumentError.rejectedAt(.declaredTotalBytes) }
+            guard expanded <= max(1,compressed) * limits.maximumExpansionRatio else { throw OfflineDocumentError.rejectedAt(.declaredExpansionRatio) }
+            guard compressed <= data.count, (method != 0 || compressed == expanded),
+                  (method != 8 || compressed > 0), (!directory || (compressed == 0 && expanded == 0 && method == 0 && crc == 0)) else { throw OfflineDocumentError.invalidArchive }
             expandedTotal += expanded
             try checkExtra(p+46+n,e)
             guard local <= centralStart - 30, try u32(local) == 0x04034b50,
@@ -148,6 +147,7 @@ private enum OfficeZIPPreflight {
         guard p == end else { throw OfflineDocumentError.invalidArchive }
         var cursor = 0
         for r in ranges.sorted(by: { $0.lowerBound < $1.lowerBound }) {
+            guard r.lowerBound >= cursor else { throw OfflineDocumentError.rejectedAt(.archiveOverlap) }
             guard r.lowerBound == cursor, r.upperBound > cursor else { throw OfflineDocumentError.invalidArchive }
             cursor = r.upperBound
         }

@@ -37,7 +37,7 @@ def metadata(data):
       crc,compressed,expanded=u32(p+16),u32(p+20),u32(p+24)
       n,e,c,disk=u16(p+28),u16(p+30),u16(p+32),u16(p+34)
       attr,local=u32(p+38),u32(p+42)
-      if version>20 or flags & ~0x0808 or method not in [0,8] or disk or not 0<n<=255 or p+46+n+e+c>end:raise Rejected('unsupported ZIP profile')
+      if version>20 or flags & ~(0x080e if method==8 else 0x0808) or method not in [0,8] or disk or not 0<n<=255 or p+46+n+e+c>end:raise Rejected('unsupported ZIP profile')
       raw=data[p+46:p+46+n]
       if not all(32<=b<127 for b in raw):raise Rejected('name encoding')
       name=raw.decode();parts=name.removesuffix('/').split('/');directory=name.endswith('/')
@@ -45,8 +45,12 @@ def metadata(data):
       folded.add(name.lower());mode=(attr>>16)&0xf000
       if ((made>>8) in [3,19] and mode not in [0,0x4000 if directory else 0x8000]) or (attr&0x10 and not directory):raise Rejected('link/type')
       lower=name.lower()
-      if lower.endswith('.bin') or any(x in lower for x in ['/embeddings/','/activex/','vbaproject','macrosheets/']):raise Rejected('executable part')
-      if expanded>4*1024*1024 or total+expanded>32*1024*1024 or expanded>max(1,compressed)*200 or compressed>len(data) or (method==0 and expanded!=compressed) or (expanded==0 and compressed!=0) or (directory and (compressed or expanded or method or crc)):raise Rejected('declared resource bound')
+      if any(x in lower for x in ['/embeddings/','/activex/','vbaproject','macrosheets/']):raise Rejected('executable part')
+      if lower.endswith('.bin') and not re.fullmatch(r'(word|xl)/printersettings/printersettings[0-9]+\.bin',lower):raise Rejected('unsupported binary part')
+      if expanded>4*1024*1024:raise Rejected('declaredEntryBytes')
+      if total+expanded>32*1024*1024:raise Rejected('declaredTotalBytes')
+      if expanded>max(1,compressed)*200:raise Rejected('declaredExpansionRatio')
+      if compressed>len(data) or (method==0 and expanded!=compressed) or (method==8 and compressed==0) or (directory and (compressed or expanded or method or crc)):raise Rejected('ZIP sizes/profile')
       total+=expanded;extra(p+46+n,e)
       if local>start-30 or u32(local)!=0x04034b50 or u16(local+4)!=version or u16(local+6)!=flags or u16(local+8)!=method or u16(local+26)!=n:raise Rejected('local mismatch')
       le=u16(local+28);content=local+30+n+le
@@ -60,7 +64,8 @@ def metadata(data):
     if p!=end:raise Rejected('central end')
     cursor=0
     for a,b in sorted(ranges):
-      if a!=cursor or b<=cursor:raise Rejected('overlap or gap')
+      if a<cursor:raise Rejected('archiveOverlap')
+      if a!=cursor or b<=cursor:raise Rejected('gap')
       cursor=b
     if cursor!=start:raise Rejected('local end')
     return result
@@ -71,7 +76,9 @@ def stream_oracle(data, entries):
       payload=data[offset:offset+compressed];actual=0;checksum=0;chunks=[]
       def consume(chunk):
         nonlocal actual,total,checksum
-        if len(chunk)>min(4*1024*1024-actual,32*1024*1024-total,expanded-actual):raise Rejected('actual streamed bytes')
+        if len(chunk)>4*1024*1024-actual:raise Rejected('streamedEntryBytes')
+        if len(chunk)>32*1024*1024-total:raise Rejected('streamedTotalBytes')
+        if len(chunk)>expanded-actual:raise Rejected('streamedDeclaredBytes')
         actual+=len(chunk);total+=len(chunk);checksum=zlib.crc32(chunk,checksum)
         if name.endswith(('.xml','.rels')):chunks.append(chunk)
       if method==0:
@@ -84,7 +91,7 @@ def stream_oracle(data, entries):
           if not pending and not chunk:raise Rejected('no decoder progress')
         else:raise Rejected('callback bound')
         if not decoder.eof:raise Rejected('deflate end')
-      if actual!=expanded or checksum!=crc:raise Rejected('actual bytes/CRC')
+      if actual!=expanded or checksum!=crc:raise Rejected('archiveIntegrity')
       result[name]=b''.join(chunks)
     return result
 
@@ -92,6 +99,10 @@ def bounded_xml(data):
     try:text=data.decode('utf8')
     except UnicodeError as e:raise Rejected('encoding') from e
     if '\0' in text or '<!DOCTYPE' in text.upper() or '<!ENTITY' in text.upper():raise Rejected('entities/encoding')
+    declaration=re.match(r'\ufeff?<\?xml(?=[ \t\r\n])(.{0,1024}?)\?>',text,re.S)
+    if declaration:
+      enc=re.search(r'''[ \t\r\n]encoding[ \t\r\n]*=[ \t\r\n]*(["'])([A-Za-z][A-Za-z0-9._-]*)\1''',declaration.group())
+      if enc and enc.group(2).lower()!='utf-8':raise Rejected('encoding')
     try:root=ET.fromstring(data)
     except ET.ParseError as e:raise Rejected('XML grammar') from e
     nodes=0;textbytes=0
@@ -107,7 +118,7 @@ def bounded_xml(data):
 
 class FixtureChecks(unittest.TestCase):
     def test_manifest_bytes_and_hashes(self):
-      m=json.loads((FIX/'manifest.json').read_text());self.assertEqual(len(m),49)
+      m=json.loads((FIX/'manifest.json').read_text());self.assertEqual(len(m),74)
       for n,a in m.items():
         d=(FIX/n).read_bytes();self.assertEqual(len(d),a['bytes'],n);self.assertEqual(hashlib.sha256(d).hexdigest(),a['sha256'],n)
     def test_benign_zip_and_streaming_profiles(self):
@@ -147,8 +158,8 @@ class FixtureChecks(unittest.TestCase):
       with self.assertRaises(csv.Error):list(csv.reader(io.StringIO((FIX/'bad.csv').read_text()),strict=True))
     def test_native_test_fixture_references_are_resolvable(self):
       source='\n'.join(p.read_text() for p in (ROOT/'Tests').glob('*.swift'))
-      names=set(re.findall(r'"([^"\n]+\.(?:docx|xlsx|csv|tsv))"',source)) - {'link.docx'}
-      self.assertGreaterEqual(len(names),49)
+      names=set(re.findall(r'"([^"\n]+\.(?:docx|xlsx|csv|tsv))"',source)) - {'link.docx','pipe.docx'}
+      self.assertGreaterEqual(len(names),74)
       for n in names:self.assertTrue((FIX/n).is_file(),n)
     def test_production_security_contracts_and_no_remote_execution_surface(self):
       sources={p.name:p.read_text() for p in (ROOT/'JarvisEVO/Services').glob('*.swift')};all_source='\n'.join(sources.values())

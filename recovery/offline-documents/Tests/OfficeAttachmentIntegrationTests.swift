@@ -48,6 +48,23 @@ final class OfficeAttachmentIntegrationTests: XCTestCase {
         service.remove(a)
         XCTAssertNotNil(service.url(for: b))
     }
+    func testCancellationAfterStagingAndDuringExtractionRemovesOwnedOriginal() async throws {
+        let source = try fixture("paragraphs-tables.docx")
+        for phase in [OfficeReadPhase.stagedOriginal,.decompressedChunk] {
+            let reader = OfflineDocumentReader(control: OfficeReadControl { current in
+                if current == phase { withUnsafeCurrentTask { $0?.cancel() } }
+            })
+            let owned = try AttachmentService(directory: service.directory,officeReader: reader)
+            let before = try FileManager.default.contentsOfDirectory(atPath: service.directory.path)
+            let cancelled = await Task.detached {
+                do { _ = try owned.importFile(at: source); return false }
+                catch is CancellationError { return true }
+                catch { return false }
+            }.value
+            XCTAssertTrue(cancelled)
+            XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: service.directory.path),before)
+        }
+    }
     func testOldHistoryStillDecodesWithoutNewFields() throws {
         let json = #"{"id":"DC6EE924-6307-46F8-A232-BEFEB4B4F733","name":"notes.txt","relativePath":"notes.txt","mediaType":"text/plain","byteCount":5,"extractedText":"hello"}"#
         let old = try JSONDecoder().decode(ChatAttachment.self,from: Data(json.utf8))

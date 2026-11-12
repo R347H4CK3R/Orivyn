@@ -1,0 +1,17 @@
+test_benign_zip_and_streaming_profiles (__main__.FixtureChecks.test_benign_zip_and_streaming_profiles) ... ok
+test_csv_fixture_semantics (__main__.FixtureChecks.test_csv_fixture_semantics) ... ok
+test_dependency_provenance_and_license (__main__.FixtureChecks.test_dependency_provenance_and_license) ... ok
+test_frozen_base_sources_remain_identical_to_patch_inputs (__main__.FixtureChecks.test_frozen_base_sources_remain_identical_to_patch_inputs) ... ok
+test_malicious_zip_metadata_and_real_streamed_bytes (__main__.FixtureChecks.test_malicious_zip_metadata_and_real_streamed_bytes) ... ok
+test_manifest_bytes_and_hashes (__main__.FixtureChecks.test_manifest_bytes_and_hashes) ... ok
+test_meaningful_docx_fixture_content (__main__.FixtureChecks.test_meaningful_docx_fixture_content) ... ok
+test_native_test_fixture_references_are_resolvable (__main__.FixtureChecks.test_native_test_fixture_references_are_resolvable) ... ok
+test_production_security_contracts_and_no_remote_execution_surface (__main__.FixtureChecks.test_production_security_contracts_and_no_remote_execution_surface) ... ok
+test_relationship_escape_and_external_targets_are_real (__main__.FixtureChecks.test_relationship_escape_and_external_targets_are_real) ... ok
+test_spreadsheet_fixture_has_real_cell_type_and_cache_coverage (__main__.FixtureChecks.test_spreadsheet_fixture_has_real_cell_type_and_cache_coverage) ... ok
+test_xml_attacks_are_real (__main__.FixtureChecks.test_xml_attacks_are_real) ... ok
+
+----------------------------------------------------------------------
+Ran 12 tests in 0.015s
+
+OK

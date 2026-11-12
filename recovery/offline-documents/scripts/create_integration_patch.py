@@ -11,6 +11,8 @@ def propose(path, edit):
     references[path]=hashlib.sha256(before.encode()).hexdigest()
     patch.extend(difflib.unified_diff(before.splitlines(True),after.splitlines(True),fromfile='a/'+path,tofile='b/'+path))
 def attachment(s):
+    s=s.replace('    private let imageService: ImageAttachmentService','    private let imageService: ImageAttachmentService\n    private let officeReader: OfflineDocumentReader')
+    s=s.replace('    init(directory: URL) throws {','    init(directory: URL, officeReader: OfflineDocumentReader = OfflineDocumentReader()) throws {\n        self.officeReader = officeReader')
     s=s.replace('        let isPDF = type?.conforms(to: .pdf) == true','''        let officeFormat = OfflineDocumentFormat(filenameExtension: source.pathExtension)
         // Old binary/macro formats are not plain text, even if a provider reports a broad text type.
         guard !["doc", "xls", "docm", "xlsm", "xlsb"].contains(source.pathExtension.lowercased()) else { throw AttachmentError.unsupportedType }
@@ -22,15 +24,16 @@ def attachment(s):
             if officeFormat != nil {
                 // Keep the exact bounded immutable snapshot as the private original. No second
                 // source read can swap content between size checking, staging and extraction.
-                let snapshot = try OfflineDocumentReader().boundedSnapshot(at: source)
+                let snapshot = try officeReader.boundedSnapshot(at: source)
                 try snapshot.write(to: destination, options: .atomic)
+                try officeReader.checkpoint(.stagedOriginal)
             } else {
                 try FileManager.default.copyItem(at: source, to: destination)
             }''')
     s=s.replace('''            if isPDF {
                 guard let document''','''            if let officeFormat {
-                let snapshot = try OfflineDocumentReader().boundedSnapshot(at: destination)
-                extracted = try OfflineDocumentReader().read(data: snapshot, format: officeFormat).modelContext
+                let snapshot = try officeReader.boundedSnapshot(at: destination)
+                extracted = try officeReader.read(data: snapshot, format: officeFormat).modelContext
             } else if isPDF {
                 guard let document''')
     s=s.replace('mediaType: isPDF ? "application/pdf" : "text/plain"','mediaType: officeFormat?.mediaType ?? (isPDF ? "application/pdf" : "text/plain")')

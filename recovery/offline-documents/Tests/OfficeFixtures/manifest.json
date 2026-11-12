@@ -3,6 +3,10 @@
     "bytes": 976,
     "sha256": "db86966d2d62565f567e699337e8fa27cb0fb44c5eff4465742b34b48017956c"
   },
+  "array-formula.xlsx": {
+    "bytes": 2182,
+    "sha256": "c1ba80c2cbc4f846fa7f94020e410f0ec6f51521b4596e645dbc2376a478aeb2"
+  },
   "backslash.docx": {
     "bytes": 972,
     "sha256": "58f3d0430799d98dcaf33fa6827c8624184c0cb1a85d40e47599841b06d1dea3"
@@ -19,6 +23,10 @@
     "bytes": 2147,
     "sha256": "bfb3544596fc7eb732e30a7ce3b4e09463128e9fe8b9cf2a1224dfcbc430449a"
   },
+  "bad-formula-range.xlsx": {
+    "bytes": 2157,
+    "sha256": "f909b2b1141ef95850c4bcf5f236e66a2dbc9a1383a4b42b00f74b3fd9f137d1"
+  },
   "bad-shared-index.xlsx": {
     "bytes": 2141,
     "sha256": "9ce9a7866a0667635b7aee190e5d5918c97e4e6be5435b686df34d9001de8328"
@@ -28,8 +36,8 @@
     "sha256": "ff599f4ada05922e094eadd29f6ad6f9a5ee40eecd798152996e96942a789f64"
   },
   "bomb.docx": {
-    "bytes": 6079,
-    "sha256": "47a1bf9a450ce20c9d9d5f1d9041b2eb842070ed55602e0dda512183b8c79733"
+    "bytes": 1047,
+    "sha256": "c157102cb05587a51d84b1f24bedc66bd31902d9ef7c700dd7a78f576aeaf41d"
   },
   "cache-types.xlsx": {
     "bytes": 2252,
@@ -39,6 +47,14 @@
     "bytes": 990,
     "sha256": "4d1f2cc3563cba33279da19ead5582436013e58caf5837d8212370715f13b831"
   },
+  "combining.csv": {
+    "bytes": 32768,
+    "sha256": "23d3a454f44a465e02feee7cacaf4a5f0087703c8ca828efb55141c229d74efd"
+  },
+  "combining.docx": {
+    "bytes": 33552,
+    "sha256": "66a0bb4efa24d64a15f43667911512d5126463befa697bbe1d3abb61c518af7e"
+  },
   "date1904.xlsx": {
     "bytes": 2253,
     "sha256": "136c4fd025343c71d89b4f0aa47403d94757fb8997ad7b0e5235fdb1e36e6a89"
@@ -46,6 +62,10 @@
   "default-style.xlsx": {
     "bytes": 1872,
     "sha256": "5683f44476f56abc379f649c0ac317dc269632c952c5385a8c4977a8c3a34fd7"
+  },
+  "deflate-level-flags.docx": {
+    "bytes": 872,
+    "sha256": "cd7d76d8796b0ae9d2c63b25b4ea79c801cf2e3079da83d15045353514c84136"
   },
   "depth.docx": {
     "bytes": 751,
@@ -63,6 +83,10 @@
     "bytes": 990,
     "sha256": "b1e7f02ac9b0fadea8de62f718cad79b447dba4c3dff6d4e146d6251d94fb89c"
   },
+  "empty-deflate-part.docx": {
+    "bytes": 968,
+    "sha256": "90200fdb5b2a43e9ccc0ef0afd758a2e9fe9f159e8359ceb4ad993d9c817bffe"
+  },
   "empty.docx": {
     "bytes": 735,
     "sha256": "65a9415ea86a4d1dc680f00269b7cf00d9fda85255edd3387ee66d68e77a621d"
@@ -74,6 +98,10 @@
   "entity.docx": {
     "bytes": 802,
     "sha256": "a4019a43d31694221e54a767c3c9910ee8661d83244e4354b89efe243ad4a74d"
+  },
+  "entry-size.docx": {
+    "bytes": 36098,
+    "sha256": "fb6b64ee95d5222a881c65d5712dc5dfd185ae7d061d57d8723a72c85d46d57c"
   },
   "escaped-strings.xlsx": {
     "bytes": 2264,
@@ -87,9 +115,25 @@
     "bytes": 872,
     "sha256": "fad39b02fe404b9a81ec3ff0519c5f1b34bf73f7e6bcadaf9ca0a51e91a97079"
   },
+  "formula-anchor-outside.xlsx": {
+    "bytes": 2154,
+    "sha256": "55f9899596948ffed80606844febd01bc8d5a61a37f7470fb212db22efcebc26"
+  },
   "header-mismatch.docx": {
     "bytes": 872,
     "sha256": "26d1258c8f321b561714a370ed8b1ca02d3c280d29d2f9adc70159eecd9dc519"
+  },
+  "inherited-styles.xlsx": {
+    "bytes": 2173,
+    "sha256": "09b2b4a110defd7836c4045461baea02563c2183ad0ab5d5829b0925a23466ba"
+  },
+  "invalid-after-cap.csv": {
+    "bytes": 1015,
+    "sha256": "3859a4580c124445f20e595900cc9ba014f3a2cdb174afdea18c3db741612ea6"
+  },
+  "invalid-after-cap.xlsx": {
+    "bytes": 61560,
+    "sha256": "01ff41931e7095597b727314f607af0c4d564793486faeca69d27717762f34cf"
   },
   "invalid-surrogate.xlsx": {
     "bytes": 2240,
@@ -128,8 +172,12 @@
     "sha256": "2e5f40a69753d970e8530f5107aae76efa2de330506f8e3f100690b20eb6a70c"
   },
   "overlap.docx": {
-    "bytes": 872,
-    "sha256": "644b3fa98ce93475ba8b848a41c93dd0808b32d48e94b4c261f14fd3af304f5a"
+    "bytes": 1087,
+    "sha256": "f372decf7adf77737bc5d51510b224d8d5a8280bf9632f45746f7e4b6d38ad3b"
+  },
+  "oversized-formula-range.xlsx": {
+    "bytes": 2163,
+    "sha256": "9fcfc469eaf97f50793c2fc86dbb2941b5cb5fb248f34bd52593e6608e2f6bc2"
   },
   "paragraphs-tables.docx": {
     "bytes": 872,
@@ -139,6 +187,22 @@
     "bytes": 986,
     "sha256": "7eabe9c421d7acf64ea9e1e36b48afb766145e7741d89406194fb142b10a2203"
   },
+  "printer-settings.docx": {
+    "bytes": 1067,
+    "sha256": "65a2b9fc8d8db77fbbed54d8e2571a14f2ca155dda5ae5037c02328f30b92e9b"
+  },
+  "producer-openpyxl.xlsx": {
+    "bytes": 4907,
+    "sha256": "2e54de2becf31a44b3a8b4cea32c993c7db6b7e73b29e02f3bcb1def8f87ab12"
+  },
+  "producer-python-docx.docx": {
+    "bytes": 36729,
+    "sha256": "43bcbb175c3b5f63dd1325cb1a3411652e31669dcd544ad2367978bcf2af871c"
+  },
+  "producer-xlsxwriter.xlsx": {
+    "bytes": 5295,
+    "sha256": "14e9132993aaab4eacaf3e5624918b5bac397c7f39960be6c41c5d0a79ec9be0"
+  },
   "quote-in-bare.csv": {
     "bytes": 6,
     "sha256": "748bef41da40296ba8e71bb44293eb2aaf4eaa4a3851b512904d6f64375f5b2a"
@@ -146,6 +210,14 @@
   "relationship-traversal.xlsx": {
     "bytes": 2240,
     "sha256": "45bd3ff002e8c0c6239ddfe7d8df395bb7af4c32b2b90bd1cf17e2dd5c3f5175"
+  },
+  "repeated-combining.xlsx": {
+    "bytes": 61549,
+    "sha256": "35887dfd6a1b44851c00609db7a6db8b05d9b4504c9961fb5a01f99cdc4e8b6f"
+  },
+  "repeated-large-shared.xlsx": {
+    "bytes": 61550,
+    "sha256": "e290350602c4df821c4b0247d8ee9a0d09e143a00563d8ee90da9535fe01cdc4"
   },
   "rooted-target.xlsx": {
     "bytes": 2278,
@@ -163,9 +235,25 @@
     "bytes": 18,
     "sha256": "228a4bff9c91e5e838129bd74709c370313c48a627c9fea469207f823df0c558"
   },
+  "style-zero-custom.xlsx": {
+    "bytes": 2138,
+    "sha256": "0a77a7c537b00d48ba12bec57bc465347036771b2f86a3af3896a4681406b55b"
+  },
+  "style-zero-date.xlsx": {
+    "bytes": 2139,
+    "sha256": "970a51ab02dfb9b2e021beae16f5c831d98f328394a698e7b2dab8ad65a0759a"
+  },
   "symlink.docx": {
     "bytes": 872,
     "sha256": "cafb0c5199ffa6e391db7140807526886779ad03f9a14f450efa77f124a61b44"
+  },
+  "too-many-formula-ranges.xlsx": {
+    "bytes": 3433,
+    "sha256": "b8158b5ddc8240e63216392d6e8439130d7a302dc1332d142e1db723e4775518"
+  },
+  "total-size.docx": {
+    "bytes": 263060,
+    "sha256": "7fd98a5dad7ca5e5af1554c3496d46c2aee0b35d3642d598c35a948324146562"
   },
   "traversal.docx": {
     "bytes": 972,
@@ -190,6 +278,18 @@
   "utf16-xml.docx": {
     "bytes": 802,
     "sha256": "5fcd18fb490a1862169d9fd82897e796af51b5719e5b3db9e9b5fb68299330a4"
+  },
+  "xml-declaration-misleading.docx": {
+    "bytes": 812,
+    "sha256": "1023ccbebfe7b8b163d845fbe3155aa19a1ffc015663d99d9a74f36d4d098e94"
+  },
+  "xml-declaration-no-encoding.docx": {
+    "bytes": 796,
+    "sha256": "35faeadd6a99d6e4277fe23bb52233831211bacba75e3a29d58173301d786271"
+  },
+  "xml-declaration-spacing.docx": {
+    "bytes": 809,
+    "sha256": "624c0c78454ede32e1f85b2ff1e4619672ff422384275cb7edf4156d1d3cbb6a"
   },
   "zip64.docx": {
     "bytes": 872,

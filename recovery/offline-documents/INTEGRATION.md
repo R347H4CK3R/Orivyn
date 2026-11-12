@@ -9,13 +9,13 @@ The coordinator should independently review and integrate only after the frozen 
    - `BoundedOfficeXML.swift`
    - `OfficeTextExtractor.swift`
    - `DelimitedDocumentReader.swift`
-3. Copy the two new XCTest files into `Tests/`, and the entire `Tests/OfficeFixtures/` folder into the same relative location. Do not overwrite old tests. These fixtures belong to the **test bundle only**, not the production app.
+3. Copy the three new XCTest files into `Tests/`, and the entire `Tests/OfficeFixtures/` folder into the same relative location. Do not overwrite old tests. These fixtures belong to the **test bundle only**, not the production app.
 4. Review and apply `proposed/office-integration.diff` to the chosen non-frozen integration checkout. It changes only:
    - AttachmentService: recognize four supported extensions; stage an exact bounded immutable local snapshot under UUID + real extension; extract format notes/text; preserve the existing return/schema and failed-import cleanup.
    - FileAttachmentPicker: add extension-derived DOCX/XLSX/CSV/TSV UTTypes without broadening the picker to arbitrary data.
    - XcodeGen: add the pinned package/product and test folder resources.
 5. Copy `provenance/ZIPFoundation-LICENSE.txt` into `ThirdPartyNotices/ZIPFoundation-LICENSE.txt`. Preserve the MIT notice in redistributed source/binary notices using the project's existing third-party notice procedure. API snapshots in provenance are review evidence, not files to compile into the app.
-6. Resolve/generate/build using the project's normal XcodeGen/native workflow. Verify Package.resolved actually records the commit below, then run the two new XCTest classes and the existing attachment/picker/image/history/app regressions. Use a currently verified local iOS simulator destination, not a guessed simulator name. This authoring host cannot execute these steps.
+6. Resolve/generate/build using the project's normal XcodeGen/native workflow. Verify Package.resolved actually records the commit below, then run all three new XCTest classes and the existing attachment/picker/image/history/app regressions. Use a currently verified local iOS simulator destination, not a guessed simulator name. This authoring host cannot execute these steps.
 
 ## Exact dependency wiring
 
@@ -63,7 +63,7 @@ let result = try reader.read(at: userSelectedOrPrivatelyStagedURL)
 // Preserve the bounded original bytes with format.rawValue extension and format.mediaType.
 ```
 
-The proposal uses `boundedSnapshot(at:)` when staging, then `read(data:format:)` from the private original. Neither method uploads, runs Office code, or extracts archive entries into filesystem paths. Security-scoped URL access remains owned by AttachmentService's existing import method.
+The proposal uses an injected immutable `OfflineDocumentReader` (default normal reader) and `boundedSnapshot(at:)` when staging, then `read(data:format:)` from the private original. The internal post-stage checkpoint preserves real Task cancellation/cleanup and makes regression tests deterministic; its default only checks Task cancellation. No runtime setting or user-facing hook is added. Neither method uploads, runs Office code, or extracts archive entries into filesystem paths. Security-scoped URL access remains owned by AttachmentService's existing import method.
 
 No new Codable property is required. `ChatAttachment` and `ChatMessage.promptContent` remain backward compatible; the latter already treats document text as untrusted. Limitation and cache/truncation notices are frontloaded in `modelContext` so the existing prompt cap does not hide them.
 
@@ -72,6 +72,7 @@ No new Codable property is required. `ChatAttachment` and `ChatMessage.promptCon
 ```sh
 python scripts/generate_fixtures.py
 python scripts/check_office_delivery.py
+python scripts/check_review_delivery.py
 cd /workspace/shared/Jarvis-EVO-recovery-next
 git apply --check /workspace/shared/Jarvis-EVO-office-work/proposed/office-integration.diff
 ```

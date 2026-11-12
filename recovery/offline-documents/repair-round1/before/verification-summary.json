@@ -1,0 +1,13 @@
+{
+  "python_scripts_ast": "passed",
+  "fixture_regeneration_deterministic": "passed",
+  "fixture_count": 49,
+  "proposed_yaml_and_wiring": "passed",
+  "native_tools": {
+    "swift": null,
+    "xcodebuild": null,
+    "xcodegen": null
+  },
+  "native_swift_tests": "not run; no Swift/Xcode available",
+  "frozen_tree_modified_by_this_work": false
+}

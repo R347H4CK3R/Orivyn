@@ -12,6 +12,6 @@ test_spreadsheet_fixture_has_real_cell_type_and_cache_coverage (__main__.Fixture
 test_xml_attacks_are_real (__main__.FixtureChecks.test_xml_attacks_are_real) ... ok
 
 ----------------------------------------------------------------------
-Ran 12 tests in 0.014s
+Ran 12 tests in 0.015s
 
 OK

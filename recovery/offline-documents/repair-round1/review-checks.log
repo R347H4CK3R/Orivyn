@@ -1,0 +1,17 @@
+test_before_manifest_stays_exact (__main__.ReviewChecks.test_before_manifest_stays_exact) ... ok
+test_byte_sink_reference_charges_escapes_and_stops_without_repeated_value_copies (__main__.ReviewChecks.test_byte_sink_reference_charges_escapes_and_stops_without_repeated_value_copies) ... ok
+test_cancellation_and_fifo_contracts_are_present (__main__.ReviewChecks.test_cancellation_and_fifo_contracts_are_present) ... ok
+test_combining_fixtures_are_not_zip_bombs_or_oversized_strings (__main__.ReviewChecks.test_combining_fixtures_are_not_zip_bombs_or_oversized_strings) ... ok
+test_library_export_provenance_and_readability (__main__.ReviewChecks.test_library_export_provenance_and_readability) ... ok
+test_repeated_string_fixture_reaches_document_layer_and_is_high_amplification (__main__.ReviewChecks.test_repeated_string_fixture_reaches_document_layer_and_is_high_amplification) ... ok
+test_safe_deflate_and_printer_profiles_are_real (__main__.ReviewChecks.test_safe_deflate_and_printer_profiles_are_real) ... ok
+test_source_has_no_full_row_or_full_value_rendering_and_uses_finite_ranges (__main__.ReviewChecks.test_source_has_no_full_row_or_full_value_rendering_and_uses_finite_ranges) ... ok
+test_sparse_array_formula_and_malicious_ranges_are_real (__main__.ReviewChecks.test_sparse_array_formula_and_malicious_ranges_are_real) ... ok
+test_stage_specific_adversarial_fixtures (__main__.ReviewChecks.test_stage_specific_adversarial_fixtures) ... ok
+test_style_zero_and_inherited_style_metadata_is_real (__main__.ReviewChecks.test_style_zero_and_inherited_style_metadata_is_real) ... ok
+test_xml_declarations_are_tested_in_actual_parts (__main__.ReviewChecks.test_xml_declarations_are_tested_in_actual_parts) ... ok
+
+----------------------------------------------------------------------
+Ran 12 tests in 0.429s
+
+OK

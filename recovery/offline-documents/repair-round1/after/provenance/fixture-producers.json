@@ -1,0 +1,20 @@
+{
+  "producer-python-docx.docx": {
+    "producer": "python-docx",
+    "version": "1.2.0",
+    "normalization": "ZIP metadata timestamps/permissions/compression normalized; core created/modified timestamps fixed to 2020-01-01. Other producer-emitted XML/parts unchanged.",
+    "native_office_application_used": false
+  },
+  "producer-openpyxl.xlsx": {
+    "producer": "openpyxl",
+    "version": "3.1.5",
+    "normalization": "ZIP metadata timestamps/permissions/compression normalized; core created/modified timestamps fixed to 2020-01-01. Other producer-emitted XML/parts unchanged.",
+    "native_office_application_used": false
+  },
+  "producer-xlsxwriter.xlsx": {
+    "producer": "XlsxWriter",
+    "version": "3.2.9",
+    "normalization": "ZIP metadata timestamps/permissions/compression normalized; core created/modified timestamps fixed to 2020-01-01. Other producer-emitted XML/parts unchanged.",
+    "native_office_application_used": false
+  }
+}
