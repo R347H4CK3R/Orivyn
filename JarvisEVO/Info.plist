@@ -24,6 +24,8 @@
 	<string>Orivyn transcribes your speech on this iPhone when you start dictation or voice conversation.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Only when you tap Get current location, Orivyn asks iOS for a one-time location displayed on this screen. It is not sent to a model or server.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Only when you connect to your chosen plugin server, Orivyn may access that server on your local network. Chats and files are not sent automatically.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Take a photo to attach and recognize its text on this iPhone.</string>
 	<key>UIApplicationSceneManifest</key>

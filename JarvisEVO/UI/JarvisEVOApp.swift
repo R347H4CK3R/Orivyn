@@ -66,6 +66,7 @@ struct JarvisEVOApp: App {
             }
             let model = AppModel(store: store, attachmentService: attachments, modelStore: modelStore, defaults: defaults)
             await model.bootstrap()
+            model.configurePlugins(directory: root.appendingPathComponent("Plugins", isDirectory: true))
             ExternalWorkspaceController.shared.configure(model: model)
             self.model = model
             OrivynShortcuts.updateAppShortcutParameters()

@@ -22,20 +22,23 @@
 
 ### Task 1: Transport and schema
 - [x] Tests and spec authored before production.
-- [ ] Observe actual `plugin.add` missing-control native RED.
-- [ ] Implement only worker-owned Core/MCPTypes.swift, Core/MCPToolSchema.swift, Services/MCPHTTPClient.swift.
+- [x] Observe actual `plugin.add` missing-control native RED (run 6af601b8, line 18, 16.503 seconds).
+- [x] Implement only worker-owned Core/MCPTypes.swift, Core/MCPToolSchema.swift, Services/MCPHTTPClient.swift.
 - [ ] Run contract tests including real URLSession receiving/redirect boundaries; inspect errors, not only test counts.
 
 ### Task 2: Permission broker and durable outcomes
 Files: Core/PluginExecution.swift, Services/PluginBroker.swift, Services/PluginPersistence.swift, Services/PluginCredentialStore.swift, Tests/PluginBrokerTests.swift.
-- [ ] Author tests for connection ownership, immutable one-use review, write-ahead records, unknown outcome recovery and no implicit model-context disclosure.
-- [ ] Implement client injection using MCPHTTPClient as the production implementation, not fake runtime branches.
-- [ ] Persist metadata/logs atomically with protected files; retain unreadable bytes; keep secrets in separate Keychain service.
+- [x] Author tests for connection ownership, immutable one-use review, write-ahead records, unknown outcome recovery and no implicit model-context disclosure.
+- [x] Implement client injection using MCPHTTPClient as the production implementation, not fake runtime branches.
+- [x] Persist metadata/logs atomically with protected files; retain unreadable bytes; keep secrets in separate Keychain service.
 - [ ] Run native tests, repair real failures, and review cancellation across every await.
 
 ### Task 3: Real plugin controls
 Files: UI/PluginConnectionsView.swift, UI/WorkspaceViews.swift, UITests/PluginConnectionUITests.swift.
-- [ ] Add explicit endpoint/token/connect/install, bounded schema display, JSON argument editor, exact call review and outcome log.
+- [x] Add explicit endpoint/token/connect/install, bounded schema display, JSON argument editor, exact call review and outcome log.
 - [ ] Preserve draft/history/provider on navigation and cancel. Disable duplicate mutation during operations.
 - [ ] Verify native invalid endpoint/no-call/cancel and actual configured server end-to-end only when an authorized endpoint is available.
 - [ ] Update the 1.0.0 acceptance ledger; do not call configured tools, agent workflow, remote desktop or full computer verified without evidence.
+
+## Review checkpoint before native gate
+41 MCP transport/schema cases and 25 broker/journal/review cases are authored, not yet native executed. Three regression areas intentionally await actual RED before repair: pre-canceled connect/run dispatch, credential clearing in the open form on background, and outcome persistence failure after server response. No real external provider or credential was used. The plugin gate must not be described as end-to-end provider validation.

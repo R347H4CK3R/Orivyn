@@ -25,7 +25,7 @@ struct OrivynWorkspaceView: View {
             LocalSpaceView(model: model, imagesOnly: section == .images, openChat: openChat).id(section)
         case .projects: LocalProjectsView(model: model, openChat: openChat)
         case .customize: CustomizeWorkspaceView(model: model, openModels: openModels)
-        case .plugins: IntegrationCatalogView()
+        case .plugins: IntegrationCatalogView(broker: model.plugins, setupError: model.pluginSetupError)
         case .studio:
             CapabilityNoticeView(title: "Your coding workspace", icon: "chevron.left.forwardslash.chevron.right",
                 detail: "Ask your selected model to explain or write code. Orivyn cannot yet run builds, edit remote repositories, or connect to a computer. Generated code needs review and testing.") {
@@ -248,7 +248,7 @@ struct CustomizeWorkspaceView: View {
         Form {
             if let error = model.workspace.loadError { Section { Text(error).foregroundStyle(.red) } }
             Section {
-                NavigationLink { IntegrationCatalogView().navigationTitle("Plugins") } label: { row("Plugins", icon: "puzzlepiece.extension", color: .mint, detail: "Local tools") }
+                NavigationLink { IntegrationCatalogView(broker: model.plugins, setupError: model.pluginSetupError).navigationTitle("Plugins") } label: { row("Plugins", icon: "puzzlepiece.extension", color: .mint, detail: "Local tools") }
                 NavigationLink { MemoryView(model: model) } label: { row("Memory", icon: "book.closed", color: .orange, detail: "\(model.memories.count) notes") }
                 NavigationLink { BehaviorEditorView(workspace: model.workspace) } label: { row("Behavior", icon: "sparkle", color: .cyan, detail: model.workspace.behavior.style) }
             }
@@ -327,14 +327,18 @@ struct BehaviorEditorView: View {
 }
 
 struct IntegrationCatalogView: View {
+    var broker: PluginBroker?
+    var setupError: String?
     @State private var query = ""
     private let groups = ["Email", "Calendar", "Passwords", "Health", "Finances", "Browser", "Location"]
     var body: some View {
         List {
             Section {
-                Label("No external integrations connected", systemImage: "puzzlepiece.extension").font(.headline)
+                Label(broker?.activeConnection == nil ? "No external integrations connected" : "Reviewed plugin connected", systemImage: "puzzlepiece.extension").font(.headline)
                 Text("Connections in the reference recording belong to another app and do not transfer to Orivyn. No account data, credentials or permissions have been copied.").font(.footnote).foregroundStyle(.secondary)
             }
+            if let broker { PluginConnectionsSection(broker: broker) }
+            else if let setupError { Section { Text(setupError).font(.footnote).foregroundStyle(.red) } }
             Section("On this iPhone") {
                 if query.isEmpty || "Shortcuts sharing text".localizedCaseInsensitiveContains(query) {
                     NavigationLink { ShortcutsHelpView() } label: { Label("Shortcuts & sharing", systemImage: "square.and.arrow.up") }

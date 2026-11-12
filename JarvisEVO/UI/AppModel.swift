@@ -33,6 +33,8 @@ final class AppModel {
     var errorMessage: String?
     var statusMessage: String?
     let network = NetworkStatus()
+    private(set) var plugins: PluginBroker?
+    private(set) var pluginSetupError: String?
     let workspace: WorkspaceStore
     private(set) var providers: [ProviderOption] = []
     var selectedProviderID: String {
@@ -111,6 +113,11 @@ final class AppModel {
         self.automaticPreparer = automaticPreparer ?? LocalAutomaticModelPreparer(store: modelStore, network: network)
         self.automaticProviderFactory = automaticProviderFactory
         network.onAutomaticPathChange = { [weak self] path in self?.automaticNetworkChanged(to: path) }
+    }
+
+    func configurePlugins(directory: URL) {
+        do { plugins = try PluginBroker(directory: directory); pluginSetupError = nil }
+        catch { plugins = nil; pluginSetupError = error.localizedDescription }
     }
 
     var activeConversation: Conversation? { conversations.first { $0.id == selectedConversationID } }

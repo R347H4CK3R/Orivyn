@@ -174,6 +174,7 @@ struct RootView: View {
         }
         .onChange(of: scenePhase) { _, phase in
             ExternalWorkspaceController.shared.setForeground(phase == .active)
+            model.plugins?.setForeground(phase == .active)
             if phase != .active { model.cancelAutomaticPreparation() }
             if phase == .background { voiceSession?.controller.setForeground(false); stopAudio(); cancelTransfers() }
             else if phase == .active { voiceSession?.controller.setForeground(true) }

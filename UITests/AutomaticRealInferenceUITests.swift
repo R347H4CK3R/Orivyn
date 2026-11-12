@@ -29,6 +29,8 @@ final class AutomaticRealInferenceUITests: XCTestCase {
         app.buttons["conversation.new"].tap()
         send("Write a Python statement that prints 2 + 2. Return only the code.", app: app)
         let coder = finishedResponse(app: app, timeout: 210)
+        capture("Automatic coder output before quality assertion", app: app)
+        let output = XCTAttachment(string: coder); output.name = "Actual coder response"; output.lifetime = .keepAlways; add(output)
         XCTAssertTrue(coder.lowercased().contains("print"), "The downloaded coder must actually generate Python code.")
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Automatic: Qwen 2.5 Coder · 0.5B")).firstMatch.exists)
         capture("Automatic real coder-model response", app: app)

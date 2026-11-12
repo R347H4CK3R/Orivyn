@@ -139,3 +139,33 @@ workflows:
       - artifacts/automatic-real-inference/screenshots/**/*.json
       - artifacts/automatic-real-inference/screenshots/**/*.txt
       - artifacts/automatic-real-inference/Tests.xcresult
+
+  orivyn-plugin-regression:
+    name: Orivyn permissioned plugin regression proof
+    max_build_duration: 20
+    instance_type: mac_mini_m2
+    environment:
+      xcode: 26.0
+    scripts:
+      - name: Focused native plugin contracts and lifecycle
+        script: |
+          set -euo pipefail
+          if ! command -v xcodegen >/dev/null; then brew install xcodegen; fi
+          bash scripts/bootstrap_llama.sh
+          # Xcode builds the unit-test target even for UI-only selection.
+          # Its real-model resource must exist; optional source does not skip Copy Resources.
+          python3 scripts/download_test_model.py
+          xcodegen generate
+          mkdir -p artifacts/plugin-regression
+          xcrun simctl list devices available -j > artifacts/plugin-regression/simulators.json
+          SIMULATOR_ID=$(python3 -c 'import json; v=json.load(open("artifacts/plugin-regression/simulators.json"))["devices"]; ds=[d for r,items in v.items() if "iOS-26" in r for d in items if "iPhone" in d["name"] and d.get("isAvailable")]; ds.sort(key=lambda d:(d["name"]!="iPhone 16 Plus",d["name"])); print(ds[0]["udid"])')
+          xcrun simctl bootstatus "$SIMULATOR_ID" -b
+          # Real Core Location simulator input, explicitly not physical GPS evidence.
+          xcrun simctl location "$SIMULATOR_ID" set 37.3349,-122.0090
+          bash scripts/run_native_tests.sh artifacts/plugin-regression xcodebuild -project JarvisEVO.xcodeproj -scheme JarvisEVO -destination "platform=iOS Simulator,id=$SIMULATOR_ID" -parallel-testing-enabled NO -test-timeouts-enabled YES -default-test-execution-time-allowance 90 -maximum-test-execution-time-allowance 120 -resultBundlePath artifacts/plugin-regression/Tests.xcresult -only-testing:JarvisEVOTests/MCPClientTests -only-testing:JarvisEVOTests/PluginExecutionTests -only-testing:JarvisEVOTests/PluginJournalTests -only-testing:JarvisEVOTests/PluginBrokerTests -only-testing:JarvisEVOUITests/PluginConnectionUITests CODE_SIGNING_ALLOWED=NO test
+    artifacts:
+      - artifacts/plugin-regression/*.log
+      - artifacts/plugin-regression/screenshots/**/*.png
+      - artifacts/plugin-regression/screenshots/**/*.json
+      - artifacts/plugin-regression/screenshots/**/*.txt
+      - artifacts/plugin-regression/Tests.xcresult
