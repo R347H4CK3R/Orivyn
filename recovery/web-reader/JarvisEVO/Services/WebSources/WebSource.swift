@@ -9,6 +9,7 @@ struct WebSource: Codable, Sendable, Equatable, Identifiable {
     let mediaType: String
     let receivedBodyBytes: Int
     let title: String?
+    let titleTruncated: Bool
     let text: String
     let textTruncated: Bool
 }
@@ -26,7 +27,7 @@ enum WebSourceLimits {
 enum WebSourceError: Error, Sendable, Equatable, LocalizedError {
     case invalidURL, unsafeAddress, hostnameIsolationUnavailable, busy, offline
     case redirectBlocked, authenticationRequired, rateLimited, httpStatus(Int)
-    case encodedResponse, unsupportedContentType, bodyTooLarge, invalidResponse
+    case encodedResponse, unsupportedContentType, bodyTooLarge, responseLimitExceeded, invalidResponse
     case invalidUTF8, complexHTML, emptyContent, timeout, transportUnavailable, contextTooSmall, tooManySources
 
     var errorDescription: String? {
@@ -43,13 +44,14 @@ enum WebSourceError: Error, Sendable, Equatable, LocalizedError {
         case .encodedResponse: "This source requires an unsupported compressed response."
         case .unsupportedContentType: "Only UTF-8 HTML and plain-text sources are supported."
         case .bodyTooLarge: "The source exceeds the 256 KiB retrieval limit."
+        case .responseLimitExceeded: "The source exceeds the safe HTTP header or wire-data limits."
         case .invalidResponse: "The source returned an unsupported or invalid response."
         case .invalidUTF8: "The source is not valid UTF-8 text."
         case .complexHTML: "The source HTML is malformed or exceeds the safe extraction limits."
         case .emptyContent: "No readable text was extracted. Script-only and gated pages are not supported."
         case .timeout: "The source read timed out."
         case .transportUnavailable: "Live source retrieval is currently unavailable."
-        case .contextTooSmall: "The source metadata does not fit the requested context budget."
+        case .contextTooSmall: "The source metadata and a useful excerpt from every source do not fit the context budget."
         case .tooManySources: "Read between one and three explicit sources per request."
         }
     }
@@ -71,6 +73,7 @@ struct BoundedWebBody: Sendable {
 
 struct ExtractedWebText: Sendable {
     let title: String?
+    let titleTruncated: Bool
     let text: String
     let truncated: Bool
 }

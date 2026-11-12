@@ -1,0 +1,67 @@
+[
+  {
+    "path": "JarvisEVO/Services/WebSources/PinnedWebTransport.swift",
+    "before": "4a8266c7f1e2f01ca683e09f08c17d89f9f50cfeae17a7feaa1bdffb901481e1",
+    "after": "0f5db5c44417d9712663f9e805cc95119dec156d64e943b0d74219694ddef258"
+  },
+  {
+    "path": "JarvisEVO/Services/WebSources/WebDNSResolver.swift",
+    "before": "47b92c2bf79d25db2c564da10bafe5eb4b6f2898652c15cd41a3c83d9644d743",
+    "after": "b4f2861cd12aba38c2daa24af1d9d7160e5c121a23a4e449380e4a7937b64bce"
+  },
+  {
+    "path": "JarvisEVO/Services/WebSources/WebSource.swift",
+    "before": "15ee444577bbac810c2fd51613cd15d99d2a1453acbf9d802554549dd9d7f5e3",
+    "after": "6de1bc5ea792b3885b6deb4e53629b682b8cdd5abd7b69f17d4bf514ffbba8a6"
+  },
+  {
+    "path": "JarvisEVO/Services/WebSources/WebSourceContext.swift",
+    "before": "8ace2a7e0239badf76f148ca9c9128a8b19cb98c13e8dac20f25e26672d79221",
+    "after": "bbf9ab1a072397639f0be6a08e5b89249b4aa6b527799a03f116364ba954b665"
+  },
+  {
+    "path": "JarvisEVO/Services/WebSources/WebSourceReader.swift",
+    "before": "e01af9a064a384b72b7bc6b95c6680cfbd3d3cb0fae173c13d8ae9e3a76bfabb",
+    "after": "ba1892a770a9823e6d1bbbcad1714b4ba6ec1b70ba8ae954bfb3f1ec3c468624"
+  },
+  {
+    "path": "JarvisEVO/Services/WebSources/WebTextExtractor.swift",
+    "before": "e210962d22f211649dbd5a757d0d6c4a9b3e339125eecca49c5e780904dd224e",
+    "after": "8c883362ab21419afc5823ba371e2b8587bd166b0732e05ad44ce1b875d9316d"
+  },
+  {
+    "path": "Tests/WebDNSLifecycleTests.swift",
+    "before": null,
+    "after": "3b76811f27693ae9d71ac8fb319fb30bc61508f5d625bca2678c134b90fecc86"
+  },
+  {
+    "path": "Tests/WebHTTPTransportTests.swift",
+    "before": "d02fd4b3640c7fac817ff833b524886cc1b7a983943675f11c45cc2e24a60cc6",
+    "after": "b7665b880f4071be1229e29d86fe65f4f21273d87573b9bb37cd39509df6a29c"
+  },
+  {
+    "path": "Tests/WebSourceReaderTests.swift",
+    "before": "a208ab6d06f2c234604133766a58ca61d9bddd4896847515cd0fda169f9e925b",
+    "after": "d2a7175fb932dca19203f3e4509e4de05999044a79821c186d72aa36b2fdab2e"
+  },
+  {
+    "path": "Tests/WebSourceRepairTests.swift",
+    "before": null,
+    "after": "9b289a098de0519fc64a9bef63dd23c38aa6ca0676be5fef9d15f7fce50d956b"
+  },
+  {
+    "path": "docs/INTEGRATION_PROPOSAL.md",
+    "before": "696ef0ff277815d59b90509aa5ecb2cf5745fa6e81cd5cb8e9649ea6a190a521",
+    "after": "d9796bdaa38def720df62deba0c34c3406fea4cd218e72639eaeae1ad56e89cf"
+  },
+  {
+    "path": "docs/TEST_REPORT.md",
+    "before": "97a0b9d54bb68d700cc585e11e230b8a413494a0842ad14c91b897863eee6bec",
+    "after": "c4ea365c2829e4e7613e38edecf1116c588419886bf46a9751d080aedd7bd62b"
+  },
+  {
+    "path": "docs/WEB_SOURCE_DESIGN.md",
+    "before": "9977ecd3ae885633e045a17610615a0335ed9441a7b58bcd3b8bdcb3745c6483",
+    "after": "65e43ee472fd3ffa8f993a4a425d31fa5e270c3160db5401573e9cd01016eaf7"
+  }
+]

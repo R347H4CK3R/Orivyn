@@ -1,3 +1,7 @@
+# Repair revision status
+
+This is the independent repair copy at /workspace/shared/Jarvis-EVO-web-repair-work. The original frozen tree remains unchanged. See repair-evidence/REPAIR_REPORT.md for the four Important and two minor repairs, current test inventory, focused patch and before/after manifests. The initial implementation report below is historical; its test counts and independent-review status describe the original freeze, not the current revision. Native compilation/tests and successful real retrieval are still unrun. No public probe was retried.
+
 # Frozen implementation and test report
 
 ## Delivered

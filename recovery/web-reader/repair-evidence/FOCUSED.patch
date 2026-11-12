@@ -1,0 +1,1014 @@
+--- before/JarvisEVO/Services/WebSources/PinnedWebTransport.swift
++++ after/JarvisEVO/Services/WebSources/PinnedWebTransport.swift
+@@ -42,7 +42,7 @@
+                     }
+                 // SocketAddress(ipAddress:) parses a literal. It does not perform DNS resolution.
+                 let socket = try SocketAddress(ipAddress: address.literal, port: 443)
+-                bootstrap.connect(to: socket).whenFailure { operation.finish(.failure(Self.map($0))) }
++                bootstrap.connect(to: socket).whenFailure { operation.finish(.failure($0)) }
+                 return try await operation.promise.futureResult.get()
+             } onCancel: { operation.finish(.failure(CancellationError())) }
+             outcome = .success(body)
+@@ -64,8 +64,9 @@
+         sec_protocol_options_set_tls_resumption_enabled(options.securityProtocolOptions, false)
+         sec_protocol_options_set_tls_tickets_enabled(options.securityProtocolOptions, false)
+         sec_protocol_options_set_tls_renegotiation_enabled(options.securityProtocolOptions, false)
+-        // Certificate AIA/OCSP URLs are also untrusted destinations. Keep trust evaluation offline,
++        // Certificate AIA/OCSP URLs are also untrusted destinations. Disable network fetching for this trust evaluation,
+         // using the platform trust store and the original hostname, with no anchor or error override.
++        // This is not a claim that Security.framework performs no independent OS maintenance traffic.
+         sec_protocol_options_set_verify_block(options.securityProtocolOptions, { _, trust, complete in
+             let systemTrust = sec_trust_copy_ref(trust).takeRetainedValue()
+             complete(WebTLSIdentity.evaluate(systemTrust, hostname: hostname))
+@@ -73,14 +74,7 @@
+         return options
+     }
+ 
+-    private static func map(_ error: Error) -> Error {
+-        if let error = error as? WebSourceError { return error }
+-        if error is CancellationError { return error }
+-        if let network = error as? NWError, case .posix(let code) = network,
+-           code == .ENETDOWN || code == .ENETUNREACH || code == .ENOTCONN { return WebSourceError.offline }
+-        if let channel = error as? ChannelError, case .connectTimeout = channel { return WebSourceError.timeout }
+-        return WebSourceError.transportUnavailable
+-    }
++
+ }
+ 
+ /// Cross-thread cancellation and exactly-once completion. All mutable fields are lock protected.
+@@ -110,7 +104,7 @@
+         }
+         guard state.0 else { return }
+         state.1?.close(promise: nil)
+-        promise.completeWith(result)
++        promise.completeWith(result.mapError(WebTransportErrorPolicy.normalize))
+     }
+ }
+ 
+@@ -139,7 +133,7 @@
+         context.fireChannelRead(data)
+     }
+     private func fail(_ context: ChannelHandlerContext) {
+-        context.fireErrorCaught(WebSourceError.bodyTooLarge)
++        context.fireErrorCaught(WebSourceError.responseLimitExceeded)
+         context.close(promise: nil)
+     }
+ }
+@@ -192,7 +186,7 @@
+     func errorCaught(context: ChannelHandlerContext, error: Error) { operation.finish(.failure(error)) }
+ }
+ 
+-/// Platform certificate evaluation with no network fetches or trust exceptions.
++/// Platform certificate evaluation with per-evaluation network fetching disabled and no trust exceptions.
+ enum WebTLSIdentity {
+     static func evaluate(_ trust: SecTrust, hostname: String) -> Bool {
+         let policy = SecPolicyCreateSSL(true, hostname as CFString)
+@@ -201,3 +195,16 @@
+         return SecTrustEvaluateWithError(trust, nil)
+     }
+ }
++
++/// One public error policy, applied at exactly-once transport completion.
++enum WebTransportErrorPolicy {
++    static func normalize(_ error: Error) -> Error {
++        if let error = error as? WebSourceError { return error }
++        if error is CancellationError { return error }
++        if error is HTTPParserError || error is NIOHTTPDecoderError { return WebSourceError.invalidResponse }
++        if let network = error as? NWError, case .posix(let code) = network, code == .ETIMEDOUT { return WebSourceError.timeout }
++        // A failed route/connection is not evidence that the entire device is offline.
++        if let channel = error as? ChannelError, case .connectTimeout = channel { return WebSourceError.timeout }
++        return WebSourceError.transportUnavailable
++    }
++}
+--- before/JarvisEVO/Services/WebSources/WebDNSResolver.swift
++++ after/JarvisEVO/Services/WebSources/WebDNSResolver.swift
+@@ -7,83 +7,224 @@
+ }
+ 
+ struct PublicWebDNSResolver: WebDNSResolving {
++    private let api: any WebDNSStarting
++    private let deadlines: any WebDNSDeadlineScheduling
++    private let admission: WebDNSAdmissionPool
++
++    init(api: any WebDNSStarting = SystemWebDNSAPI(), deadlines: any WebDNSDeadlineScheduling = SystemWebDNSDeadlines(),
++         admission: WebDNSAdmissionPool = .shared) {
++        self.api = api; self.deadlines = deadlines; self.admission = admission
++    }
++
+     func resolve(_ request: UserSuppliedWebURL) async throws -> PublicWebIPv4 {
+         try Task.checkCancellation()
+         if let literal = try? PublicWebIPv4(request.hostname) { return literal }
+-        let query = WebDNSQuery(host: request.hostname)
+-        return try await withTaskCancellationHandler {
++        let query = WebDNSQuery(host: request.hostname, api: api, deadlines: deadlines, admission: admission)
++        let value = try await withTaskCancellationHandler {
+             try await query.resolve()
+-        } onCancel: { query.cancel() }
+-    }
+-}
+-
+-/// DNSServiceRef, continuation and timer are owned by this private serial queue.
+-/// Only A records are requested; an explicit literal is handed to the connector, never the hostname.
++        } onCancel: { query.finish(.failure(CancellationError())) }
++        try Task.checkCancellation()
++        return value
++    }
++}
++
++enum WebDNSRecord: Sendable {
++    case address(String, moreComing: Bool)
++    case failure(WebSourceError)
++}
++
++/// The caller serializes creation, callbacks and cancellation on the supplied queue.
++/// start may block in operating-system IPC; cancellation must not race that call.
++protocol WebDNSStarting: Sendable {
++    func start(host: String, queue: DispatchQueue, receive: @escaping @Sendable (WebDNSRecord) -> Void) throws -> any WebDNSService
++}
++protocol WebDNSService: AnyObject, Sendable { func cancel() }
++protocol WebDNSDeadline: Sendable { func cancel() }
++protocol WebDNSDeadlineScheduling: Sendable {
++    func schedule(after seconds: TimeInterval, action: @escaping @Sendable () -> Void) -> any WebDNSDeadline
++}
++
++/// Admission includes completed callers whose OS setup or cleanup is still blocked.
++/// No work is queued when capacity is exhausted; a new caller receives .busy immediately.
++final class WebDNSAdmissionPool: @unchecked Sendable {
++    static let shared = WebDNSAdmissionPool(limit: 2)
++    private let lock = NSLock()
++    private let limit: Int
++    private var outstanding = 0
++    init(limit: Int) { self.limit = max(1, limit) }
++    func acquire() -> Lease? {
++        lock.withLock {
++            guard outstanding < limit else { return nil }
++            outstanding += 1
++            return Lease(pool: self)
++        }
++    }
++    private func release() { lock.withLock { outstanding -= 1 } }
++    final class Lease: @unchecked Sendable {
++        private let lock = NSLock()
++        private var pool: WebDNSAdmissionPool?
++        fileprivate init(pool: WebDNSAdmissionPool) { self.pool = pool }
++        func release() {
++            let owner = lock.withLock { let value = pool; pool = nil; return value }
++            owner?.release()
++        }
++    }
++}
++
++/// Caller completion is lock protected, independent of the possibly blocked service queue.
++/// Only the service queue owns the API handle, accumulated records and admission lease.
+ private final class WebDNSQuery: @unchecked Sendable {
+     private let queue = DispatchQueue(label: "app.jarvisevo.source-dns")
++    private let lock = NSLock()
+     private let host: String
+-    private var reference: DNSServiceRef?
++    private let api: any WebDNSStarting
++    private let deadlines: any WebDNSDeadlineScheduling
++    private let admission: WebDNSAdmissionPool
++    private var outcome: Result<PublicWebIPv4, Error>?
+     private var continuation: CheckedContinuation<PublicWebIPv4, Error>?
+-    private var timeout: DispatchWorkItem?
+-    private var finished = false
+-    private var cancelled = false
++    private var timer: (any WebDNSDeadline)?
++    // Service-queue-only fields:
++    private var service: (any WebDNSService)?
++    private var lease: WebDNSAdmissionPool.Lease?
+     private var addresses: [PublicWebIPv4] = []
+-    init(host: String) { self.host = host }
++
++    init(host: String, api: any WebDNSStarting, deadlines: any WebDNSDeadlineScheduling, admission: WebDNSAdmissionPool) {
++        self.host = host; self.api = api; self.deadlines = deadlines; self.admission = admission
++    }
++    private var isFinished: Bool { lock.withLock { outcome != nil } }
+ 
+     func resolve() async throws -> PublicWebIPv4 {
+         try await withCheckedThrowingContinuation { continuation in
+-            queue.async { [self] in
++            let existing = lock.withLock { () -> Result<PublicWebIPv4, Error>? in
++                if let outcome { return outcome }
+                 self.continuation = continuation
+-                guard !cancelled else { finish(.failure(CancellationError())); return }
+-                let callback: DNSServiceGetAddrInfoReply = { _, flags, _, error, _, address, _, context in
+-                    guard let context else { return }
+-                    let operation = Unmanaged<WebDNSQuery>.fromOpaque(context).takeUnretainedValue()
+-                    operation.receive(flags: flags, error: error, address: address)
++                return nil
++            }
++            if let existing { continuation.resume(with: existing); return }
++            // This deadline is installed before setup and runs independently of its queue.
++            let deadline = deadlines.schedule(after: 5) { [weak self] in self?.finish(.failure(WebSourceError.timeout)) }
++            let alreadyFinished = lock.withLock { () -> Bool in
++                guard outcome == nil else { return true }
++                timer = deadline
++                return false
++            }
++            if alreadyFinished { deadline.cancel(); return }
++            guard let lease = admission.acquire() else { finish(.failure(WebSourceError.busy)); return }
++            queue.async { [self, lease] in
++                self.lease = lease
++                guard !isFinished else { cleanup(); return }
++                do {
++                    // Retained by this queue closure even if the caller has already completed.
++                    service = try api.start(host: host, queue: queue) { [weak self] record in self?.receive(record) }
++                    if isFinished { cleanup() }
++                } catch {
++                    finish(.failure(error as? WebSourceError ?? .transportUnavailable))
++                    cleanup()
+                 }
+-                // A trailing dot prevents local search-domain expansion. No multicast browsing is used.
+-                let status = DNSServiceGetAddrInfo(&reference, DNSServiceFlags(kDNSServiceFlagsTimeout),
+-                                                  0, UInt32(kDNSServiceProtocol_IPv4), host + ".", callback,
+-                                                  Unmanaged.passUnretained(self).toOpaque())
+-                guard status == kDNSServiceErr_NoError, let reference else { finish(.failure(WebSourceError.transportUnavailable)); return }
+-                guard DNSServiceSetDispatchQueue(reference, queue) == kDNSServiceErr_NoError else { finish(.failure(WebSourceError.transportUnavailable)); return }
+-                let timer = DispatchWorkItem { [weak self] in self?.finish(.failure(WebSourceError.timeout)) }
+-                timeout = timer
+-                queue.asyncAfter(deadline: .now() + 5, execute: timer)
+             }
+         }
+     }
+ 
+-    func cancel() {
+-        queue.async { [self] in
+-            cancelled = true
+-            if continuation != nil { finish(.failure(CancellationError())) }
+-        }
+-    }
+-
+-    private func receive(flags: DNSServiceFlags, error: DNSServiceErrorType, address: UnsafePointer<sockaddr>?) {
+-        guard !finished else { return }
+-        guard error == kDNSServiceErr_NoError, let address, Int32(address.pointee.sa_family) == AF_INET,
+-              flags & DNSServiceFlags(kDNSServiceFlagsAdd) != 0 else { finish(.failure(WebSourceError.transportUnavailable)); return }
+-        guard addresses.count < 16 else { finish(.failure(WebSourceError.invalidResponse)); return }
+-        let ipv4 = address.withMemoryRebound(to: sockaddr_in.self, capacity: 1) { $0.pointee }
+-        var raw = ipv4.sin_addr
+-        var buffer = [CChar](repeating: 0, count: Int(INET_ADDRSTRLEN))
+-        guard inet_ntop(AF_INET, &raw, &buffer, socklen_t(INET_ADDRSTRLEN)) != nil else { finish(.failure(WebSourceError.invalidResponse)); return }
+-        do { addresses.append(try PublicWebIPv4(String(cString: buffer))) }
+-        catch { finish(.failure(error)); return }
+-        if flags & DNSServiceFlags(kDNSServiceFlagsMoreComing) == 0 {
+-            guard let first = addresses.first else { finish(.failure(WebSourceError.transportUnavailable)); return }
+-            finish(.success(first))
+-        }
+-    }
+-
+-    private func finish(_ result: Result<PublicWebIPv4, Error>) {
+-        guard !finished else { return }
+-        finished = true
+-        timeout?.cancel(); timeout = nil
+-        if let reference { DNSServiceRefDeallocate(reference); self.reference = nil }
+-        let completion = continuation
+-        continuation = nil
+-        completion?.resume(with: result)
+-    }
+-}
++    func finish(_ result: Result<PublicWebIPv4, Error>) {
++        let completion = lock.withLock { () -> (Bool, CheckedContinuation<PublicWebIPv4, Error>?, (any WebDNSDeadline)?) in
++            guard outcome == nil else { return (false, nil, nil) }
++            outcome = result
++            let continuation = continuation
++            let timer = timer
++            self.continuation = nil; self.timer = nil
++            return (true, continuation, timer)
++        }
++        guard completion.0 else { return }
++        completion.2?.cancel()
++        // Resume without waiting for DNS setup or DNSServiceRefDeallocate.
++        completion.1?.resume(with: result)
++        queue.async { [self] in cleanup() }
++    }
++
++    private func receive(_ record: WebDNSRecord) {
++        dispatchPrecondition(condition: .onQueue(queue))
++        guard !isFinished else { return }
++        switch record {
++        case .failure(let error): finish(.failure(error))
++        case .address(let literal, let moreComing):
++            guard addresses.count < 16 else { finish(.failure(WebSourceError.invalidResponse)); return }
++            do { addresses.append(try PublicWebIPv4(literal)) }
++            catch { finish(.failure(error)); return }
++            if !moreComing, let first = addresses.first { finish(.success(first)) }
++        }
++    }
++
++    private func cleanup() {
++        dispatchPrecondition(condition: .onQueue(queue))
++        let handle = service
++        service = nil
++        handle?.cancel()
++        // Never release capacity before setup and serialized deallocation have returned.
++        lease?.release(); lease = nil
++    }
++}
++
++struct SystemWebDNSDeadlines: WebDNSDeadlineScheduling {
++    func schedule(after seconds: TimeInterval, action: @escaping @Sendable () -> Void) -> any WebDNSDeadline {
++        let item = DispatchWorkItem(block: action)
++        DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + seconds, execute: item)
++        return Token(item: item)
++    }
++    private final class Token: WebDNSDeadline, @unchecked Sendable {
++        let item: DispatchWorkItem
++        init(item: DispatchWorkItem) { self.item = item }
++        func cancel() { item.cancel() }
++    }
++}
++
++struct SystemWebDNSAPI: WebDNSStarting {
++    func start(host: String, queue: DispatchQueue, receive: @escaping @Sendable (WebDNSRecord) -> Void) throws -> any WebDNSService {
++        dispatchPrecondition(condition: .onQueue(queue))
++        let box = Unmanaged.passRetained(CallbackBox(receive: receive))
++        var reference: DNSServiceRef?
++        let callback: DNSServiceGetAddrInfoReply = { _, flags, _, error, _, address, _, context in
++            guard let context else { return }
++            let box = Unmanaged<CallbackBox>.fromOpaque(context).takeUnretainedValue()
++            guard error == kDNSServiceErr_NoError, let address, Int32(address.pointee.sa_family) == AF_INET,
++                  flags & DNSServiceFlags(kDNSServiceFlagsAdd) != 0 else { box.receive(.failure(.transportUnavailable)); return }
++            var raw = address.withMemoryRebound(to: sockaddr_in.self, capacity: 1) { $0.pointee.sin_addr }
++            var buffer = [CChar](repeating: 0, count: Int(INET_ADDRSTRLEN))
++            guard inet_ntop(AF_INET, &raw, &buffer, socklen_t(INET_ADDRSTRLEN)) != nil else { box.receive(.failure(.invalidResponse)); return }
++            box.receive(.address(String(cString: buffer), moreComing: flags & DNSServiceFlags(kDNSServiceFlagsMoreComing) != 0))
++        }
++        // Absolute A-record lookup only. This synchronous API may stall; the caller is independently cancellable.
++        let status = DNSServiceGetAddrInfo(&reference, DNSServiceFlags(kDNSServiceFlagsTimeout), 0,
++                                          UInt32(kDNSServiceProtocol_IPv4), host + ".", callback, box.toOpaque())
++        guard status == kDNSServiceErr_NoError, let reference else {
++            if let reference { DNSServiceRefDeallocate(reference) }
++            box.release()
++            throw WebSourceError.transportUnavailable
++        }
++        let handle = Handle(reference: reference, box: box, queue: queue)
++        guard DNSServiceSetDispatchQueue(reference, queue) == kDNSServiceErr_NoError else {
++            handle.cancel()
++            throw WebSourceError.transportUnavailable
++        }
++        return handle
++    }
++    private final class CallbackBox: @unchecked Sendable {
++        let receive: @Sendable (WebDNSRecord) -> Void
++        init(receive: @escaping @Sendable (WebDNSRecord) -> Void) { self.receive = receive }
++    }
++    /// Owned by WebDNSQuery until cancel, or by start until an installation failure is cleaned up.
++    private final class Handle: WebDNSService, @unchecked Sendable {
++        private var reference: DNSServiceRef?
++        private var box: Unmanaged<CallbackBox>?
++        private let queue: DispatchQueue
++        init(reference: DNSServiceRef, box: Unmanaged<CallbackBox>, queue: DispatchQueue) {
++            self.reference = reference; self.box = box; self.queue = queue
++        }
++        func cancel() {
++            dispatchPrecondition(condition: .onQueue(queue))
++            guard let reference else { return }
++            self.reference = nil
++            DNSServiceRefDeallocate(reference)
++            box?.release(); box = nil
++        }
++    }
++}
+--- before/JarvisEVO/Services/WebSources/WebSource.swift
++++ after/JarvisEVO/Services/WebSources/WebSource.swift
+@@ -9,6 +9,7 @@
+     let mediaType: String
+     let receivedBodyBytes: Int
+     let title: String?
++    let titleTruncated: Bool
+     let text: String
+     let textTruncated: Bool
+ }
+@@ -26,7 +27,7 @@
+ enum WebSourceError: Error, Sendable, Equatable, LocalizedError {
+     case invalidURL, unsafeAddress, hostnameIsolationUnavailable, busy, offline
+     case redirectBlocked, authenticationRequired, rateLimited, httpStatus(Int)
+-    case encodedResponse, unsupportedContentType, bodyTooLarge, invalidResponse
++    case encodedResponse, unsupportedContentType, bodyTooLarge, responseLimitExceeded, invalidResponse
+     case invalidUTF8, complexHTML, emptyContent, timeout, transportUnavailable, contextTooSmall, tooManySources
+ 
+     var errorDescription: String? {
+@@ -43,13 +44,14 @@
+         case .encodedResponse: "This source requires an unsupported compressed response."
+         case .unsupportedContentType: "Only UTF-8 HTML and plain-text sources are supported."
+         case .bodyTooLarge: "The source exceeds the 256 KiB retrieval limit."
++        case .responseLimitExceeded: "The source exceeds the safe HTTP header or wire-data limits."
+         case .invalidResponse: "The source returned an unsupported or invalid response."
+         case .invalidUTF8: "The source is not valid UTF-8 text."
+         case .complexHTML: "The source HTML is malformed or exceeds the safe extraction limits."
+         case .emptyContent: "No readable text was extracted. Script-only and gated pages are not supported."
+         case .timeout: "The source read timed out."
+         case .transportUnavailable: "Live source retrieval is currently unavailable."
+-        case .contextTooSmall: "The source metadata does not fit the requested context budget."
++        case .contextTooSmall: "The source metadata and a useful excerpt from every source do not fit the context budget."
+         case .tooManySources: "Read between one and three explicit sources per request."
+         }
+     }
+@@ -71,6 +73,7 @@
+ 
+ struct ExtractedWebText: Sendable {
+     let title: String?
++    let titleTruncated: Bool
+     let text: String
+     let truncated: Bool
+ }
+--- before/JarvisEVO/Services/WebSources/WebSourceContext.swift
++++ after/JarvisEVO/Services/WebSources/WebSourceContext.swift
+@@ -3,6 +3,7 @@
+ struct WebSourceCitation: Sendable, Equatable {
+     let sourceID: UUID
+     let title: String?
++    let titleTruncated: Bool
+     let url: URL
+     let retrievedAt: Date
+ }
+@@ -30,20 +31,51 @@
+         encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
+         encoder.dateEncodingStrategy = .iso8601
+         func encode(_ values: [Entry]) throws -> Data { try encoder.encode(Payload(sources: values)) }
+-        var encoded = try encode(entries)
+-        // Each pass reduces a nonempty string. The source text is already bounded at 16 KiB.
+-        while encoded.count > maximumBytes {
+-            guard let index = entries.indices.max(by: { entries[$0].text.utf8.count < entries[$1].text.utf8.count }),
+-                  !entries[index].text.isEmpty else { throw WebSourceError.contextTooSmall }
+-            let bytes = entries[index].text.utf8.count
+-            let remove = max(64, encoded.count - maximumBytes)
+-            entries[index].text = webUTF8Prefix(entries[index].text, maximumBytes: max(0, bytes - remove))
+-            entries[index].contextTruncated = true
+-            encoded = try encode(entries)
++        // Reserve the larger, untruncated metadata spelling first. Each source must retain
++        // up to 256 UTF-8 bytes before spare encoded-byte budget is distributed fairly.
++        guard sources.allSatisfy({ !$0.text.isEmpty }) else { throw WebSourceError.emptyContent }
++        var metadata = entries
++        for index in metadata.indices { metadata[index].text = "" }
++        let metadataBytes = try encode(metadata).count
++        func encodedTextBytes(_ text: String) throws -> Int { try encoder.encode(text).count - 2 }
++        let fullCosts = try sources.map { try encodedTextBytes($0.text) }
++        let minimumTexts = sources.map { webUTF8Prefix($0.text, maximumBytes: 256) }
++        var allocations = try minimumTexts.map(encodedTextBytes)
++        guard metadataBytes + allocations.reduce(0, +) <= maximumBytes else { throw WebSourceError.contextTooSmall }
++        var spare = maximumBytes - metadataBytes - allocations.reduce(0, +)
++        var active = allocations.indices.filter { allocations[$0] < fullCosts[$0] }
++        while spare > 0 && !active.isEmpty {
++            let share = spare / active.count
++            let remainder = spare % active.count
++            var used = 0
++            for (position, index) in active.enumerated() {
++                let addition = min(fullCosts[index] - allocations[index], share + (position < remainder ? 1 : 0))
++                allocations[index] += addition
++                used += addition
++            }
++            guard used > 0 else { break }
++            spare -= used
++            active = active.filter { allocations[$0] < fullCosts[$0] }
+         }
++        for index in entries.indices {
++            let original = sources[index].text
++            var low = minimumTexts[index].utf8.count
++            var high = original.utf8.count
++            // Exact JSON cost, including escapes, is monotonic over valid scalar prefixes.
++            while low < high {
++                let midpoint = low + (high - low + 1) / 2
++                let candidate = webUTF8Prefix(original, maximumBytes: midpoint)
++                if try encodedTextBytes(candidate) <= allocations[index] { low = midpoint }
++                else { high = midpoint - 1 }
++            }
++            entries[index].text = webUTF8Prefix(original, maximumBytes: low)
++            entries[index].contextTruncated = entries[index].text.utf8.count < original.utf8.count
++        }
++        let encoded = try encode(entries)
++        guard encoded.count <= maximumBytes else { throw WebSourceError.contextTooSmall }
+         json = String(decoding: encoded, as: UTF8.self)
+         citations = Dictionary(uniqueKeysWithValues: sources.map {
+-            ($0.id, WebSourceCitation(sourceID: $0.id, title: $0.title, url: $0.finalURL, retrievedAt: $0.retrievedAt))
++            ($0.id, WebSourceCitation(sourceID: $0.id, title: $0.title, titleTruncated: $0.titleTruncated, url: $0.finalURL, retrievedAt: $0.retrievedAt))
+         })
+     }
+ 
+@@ -60,12 +92,13 @@
+         let finalURL: URL
+         let retrievedAt: Date
+         let title: String?
++        let titleTruncated: Bool
+         var text: String
+         let extractionTruncated: Bool
+         var contextTruncated = false
+         init(_ source: WebSource) {
+             sourceID = source.id; originalURL = source.originalURL; finalURL = source.finalURL
+-            retrievedAt = source.retrievedAt; title = source.title; text = source.text
++            retrievedAt = source.retrievedAt; title = source.title; titleTruncated = source.titleTruncated; text = source.text
+             extractionTruncated = source.textTruncated
+         }
+     }
+--- before/JarvisEVO/Services/WebSources/WebSourceReader.swift
++++ after/JarvisEVO/Services/WebSources/WebSourceReader.swift
+@@ -81,7 +81,7 @@
+         try Task.checkCancellation()
+         let source = WebSource(id: UUID(), originalURL: request.url, finalURL: body.url, retrievedAt: now(),
+                                mediaType: body.mediaType, receivedBodyBytes: body.data.count,
+-                               title: text.title, text: text.text, textTruncated: text.truncated)
++                               title: text.title, titleTruncated: text.titleTruncated, text: text.text, textTruncated: text.truncated)
+         progress(.finished(source.id))
+         return source
+     }
+--- before/JarvisEVO/Services/WebSources/WebTextExtractor.swift
++++ after/JarvisEVO/Services/WebSources/WebTextExtractor.swift
+@@ -11,7 +11,7 @@
+             var writer = TextWriter(limit: WebSourceLimits.textBytes)
+             writer.append(input)
+             guard !writer.text.isEmpty else { throw WebSourceError.emptyContent }
+-            return ExtractedWebText(title: nil, text: writer.text, truncated: writer.truncated)
++            return ExtractedWebText(title: nil, titleTruncated: false, text: writer.text, truncated: writer.truncated)
+         }
+         guard mediaType == "text/html" else { throw WebSourceError.unsupportedContentType }
+         var scanner = HTMLScanner(bytes: Array(input.utf8))
+@@ -55,6 +55,7 @@
+     private var titleSeen = false
+     private static let voids: Set<String> = ["area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source", "track", "wbr"]
+     private static let excluded: Set<String> = ["head", "template", "noscript", "iframe", "object", "svg", "math"]
++    private static let blocks: Set<String> = ["address", "article", "aside", "blockquote", "body", "br", "dd", "div", "dl", "dt", "fieldset", "figcaption", "figure", "footer", "form", "h1", "h2", "h3", "h4", "h5", "h6", "header", "hr", "html", "li", "main", "nav", "ol", "p", "pre", "section", "table", "tbody", "td", "tfoot", "th", "thead", "tr", "ul"]
+     private static let raw: Set<String> = ["script", "style", "textarea", "xmp", "plaintext"]
+     private struct Element { let name: String; let hidden: Bool }
+ 
+@@ -107,8 +108,8 @@
+             let attributes = Array(token[index...])
+             if closing {
+                 guard attributes.allSatisfy(isSpace), stack.last?.name == name else { throw WebSourceError.complexHTML }
+-                stack.removeLast()
+-                body.separator()
++                let removed = stack.removeLast()
++                if Self.blocks.contains(name) || removed.hidden { body.separator() }
+                 continue
+             }
+             let hidden = try hasHiddenAttribute(attributes)
+@@ -125,7 +126,8 @@
+                 guard !titleSeen else { throw WebSourceError.complexHTML }
+                 titleSeen = true
+             }
+-            body.separator()
++            let removesContent = hidden || Self.excluded.contains(name) || name == "title"
++            if Self.blocks.contains(name) || removesContent { body.separator() }
+             if !Self.voids.contains(name) {
+                 guard stack.count < WebSourceLimits.depth else { throw WebSourceError.complexHTML }
+                 // Self-closing non-void HTML is ambiguous under HTML5; reject, do not reinterpret.
+@@ -135,7 +137,7 @@
+         }
+         guard stack.isEmpty else { throw WebSourceError.complexHTML }
+         guard !body.text.isEmpty else { throw WebSourceError.emptyContent }
+-        return ExtractedWebText(title: title.text.isEmpty ? nil : title.text, text: body.text, truncated: body.truncated)
++        return ExtractedWebText(title: title.text.isEmpty ? nil : title.text, titleTruncated: title.truncated, text: body.text, truncated: body.truncated)
+     }
+ 
+     private func matches(_ pattern: String, at index: Int) -> Bool {
+--- before/Tests/WebDNSLifecycleTests.swift
++++ after/Tests/WebDNSLifecycleTests.swift
+@@ -0,0 +1,160 @@
++import XCTest
++import Foundation
++@testable import JarvisEVO
++
++final class WebDNSLifecycleTests: XCTestCase {
++    func testStalledSetupDeadlineCompletesCallerAndBoundsAbandonedWork() async throws {
++        let api = DNSAPIFixture(blockSetup: true)
++        let deadlines = ManualDNSDeadlines()
++        let admission = WebDNSAdmissionPool(limit: 1)
++        let resolver = PublicWebDNSResolver(api: api, deadlines: deadlines, admission: admission)
++        let completed = expectation(description: "caller completes while setup is blocked")
++        let result = DNSResultBox()
++        let task = Task {
++            do { result.store(.success(try await resolver.resolve(UserSuppliedWebURL("https://example.com/")))) }
++            catch { result.store(.failure(error)) }
++            completed.fulfill()
++        }
++        defer { api.unblock(); task.cancel() }
++        await fulfillment(of: [api.started], timeout: 1)
++        deadlines.fire()
++        await fulfillment(of: [completed], timeout: 1)
++        XCTAssertEqual(result.error as? WebSourceError, .timeout)
++        XCTAssertEqual(api.cancelCount, 0, "Cannot deallocate while the setup call is still using the reference")
++        let second = DNSAPIFixture(blockSetup: false)
++        let secondResolver = PublicWebDNSResolver(api: second, deadlines: ManualDNSDeadlines(), admission: admission)
++        do { _ = try await secondResolver.resolve(UserSuppliedWebURL("https://example.org/")); XCTFail() }
++        catch { XCTAssertEqual(error as? WebSourceError, .busy) }
++        XCTAssertEqual(second.startCount, 0, "Abandoned setup retains its admission slot until cleanup")
++        api.unblock()
++        await fulfillment(of: [api.cleaned], timeout: 1)
++        XCTAssertEqual(api.cancelCount, 1)
++        XCTAssertEqual(result.completionCount, 1)
++    }
++
++    func testCancellationDoesNotWaitForBlockedSetupAndLateSuccessIsCleaned() async throws {
++        let api = DNSAPIFixture(blockSetup: true)
++        let deadlines = ManualDNSDeadlines()
++        let resolver = PublicWebDNSResolver(api: api, deadlines: deadlines, admission: WebDNSAdmissionPool(limit: 1))
++        let completed = expectation(description: "cancelled caller finishes")
++        let result = DNSResultBox()
++        let task = Task {
++            do { result.store(.success(try await resolver.resolve(UserSuppliedWebURL("https://example.com/")))) }
++            catch { result.store(.failure(error)) }
++            completed.fulfill()
++        }
++        defer { api.unblock(); task.cancel() }
++        await fulfillment(of: [api.started], timeout: 1)
++        task.cancel()
++        await fulfillment(of: [completed], timeout: 1)
++        XCTAssertTrue(result.error is CancellationError)
++        XCTAssertEqual(api.cancelCount, 0)
++        deadlines.fire() // A late deadline must not complete the continuation again.
++        api.unblock()
++        await fulfillment(of: [api.cleaned], timeout: 1)
++        api.emit(.address("1.1.1.1", moreComing: false))
++        await fulfillment(of: [api.emitted], timeout: 1)
++        XCTAssertEqual(api.cancelCount, 1)
++        XCTAssertEqual(result.completionCount, 1)
++        XCTAssertTrue(result.error is CancellationError)
++    }
++
++    func testCallbackSuccessThenLateDeadlineCleansExactlyOnceAndReleasesSlot() async throws {
++        let api = DNSAPIFixture(blockSetup: false)
++        let deadlines = ManualDNSDeadlines()
++        let admission = WebDNSAdmissionPool(limit: 1)
++        let resolver = PublicWebDNSResolver(api: api, deadlines: deadlines, admission: admission)
++        let task = Task { try await resolver.resolve(UserSuppliedWebURL("https://example.com/")) }
++        await fulfillment(of: [api.started], timeout: 1)
++        api.emit(.address("1.1.1.1", moreComing: false))
++        let result = try await task.value
++        XCTAssertEqual(result.literal, "1.1.1.1")
++        await fulfillment(of: [api.cleaned], timeout: 1)
++        await api.drain()
++        deadlines.fire()
++        task.cancel()
++        XCTAssertEqual(api.cancelCount, 1)
++        let next = DNSAPIFixture(blockSetup: false)
++        let nextResolver = PublicWebDNSResolver(api: next, deadlines: ManualDNSDeadlines(), admission: admission)
++        let nextTask = Task { try await nextResolver.resolve(UserSuppliedWebURL("https://example.org/")) }
++        await fulfillment(of: [next.started], timeout: 1)
++        next.emit(.address("8.8.8.8", moreComing: false))
++        let nextResult = try await nextTask.value
++        XCTAssertEqual(nextResult.literal, "8.8.8.8")
++        await fulfillment(of: [next.cleaned], timeout: 1)
++    }
++
++    func testPrivateAnswerAndTooManyRecordsFailBeforeConnection() async throws {
++        for excess in [false, true] {
++            let api = DNSAPIFixture(blockSetup: false)
++            let resolver = PublicWebDNSResolver(api: api, deadlines: ManualDNSDeadlines(), admission: WebDNSAdmissionPool(limit: 1))
++            let task = Task { try await resolver.resolve(UserSuppliedWebURL("https://example.com/")) }
++            await fulfillment(of: [api.started], timeout: 1)
++            if excess {
++                for _ in 0..<17 { api.emit(.address("1.1.1.1", moreComing: true), signal: false) }
++            } else { api.emit(.address("127.0.0.1", moreComing: false), signal: false) }
++            do { _ = try await task.value; XCTFail() }
++            catch { XCTAssertEqual(error as? WebSourceError, excess ? .invalidResponse : .unsafeAddress) }
++            await fulfillment(of: [api.cleaned], timeout: 1)
++            XCTAssertEqual(api.cancelCount, 1)
++        }
++    }
++}
++
++private final class DNSResultBox: @unchecked Sendable {
++    private let lock = NSLock()
++    private var result: Result<PublicWebIPv4, Error>?
++    private var count = 0
++    func store(_ result: Result<PublicWebIPv4, Error>) { lock.withLock { self.result = result; count += 1 } }
++    var error: Error? { lock.withLock { if case .failure(let error)? = result { return error }; return nil } }
++    var completionCount: Int { lock.withLock { count } }
++}
++
++private final class ManualDNSDeadlines: WebDNSDeadlineScheduling, @unchecked Sendable {
++    private let lock = NSLock()
++    private var actions: [@Sendable () -> Void] = []
++    func schedule(after seconds: TimeInterval, action: @escaping @Sendable () -> Void) -> any WebDNSDeadline {
++        lock.withLock { actions.append(action) }
++        return Token()
++    }
++    func fire() { for action in lock.withLock({ actions }) { action() } }
++    private final class Token: WebDNSDeadline, @unchecked Sendable { func cancel() {} }
++}
++
++private final class DNSAPIFixture: WebDNSStarting, @unchecked Sendable {
++    let started = XCTestExpectation(description: "DNS setup entered")
++    let cleaned = XCTestExpectation(description: "DNS reference cleaned")
++    let emitted = XCTestExpectation(description: "DNS callback emitted")
++    private let lock = NSLock()
++    private let gate = DispatchSemaphore(value: 0)
++    private let blockSetup: Bool
++    private var callback: (@Sendable (WebDNSRecord) -> Void)?
++    private var queue: DispatchQueue?
++    private var starts = 0
++    private var cancels = 0
++    init(blockSetup: Bool) { self.blockSetup = blockSetup }
++    var startCount: Int { lock.withLock { starts } }
++    var cancelCount: Int { lock.withLock { cancels } }
++    func start(host: String, queue: DispatchQueue, receive: @escaping @Sendable (WebDNSRecord) -> Void) throws -> any WebDNSService {
++        dispatchPrecondition(condition: .onQueue(queue))
++        lock.withLock { starts += 1; self.queue = queue; callback = receive }
++        started.fulfill()
++        if blockSetup { gate.wait() }
++        return Service(queue: queue) { [self] in lock.withLock { cancels += 1 }; cleaned.fulfill() }
++    }
++    func unblock() { gate.signal() }
++    func drain() async {
++        guard let queue = lock.withLock({ queue }) else { return }
++        await withCheckedContinuation { continuation in queue.async { continuation.resume() } }
++    }
++    func emit(_ record: WebDNSRecord, signal: Bool = true) {
++        let target = lock.withLock { (queue, callback) }
++        target.0?.async { [self] in target.1?(record); if signal { emitted.fulfill() } }
++    }
++    private final class Service: WebDNSService, @unchecked Sendable {
++        let queue: DispatchQueue
++        let cleanup: @Sendable () -> Void
++        init(queue: DispatchQueue, cleanup: @escaping @Sendable () -> Void) { self.queue = queue; self.cleanup = cleanup }
++        func cancel() { dispatchPrecondition(condition: .onQueue(queue)); cleanup() }
++    }
++}
+--- before/Tests/WebHTTPTransportTests.swift
++++ after/Tests/WebHTTPTransportTests.swift
+@@ -1,4 +1,5 @@
+ import XCTest
++import Network
+ import NIOCore
+ import NIOHTTP1
+ import NIOEmbedded
+@@ -53,7 +54,8 @@
+     func testRequestContainsNoCredentialsOrConversationAndUsesOriginalHost() throws {
+         let harness = try Harness()
+         var outbound = ""
+-        while let buffer = try harness.channel.readOutbound(as: ByteBuffer.self) {
++        while let data = try harness.channel.readOutbound(as: IOData.self) {
++            guard case .byteBuffer(let buffer) = data else { XCTFail("A GET must not send a file region"); continue }
+             outbound += buffer.getString(at: buffer.readerIndex, length: buffer.readableBytes) ?? ""
+         }
+         XCTAssertTrue(outbound.hasPrefix("GET /article HTTP/1.1\r\n"))
+@@ -73,23 +75,60 @@
+         XCTAssertThrowsError(try harness.result()) { XCTAssertTrue($0 is CancellationError) }
+         XCTAssertFalse(harness.channel.isActive)
+     }
++    func testPreAndPostActivationFailuresUseSamePublicClassification() throws {
++        let cases: [(Error, WebSourceError)] = [(NWError.posix(.ENETDOWN), .transportUnavailable),
++                                               (NWError.tls(-9807), .transportUnavailable),
++                                               (HTTPParserError.invalidContentLength, .invalidResponse)]
++        for (error, expected) in cases {
++            for active in [false, true] {
++                let harness = try Harness(activate: active)
++                if active { try harness.feed(Data("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 5\r\n\r\nhe".utf8)) }
++                harness.channel.pipeline.fireErrorCaught(error)
++                XCTAssertThrowsError(try harness.result()) { XCTAssertEqual($0 as? WebSourceError, expected) }
++            }
++            let write = try Harness(activate: false, writeError: error)
++            try? write.activate()
++            XCTAssertThrowsError(try write.result()) { XCTAssertEqual($0 as? WebSourceError, expected) }
++        }
++    }
++
++    func testHeaderAndWireBudgetFailuresHaveTheirOwnDiagnostic() throws {
++        for bytes in [Data(repeating: 65, count: 16_385), Data(repeating: 65, count: 294_913)] {
++            let harness = try Harness()
++            try? harness.feed(bytes)
++            XCTAssertThrowsError(try harness.result()) { XCTAssertEqual($0 as? WebSourceError, .responseLimitExceeded) }
++        }
++    }
++
++    func testSingleAndBatchPreserveNormalizedBodyFailureWithoutPartialSources() async throws {
++        let reader = WebSourceReader(transport: InjectedBodyFailure(), minimumInterval: .zero)
++        let request = try UserSuppliedWebURL("https://example.com/article")
++        do { _ = try await reader.read(request, isOnline: true); XCTFail() }
++        catch { XCTAssertEqual(error as? WebSourceError, .transportUnavailable) }
++        let outcomes = try await reader.readMany([request], isOnline: true)
++        XCTAssertNil(outcomes.first?.source)
++        XCTAssertEqual(outcomes.first?.error, .transportUnavailable)
++    }
++
+ }
+ 
+ private final class Harness {
+     let channel = EmbeddedChannel()
+     let operation: WebReadOperation
+-    init() throws {
++    init(activate: Bool = true, writeError: Error? = nil) throws {
+         operation = WebReadOperation(promise: channel.eventLoop.makePromise(of: RetrievedWebBody.self))
+         operation.install(channel)
+         try channel.pipeline.syncOperations.addHandler(WebWireLimitHandler())
++        if let writeError { try channel.pipeline.syncOperations.addHandler(FailingRequestWrites(error: writeError)) }
+         try channel.pipeline.syncOperations.addHandler(HTTPRequestEncoder())
+         try channel.pipeline.syncOperations.addHandler(ByteToMessageHandler(HTTPResponseDecoder(
+             leftOverBytesStrategy: .dropBytes, informationalResponseStrategy: .forward)))
+         try channel.pipeline.syncOperations.addHandler(NIOHTTPRequestHeadersValidator())
+         try channel.pipeline.syncOperations.addHandler(WebHTTPResponseHandler(
+             request: UserSuppliedWebURL("https://example.com/article"), operation: operation, progress: { _ in }))
+-        try channel.connect(to: SocketAddress(ipAddress: "1.1.1.1", port: 443)).wait()
++        if activate { try self.activate() }
+     }
++    func activate() throws { try channel.connect(to: SocketAddress(ipAddress: "1.1.1.1", port: 443)).wait() }
+     func feed(_ bytes: Data) throws {
+         var buffer = channel.allocator.buffer(capacity: bytes.count)
+         buffer.writeBytes(bytes)
+@@ -98,3 +137,19 @@
+     func result() throws -> RetrievedWebBody { try operation.promise.futureResult.wait() }
+     deinit { _ = try? channel.finish() }
+ }
++
++private final class FailingRequestWrites: ChannelOutboundHandler {
++    typealias OutboundIn = IOData
++    let error: Error
++    init(error: Error) { self.error = error }
++    func write(context: ChannelHandlerContext, data: NIOAny, promise: EventLoopPromise<Void>?) { promise?.fail(error) }
++}
++
++private struct InjectedBodyFailure: WebSourceTransport {
++    func retrieve(_ request: UserSuppliedWebURL, progress: @escaping @Sendable (Int) -> Void) async throws -> RetrievedWebBody {
++        let harness = try Harness()
++        try harness.feed(Data("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 5\r\n\r\nhe".utf8))
++        harness.channel.pipeline.fireErrorCaught(NWError.posix(.ENETDOWN))
++        return try harness.result()
++    }
++}
+--- before/Tests/WebSourceReaderTests.swift
++++ after/Tests/WebSourceReaderTests.swift
+@@ -16,6 +16,7 @@
+         XCTAssertEqual(source.finalURL, source.originalURL)
+         XCTAssertEqual(source.retrievedAt, date)
+         XCTAssertEqual(source.title, "Fixture")
++        XCTAssertFalse(source.titleTruncated)
+         XCTAssertEqual(source.text, "Actual content")
+         XCTAssertFalse(source.textTruncated)
+         XCTAssertEqual(source.receivedBodyBytes, 43)
+--- before/Tests/WebSourceRepairTests.swift
++++ after/Tests/WebSourceRepairTests.swift
+@@ -0,0 +1,92 @@
++import XCTest
++import Network
++import NIOCore
++import NIOHTTP1
++import NIOEmbedded
++@testable import JarvisEVO
++
++final class WebSourceRepairTests: XCTestCase {
++    func testThreeLongSourcesEachKeepMeaningfulEvidence() throws {
++        let sources = (0..<3).map { source(String(repeating: String($0), count: 16_384)) }
++        let context = try WebSourceContext(sources: sources)
++        let entries = try decoded(context)
++        XCTAssertLessThanOrEqual(context.json.utf8.count, 6_000)
++        XCTAssertEqual(entries.count, 3)
++        let counts = entries.map { ($0["text"] as! String).utf8.count }
++        XCTAssertTrue(counts.allSatisfy { $0 >= 256 })
++        XCTAssertLessThanOrEqual(counts.max()! - counts.min()!, 1)
++        XCTAssertTrue(entries.allSatisfy { $0["contextTruncated"] as? Bool == true })
++    }
++
++    func testFairAllocationHandlesShortSourcesEscapesAndUnicode() throws {
++        let texts = ["Short evidence", String(repeating: "\"\\\n", count: 2_000), String(repeating: "🦉", count: 4_096)]
++        let context = try WebSourceContext(sources: texts.map { source($0) }, maximumBytes: 4_000)
++        let entries = try decoded(context)
++        XCTAssertLessThanOrEqual(context.json.utf8.count, 4_000)
++        XCTAssertEqual(entries[0]["text"] as? String, "Short evidence")
++        XCTAssertEqual(entries[0]["contextTruncated"] as? Bool, false)
++        for index in 1...2 {
++            let text = try XCTUnwrap(entries[index]["text"] as? String)
++            XCTAssertGreaterThanOrEqual(text.utf8.count, 253)
++            XCTAssertTrue(texts[index].hasPrefix(text))
++            XCTAssertEqual(entries[index]["contextTruncated"] as? Bool, true)
++        }
++    }
++
++    func testMetadataOnlyBudgetFailsRatherThanRetainingEmptyEvidence() throws {
++        let longPath = "https://example.com/" + String(repeating: "a", count: 1_900)
++        let sources = (0..<3).map { _ in source(String(repeating: "a", count: 1_000), url: longPath) }
++        XCTAssertThrowsError(try WebSourceContext(sources: sources, maximumBytes: 12_500)) {
++            XCTAssertEqual($0 as? WebSourceError, .contextTooSmall)
++        }
++        let context = try WebSourceContext(sources: sources, maximumBytes: 16_384)
++        XCTAssertTrue(try decoded(context).allSatisfy { ($0["text"] as! String).utf8.count >= 256 })
++    }
++
++    func testInlineTagsPreserveNumericPunctuationAndWords() throws {
++        for (html, expected) in [
++            ("<p>The rate is 0.<b>5</b>%.</p>", "The rate is 0.5%."),
++            ("<p>inter<em>oper</em>able</p>", "interoperable"),
++            ("<p><a href='https://example.com'>A</a><span>B</span><i>C</i></p>", "ABC"),
++            ("<div>First</div><p>Second<br>Third</p>", "First Second Third"),
++            ("<p>A<span hidden>hidden</span>B<script>ignored()</script>C</p>", "A B C")
++        ] { XCTAssertEqual(try WebTextExtractor.extract(Data(html.utf8), mediaType: "text/html").text, expected) }
++    }
++
++    func testUnicodeTitleTruncationTravelsThroughSourceAndCitation() throws {
++        let value = try WebTextExtractor.extract(Data(("<title>" + String(repeating: "🦉", count: 61) + "</title><p>Body</p>").utf8), mediaType: "text/html")
++        XCTAssertEqual(value.title, String(repeating: "🦉", count: 60))
++        XCTAssertTrue(value.titleTruncated)
++        XCTAssertFalse(value.truncated)
++        let item = source("Body", title: value.title, titleTruncated: value.titleTruncated)
++        let context = try WebSourceContext(sources: [item])
++        XCTAssertEqual(try decoded(context)[0]["titleTruncated"] as? Bool, true)
++        XCTAssertEqual(context.citation(for: item.id)?.titleTruncated, true)
++    }
++
++    func testAllTerminalErrorsAreNormalizedWithoutGuessingOffline() throws {
++        for raw in [NWError.posix(.ENETDOWN), NWError.posix(.ENETUNREACH), NWError.posix(.ENOTCONN)] {
++            let channel = EmbeddedChannel()
++            let operation = WebReadOperation(promise: channel.eventLoop.makePromise(of: RetrievedWebBody.self))
++            operation.finish(.failure(raw))
++            XCTAssertThrowsError(try operation.promise.futureResult.wait()) { XCTAssertEqual($0 as? WebSourceError, .transportUnavailable) }
++            _ = try? channel.finish()
++        }
++        let channel = EmbeddedChannel()
++        let operation = WebReadOperation(promise: channel.eventLoop.makePromise(of: RetrievedWebBody.self))
++        operation.finish(.failure(HTTPParserError.invalidContentLength))
++        XCTAssertThrowsError(try operation.promise.futureResult.wait()) { XCTAssertEqual($0 as? WebSourceError, .invalidResponse) }
++        _ = try? channel.finish()
++    }
++
++    private func source(_ text: String, url: String = "https://example.com/article", title: String? = nil, titleTruncated: Bool = false) -> WebSource {
++        let url = URL(string: url)!
++        return WebSource(id: UUID(), originalURL: url, finalURL: url, retrievedAt: Date(timeIntervalSince1970: 100),
++                         mediaType: "text/plain", receivedBodyBytes: text.utf8.count, title: title,
++                         titleTruncated: titleTruncated, text: text, textTruncated: false)
++    }
++    private func decoded(_ context: WebSourceContext) throws -> [[String: Any]] {
++        let object = try XCTUnwrap(try JSONSerialization.jsonObject(with: Data(context.json.utf8)) as? [String: Any])
++        return try XCTUnwrap(object["sources"] as? [[String: Any]])
++    }
++}
+--- before/docs/INTEGRATION_PROPOSAL.md
++++ after/docs/INTEGRATION_PROPOSAL.md
+@@ -8,18 +8,18 @@
+ 2. Compile the isolated package on a Mac with Swift 6.0+ using `swift test --enable-code-coverage`; then add the files/dependency products to a disposable copy of the iOS 26 application and run its existing full native gates. The module name JarvisEVO in this harness exists only so its test sources match the application test import; do not import this product alongside another JarvisEVO module. Copy the source files after review or rename the standalone package module deliberately.
+ 3. Link NIOCore, NIOHTTP1 and NIOTransportServices to the app, and NIOEmbedded to its test target. Include Tests/Fixtures/WebTLSIdentity.der in test resources only. Bundle the six ThirdPartyNotices files. Do not bundle evidence/upstream or build probes. Confirm SwiftPM's generated resolution exactly matches the hand-recorded version/revision lock; this lock has not been produced by a successful native resolve.
+ 4. At a future explicit "Read sources" action, show exact destination URLs and privacy disclosure, validate UserSuppliedWebURL values, pass NetworkStatus.isOnline, and keep a Task handle for cancellation. Do not automatically read URLs merely pasted into chat or returned by a model. Main-actor UI receives progress through an explicit Task { @MainActor ... } hop. Stale/cancelled UI sessions must not install a late result.
+-5. Show source title as untrusted plain Text, original and final URLs, retrieval time, extraction truncation, per-source errors and the offline message. Do not auto-open links or render extracted content as HTML. The final URL currently equals the original because redirects are never followed.
++5. Show source title as untrusted plain Text, original and final URLs, retrieval time, title truncation and extraction truncation, per-source errors and the offline message. Do not auto-open links or render extracted content as HTML. The final URL currently equals the original because redirects are never followed.
+ 6. Offer a separate local-only summarize action. Reserve model context before constructing WebSourceContext; preserve its instruction/data separation and truncation flags. The model cannot browse or invoke tools. Resolve emitted citation IDs against the exact source snapshot registry; unknown IDs must remain visibly unsupported, never become guessed links. Remote-provider use requires a separate explicit decision, not a fallback.
+ 
+ ## Required native acceptance gates
+ 
+-- All authored tests compile and pass under strict Swift 6 concurrency. Capture the full result bundle. Check DNS cancellation before scheduling, during callbacks and after a timeout for leaks/double-resume.
++- All authored tests compile and pass under strict Swift 6 concurrency. Capture the full result bundle. Run the new injected stalled-setup/deadline/cancellation tests, including exact-once cleanup and admission-slot retention/release. Check DNS cancellation before scheduling, during callbacks and after a timeout for leaks/double-resume. A caller may finish while bounded OS setup work remains; do not equate task completion with all OS activity stopping.
+ - Controlled DNS fixture: mixed public/private records, private-only records, rotating/rebinding answers, excessive records and stale callbacks. Confirm the socket receives only the selected validated public literal and never re-resolves the original hostname.
+-- Controlled TLS server: correct hostname succeeds with system trust; wrong-host, expired, untrusted, missing-chain and TLS <1.2 fail. No client certificate offered. Verify no network fetch from attacker-controlled certificate AIA/OCSP, no tickets/resumption, and no trust override. Unit tests with a test-only anchor do not replace real system-trust tests.
++- Controlled TLS server: correct hostname succeeds with system trust; wrong-host, expired, untrusted, missing-chain and TLS <1.2 fail. No client certificate offered. Verify no per-reader fetch to attacker-controlled certificate AIA/OCSP, no tickets/resumption, and no trust override. Distinguish per-evaluation network permission from independent OS trust-database maintenance; do not promise absolute OS network silence. Unit tests with a test-only anchor do not replace real system-trust tests.
+ - NIOEmbedded fixtures: bytewise split chunked/length/EOF messages, malformed and duplicate framing, 100/101, redirects to localhost/private schemes, oversized headers/body/trailers, compressed bomb headers, interrupted bodies, cancellation and timeout.
+ - iPhone/iOS 26 network instrumentation: public pages, Wi-Fi loss, unknown reachability, IPv6-only environment, VPN/proxy configuration, large and slow bodies, cancellation during TLS and parser work. Verify no extra host/link/subresource or account calls.
+ - Full app regressions and measured binary/install-size, startup, memory, and energy delta. NIO has a nontrivial dependency footprint; no guessed MB claim is supplied. Source checkout disk size is not installed binary size. NIOTransportServices itself links NIO components and Atomics, and NIO adds Collections/System resolution; there is no BoringSSL dependency.
+-- A fresh independent security/code review before enabling any entry point. This worker has not obtained that review because all native-agent slots were occupied.
++- A fresh independent security/code review before enabling any entry point. The original frozen revision received an independent review requiring repairs. The separate repair copy requires targeted re-review, especially DNS ownership. Neither review replaces native gates.
+ 
+ ## Not included
+ 
+--- before/docs/TEST_REPORT.md
++++ after/docs/TEST_REPORT.md
+@@ -1,3 +1,7 @@
++# Repair revision status
++
++This is the independent repair copy at /workspace/shared/Jarvis-EVO-web-repair-work. The original frozen tree remains unchanged. See repair-evidence/REPAIR_REPORT.md for the four Important and two minor repairs, current test inventory, focused patch and before/after manifests. The initial implementation report below is historical; its test counts and independent-review status describe the original freeze, not the current revision. Native compilation/tests and successful real retrieval are still unrun. No public probe was retried.
++
+ # Frozen implementation and test report
+ 
+ ## Delivered
+--- before/docs/WEB_SOURCE_DESIGN.md
++++ after/docs/WEB_SOURCE_DESIGN.md
+@@ -8,7 +8,7 @@
+ 
+ URLSession with a hostname preflight was rejected because its connection DNS lookup cannot be tied to the validated result through a documented pinning hook. An IP-literal-only URLSession reader was rejected as too limited for ordinary websites. A bespoke HTTP parser was rejected in favor of NIOHTTP1's llhttp-backed parser. There is no silent URLSession fallback, hand-written TLS, third-party proxy, account requirement, or paid key.
+ 
+-Apple explicitly documents sec_protocol_options_set_tls_server_name as setting the name used to verify the peer certificate, overriding the endpoint name. The implementation additionally evaluates the original hostname using SecPolicyCreateSSL and SecTrustEvaluateWithError against the platform trust store. It never adds anchors, accepts failed trust, or disables certificate checks. Network fetches during trust evaluation are disabled to avoid following certificate AIA/OCSP URLs to unvalidated destinations. This may reject servers that omit required intermediates. TLS minimum is 1.2; tickets, resumption and renegotiation are disabled. Network.framework is outside ATS, so no ATS-equivalence claim is made.
++Apple explicitly documents sec_protocol_options_set_tls_server_name as setting the name used to verify the peer certificate, overriding the endpoint name. The implementation additionally evaluates the original hostname using SecPolicyCreateSSL and SecTrustEvaluateWithError against the platform trust store. It never adds anchors, accepts failed trust, or disables certificate checks. Network fetching is disabled for this specific SecTrust evaluation to avoid following certificate AIA/OCSP URLs to unvalidated destinations. This does not disable or make claims about independent Security.framework revocation-database maintenance or other OS traffic; controlled native instrumentation remains required. This may reject servers that omit required intermediates. TLS minimum is 1.2; tickets, resumption and renegotiation are disabled. Network.framework is outside ATS, so no ATS-equivalence claim is made.
+ 
+ ## Consent and privacy boundary
+ 
+@@ -17,7 +17,7 @@
+ ## Limits and resource accounting
+ 
+ - HTTPS port 443; ASCII host/path spelling up to 2,048 bytes; no credentials, query or fragment. Percent-encoded UTF-8 paths are accepted after control-character checks. Canonical public IPv4 literals or validated multi-label DNS names only. Local/reserved host suffixes are rejected.
+-- DNS requests only A records, appends a root dot to avoid search-domain expansion, accepts at most 16 records, validates every returned address used before connection, and has a 5-second cancellation/deadline. No IPv6, mapped, transition, DNS64 or local-network fallback.
++- DNS requests only A records, appends a root dot to avoid search-domain expansion, accepts at most 16 records, validates every returned address used before connection, and installs a five-second caller deadline before setup on an independent scheduler. Cancellation/deadline completion does not wait for blocking DNS daemon IPC. OS work can remain outstanding; a shared two-slot pool retains capacity until serialized setup and cleanup return. Further callers fail busy rather than queue additional blocked work. This is scheduler-based caller completion, not a hard real-time guarantee or a guarantee that OS work has stopped. No IPv6, mapped, transition, DNS64 or local-network fallback.
+ - One source operation at a time; one to three unique URLs per explicit batch; minimum two seconds between starts. No automatic retry. Each source gets one selected address and one connection attempt.
+ - 10-second connect timeout and 30-second transport deadline after DNS. One 8 KiB maximum Network.framework receive completion, 16 KiB initial HTTP header budget, 100 fields, 288 KiB total plaintext HTTP wire budget including chunk/trailer overhead, 256 KiB decoded body budget. NIO performs HTTP framing, including chunked bodies. Informational responses, non-200 responses, upgrade flows, ambiguous lengths and nonempty trailers are rejected.
+ - Only identity Content-Encoding. Compressed responses are rejected before any decompression because no decompressor exists in this pipeline. Advertised content length and accumulated body bytes are checked separately. The wire budget bounds bytes entering the parser, not encrypted TLS overhead or OS buffers. OS TLS/DNS internals and allocation overhead are not claimed to fit this byte budget. These are application input limits, not a process memory proof.
+@@ -25,15 +25,15 @@
+ 
+ ## Extraction and prompt injection
+ 
+-The strict linear HTML tokenizer never loads a DOM or renders HTML. It discards attributes and executable/foreign/hidden elements, extracts title separately, decodes a small safe entity set and numeric Unicode scalars, and normalizes whitespace/control characters. It rejects malformed/deep markup rather than reproducing the HTML5 recovery algorithm. Optional-end-tag documents, CSS visibility, unknown named entities, script-created pages and some ordinary HTML will be incomplete or unsupported. The extracted text must never be fed to a web view as markup. Unknown entity spellings remain text.
++The strict linear HTML tokenizer never loads a DOM or renders HTML. It discards attributes and executable/foreign/hidden elements, extracts title separately, decodes a small safe entity set and numeric Unicode scalars, and normalizes whitespace/control characters. Ordinary inline boundaries preserve adjacent text; only block/break boundaries and removed content introduce separators. It rejects malformed/deep markup rather than reproducing the HTML5 recovery algorithm. Optional-end-tag documents, CSS visibility, unknown named entities, script-created pages and some ordinary HTML will be incomplete or unsupported. The extracted text must never be fed to a web view as markup. Unknown entity spellings remain text.
+ 
+-Text and titles remain untrusted and can contain false claims or malicious model instructions. JSON framing and synthesis instructions reduce confusion but are not a prompt-injection guarantee. Future synthesis must be local, tool-free, explicitly label untrusted source data, and cite only IDs resolved through the retrieved snapshot registry. Citation links are provenance, not proof. Text truncation and context truncation have separate flags. No search results or summaries are fabricated.
++Text and titles remain untrusted and can contain false claims or malicious model instructions. JSON framing and synthesis instructions reduce confusion but are not a prompt-injection guarantee. Future synthesis must be local, tool-free, explicitly label untrusted source data, and cite only IDs resolved through the retrieved snapshot registry. Citation links are provenance, not proof. Title, extracted-body text and context truncation have separate flags. No search results or summaries are fabricated.
+ 
+ ## Scope and limitations
+ 
+ This is a safe-address-pinned, limited source reader design, not general browsing or search. HTTPS hostnames with public A records are supported in the draft. IPv6-only sites, query-bearing URLs, redirects, compressed-only pages, non-UTF-8 text, PDFs, gated pages and JavaScript pages are intentionally unsupported. OS/VPN/NAT routing and OS DNS infrastructure are outside application control; the promise is a validated public destination passed to the connection API, not proof of physical network topology.
+ 
+-The app's existing local-provider contract takes GenerationRequest messages/systemPrompt and a bounded context window. Integration must budget these sources together with chat history, not append them after trimming. WebSourceContext prepares at most 6,000 UTF-8 bytes by default, preserving metadata and explicitly flagging text reduction; it does not execute synthesis.
++The app's existing local-provider contract takes GenerationRequest messages/systemPrompt and a bounded context window. Integration must budget these sources together with chat history, not append them after trimming. WebSourceContext prepares at most 6,000 UTF-8 bytes by default, reserving metadata and a valid-scalar prefix of up to 256 UTF-8 bytes per source before distributing spare encoded-JSON bytes fairly. It fails if useful excerpts for every source do not fit, explicitly flags any reduction, and it does not execute synthesis.
+ 
+ ## Implementation plan and rulings
+ 
+@@ -44,3 +44,8 @@
+ 5. Require fresh review, native compile/test and iPhone transport instrumentation before any integration or release.
+ 
+ Rulings: choose IPv4-only rather than an unreviewed IPv6 special-range policy; reject compression rather than claim a false decompression bound; reject redirects rather than expand consent; strict HTML may reject real pages rather than execute a browser; use independent check results only for the exact code they exercised.
++
++
++## Review repair revision
++
++Four Important findings and two minor findings from the independent review were addressed in a separate repair copy, without modifying the frozen reviewed tree. Caller-owned DNS completion, bounded abandoned setup work, fair evidence allocation, inline adjacency, terminal error normalization and title/limit metadata are described in repair-evidence/REPAIR_REPORT.md. These are authored repairs pending native execution and the same reviewer's targeted re-review. Connection routing, public-IP policy, dependency pins and system certificate trust behavior remain unchanged.

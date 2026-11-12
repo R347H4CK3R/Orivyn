@@ -81,7 +81,7 @@ actor WebSourceReader {
         try Task.checkCancellation()
         let source = WebSource(id: UUID(), originalURL: request.url, finalURL: body.url, retrievedAt: now(),
                                mediaType: body.mediaType, receivedBodyBytes: body.data.count,
-                               title: text.title, text: text.text, textTruncated: text.truncated)
+                               title: text.title, titleTruncated: text.titleTruncated, text: text.text, textTruncated: text.truncated)
         progress(.finished(source.id))
         return source
     }

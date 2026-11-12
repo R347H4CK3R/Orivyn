@@ -42,7 +42,7 @@ struct PinnedWebTransport: WebSourceTransport {
                     }
                 // SocketAddress(ipAddress:) parses a literal. It does not perform DNS resolution.
                 let socket = try SocketAddress(ipAddress: address.literal, port: 443)
-                bootstrap.connect(to: socket).whenFailure { operation.finish(.failure(Self.map($0))) }
+                bootstrap.connect(to: socket).whenFailure { operation.finish(.failure($0)) }
                 return try await operation.promise.futureResult.get()
             } onCancel: { operation.finish(.failure(CancellationError())) }
             outcome = .success(body)
@@ -64,8 +64,9 @@ struct PinnedWebTransport: WebSourceTransport {
         sec_protocol_options_set_tls_resumption_enabled(options.securityProtocolOptions, false)
         sec_protocol_options_set_tls_tickets_enabled(options.securityProtocolOptions, false)
         sec_protocol_options_set_tls_renegotiation_enabled(options.securityProtocolOptions, false)
-        // Certificate AIA/OCSP URLs are also untrusted destinations. Keep trust evaluation offline,
+        // Certificate AIA/OCSP URLs are also untrusted destinations. Disable network fetching for this trust evaluation,
         // using the platform trust store and the original hostname, with no anchor or error override.
+        // This is not a claim that Security.framework performs no independent OS maintenance traffic.
         sec_protocol_options_set_verify_block(options.securityProtocolOptions, { _, trust, complete in
             let systemTrust = sec_trust_copy_ref(trust).takeRetainedValue()
             complete(WebTLSIdentity.evaluate(systemTrust, hostname: hostname))
@@ -73,14 +74,7 @@ struct PinnedWebTransport: WebSourceTransport {
         return options
     }
 
-    private static func map(_ error: Error) -> Error {
-        if let error = error as? WebSourceError { return error }
-        if error is CancellationError { return error }
-        if let network = error as? NWError, case .posix(let code) = network,
-           code == .ENETDOWN || code == .ENETUNREACH || code == .ENOTCONN { return WebSourceError.offline }
-        if let channel = error as? ChannelError, case .connectTimeout = channel { return WebSourceError.timeout }
-        return WebSourceError.transportUnavailable
-    }
+
 }
 
 /// Cross-thread cancellation and exactly-once completion. All mutable fields are lock protected.
@@ -110,7 +104,7 @@ final class WebReadOperation: @unchecked Sendable {
         }
         guard state.0 else { return }
         state.1?.close(promise: nil)
-        promise.completeWith(result)
+        promise.completeWith(result.mapError(WebTransportErrorPolicy.normalize))
     }
 }
 
@@ -139,7 +133,7 @@ final class WebWireLimitHandler: ChannelInboundHandler {
         context.fireChannelRead(data)
     }
     private func fail(_ context: ChannelHandlerContext) {
-        context.fireErrorCaught(WebSourceError.bodyTooLarge)
+        context.fireErrorCaught(WebSourceError.responseLimitExceeded)
         context.close(promise: nil)
     }
 }
@@ -192,12 +186,25 @@ final class WebHTTPResponseHandler: ChannelInboundHandler {
     func errorCaught(context: ChannelHandlerContext, error: Error) { operation.finish(.failure(error)) }
 }
 
-/// Platform certificate evaluation with no network fetches or trust exceptions.
+/// Platform certificate evaluation with per-evaluation network fetching disabled and no trust exceptions.
 enum WebTLSIdentity {
     static func evaluate(_ trust: SecTrust, hostname: String) -> Bool {
         let policy = SecPolicyCreateSSL(true, hostname as CFString)
         guard SecTrustSetPolicies(trust, policy) == errSecSuccess,
               SecTrustSetNetworkFetchAllowed(trust, false) == errSecSuccess else { return false }
         return SecTrustEvaluateWithError(trust, nil)
+    }
+}
+
+/// One public error policy, applied at exactly-once transport completion.
+enum WebTransportErrorPolicy {
+    static func normalize(_ error: Error) -> Error {
+        if let error = error as? WebSourceError { return error }
+        if error is CancellationError { return error }
+        if error is HTTPParserError || error is NIOHTTPDecoderError { return WebSourceError.invalidResponse }
+        if let network = error as? NWError, case .posix(let code) = network, code == .ETIMEDOUT { return WebSourceError.timeout }
+        // A failed route/connection is not evidence that the entire device is offline.
+        if let channel = error as? ChannelError, case .connectTimeout = channel { return WebSourceError.timeout }
+        return WebSourceError.transportUnavailable
     }
 }

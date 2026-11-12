@@ -11,7 +11,7 @@ enum WebTextExtractor {
             var writer = TextWriter(limit: WebSourceLimits.textBytes)
             writer.append(input)
             guard !writer.text.isEmpty else { throw WebSourceError.emptyContent }
-            return ExtractedWebText(title: nil, text: writer.text, truncated: writer.truncated)
+            return ExtractedWebText(title: nil, titleTruncated: false, text: writer.text, truncated: writer.truncated)
         }
         guard mediaType == "text/html" else { throw WebSourceError.unsupportedContentType }
         var scanner = HTMLScanner(bytes: Array(input.utf8))
@@ -55,6 +55,7 @@ private struct HTMLScanner {
     private var titleSeen = false
     private static let voids: Set<String> = ["area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source", "track", "wbr"]
     private static let excluded: Set<String> = ["head", "template", "noscript", "iframe", "object", "svg", "math"]
+    private static let blocks: Set<String> = ["address", "article", "aside", "blockquote", "body", "br", "dd", "div", "dl", "dt", "fieldset", "figcaption", "figure", "footer", "form", "h1", "h2", "h3", "h4", "h5", "h6", "header", "hr", "html", "li", "main", "nav", "ol", "p", "pre", "section", "table", "tbody", "td", "tfoot", "th", "thead", "tr", "ul"]
     private static let raw: Set<String> = ["script", "style", "textarea", "xmp", "plaintext"]
     private struct Element { let name: String; let hidden: Bool }
 
@@ -107,8 +108,8 @@ private struct HTMLScanner {
             let attributes = Array(token[index...])
             if closing {
                 guard attributes.allSatisfy(isSpace), stack.last?.name == name else { throw WebSourceError.complexHTML }
-                stack.removeLast()
-                body.separator()
+                let removed = stack.removeLast()
+                if Self.blocks.contains(name) || removed.hidden { body.separator() }
                 continue
             }
             let hidden = try hasHiddenAttribute(attributes)
@@ -125,7 +126,8 @@ private struct HTMLScanner {
                 guard !titleSeen else { throw WebSourceError.complexHTML }
                 titleSeen = true
             }
-            body.separator()
+            let removesContent = hidden || Self.excluded.contains(name) || name == "title"
+            if Self.blocks.contains(name) || removesContent { body.separator() }
             if !Self.voids.contains(name) {
                 guard stack.count < WebSourceLimits.depth else { throw WebSourceError.complexHTML }
                 // Self-closing non-void HTML is ambiguous under HTML5; reject, do not reinterpret.
@@ -135,7 +137,7 @@ private struct HTMLScanner {
         }
         guard stack.isEmpty else { throw WebSourceError.complexHTML }
         guard !body.text.isEmpty else { throw WebSourceError.emptyContent }
-        return ExtractedWebText(title: title.text.isEmpty ? nil : title.text, text: body.text, truncated: body.truncated)
+        return ExtractedWebText(title: title.text.isEmpty ? nil : title.text, titleTruncated: title.truncated, text: body.text, truncated: body.truncated)
     }
 
     private func matches(_ pattern: String, at index: Int) -> Bool {

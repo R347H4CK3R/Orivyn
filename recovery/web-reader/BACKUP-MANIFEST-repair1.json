@@ -1,0 +1,524 @@
+{
+  "schema_version": 1,
+  "repository": "R347H4CK3R/Jarvis-EVO",
+  "branch": "recovery/evo-web-reader",
+  "base_commit": "381d4d1de958ce390e4bac8cb7a99bc735062d28",
+  "base_root_tree": "beb0360d11f2367df795c11a68ccf55063e47d5a",
+  "purpose": "Independent preservation of the frozen repaired web-reader package; not integration, native-test acceptance or release.",
+  "source_manifest_sha256": "58fda038576ecfb51c799672ae4c728eebbb4213cdab75bf55c3d1dfcf89db68",
+  "selected_source_file_count": 55,
+  "selected_source_bytes": 379043,
+  "excluded": [
+    "repair-evidence/before/**",
+    "repair-evidence/after/**",
+    "upstream checkouts",
+    "unlisted compiled files"
+  ],
+  "prior_manifest_preserved": {
+    "path": "recovery/web-reader/BACKUP-MANIFEST.json",
+    "git_blob_id": "56aac20f5f49acbf2512e239995f5724b5da1bd7",
+    "mode": "100644"
+  },
+  "limitations": [
+    "New native tests remain unrun.",
+    "No app integration or release acceptance is claimed.",
+    "This manifest inventories selected local files; its own Git blob ID is recorded in external preservation proof to avoid self-reference."
+  ],
+  "files": [
+    {
+      "source_relative_path": "DELIVERABLE_SHA256.json",
+      "path": "recovery/web-reader/DELIVERABLE_SHA256.json",
+      "bytes": 4883,
+      "sha256": "58fda038576ecfb51c799672ae4c728eebbb4213cdab75bf55c3d1dfcf89db68",
+      "git_blob_id": "a41a25848185d868db7b28df2f7383f3453852bd",
+      "mode": "100644",
+      "source_mode": "0o644"
+    },
+    {
+      "source_relative_path": "JarvisEVO/Services/WebSources/PinnedWebTransport.swift",
+      "path": "recovery/web-reader/JarvisEVO/Services/WebSources/PinnedWebTransport.swift",
+      "bytes": 11599,
+      "sha256": "0f5db5c44417d9712663f9e805cc95119dec156d64e943b0d74219694ddef258",
+      "git_blob_id": "81d8689fd7d3ca9258f7265e48aefae69f8d5c67",
+      "mode": "100644",
+      "source_mode": "0o644"
+    },
+    {
+      "source_relative_path": "JarvisEVO/Services/WebSources/WebDNSResolver.swift",
+      "path": "recovery/web-reader/JarvisEVO/Services/WebSources/WebDNSResolver.swift",
+      "bytes": 10967,
+      "sha256": "b4f2861cd12aba38c2daa24af1d9d7160e5c121a23a4e449380e4a7937b64bce",
+      "git_blob_id": "f6849c62f1fdd429ac14b877fa6e2397c4ab60fe",
+      "mode": "100644",
+      "source_mode": "0o644"
+    },
+    {
+      "source_relative_path": "JarvisEVO/Services/WebSources/WebResponsePolicy.swift",
+      "path": "recovery/web-reader/JarvisEVO/Services/WebSources/WebResponsePolicy.swift",
+      "bytes": 2106,
+      "sha256": "139857b63d45fd06cdba657941fb35625822a6380802721cac7842e2cd4b8f00",
+      "git_blob_id": "1de63c0480d4ca6956f99842b3fe5b56bdd65319",
+      "mode": "100644",
+      "source_mode": "0o644"
+    },
+    {
+      "source_relative_path": "JarvisEVO/Services/WebSources/WebSource.swift",
+      "path": "recovery/web-reader/JarvisEVO/Services/WebSources/WebSource.swift",
+      "bytes": 4072,
+      "sha256": "6de1bc5ea792b3885b6deb4e53629b682b8cdd5abd7b69f17d4bf514ffbba8a6",
+      "git_blob_id": "ddddf56707d9809f05200ec37862f3532d1d3dbf",
+      "mode": "100644",
+      "source_mode": "0o644"
+    },
+    {
+      "source_relative_path": "JarvisEVO/Services/WebSources/WebSourceContext.swift",
+      "path": "recovery/web-reader/JarvisEVO/Services/WebSources/WebSourceContext.swift",
+      "bytes": 5638,
+      "sha256": "bbf9ab1a072397639f0be6a08e5b89249b4aa6b527799a03f116364ba954b665",
+      "git_blob_id": "2d6b1db7d29d6d01227c289d5e4948b678a5bdf2",
+      "mode": "100644",
+      "source_mode": "0o644"
+    },
+    {
+      "source_relative_path": "JarvisEVO/Services/WebSources/WebSourceReader.swift",
+      "path": "recovery/web-reader/JarvisEVO/Services/WebSources/WebSourceReader.swift",
+      "bytes": 4114,
+      "sha256": "ba1892a770a9823e6d1bbbcad1714b4ba6ec1b70ba8ae954bfb3f1ec3c468624",
+      "git_blob_id": "67db109dc17729530e1d84c232f6dd5c25fa1e03",
+      "mode": "100644",
+      "source_mode": "0o644"
+    },
+    {
+      "source_relative_path": "JarvisEVO/Services/WebSources/WebTextExtractor.swift",
+      "path": "recovery/web-reader/JarvisEVO/Services/WebSources/WebTextExtractor.swift",
+      "bytes": 11950,
+      "sha256": "8c883362ab21419afc5823ba371e2b8587bd166b0732e05ad44ce1b875d9316d",
+      "git_blob_id": "d728a968cc770088878912d73184519094096b12",
+      "mode": "100644",
+      "source_mode": "0o644"
+    },
+    {
+      "source_relative_path": "JarvisEVO/Services/WebSources/WebURLPolicy.swift",
+      "path": "recovery/web-reader/JarvisEVO/Services/WebSources/WebURLPolicy.swift",
+      "bytes": 3917,
+      "sha256": "60e567867be7b1c1b0b8655e4e3d90d84532fccd83cbb9f7e66e3eff900b0f91",
+      "git_blob_id": "75feaa4bb780d411fedcbcf27b6ffc6a45cd2bec",
+      "mode": "100644",
+      "source_mode": "0o644"
+    },
+    {
+      "source_relative_path": "Package.resolved",
+      "path": "recovery/web-reader/Package.resolved",
+      "bytes": 1390,
+      "sha256": "c2517fb6bd2f37e7a8e797d27fc269af2dee72eb60b9502155d84940fb7d7ac3",
+      "git_blob_id": "9cca64ab8f53fa87936d9d8422fb0e84d2ed0e2c",
+      "mode": "100644",
+      "source_mode": "0o644"
+    },
+    {
+      "source_relative_path": "Package.swift",
+      "path": "recovery/web-reader/Package.swift",
+      "bytes": 1337,
+      "sha256": "967e5d87a7fee8c8f8b35d838fc1f3d75ba842b7095781695af7fbd4e1fbc138",
+      "git_blob_id": "9f44ed7e974c6361176470613ce3ef89c878d240",
+      "mode": "100644",
+      "source_mode": "0o644"
+    },
+    {
+      "source_relative_path": "Tests/Fixtures/WebTLSIdentity.der",
+      "path": "recovery/web-reader/Tests/Fixtures/WebTLSIdentity.der",
+      "bytes": 853,
+      "sha256": "a8c2afbdf198ca2745ece4928b9b46fb68acf6ad73d44aad7dedbc7b7db0b8b1",
+      "git_blob_id": "8000a84af58a278d8e2925f6aba88c0a2fc131fd",
+      "mode": "100644",
+      "source_mode": "0o644"
+    },
+    {
+      "source_relative_path": "Tests/WebDNSLifecycleTests.swift",
+      "path": "recovery/web-reader/Tests/WebDNSLifecycleTests.swift",
+      "bytes": 8468,
+      "sha256": "3b76811f27693ae9d71ac8fb319fb30bc61508f5d625bca2678c134b90fecc86",
+      "git_blob_id": "17e00079a615ea94ac59ed7c2dd8e8c244bae994",
+      "mode": "100644",
+      "source_mode": "0o644"
+    },
+    {
+      "source_relative_path": "Tests/WebHTTPTransportTests.swift",
+      "path": "recovery/web-reader/Tests/WebHTTPTransportTests.swift",
+      "bytes": 8649,
+      "sha256": "b7665b880f4071be1229e29d86fe65f4f21273d87573b9bb37cd39509df6a29c",
+      "git_blob_id": "8e177563a835e78b90b11079dfbd9ce0a8981bfa",
+      "mode": "100644",
+      "source_mode": "0o644"
+    },
+    {
+      "source_relative_path": "Tests/WebSourcePolicyTests.swift",
+      "path": "recovery/web-reader/Tests/WebSourcePolicyTests.swift",
+      "bytes": 3413,
+      "sha256": "2b4bcf39605f27a482ebfec581a8a0a03def8912f9e7615b8a4501268cc8dc5b",
+      "git_blob_id": "c9bb4ff1c7ac33aee99063fe91653b6b54dd5999",
+      "mode": "100644",
+      "source_mode": "0o644"
+    },
+    {
+      "source_relative_path": "Tests/WebSourceReaderTests.swift",
+      "path": "recovery/web-reader/Tests/WebSourceReaderTests.swift",
+      "bytes": 3853,
+      "sha256": "d2a7175fb932dca19203f3e4509e4de05999044a79821c186d72aa36b2fdab2e",
+      "git_blob_id": "c7100d330448ca6e96837c04f5e5291533d2fee7",
+      "mode": "100644",
+      "source_mode": "0o644"
+    },
+    {
+      "source_relative_path": "Tests/WebSourceRepairTests.swift",
+      "path": "recovery/web-reader/Tests/WebSourceRepairTests.swift",
+      "bytes": 5369,
+      "sha256": "9b289a098de0519fc64a9bef63dd23c38aa6ca0676be5fef9d15f7fce50d956b",
+      "git_blob_id": "6c1f92b29712f451ab6e2b17c15f03825cc02651",
+      "mode": "100644",
+      "source_mode": "0o644"
+    },
+    {
+      "source_relative_path": "Tests/WebTLSIdentityTests.swift",
+      "path": "recovery/web-reader/Tests/WebTLSIdentityTests.swift",
+      "bytes": 2115,
+      "sha256": "11d41ae4849ea95e12275c078140f658800e704e93aa566e4377bf92089158c5",
+      "git_blob_id": "1a669993728eab9ccd918c512e8d2e7385a1df05",
+      "mode": "100644",
+      "source_mode": "0o644"
+    },
+    {
+      "source_relative_path": "Tests/WebTextExtractorTests.swift",
+      "path": "recovery/web-reader/Tests/WebTextExtractorTests.swift",
+      "bytes": 2666,
+      "sha256": "21cf7363c90cf0f6f82a8f4201fe5c3ca965435043865e0de0d9168e38b8ad5f",
+      "git_blob_id": "d2ab61e23ac90eeefa188a808d5902ebfa382819",
+      "mode": "100644",
+      "source_mode": "0o644"
+    },
+    {
+      "source_relative_path": "ThirdPartyNotices/llhttp-LICENSE.txt",
+      "path": "recovery/web-reader/ThirdPartyNotices/llhttp-LICENSE.txt",
+      "bytes": 1105,
+      "sha256": "ebca854e0134cd256d673627c20499f42577eb74bacf08b9f25b626a73c91277",
+      "git_blob_id": "6c1512dd6bcd6de314673f8c2c7ff3fd6139f28e",
+      "mode": "100644",
+      "source_mode": "0o644"
+    },
+    {
+      "source_relative_path": "ThirdPartyNotices/swift-atomics-LICENSE.txt",
+      "path": "recovery/web-reader/ThirdPartyNotices/swift-atomics-LICENSE.txt",
+      "bytes": 11751,
+      "sha256": "770af8291f708538d8ff885a0bbc4e045cd700531741c4f99528d435c14d7f55",
+      "git_blob_id": "61b0c78195f2d00acaf658000eeca6ad406a3a29",
+      "mode": "100644",
+      "source_mode": "0o644"
+    },
+    {
+      "source_relative_path": "ThirdPartyNotices/swift-collections-LICENSE.txt",
+      "path": "recovery/web-reader/ThirdPartyNotices/swift-collections-LICENSE.txt",
+      "bytes": 11751,
+      "sha256": "770af8291f708538d8ff885a0bbc4e045cd700531741c4f99528d435c14d7f55",
+      "git_blob_id": "61b0c78195f2d00acaf658000eeca6ad406a3a29",
+      "mode": "100644",
+      "source_mode": "0o644"
+    },
+    {
+      "source_relative_path": "ThirdPartyNotices/swift-nio-LICENSE.txt",
+      "path": "recovery/web-reader/ThirdPartyNotices/swift-nio-LICENSE.txt",
+      "bytes": 11358,
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "git_blob_id": "d645695673349e3947e8e5ae42332d0ac3164cd7",
+      "mode": "100644",
+      "source_mode": "0o644"
+    },
+    {
+      "source_relative_path": "ThirdPartyNotices/swift-nio-transport-services-LICENSE.txt",
+      "path": "recovery/web-reader/ThirdPartyNotices/swift-nio-transport-services-LICENSE.txt",
+      "bytes": 11358,
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "git_blob_id": "d645695673349e3947e8e5ae42332d0ac3164cd7",
+      "mode": "100644",
+      "source_mode": "0o644"
+    },
+    {
+      "source_relative_path": "ThirdPartyNotices/swift-system-LICENSE.txt",
+      "path": "recovery/web-reader/ThirdPartyNotices/swift-system-LICENSE.txt",
+      "bytes": 11750,
+      "sha256": "2245a990b635558be210fb3eb4f8a6f7a49aebc0fefbf5859146a65ddc7ddcf3",
+      "git_blob_id": "004d67aff35d05d06650d50bf14a7ac789557e7c",
+      "mode": "100644",
+      "source_mode": "0o644"
+    },
+    {
+      "source_relative_path": "docs/API_PROVENANCE.md",
+      "path": "recovery/web-reader/docs/API_PROVENANCE.md",
+      "bytes": 3436,
+      "sha256": "8cf6ede17c36f278bc387aa57ff76888de67165bc6639075774c99ee0fd557ca",
+      "git_blob_id": "5aefa9cd19c73a5b789f1e7cb1283e61bf34e703",
+      "mode": "100644",
+      "source_mode": "0o644"
+    },
+    {
+      "source_relative_path": "docs/INTEGRATION_PROPOSAL.md",
+      "path": "recovery/web-reader/docs/INTEGRATION_PROPOSAL.md",
+      "bytes": 5776,
+      "sha256": "d9796bdaa38def720df62deba0c34c3406fea4cd218e72639eaeae1ad56e89cf",
+      "git_blob_id": "fa5b711c78a58337effbcfbbc8b9e4d1fd950867",
+      "mode": "100644",
+      "source_mode": "0o644"
+    },
+    {
+      "source_relative_path": "docs/TEST_REPORT.md",
+      "path": "recovery/web-reader/docs/TEST_REPORT.md",
+      "bytes": 5086,
+      "sha256": "c4ea365c2829e4e7613e38edecf1116c588419886bf46a9751d080aedd7bd62b",
+      "git_blob_id": "3693fb342fcc1e6c6fa19998e17ef3fd1d71a638",
+      "mode": "100644",
+      "source_mode": "0o644"
+    },
+    {
+      "source_relative_path": "docs/WEB_SOURCE_DESIGN.md",
+      "path": "recovery/web-reader/docs/WEB_SOURCE_DESIGN.md",
+      "bytes": 9659,
+      "sha256": "65e43ee472fd3ffa8f993a4a425d31fa5e270c3160db5401573e9cd01016eaf7",
+      "git_blob_id": "fcaebe948c5e18fc8b5d7177f5a1a7cb686933c0",
+      "mode": "100644",
+      "source_mode": "0o644"
+    },
+    {
+      "source_relative_path": "evidence/BASE_SHA256.json",
+      "path": "recovery/web-reader/evidence/BASE_SHA256.json",
+      "bytes": 805,
+      "sha256": "cc685fefe092679b6b67074de8de4f7e80d82fd806956a78d5495e895453e23e",
+      "git_blob_id": "79394c116f120c3cd7552d921ff390cbd3913e2c",
+      "mode": "100644",
+      "source_mode": "0o644"
+    },
+    {
+      "source_relative_path": "evidence/DEPENDENCIES.json",
+      "path": "recovery/web-reader/evidence/DEPENDENCIES.json",
+      "bytes": 3324,
+      "sha256": "979f90a64d0f996aceef5cadcb3fb218b7855fb6e691daf7de3d6a39ce9bd351",
+      "git_blob_id": "b3ec02df201cb02e85466bc75461330cf1596c0f",
+      "mode": "100644",
+      "source_mode": "0o644"
+    },
+    {
+      "source_relative_path": "evidence/base-recheck.json",
+      "path": "recovery/web-reader/evidence/base-recheck.json",
+      "bytes": 260,
+      "sha256": "da37947c129719c00f4018a5b32f30dadd8df7f0f81b1249e5620b57aa139eb4",
+      "git_blob_id": "5609b7d108e95c2b822a4491307f735d0459e020",
+      "mode": "100644",
+      "source_mode": "0o644"
+    },
+    {
+      "source_relative_path": "evidence/certificate-generation.txt",
+      "path": "recovery/web-reader/evidence/certificate-generation.txt",
+      "bytes": 1336,
+      "sha256": "fbea8d2e02c6515845d32fea4df54afcee73c7e3f7a5799257467f149a64f250",
+      "git_blob_id": "b2da881830b91ef6666cf86346a777c17fe40436",
+      "mode": "100644",
+      "source_mode": "0o644"
+    },
+    {
+      "source_relative_path": "evidence/llhttp-build.txt",
+      "path": "recovery/web-reader/evidence/llhttp-build.txt",
+      "bytes": 51390,
+      "sha256": "80634466a97560e304a8ad382ee2fce120dad641f8083b1b9e90ab13b866dce7",
+      "git_blob_id": "62d3dafe0ff524e8773591fa344d4dd04ce48dac",
+      "mode": "100644",
+      "source_mode": "0o644"
+    },
+    {
+      "source_relative_path": "evidence/native-test-attempt.txt",
+      "path": "recovery/web-reader/evidence/native-test-attempt.txt",
+      "bytes": 45,
+      "sha256": "83ac2d960dc5a7072e2f6875f96b04365aabfa3502b1339665286b8dd13af9d5",
+      "git_blob_id": "a0d92a52afb4a94e14fbe9df4444d693e651a836",
+      "mode": "100644",
+      "source_mode": "0o644"
+    },
+    {
+      "source_relative_path": "evidence/native-toolchain-check.txt",
+      "path": "recovery/web-reader/evidence/native-toolchain-check.txt",
+      "bytes": 46,
+      "sha256": "82845dc15d572c55ef93f5d4d91f7db4072e68cb605eaa3f8d0bf1ec9786eab5",
+      "git_blob_id": "092e5b4d5c085050dc7e1433a2fff209e7916fd7",
+      "mode": "100644",
+      "source_mode": "0o644"
+    },
+    {
+      "source_relative_path": "evidence/public-pinned-tls-check.json",
+      "path": "recovery/web-reader/evidence/public-pinned-tls-check.json",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "git_blob_id": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "mode": "100644",
+      "source_mode": "0o644"
+    },
+    {
+      "source_relative_path": "evidence/public-pinned-tls-error.txt",
+      "path": "recovery/web-reader/evidence/public-pinned-tls-error.txt",
+      "bytes": 630,
+      "sha256": "0fb8f704f1528e2997638e037eb4dba8b6d885d749745feff23df0884b441577",
+      "git_blob_id": "bc16289b639c41b767bc7451a12bc3ff6a2f09be",
+      "mode": "100644",
+      "source_mode": "0o644"
+    },
+    {
+      "source_relative_path": "evidence/reference-checks-initial-failure.txt",
+      "path": "recovery/web-reader/evidence/reference-checks-initial-failure.txt",
+      "bytes": 1511,
+      "sha256": "a82d086bf625f7b27526d57a4acfbb7bd4b53190963eb3df4528d4e49239eb99",
+      "git_blob_id": "3bec1dcef566e090021711a09982bf078f4d0025",
+      "mode": "100644",
+      "source_mode": "0o644"
+    },
+    {
+      "source_relative_path": "evidence/reference-checks.txt",
+      "path": "recovery/web-reader/evidence/reference-checks.txt",
+      "bytes": 950,
+      "sha256": "8ebb7b88b4e2fc4be771bd9ad33d1775f7548f91c4b39f6da58a2d9352386d97",
+      "git_blob_id": "cbad6b1eadaa64b8aff5c02b78fb5c060f82f891",
+      "mode": "100644",
+      "source_mode": "0o644"
+    },
+    {
+      "source_relative_path": "repair-evidence/AFTER_SHA256.json",
+      "path": "recovery/web-reader/repair-evidence/AFTER_SHA256.json",
+      "bytes": 4883,
+      "sha256": "58fda038576ecfb51c799672ae4c728eebbb4213cdab75bf55c3d1dfcf89db68",
+      "git_blob_id": "a41a25848185d868db7b28df2f7383f3453852bd",
+      "mode": "100644",
+      "source_mode": "0o644"
+    },
+    {
+      "source_relative_path": "repair-evidence/BEFORE_SHA256.json",
+      "path": "recovery/web-reader/repair-evidence/BEFORE_SHA256.json",
+      "bytes": 4694,
+      "sha256": "491958ea5d810daa3a66787b2f2b04594ca7a8ac2a376bb5eb943c4f322ffba7",
+      "git_blob_id": "6f8fc9dd3a02e758f7292fde00b15eb15697c6ee",
+      "mode": "100644",
+      "source_mode": "0o644"
+    },
+    {
+      "source_relative_path": "repair-evidence/CHANGES.json",
+      "path": "recovery/web-reader/repair-evidence/CHANGES.json",
+      "bytes": 2815,
+      "sha256": "6767e84915acf2b6a798b434f55221bc97c7661a9572d7484b2f00b49b747b14",
+      "git_blob_id": "6ee70d4dbc8e5c78bee437bedf570436662d9c17",
+      "mode": "100644",
+      "source_mode": "0o644"
+    },
+    {
+      "source_relative_path": "repair-evidence/FOCUSED.patch",
+      "path": "recovery/web-reader/repair-evidence/FOCUSED.patch",
+      "bytes": 66575,
+      "sha256": "5efcf16d72098c078259be0b20096655f86fe7f98178167b91f44ed8bedd99d8",
+      "git_blob_id": "39e00230dd68dd1043e890c281ad42112719b9ce",
+      "mode": "100644",
+      "source_mode": "0o644"
+    },
+    {
+      "source_relative_path": "repair-evidence/PACKAGE_SHA256.json",
+      "path": "recovery/web-reader/repair-evidence/PACKAGE_SHA256.json",
+      "bytes": 10862,
+      "sha256": "81201c9837916bda83a517d3779530cb665b936a1d4be19d4bc49c27340c119d",
+      "git_blob_id": "98e2df7d699d7fc33d35666e03311f32f23dc159",
+      "mode": "100644",
+      "source_mode": "0o644"
+    },
+    {
+      "source_relative_path": "repair-evidence/REPAIR_REPORT.md",
+      "path": "recovery/web-reader/repair-evidence/REPAIR_REPORT.md",
+      "bytes": 6787,
+      "sha256": "17c01532826627fdabad161bfbbb3f6b55059f506afb1be9d3a0b379f2ddef0c",
+      "git_blob_id": "86b9bdaf1268504518c80dc56ccfbd9b60eeb5a1",
+      "mode": "100644",
+      "source_mode": "0o644"
+    },
+    {
+      "source_relative_path": "repair-evidence/REREVIEW.md",
+      "path": "recovery/web-reader/repair-evidence/REREVIEW.md",
+      "bytes": 14951,
+      "sha256": "e97d8047e05a8717fcc73f0c357d99ae5f504a1b6c20650cdae2e12457ec7cf1",
+      "git_blob_id": "04c82776d3ca7a1d2c60feafa8cba260d2109704",
+      "mode": "100644",
+      "source_mode": "0o644"
+    },
+    {
+      "source_relative_path": "repair-evidence/REVIEW_INPUT.md",
+      "path": "recovery/web-reader/repair-evidence/REVIEW_INPUT.md",
+      "bytes": 19106,
+      "sha256": "0f0123530d0f2520bcaf35e7d2bc6887400807e6c32d4662520168179c5b9ed1",
+      "git_blob_id": "69d24d129793493619b5612d26bcc627e4522f82",
+      "mode": "100644",
+      "source_mode": "0o644"
+    },
+    {
+      "source_relative_path": "repair-evidence/native-red-attempt.txt",
+      "path": "recovery/web-reader/repair-evidence/native-red-attempt.txt",
+      "bytes": 45,
+      "sha256": "6b3fa37f9ac3833dbe842218757f49c33d627bcf5ee15a9f308127b14a58cbd6",
+      "git_blob_id": "b685265cd303c6a101aafbd2d780b546756746b5",
+      "mode": "100644",
+      "source_mode": "0o644"
+    },
+    {
+      "source_relative_path": "repair-evidence/native-test-attempt.txt",
+      "path": "recovery/web-reader/repair-evidence/native-test-attempt.txt",
+      "bytes": 45,
+      "sha256": "1d1607db24a053eaf2ef94bbbe7b1fbcc2ceede3b7d574a118231b214cd47016",
+      "git_blob_id": "94191bb812e2b053bc70dca8a96ecf1bc4dd1135",
+      "mode": "100644",
+      "source_mode": "0o644"
+    },
+    {
+      "source_relative_path": "repair-evidence/original-freeze-recheck.json",
+      "path": "recovery/web-reader/repair-evidence/original-freeze-recheck.json",
+      "bytes": 139,
+      "sha256": "172ff74cc950980a6b6f9ca88ecdde2402db72f37ca73c85f10293f40d678c50",
+      "git_blob_id": "50cd39a2c97ad735d365faaa3c07d3d6fe32a83b",
+      "mode": "100644",
+      "source_mode": "0o644"
+    },
+    {
+      "source_relative_path": "repair-evidence/reference-checks.txt",
+      "path": "recovery/web-reader/repair-evidence/reference-checks.txt",
+      "bytes": 950,
+      "sha256": "bc8d6ffe612e7867913ba5f087af4b1166b4d5ed276f8216ef71a522c560e5e9",
+      "git_blob_id": "0fb76439f8401cd54a37805205cd5ab86d2f331b",
+      "mode": "100644",
+      "source_mode": "0o644"
+    },
+    {
+      "source_relative_path": "scripts/check_public_pinned_tls.py",
+      "path": "recovery/web-reader/scripts/check_public_pinned_tls.py",
+      "bytes": 1812,
+      "sha256": "175122922ddaaeb1fcf47520f23dbf974e1e72d06a68cdff9fa6ebe31d199118",
+      "git_blob_id": "2a58b3bb76f1c029677a01ae46007bf477c2b526",
+      "mode": "100644",
+      "source_mode": "0o644"
+    },
+    {
+      "source_relative_path": "scripts/check_reference_fixtures.py",
+      "path": "recovery/web-reader/scripts/check_reference_fixtures.py",
+      "bytes": 3318,
+      "sha256": "98ee77eeaa6749911ae774bde46b2fe3b0066343ee8590c2f6c4728a02ac5043",
+      "git_blob_id": "864a9c81cb10c5469c0e39b12d8d9f6a9f52aa38",
+      "mode": "100644",
+      "source_mode": "0o644"
+    },
+    {
+      "source_relative_path": "scripts/llhttp_probe.c",
+      "path": "recovery/web-reader/scripts/llhttp_probe.c",
+      "bytes": 1375,
+      "sha256": "b9ea483f62005ec7dd4440469fc2ca7073623cfb3c3a709b2d5dc75394210c2b",
+      "git_blob_id": "944a982341a4f78a7baf2e772a2f2f4b203718d6",
+      "mode": "100644",
+      "source_mode": "0o644"
+    }
+  ]
+}

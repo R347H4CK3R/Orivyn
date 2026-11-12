@@ -16,6 +16,7 @@ final class WebSourceReaderTests: XCTestCase {
         XCTAssertEqual(source.finalURL, source.originalURL)
         XCTAssertEqual(source.retrievedAt, date)
         XCTAssertEqual(source.title, "Fixture")
+        XCTAssertFalse(source.titleTruncated)
         XCTAssertEqual(source.text, "Actual content")
         XCTAssertFalse(source.textTruncated)
         XCTAssertEqual(source.receivedBodyBytes, 43)

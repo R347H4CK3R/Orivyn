@@ -1,4 +1,5 @@
 import XCTest
+import Network
 import NIOCore
 import NIOHTTP1
 import NIOEmbedded
@@ -53,7 +54,8 @@ final class WebHTTPTransportTests: XCTestCase {
     func testRequestContainsNoCredentialsOrConversationAndUsesOriginalHost() throws {
         let harness = try Harness()
         var outbound = ""
-        while let buffer = try harness.channel.readOutbound(as: ByteBuffer.self) {
+        while let data = try harness.channel.readOutbound(as: IOData.self) {
+            guard case .byteBuffer(let buffer) = data else { XCTFail("A GET must not send a file region"); continue }
             outbound += buffer.getString(at: buffer.readerIndex, length: buffer.readableBytes) ?? ""
         }
         XCTAssertTrue(outbound.hasPrefix("GET /article HTTP/1.1\r\n"))
@@ -73,23 +75,60 @@ final class WebHTTPTransportTests: XCTestCase {
         XCTAssertThrowsError(try harness.result()) { XCTAssertTrue($0 is CancellationError) }
         XCTAssertFalse(harness.channel.isActive)
     }
+    func testPreAndPostActivationFailuresUseSamePublicClassification() throws {
+        let cases: [(Error, WebSourceError)] = [(NWError.posix(.ENETDOWN), .transportUnavailable),
+                                               (NWError.tls(-9807), .transportUnavailable),
+                                               (HTTPParserError.invalidContentLength, .invalidResponse)]
+        for (error, expected) in cases {
+            for active in [false, true] {
+                let harness = try Harness(activate: active)
+                if active { try harness.feed(Data("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 5\r\n\r\nhe".utf8)) }
+                harness.channel.pipeline.fireErrorCaught(error)
+                XCTAssertThrowsError(try harness.result()) { XCTAssertEqual($0 as? WebSourceError, expected) }
+            }
+            let write = try Harness(activate: false, writeError: error)
+            try? write.activate()
+            XCTAssertThrowsError(try write.result()) { XCTAssertEqual($0 as? WebSourceError, expected) }
+        }
+    }
+
+    func testHeaderAndWireBudgetFailuresHaveTheirOwnDiagnostic() throws {
+        for bytes in [Data(repeating: 65, count: 16_385), Data(repeating: 65, count: 294_913)] {
+            let harness = try Harness()
+            try? harness.feed(bytes)
+            XCTAssertThrowsError(try harness.result()) { XCTAssertEqual($0 as? WebSourceError, .responseLimitExceeded) }
+        }
+    }
+
+    func testSingleAndBatchPreserveNormalizedBodyFailureWithoutPartialSources() async throws {
+        let reader = WebSourceReader(transport: InjectedBodyFailure(), minimumInterval: .zero)
+        let request = try UserSuppliedWebURL("https://example.com/article")
+        do { _ = try await reader.read(request, isOnline: true); XCTFail() }
+        catch { XCTAssertEqual(error as? WebSourceError, .transportUnavailable) }
+        let outcomes = try await reader.readMany([request], isOnline: true)
+        XCTAssertNil(outcomes.first?.source)
+        XCTAssertEqual(outcomes.first?.error, .transportUnavailable)
+    }
+
 }
 
 private final class Harness {
     let channel = EmbeddedChannel()
     let operation: WebReadOperation
-    init() throws {
+    init(activate: Bool = true, writeError: Error? = nil) throws {
         operation = WebReadOperation(promise: channel.eventLoop.makePromise(of: RetrievedWebBody.self))
         operation.install(channel)
         try channel.pipeline.syncOperations.addHandler(WebWireLimitHandler())
+        if let writeError { try channel.pipeline.syncOperations.addHandler(FailingRequestWrites(error: writeError)) }
         try channel.pipeline.syncOperations.addHandler(HTTPRequestEncoder())
         try channel.pipeline.syncOperations.addHandler(ByteToMessageHandler(HTTPResponseDecoder(
             leftOverBytesStrategy: .dropBytes, informationalResponseStrategy: .forward)))
         try channel.pipeline.syncOperations.addHandler(NIOHTTPRequestHeadersValidator())
         try channel.pipeline.syncOperations.addHandler(WebHTTPResponseHandler(
             request: UserSuppliedWebURL("https://example.com/article"), operation: operation, progress: { _ in }))
-        try channel.connect(to: SocketAddress(ipAddress: "1.1.1.1", port: 443)).wait()
+        if activate { try self.activate() }
     }
+    func activate() throws { try channel.connect(to: SocketAddress(ipAddress: "1.1.1.1", port: 443)).wait() }
     func feed(_ bytes: Data) throws {
         var buffer = channel.allocator.buffer(capacity: bytes.count)
         buffer.writeBytes(bytes)
@@ -97,4 +136,20 @@ private final class Harness {
     }
     func result() throws -> RetrievedWebBody { try operation.promise.futureResult.wait() }
     deinit { _ = try? channel.finish() }
+}
+
+private final class FailingRequestWrites: ChannelOutboundHandler {
+    typealias OutboundIn = IOData
+    let error: Error
+    init(error: Error) { self.error = error }
+    func write(context: ChannelHandlerContext, data: NIOAny, promise: EventLoopPromise<Void>?) { promise?.fail(error) }
+}
+
+private struct InjectedBodyFailure: WebSourceTransport {
+    func retrieve(_ request: UserSuppliedWebURL, progress: @escaping @Sendable (Int) -> Void) async throws -> RetrievedWebBody {
+        let harness = try Harness()
+        try harness.feed(Data("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 5\r\n\r\nhe".utf8))
+        harness.channel.pipeline.fireErrorCaught(NWError.posix(.ENETDOWN))
+        return try harness.result()
+    }
 }

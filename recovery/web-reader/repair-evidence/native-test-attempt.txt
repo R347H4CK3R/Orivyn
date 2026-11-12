@@ -1,0 +1,1 @@
+/bin/bash: line 38: swift: command not found
