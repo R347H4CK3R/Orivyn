@@ -6,13 +6,17 @@ import XCTest
 final class AutomaticRealInferenceUITests: XCTestCase {
     func testActualGeneralCoderDownloadSwitchAndRelaunch() {
         continueAfterFailure = false
+        executionTimeAllowance = 600
         let app = XCUIApplication()
         app.launchArguments = ["--uitesting", "--reset-test-storage"]
         app.launch()
         let input = app.textViews["composer.input"]
         XCTAssertTrue(input.waitForExistence(timeout: 10))
         app.buttons["model.choose"].tap()
-        app.switches["model.automatic"].tap()
+        let automatic = app.switches["model.automatic"]
+        XCTAssertTrue(automatic.switches.firstMatch.exists)
+        automatic.switches.firstMatch.tap()
+        XCTAssertEqual(automatic.value as? String, "1")
         XCTAssertEqual(app.switches["model.automatic.cellular"].value as? String, "0")
         app.buttons["model.done"].tap()
 

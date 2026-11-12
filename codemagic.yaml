@@ -132,7 +132,7 @@ workflows:
           xcrun simctl bootstatus "$SIMULATOR_ID" -b
           # Real Core Location simulator input, explicitly not physical GPS evidence.
           xcrun simctl location "$SIMULATOR_ID" set 37.3349,-122.0090
-          bash scripts/run_native_tests.sh artifacts/automatic-real-inference xcodebuild -project JarvisEVO.xcodeproj -scheme JarvisEVO -destination "platform=iOS Simulator,id=$SIMULATOR_ID" -parallel-testing-enabled NO -test-timeouts-enabled YES -default-test-execution-time-allowance 600 -maximum-test-execution-time-allowance 720 -resultBundlePath artifacts/automatic-real-inference/Tests.xcresult -only-testing:JarvisEVOUITests/AutomaticRealInferenceUITests CODE_SIGNING_ALLOWED=NO test
+          bash scripts/run_native_tests.sh artifacts/automatic-real-inference xcodebuild -project JarvisEVO.xcodeproj -scheme JarvisEVO -destination "platform=iOS Simulator,id=$SIMULATOR_ID" -parallel-testing-enabled NO -test-timeouts-enabled YES -default-test-execution-time-allowance 600 -maximum-test-execution-time-allowance 720 -resultBundlePath artifacts/automatic-real-inference/Tests.xcresult -only-testing:JarvisEVOUITests/AutomaticRealInferenceUITests -only-testing:JarvisEVOUITests/AutomaticModelUITests -only-testing:JarvisEVOUITests/DeskWorkspaceUITests -only-testing:JarvisEVOTests/ExternalWorkspaceTests -only-testing:JarvisEVOTests/AppModelTests CODE_SIGNING_ALLOWED=NO test
     artifacts:
       - artifacts/automatic-real-inference/*.log
       - artifacts/automatic-real-inference/screenshots/**/*.png

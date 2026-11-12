@@ -15,11 +15,17 @@ final class AutomaticModelUITests: XCTestCase {
         let automatic = app.switches["model.automatic"]
         XCTAssertTrue(automatic.waitForExistence(timeout: 5))
         XCTAssertEqual(automatic.value as? String, "0")
-        automatic.tap()
+        // iOS 26 exposes a row-sized parent Switch and a nested UISwitch knob.
+        // Tapping the parent center lands in the label gap, not the control.
+        let knob = automatic.switches.firstMatch
+        XCTAssertTrue(knob.exists); knob.tap()
+        XCTAssertEqual(automatic.value as? String, "1")
         let cellular = app.switches["model.automatic.cellular"]
         XCTAssertTrue(cellular.waitForExistence(timeout: 5))
         XCTAssertEqual(cellular.value as? String, "0", "Automatic downloads begin with the Wi-Fi policy, not implicit cellular consent.")
         XCTAssertFalse(app.buttons["model.download.cancel"].exists, "Enabling mode alone must not start a download.")
+        let capture = XCTAttachment(screenshot: app.screenshot())
+        capture.name = "Automatic opt-in with cellular off"; capture.lifetime = .keepAlways; add(capture)
         app.buttons["model.done"].tap()
         app.terminate(); app.launchArguments = ["--uitesting"]; app.launch()
         XCTAssertTrue(app.textViews["composer.input"].waitForExistence(timeout: 10))

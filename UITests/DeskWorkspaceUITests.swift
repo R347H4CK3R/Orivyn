@@ -20,6 +20,8 @@ final class DeskWorkspaceUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["desk.disconnected"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.switches["desk.enabled"].isEnabled)
         XCTAssertFalse(app.staticTexts["desk.connected"].exists)
+        let capture = XCTAttachment(screenshot: app.screenshot())
+        capture.name = "Desk disconnected privacy controls"; capture.lifetime = .keepAlways; add(capture)
         app.navigationBars.buttons["Devices"].firstMatch.tap()
         app.navigationBars.buttons["Customize"].firstMatch.tap()
         app.buttons["workspace.menu"].tap(); app.buttons["workspace.route.chat"].tap()
