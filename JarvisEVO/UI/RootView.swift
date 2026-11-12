@@ -308,6 +308,8 @@ private struct EvoMenuGlyph: View {
         VStack(alignment: .leading, spacing: 5) {
             Capsule().frame(width: 18, height: 1.7)
             Capsule().frame(width: 11, height: 1.7)
-        }.frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .foregroundStyle(Color.primary)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }

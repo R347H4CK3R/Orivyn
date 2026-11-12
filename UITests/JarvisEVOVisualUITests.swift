@@ -55,8 +55,17 @@ final class JarvisEVOVisualUITests: XCTestCase {
         app.buttons["history.open"].tap()
         let row = app.buttons.matching(identifier: "history.conversation").firstMatch
         XCTAssertTrue(row.waitForExistence(timeout: 5))
+        let backdrop = app.buttons["history.backdrop"]
+        XCTAssertTrue(backdrop.exists)
+        let hierarchy = XCTAttachment(string: app.debugDescription)
+        hierarchy.name = "History accessibility before row swipe"
+        hierarchy.lifetime = .keepAlways
+        add(hierarchy)
         let rightEdge = row.coordinate(withNormalizedOffset: CGVector(dx: 0.97, dy: 0.5))
         let leftSide = row.coordinate(withNormalizedOffset: CGVector(dx: 0.2, dy: 0.5))
+        XCTAssertLessThanOrEqual(row.frame.maxX, backdrop.frame.minX, "The row hit target must not extend into the dismissal backdrop.")
+        XCTAssertLessThan(rightEdge.screenPoint.x, backdrop.frame.minX)
+        XCTAssertGreaterThanOrEqual(leftSide.screenPoint.x, row.frame.minX)
         rightEdge.press(forDuration: 0.1, thenDragTo: leftSide)
         XCTAssertTrue(app.buttons["Archive"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["Delete"].exists)
@@ -118,11 +127,16 @@ final class JarvisEVOVisualUITests: XCTestCase {
         let download = app.buttons["model.download.\(modelID)"]
         XCTAssertTrue(download.waitForExistence(timeout: 5))
         download.tap()
+        XCTAssertEqual(app.state, .runningForeground, "Download must not open the neighboring model-details link.")
+        XCTAssertTrue(app.buttons["model.done"].isHittable, "The Models sheet must remain interactive after starting a download.")
         let installed = app.descendants(matching: .any).matching(identifier: "model.installed.\(modelID)").firstMatch
         XCTAssertTrue(installed.waitForExistence(timeout: 150), "The real model download or integrity verification did not finish.")
+        XCTAssertEqual(app.state, .runningForeground, "Installing a model must keep Jarvis-EVO in the foreground.")
+        XCTAssertTrue(app.buttons["model.done"].isHittable)
         XCTAssertFalse(app.alerts.firstMatch.exists)
         capture("Reference refresh - real model installed")
         let provider = app.buttons["model.provider.\(modelID)"]
+        XCTAssertTrue(provider.waitForExistence(timeout: 5), "The installed local model must appear as a selectable provider.")
         XCTAssertTrue(provider.isEnabled)
         provider.tap()
         let input = app.textViews["composer.input"]

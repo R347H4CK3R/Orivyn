@@ -61,7 +61,10 @@ struct ModelManagerView: View {
                                     .disabled(model.downloadingModelID != nil || importingBusy)
                             }
                             if let url = descriptor.sourceURL { Link("Model details & license", destination: url).font(.caption) }
-                        }.padding(.vertical, 6)
+                        }
+                        // Each control owns its tap; automatic List row actions can also open the link.
+                        .buttonStyle(.borderless)
+                        .padding(.vertical, 6)
                     }
                 } header: { Text("Recommended download") } footer: {
                     Text("Download requires internet and free storage. Inference does not. This compact model is best for short, simple tasks. For best results, keep prompts focused.")
