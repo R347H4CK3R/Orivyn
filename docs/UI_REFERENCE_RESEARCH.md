@@ -1,6 +1,6 @@
 # iPhone reference research and acceptance
 
-Research date: November 11, 2026. This document separates directly observed reference evidence from approximation. The application is independent Jarvis-EVO software, not an OpenAI product.
+Research date: November 11, 2026. Native acceptance evidence updated November 12, 2026 UTC. This document separates directly observed reference evidence from approximation. The application is independent Jarvis-EVO software, not an OpenAI product.
 
 ## Primary sources
 
@@ -30,14 +30,25 @@ Previous native iPhone 16 Plus capture: 1290×2796 pixels, simulator scale 3×. 
 
 App Store screenshot 3 is 600×1300 promotional artwork with phone interior approximately x80–520. The composer is approximately x115–485, y1114–1168. Normalizing its 54px height by 440px phone width to the candidate's 430pt width gives **52.8pt**. This is an approximate relative-geometry measurement, not a claim of native source pixels or identical devices. The native target is 52pt at standard text size, with tolerance to 66pt for screenshot/OS layout variation.
 
-Native baseline UI tests were not run before implementation: the available macOS lane was already executing a separate regression run. The visual RED above was executed against the real prior screenshot. Native tests in `JarvisEVOVisualUITests` must run in the combined full gate; their existence is not a passing result.
+Native baseline UI tests were not run before implementation: the available macOS lane was already executing a separate regression run. The visual RED above was executed against the real prior screenshot. The combined full gate subsequently passed all seven `JarvisEVOVisualUITests` cases on November 12. The baseline observation and later native pass are separate evidence.
 
 ## Remaining fidelity limits
 
 No owner-provided screenshots/recordings or signed-in reference app session were supplied. Exact empty-state layout, sidebar pixel spacing, account-specific controls, dark palette, keyboard animation timing and behavior cannot be established from these promotional assets alone. System gestures, keyboard, sheets and glass toolbar use native SwiftUI/iOS behavior, with reduced-motion handling. Those choices are documented approximations, not an exact-match acceptance claim.
 
-UI tests are configured to capture the actual simulator empty light/dark app, sidebar, settings and multiline composer. A separate 240-second UI test downloads and verifies the pinned Qwen model through the real model-management screen, selects it, sends a short prompt, waits for completion, captures the genuine local response, and checks conversation/model persistence after relaunch. Until that test runs, none of those captures or outcomes are claimed. A fabricated assistant response is not accepted as evidence of inference.
+## Verified native result
+
+[Codemagic attempt 6](https://codemagic.io/app/6af4edea52f6da2271c62b79/build/6af507f3b54d2e261c61f4b7) passed 34 Python, 78 native and 16 UI tests with zero skips on November 12, 2026. Application source was `1be1c99cb6ca1c68b5425a6cdfb0240963768b16`; exact CI commit was `65ae165a7183add9a23025442567c60ac437f90a`, with only an isolated CI trigger difference.
+
+Actual simulator screenshots were exported from that run and personally inspected:
+- [Empty light](screenshots/build2-light-ios26-iphone16plus.png) and [empty dark](screenshots/build2-dark-ios26-iphone16plus.png): one-row composer, neutral grouped toolbar and original Jarvis-EVO branding.
+- [Left history drawer](screenshots/build2-sidebar-ios26-iphone16plus.png): search, supported shortcuts, conversations and bottom settings.
+- [Installed Qwen](screenshots/build2-model-installed-ios26-iphone16plus.png) and [genuine local conversation](screenshots/build2-local-conversation-ios26-iphone16plus.png): real app installation and the generated “The capital of France is Paris.” response.
+
+The 52pt standard composer is materially smaller than the former 93.67pt capture. The native test passed the ≤66pt control-height tolerance and same-row alignment checks. The official reference remains approximately 52.8pt after normalization. The candidate is reference-informed, not an exact-pixel match.
+
+The real download/selection/reply/relaunch test completed in 51.126 seconds. Settings dismissal, draft preservation, new-chat navigation, dark/multiline controls and row archive behavior passed their UI tests. This demonstrates the listed simulator flows, not hardware acceptance or full feature parity. Screenshot filenames, hashes and limits are recorded in [QA.md](QA.md).
 
 ## Pre-native review corrections
 
-The independent UI source review found that a drawer dismiss gesture could compete with row archive/delete swipes, and that a screenshot labeled light did not force light appearance. Dismissal is now recognized only on the backdrop, and a native regression test exercises actual row archive actions without closing the drawer. Visual test setup explicitly selects Light through Settings; the dark capture explicitly selects Dark. These fixes and tests await the combined native run, rather than being described as already passing.
+The independent UI source review found that a drawer dismiss gesture could compete with row archive/delete swipes, and that a screenshot labeled light did not force light appearance. Dismissal is now recognized only on the backdrop, and a native regression test exercises actual row archive actions without closing the drawer. Visual test setup explicitly selects Light through Settings; the dark capture explicitly selects Dark. Both fixes were included in source `1be1c99cb6ca1c68b5425a6cdfb0240963768b16`; their actual row-archive and light/dark tests passed in the combined native run. Physical-device gesture behavior and broader accessibility remain separate gates.
