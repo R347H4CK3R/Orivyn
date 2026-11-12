@@ -143,6 +143,9 @@ final class AppModelTests: XCTestCase {
         try await waitFor { await source.hasSubscriber }
         let request = await source.lastRequest
         XCTAssertTrue(request?.systemPrompt.contains("You are Jarvis, the assistant in Orivyn.") == true)
+        XCTAssertTrue(request?.systemPrompt.contains("Bundled capability knowledge schema 1") == true)
+        XCTAssertTrue(request?.systemPrompt.contains("self-repair [notAvailable]") == true)
+        XCTAssertTrue(request?.systemPrompt.contains("https://github.com/R347H4CK3R/Orivyn") == true)
         XCTAssertTrue(request?.systemPrompt.contains("Use concise explanations.") == true)
         XCTAssertTrue(request?.systemPrompt.contains("Style: Efficient") == true)
         XCTAssertTrue(request?.systemPrompt.contains("Do not claim to browse, run code") == true)

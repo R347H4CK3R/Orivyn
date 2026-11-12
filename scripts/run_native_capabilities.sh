@@ -35,7 +35,13 @@ if (( FRAMEWORK_STATUS == 0 )); then
   fi
  fi
 fi
+# Verify product self-knowledge independently of the experimental probes.
+set +e
+bash scripts/run_self_knowledge_gate.sh 2>&1 | tee "$EVIDENCE/self-knowledge.log"
+KNOWLEDGE_STATUS=${PIPESTATUS[0]}
+set -e
+printf 'KNOWLEDGE_STATUS=%s\n' "$KNOWLEDGE_STATUS" | tee "$EVIDENCE/knowledge-status.txt"
 printf 'BIOS_STATUS=%s\nFRAMEWORK_STATUS=%s\nVISION_STATUS=%s\n' "$BIOS_STATUS" "$FRAMEWORK_STATUS" "$VISION_STATUS" | tee "$EVIDENCE/status.txt"
 # Bundle modest logs/images separately from the potentially large result bundles.
 bash scripts/run_native_tests.sh --bundle-evidence artifacts || true
-(( BIOS_STATUS == 0 && FRAMEWORK_STATUS == 0 && VISION_STATUS == 0 ))
+(( BIOS_STATUS == 0 && FRAMEWORK_STATUS == 0 && VISION_STATUS == 0 && KNOWLEDGE_STATUS == 0 ))

@@ -10,7 +10,9 @@ final class ImageBoundaryTests: XCTestCase {
         let context = try XCTUnwrap(CGContext(data: nil, width: width, height: height, bitsPerComponent: 8,
             bytesPerRow: width * 4, space: CGColorSpace(name: CGColorSpace.sRGB)!,
             bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
-        context.setFillColor(CGColor(red: 1, green: 0, blue: 0, alpha: transparent ? 0 : 1))
+        // Pin fixture components to sRGB rather than the platform default color space.
+        context.setFillColor(try XCTUnwrap(CGColor(colorSpace: CGColorSpace(name: CGColorSpace.sRGB)!,
+            components: [1, 0, 0, transparent ? 0 : 1])))
         context.fill(CGRect(x: 0, y: 0, width: width, height: height))
         let data = NSMutableData()
         let dst = try XCTUnwrap(CGImageDestinationCreateWithData(data, UTType.tiff.identifier as CFString, 1, nil))
@@ -37,6 +39,7 @@ final class ImageBoundaryTests: XCTestCase {
             XCTAssertEqual(rgb.bytes.count, rgb.width * rgb.height * 3)
             XCTAssertGreaterThan(rgb.bytes[0], 240)
             XCTAssertLessThan(rgb.bytes[1], 10)
+            XCTAssertLessThan(rgb.bytes[2], 10)
         }
     }
     func testThumbnailAndWhiteAlphaComposite() throws {
