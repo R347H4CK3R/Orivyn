@@ -54,3 +54,12 @@ final class VMPolicyTests: XCTestCase {
         }
     }
 }
+
+@MainActor
+final class VMDelegateRegistrationTests: XCTestCase {
+    func testPolicyCallbacksAreRegisteredWithObjectiveCRuntime() {
+        let controller = VMHarnessController()
+        XCTAssertTrue(controller.responds(to: NSSelectorFromString("webView:decidePolicyForNavigationAction:decisionHandler:")))
+        XCTAssertTrue(controller.responds(to: NSSelectorFromString("webView:decidePolicyForNavigationResponse:decisionHandler:")))
+    }
+}

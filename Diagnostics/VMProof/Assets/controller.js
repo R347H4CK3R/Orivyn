@@ -11,7 +11,7 @@ function createController({owner,load,construct,emit}){
   clearTimeout(timer);finishReady=null;if(!valid)return;
   if(vm.v86.cpu.devices.net||vm.v86.cpu.devices.virtio_net||vm.network_adapter)throw Error('Offline invariant');
   report('ready');await vm.run();if(!valid)return;phase='running';report('running');
- }catch(e){if(!valid)return;phase='failed';const old=vm;vm=null;if(old)await old.destroy();report('error');}}
+ }catch(e){if(!valid)return;phase='failed';clearTimeout(timer);finishReady=null;const old=vm;vm=null;report('error');if(old){try{await old.destroy()}catch{ /* Failure remains reported; never convert cleanup failure to success. */ }}}}
  async function type(text){if(!valid||phase!=='running'||typeof text!=='string'||text.length>1024||/[^\x09\x0a\x20-\x7e]/.test(text))throw Error('Invalid input state');await vm.keyboard_send_text(text,10);}
  function status(){if(valid&&phase==='running')report('running');}
  return Object.freeze({start,stop,type,status});

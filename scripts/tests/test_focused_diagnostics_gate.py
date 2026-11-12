@@ -10,3 +10,9 @@ class FocusedDiagnostics(unittest.TestCase):
   self.assertIn('BIOS_STATUS == 0 && KNOWLEDGE_STATUS == 0',script)
   self.assertNotIn('run_build.sh',script)
   self.assertNotIn('build_ipa',script)
+
+class DelegateContracts(unittest.TestCase):
+ def test_native_policy_delegates_match_ios26_sendable_signatures(self):
+  source=(ROOT/'Diagnostics/VMProof/Sources/VMHarness.swift').read_text()
+  self.assertIn('@escaping @MainActor @Sendable (WKNavigationActionPolicy)',source)
+  self.assertIn('@escaping @MainActor @Sendable (WKNavigationResponsePolicy)',source)

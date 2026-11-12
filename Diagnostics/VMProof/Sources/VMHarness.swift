@@ -89,13 +89,13 @@ final class VMHarnessController: NSObject, @preconcurrency WKScriptMessageHandle
         case .error: stop(); status = "Emulator failed. No saved state or external fallback."
         }
     }
-    func webView(_ webView: WKWebView, decidePolicyFor action: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+    func webView(_ webView: WKWebView, decidePolicyFor action: WKNavigationAction, decisionHandler: @escaping @MainActor @Sendable (WKNavigationActionPolicy) -> Void) {
         let allowed = self.webView === webView && owner != nil && action.request.url == initialURL
             && action.targetFrame?.isMainFrame == true && !action.shouldPerformDownload
         record("initial navigation allowed: \(allowed)")
         decisionHandler(allowed ? .allow : .cancel)
     }
-    func webView(_ webView: WKWebView, decidePolicyFor response: WKNavigationResponse, decisionHandler: @escaping (WKNavigationResponsePolicy) -> Void) {
+    func webView(_ webView: WKWebView, decidePolicyFor response: WKNavigationResponse, decisionHandler: @escaping @MainActor @Sendable (WKNavigationResponsePolicy) -> Void) {
         decisionHandler(self.webView === webView && response.isForMainFrame && response.canShowMIMEType
             && isInitialDocument(response.response.url) ? .allow : .cancel)
     }

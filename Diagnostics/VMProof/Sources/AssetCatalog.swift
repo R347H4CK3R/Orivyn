@@ -3,7 +3,7 @@ import Foundation
 enum VMAssetCatalog {
     static let files: [VMAsset] = [
         VMAsset(name: "boot.js", bytes: 1253, sha256: "a0d61198f271a17f27d4095f17973adf3799131320b642c0006a8bec881d176c", mime: "text/javascript"),
-        VMAsset(name: "controller.js", bytes: 1723, sha256: "da87f7b02468f5ee43c44d8f4b5879f475e9552e69dcc0a68edab3d23b6fe580", mime: "text/javascript"),
+        VMAsset(name: "controller.js", bytes: 1848, sha256: "c6b9b4074209bb544a6894f1ff26477bc92e7e32e79f128e1b7d490aa24e6bed", mime: "text/javascript"),
         VMAsset(name: "index.html", bytes: 681, sha256: "fb9de190899c02e20355b0526de320ebff3ba9ab4554ce757ead556499021a11", mime: "text/html"),
         VMAsset(name: "libv86.js", bytes: 359857, sha256: "e257912c4a1129e36a86c1e2df69904ab969d87bffd24aa6676e84d6ddffc1c6", mime: "text/javascript"),
         VMAsset(name: "seabios.bin", bytes: 131072, sha256: "73e3f359102e3a9982c35fce98eb7cd08f18303ac7f1ba6ebfbe6cdc1c244d98", mime: "application/octet-stream"),
