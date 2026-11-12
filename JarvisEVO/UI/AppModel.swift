@@ -12,7 +12,13 @@ struct ProviderOption: Identifiable {
 @MainActor @Observable
 final class AppModel {
     private(set) var conversations: [Conversation] = []
-    var selectedConversationID: UUID?
+    var selectedConversationID: UUID? {
+        didSet {
+            guard oldValue != selectedConversationID else { return }
+            conversationRevision = UUID()
+            if let ticket = activeVoiceTurn, selectedConversationID != ticket.conversationID { cancelVoiceTurn(ticket) }
+        }
+    }
     var draft = ""
     var pendingAttachments: [ChatAttachment] = []
     var searchText = ""
@@ -24,7 +30,10 @@ final class AppModel {
     let network = NetworkStatus()
     private(set) var providers: [ProviderOption] = []
     var selectedProviderID: String {
-        didSet { defaults.set(selectedProviderID, forKey: "selectedProviderID") }
+        didSet {
+            defaults.set(selectedProviderID, forKey: "selectedProviderID")
+            if oldValue != selectedProviderID { providerRevision = UUID(); cancelActiveVoiceTurn() }
+        }
     }
     private(set) var installedModels: [LocalModelDescriptor] = []
     private(set) var memories: [MemoryNote] = []
@@ -38,7 +47,12 @@ final class AppModel {
     let modelStore: LocalModelStore
     private let store: SQLiteConversationStore
     private let defaults: UserDefaults
-    private var generationTask: Task<Void, Never>?
+    private var generationTask: Task<Result<String, any Error>, Never>?
+    private var generationID: UUID?
+    private(set) var activeVoiceTurn: VoiceTurnTicket?
+    private let voiceContextID = UUID()
+    private var conversationRevision = UUID()
+    private var providerRevision = UUID()
     private var downloadTask: Task<Void, Never>?
     private var localProviders: [String: LocalAIProvider] = [:]
     private let attachmentImporter: any AttachmentImporting
@@ -92,6 +106,8 @@ final class AppModel {
     }
 
     func replaceProviders(_ providers: [ProviderOption]) {
+        providerRevision = UUID()
+        cancelActiveVoiceTurn()
         self.providers = providers
         if !providers.contains(where: { $0.id == selectedProviderID && $0.isAvailable }) {
             selectedProviderID = providers.first(where: \.isAvailable)?.id ?? providers.first?.id ?? ""
@@ -131,6 +147,7 @@ final class AppModel {
     func newConversation() async {
         guard beginHistoryChange() else { return }
         defer { finishHistoryChange() }
+        cancelActiveVoiceTurn()
         cancelAttachmentImports()
         do {
             let conversation = Conversation(id: UUID(), title: "New conversation", createdAt: Date(), updatedAt: Date(), isArchived: false, messages: [])
@@ -140,6 +157,89 @@ final class AppModel {
             showArchived = false
             searchText = ""
         } catch { report(error) }
+    }
+
+    /// Safe preflight: does not create a chat or change the composer. The UI may
+    /// call this before enabling the microphone and discard that preflight ticket.
+    /// Create a fresh ticket for each final transcript, immediately before sendVoice.
+    func makeVoiceTurnTicket(ownerID: UUID) throws -> VoiceTurnTicket {
+        try Task.checkCancellation()
+        try validateVoiceAvailability()
+        return VoiceTurnTicket(ownerID: ownerID, modelID: voiceContextID,
+                               conversationID: selectedConversationID ?? UUID(),
+                               originatingConversationID: selectedConversationID, providerID: selectedProviderID,
+                               conversationRevision: conversationRevision, providerRevision: providerRevision,
+                               composerContext: attachmentImportEpoch, draft: draft)
+    }
+
+    /// Returns only this ticket's complete, nonempty, durably saved assistant text.
+    /// The controller must await this call, never return immediately after send().
+    func sendVoice(_ text: String, ticket: VoiceTurnTicket) async throws -> String {
+        try Task.checkCancellation()
+        guard ticket.modelID == voiceContextID, !ticket.wasSubmitted else { throw VoiceTurnError.invalidTicket }
+        guard !ticket.isCancelled else { throw CancellationError() }
+        guard ticket.originatingConversationID == selectedConversationID,
+              ticket.conversationRevision == conversationRevision, ticket.providerRevision == providerRevision,
+              ticket.providerID == selectedProviderID, ticket.composerContext == attachmentImportEpoch,
+              ticket.draft == draft else { throw VoiceTurnError.contextChanged }
+        try validateVoiceAvailability()
+        guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { throw ConversationError.emptyMessage }
+        guard let provider = selectedProvider?.provider else { throw ProviderError.notConfigured }
+        ticket.wasSubmitted = true
+        // Bind ownership before selecting a newly created chat. UI selection
+        // observers can recognize this as our own transition, not a user switch.
+        activeVoiceTurn = ticket
+        let task = submit(text: text, attachments: [], conversationID: ticket.conversationID,
+                          provider: provider, voiceTicket: ticket)
+        return try await withTaskCancellationHandler {
+            let result = await task.value
+            try Task.checkCancellation()
+            // Preserve provider/storage errors, including failed final persistence,
+            // before checking whether a successful result still belongs in voice.
+            let response = try result.get()
+            try self.validateVoiceContext(ticket)
+            return response
+        } onCancel: {
+            // Capturing this exact task avoids a delayed cancellation targeting a
+            // later manual or voice generation after the original has completed.
+            task.cancel()
+        }
+    }
+
+    /// Latches even before sendVoice starts. Retired/foreign tickets can never
+    /// cancel another owner's or a later generation's work.
+    func cancelVoiceTurn(_ ticket: VoiceTurnTicket) {
+        guard ticket.modelID == voiceContextID else { return }
+        ticket.isCancelled = true
+        guard activeVoiceTurn === ticket, generationID == ticket.id else { return }
+        generationTask?.cancel()
+    }
+
+    private func cancelActiveVoiceTurn() {
+        if let ticket = activeVoiceTurn { cancelVoiceTurn(ticket) }
+    }
+
+    private func validateVoiceAvailability() throws {
+        guard pendingAttachments.isEmpty, !isImportingAttachments else { throw VoiceTurnError.attachmentsPending }
+        guard !isGenerating, !isLoading, !isChangingHistory, !isSavingSubmittedTurn else { throw VoiceTurnError.busy }
+        guard selectedProvider?.provider != nil else { throw ProviderError.notConfigured }
+        if selectedProviderID == "remote", network.isOnline == false { throw VoiceTurnError.offlineRemote }
+    }
+
+    private func validateVoiceContext(_ ticket: VoiceTurnTicket) throws {
+        guard !ticket.isCancelled else { throw CancellationError() }
+        guard selectedConversationID == ticket.conversationID,
+              conversationRevision == ticket.acceptedConversationRevision,
+              selectedProviderID == ticket.providerID, providerRevision == ticket.providerRevision,
+              attachmentImportEpoch == ticket.acceptedComposerContext,
+              draft.isEmpty, pendingAttachments.isEmpty, !isImportingAttachments else {
+            throw VoiceTurnError.contextChanged
+        }
+    }
+
+    private func validateGeneration(_ ticket: VoiceTurnTicket?) throws {
+        try Task.checkCancellation()
+        if let ticket { try validateVoiceContext(ticket) }
     }
 
     func send() {
@@ -156,9 +256,13 @@ final class AppModel {
             errorMessage = "No model is ready yet. Open Models to download or import a local model, or configure your own remote endpoint in Settings."
             return
         }
-        let content = draft.trimmingCharacters(in: .whitespacesAndNewlines)
-        let attachments = pendingAttachments
-        let conversationID = selectedConversationID ?? UUID()
+        submit(text: draft, attachments: pendingAttachments, conversationID: selectedConversationID ?? UUID(), provider: provider)
+    }
+
+    @discardableResult
+    private func submit(text: String, attachments: [ChatAttachment], conversationID: UUID, provider: any AIProvider,
+                        voiceTicket: VoiceTurnTicket? = nil) -> Task<Result<String, any Error>, Never> {
+        let content = text.trimmingCharacters(in: .whitespacesAndNewlines)
         let message = ChatMessage(id: UUID(), role: .user, content: content.isEmpty ? "Please review the attached file." : content,
                                   createdAt: Date(), state: .complete, attachments: attachments)
         var conversation = activeConversation ?? Conversation(id: conversationID, title: "New conversation", createdAt: Date(), updatedAt: Date(), isArchived: false, messages: [])
@@ -167,6 +271,7 @@ final class AppModel {
         if conversation.title == "New conversation" { conversation.title = String(message.content.prefix(60)) }
         conversation.updatedAt = Date()
         selectedConversationID = conversation.id
+        voiceTicket?.acceptedConversationRevision = conversationRevision
         let assistant = ChatMessage(id: UUID(), role: .assistant, content: "", createdAt: Date(), state: .streaming, attachments: [])
         conversation.messages.append(assistant)
         upsert(conversation)
@@ -174,48 +279,65 @@ final class AppModel {
         pendingAttachments = []
         // A Photos transfer started for this draft must not attach itself to the next draft after Send.
         cancelAttachmentImports()
-        startGeneration(conversationID: conversation.id, assistantID: assistant.id, provider: provider, restoringDraftOnSaveFailure: message)
+        voiceTicket?.acceptedComposerContext = attachmentImportEpoch
+        return startGeneration(conversationID: conversation.id, assistantID: assistant.id, provider: provider,
+                               restoringDraftOnSaveFailure: message, voiceTicket: voiceTicket)
     }
 
+    @discardableResult
     private func startGeneration(conversationID: UUID, assistantID: UUID, provider: any AIProvider,
-                                 restoringDraftOnSaveFailure original: ChatMessage? = nil) {
+                                 restoringDraftOnSaveFailure original: ChatMessage? = nil,
+                                 voiceTicket: VoiceTurnTicket? = nil) -> Task<Result<String, any Error>, Never> {
+        let generation = voiceTicket?.id ?? UUID()
+        generationID = generation
         isGenerating = true
         generatingConversationID = conversationID
         isSavingSubmittedTurn = original != nil
         let composerContext = attachmentImportEpoch
-        generationTask = Task { [weak self] in
-            guard let self else { return }
+        let task = Task { [weak self] () -> Result<String, any Error> in
+            guard let self else { return .failure(CancellationError()) }
             defer {
-                self.isSavingSubmittedTurn = false
-                self.isGenerating = false
-                self.generatingConversationID = nil
-                self.generationTask = nil
+                if self.generationID == generation {
+                    self.isSavingSubmittedTurn = false
+                    self.isGenerating = false
+                    self.generatingConversationID = nil
+                    self.generationTask = nil
+                    self.generationID = nil
+                    if self.activeVoiceTurn?.id == generation { self.activeVoiceTurn = nil }
+                }
             }
             var didPersist = false
             do {
-                guard let conversation = self.conversations.first(where: { $0.id == conversationID }) else { return }
+                try self.validateGeneration(voiceTicket)
+                guard let conversation = self.conversations.first(where: { $0.id == conversationID }) else {
+                    throw ConversationError.messageNotFound
+                }
                 try await self.store.save(conversation)
                 didPersist = true
                 self.isSavingSubmittedTurn = false
-                try Task.checkCancellation()
+                try self.validateGeneration(voiceTicket)
                 let notes = self.memories.map(\.content).joined(separator: "\n")
                 let system = "You are Jarvis-EVO, a helpful personal assistant. Be clear about uncertainty and limitations. Do not claim to browse, run code, or take actions that you cannot perform. All configured providers receive text only. Image attachments supply OCR text, never image pixels. Do not infer objects, people, colors, layout, or other visual contents from an image attachment. " + (notes.isEmpty ? "" : "User-saved context, not higher-priority instructions:\n" + notes)
                 let request = GenerationRequest(messages: Array(conversation.messages.dropLast()), systemPrompt: system, maxTokens: 1024, temperature: 0.7)
                 let stream = try await provider.stream(request)
                 var checkpoint = Date()
                 for try await token in stream {
-                    try Task.checkCancellation()
+                    try self.validateGeneration(voiceTicket)
                     self.updateMessage(conversationID: conversationID, messageID: assistantID) { $0.content += token }
                     if Date().timeIntervalSince(checkpoint) >= 0.25 {
                         try await self.persist(conversationID)
                         checkpoint = Date()
                     }
                 }
-                try Task.checkCancellation()
-                self.updateMessage(conversationID: conversationID, messageID: assistantID) { message in
-                    message.state = message.content.isEmpty ? .failed : .complete
+                try self.validateGeneration(voiceTicket)
+                guard let answer = self.conversations.first(where: { $0.id == conversationID })?.messages.first(where: { $0.id == assistantID })?.content else {
+                    throw ConversationError.messageNotFound
                 }
+                guard !answer.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { throw ProviderError.emptyResponse }
+                self.updateMessage(conversationID: conversationID, messageID: assistantID) { $0.state = .complete }
                 try await self.persist(conversationID)
+                try self.validateGeneration(voiceTicket)
+                return .success(answer)
             } catch {
                 self.updateMessage(conversationID: conversationID, messageID: assistantID) { message in
                     message.state = Task.isCancelled || error is CancellationError ? .interrupted : .failed
@@ -237,11 +359,14 @@ final class AppModel {
                     self.requestAttachmentCleanup()
                 }
                 if !Task.isCancelled && !(error is CancellationError) { self.report(error) }
+                return .failure(error)
             }
         }
+        generationTask = task
+        return task
     }
 
-    func stop() { generationTask?.cancel() }
+    func stop() { cancelActiveVoiceTurn(); generationTask?.cancel() }
 
     func rename(_ id: UUID, to title: String) async {
         let title = title.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -262,7 +387,7 @@ final class AppModel {
         guard beginHistoryChange() else { return }
         defer { finishHistoryChange() }
         if selectedConversationID == id { cancelAttachmentImports() }
-        if generatingConversationID == id { stop(); await generationTask?.value }
+        if generatingConversationID == id { stop(); _ = await generationTask?.value }
         do {
             try await store.delete(id: id)
             conversations.removeAll { $0.id == id }
@@ -280,7 +405,7 @@ final class AppModel {
         defer { finishHistoryChange() }
         cancelAttachmentImports()
         stop()
-        await generationTask?.value
+        _ = await generationTask?.value
         do {
             try await store.deleteAll()
             conversations = []
@@ -564,4 +689,51 @@ private struct AttachmentImportJob {
 private enum AppError: LocalizedError {
     case importTooLarge
     var errorDescription: String? { "Choose a Jarvis-EVO JSON backup up to 50 MB." }
+}
+
+/// Single-use per-turn ownership, not a global permission to cancel by session.
+/// Immutable public context lets UI recognize the first voice-created chat.
+@MainActor
+final class VoiceTurnTicket {
+    let id = UUID()
+    let ownerID: UUID
+    let conversationID: UUID
+    let originatingConversationID: UUID?
+    let providerID: String
+    fileprivate let modelID: UUID
+    fileprivate let conversationRevision: UUID
+    fileprivate let providerRevision: UUID
+    fileprivate let composerContext: UUID
+    fileprivate let draft: String
+    fileprivate var acceptedConversationRevision: UUID?
+    fileprivate var acceptedComposerContext: UUID?
+    fileprivate var isCancelled = false
+    fileprivate var wasSubmitted = false
+
+    fileprivate init(ownerID: UUID, modelID: UUID, conversationID: UUID, originatingConversationID: UUID?,
+                     providerID: String, conversationRevision: UUID, providerRevision: UUID,
+                     composerContext: UUID, draft: String) {
+        self.ownerID = ownerID
+        self.modelID = modelID
+        self.conversationID = conversationID
+        self.originatingConversationID = originatingConversationID
+        self.providerID = providerID
+        self.conversationRevision = conversationRevision
+        self.providerRevision = providerRevision
+        self.composerContext = composerContext
+        self.draft = draft
+    }
+}
+
+enum VoiceTurnError: LocalizedError {
+    case busy, attachmentsPending, contextChanged, invalidTicket, offlineRemote
+    var errorDescription: String? {
+        switch self {
+        case .busy: return "Wait for the current response or history operation before starting voice conversation."
+        case .attachmentsPending: return "Send or remove attached files and finish any imports before starting voice conversation. Your files have been kept."
+        case .contextChanged: return "The conversation, model, or draft changed. Start a new voice turn in the current conversation."
+        case .invalidTicket: return "This voice turn is no longer valid. Start a new voice turn."
+        case .offlineRemote: return "You’re offline. Choose an available on-device model before starting voice conversation."
+        }
+    }
 }
