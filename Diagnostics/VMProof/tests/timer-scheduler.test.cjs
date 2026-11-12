@@ -1,0 +1,11 @@
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+test('restricted browser uses upstream timer scheduler without constructing a worker',{timeout:10000},async()=>{
+ let workers=0; const context={module:{exports:{}},ArrayBuffer,Uint8Array,Int8Array,Uint16Array,Int16Array,Uint32Array,Int32Array,Float32Array,Float64Array,console,WebAssembly,performance,crypto:require('node:crypto').webcrypto,TextDecoder,TextEncoder,setTimeout,clearTimeout,URL,Blob,Worker:class{constructor(){workers++;throw Error('Worker forbidden')}}}; vm.createContext(context);
+ const policy=__dirname+'/../Assets/scheduler-policy.js';if(fs.existsSync(policy))vm.runInContext(fs.readFileSync(policy,'utf8'),context);
+ assert.equal(context.Worker,undefined,'worker capability must be disabled before vendor capability detection');
+ vm.runInContext(fs.readFileSync(__dirname+'/../Assets/libv86.js','utf8'),context);
+ const read=name=>{const b=fs.readFileSync(__dirname+'/../Assets/'+name);return b.buffer.slice(b.byteOffset,b.byteOffset+b.byteLength)};
+ const engine=new context.module.exports.V86({wasm_fn:async imports=>(await WebAssembly.instantiate(read('v86.wasm'),imports)).instance.exports,bios:{buffer:read('seabios.bin')},vga_bios:{buffer:read('vgabios.bin')},memory_size:64*1024*1024,vga_memory_size:2*1024*1024,net_device:{type:'none'},disable_keyboard:true,disable_mouse:true,disable_speaker:true,autostart:false});
+ try{await new Promise((resolve,reject)=>{const t=setTimeout(()=>reject(Error('No actual initialization')),4000);engine.add_listener('emulator-ready',()=>{clearTimeout(t);resolve()})});await engine.run();await new Promise(r=>setTimeout(r,500));assert.ok(engine.get_instruction_counter()>10000);assert.equal(workers,0)}finally{await engine.destroy()}
+});
+test('native document installs restricted scheduler before vendor detection',()=>{const html=fs.readFileSync(__dirname+'/../Assets/index.html','utf8');const policy=html.indexOf('bundle/scheduler-policy.js');assert.ok(policy>=0&&policy<html.indexOf('bundle/libv86.js'));assert.ok(html.includes("worker-src 'none'"))});

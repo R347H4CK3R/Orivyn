@@ -38,3 +38,9 @@ TinyCore ISO was deliberately NOT copied. The separate worker is constructing a 
 ### Compatibility recovery
 
 The pinned upstream loader tries `v86-fallback.wasm` when its optimized module is rejected. Upstream Makefile's optimized flags add bulk-memory, multivalue and SIMD128; the fallback uses CARGO_FLAGS_SAFE. Both assets come from the same checksum-verified npm archive, not another mirror/version. The isolated loader now restores exactly one local fallback attempt and reports bounded native-visible exception diagnostics. CSP, no-network policy, hashes,64MiB guest RAM,2MiB VGA and60-second proof limit remain unchanged. Both actual BIOS engines pass host tests; native compatibility and physical resource measurements remain unverified until new evidence.
+
+### Restricted scheduler diagnosis (2026-11-12)
+
+Native build `6af648bd10a05158d8122eff` at `02a672f4` exposed `engine promise: SecurityError: The operation is insecure`, followed by the bounded initialization deadline. v86's browser scheduler selects a Blob Worker whenever the Worker constructor exists, but this proof intentionally has `worker-src 'none'`. The host Node tests used a different scheduler and missed that boundary.
+
+The isolated document now disables the Worker capability before the unmodified, checksum-pinned vendor loads, selecting its existing main-thread timer scheduler. CSP remains unchanged; no workers, network or external fallback are authorized. A browser-like VM context test with no Node process executes real BIOS instructions using that scheduler and proves no Worker is constructed. This is host evidence only. The updated native simulator gate has **not** run; no native desktop success is claimed. Main-thread scheduling responsiveness and physical iPhone thermals remain acceptance work.

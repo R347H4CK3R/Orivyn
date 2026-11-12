@@ -13,8 +13,8 @@
   },
   {
     "name": "index.html",
-    "bytes": 738,
-    "sha256": "e833a21b55b86e1eb254e17cb60d44161d0cb3fded6c9cb42c02af3662908fa1",
+    "bytes": 800,
+    "sha256": "2835210ac793359f6668bd1f9c0db8063d953523494769053b00c7eb0c999228",
     "mime": "text/html"
   },
   {
@@ -22,6 +22,12 @@
     "bytes": 359857,
     "sha256": "e257912c4a1129e36a86c1e2df69904ab969d87bffd24aa6676e84d6ddffc1c6",
     "mime": "text/javascript"
+  },
+  {
+    "name": "scheduler-policy.js",
+    "mime": "text/javascript",
+    "bytes": 265,
+    "sha256": "c67d77a5bf691de5323f7174a92ff4cc89fee944c39fe998060f931c6a33fdd7"
   },
   {
     "name": "seabios.bin",
