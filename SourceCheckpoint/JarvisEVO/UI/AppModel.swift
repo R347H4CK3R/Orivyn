@@ -1002,12 +1002,10 @@ final class AppModel {
         guard beginHistoryChange() else { return }
         defer { finishHistoryChange() }
         cancelAttachmentImports()
-        let access = url.startAccessingSecurityScopedResource()
-        defer { if access { url.stopAccessingSecurityScopedResource() } }
         do {
-            let size = try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
-            guard size > 0 && size <= ConversationBackup.maximumBytes else { throw AppError.importTooLarge }
-            let summary = try await store.importData(Data(contentsOf: url), policy: policy)
+            let data = try await BackupFileReader.read(url)
+            try Task.checkCancellation()
+            let summary = try await store.importData(data, policy: policy)
             conversations = try await store.list(includeArchived: true)
             memories = try await store.memories()
             statusMessage = summary.description
