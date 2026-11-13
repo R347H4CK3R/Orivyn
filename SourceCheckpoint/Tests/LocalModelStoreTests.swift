@@ -93,4 +93,25 @@ final class LocalModelStoreTests: XCTestCase {
         XCTAssertFalse(installed)
         XCTAssertTrue(models.isEmpty)
     }
+    func testStaleOrUnknownRemovalPreservesCurrentModelAndMetadata() async throws {
+        let (root, store) = try fixture()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let input = root.appendingPathComponent("fixture.gguf")
+        let bytes = Data([0x47,0x47,0x55,0x46,3,0,0,0] + Array(repeating: 0, count: 24))
+        try bytes.write(to: input)
+        let current = try await store.importModel(from: input)
+        let installed = try await store.verifiedURL(for: current)
+        let manifest = root.appendingPathComponent("installed-models.json")
+        let originalMetadata = try Data(contentsOf: manifest)
+        for id in [current.id, "unknown-selection"] {
+            let stale = LocalModelDescriptor(id: id, name: "Old selection", fileName: current.fileName,
+                downloadURL: current.downloadURL, sha256: current.sha256, byteCount: current.byteCount,
+                license: current.license, sourceURL: current.sourceURL)
+            do { try await store.remove(stale); XCTFail("Stale or unknown selection must not remove current bytes") }
+            catch LocalModelRemovalPlanError.staleDescriptor { }
+            XCTAssertEqual(try Data(contentsOf: installed), bytes)
+            XCTAssertEqual(try Data(contentsOf: manifest), originalMetadata)
+        }
+    }
+
 }

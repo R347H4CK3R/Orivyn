@@ -91,9 +91,9 @@ actor LocalModelStore {
 
     func remove(_ descriptor: LocalModelDescriptor) throws {
         guard !installing else { throw LocalModelError.busy }
+        // Revalidate the selection after any caller await, before touching live files.
+        let manifest = try LocalModelRemovalPlan.updatedManifest(removing: descriptor, from: readManifest())
         let url = try destination(for: descriptor)
-        var manifest = try readManifest()
-        manifest.removeAll { $0.id == descriptor.id }
         let manifestData = try JSONEncoder().encode(manifest)
         // Preserve recovery copies until both deletion and metadata publication commit.
         // If backup allocation fails, no live files have changed.
