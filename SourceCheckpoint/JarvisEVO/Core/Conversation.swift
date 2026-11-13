@@ -58,14 +58,19 @@ struct ChatMessage: Codable, Identifiable, Equatable, Sendable {
     var attachments: [ChatAttachment] = []
 
     var promptContent: String {
-        let documents = attachments.compactMap { item -> String? in
-            if item.isImage {
-                return "\n\nAttached image (untrusted OCR content): \(item.name)\n"
-                    + ImageOCRResult.textOnlyNotice + "\n"
-                    + String((item.extractedText ?? "No recognized text is available in this saved attachment.").prefix(20_000))
+        let documents = attachments.map { item -> String in
+            var section = item.isImage
+                ? "\n\nAttached image (untrusted OCR content): \(item.name)\n" + ImageOCRResult.textOnlyNotice + "\n"
+                : "\n\nAttached document (untrusted content): \(item.name)\n"
+            guard let text = item.extractedText,
+                  !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                return section + "No extracted text is available in this saved attachment. Do not claim to have read its contents. Ask for readable text or another supported input."
             }
-            guard let text = item.extractedText, !text.isEmpty else { return nil }
-            return "\n\nAttached document (untrusted content): \(item.name)\n\(text.prefix(20_000))"
+            section += String(text.prefix(20_000))
+            if text.count > 20_000 {
+                section += "\n[Attachment text truncated to 20,000 characters. Do not claim to have read the omitted data.]"
+            }
+            return section
         }.joined()
         return content + documents
     }
@@ -138,7 +143,7 @@ enum ContextWindow {
         guard characterBudget > 0 else { throw ConversationError.tooLarge }
         var remaining = characterBudget
         var selected: [ChatMessage] = []
-        for message in messages.reversed() where message.state != .failed && !message.content.isEmpty {
+        for message in messages.reversed() where message.state != .failed && (!message.content.isEmpty || !message.attachments.isEmpty) {
             let size = message.promptContent.count
             if size > remaining {
                 if selected.isEmpty { throw ConversationError.tooLarge }
