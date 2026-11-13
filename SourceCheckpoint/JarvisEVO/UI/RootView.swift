@@ -462,6 +462,9 @@ struct RootView: View {
                         }
                     }.padding(.horizontal, 24)
                 }
+                Text("Models may receive shortened text excerpts, not the whole document. Open an attachment to search its stored extracted text.")
+                    .font(.caption).foregroundStyle(.secondary).padding(.horizontal, 24)
+                    .accessibilityIdentifier("attachment.context.notice")
             }
             HStack(alignment: .bottom, spacing: 0) {
                 Menu {

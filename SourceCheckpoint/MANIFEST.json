@@ -71,18 +71,18 @@
   },
   {
     "path": "JarvisEVO/Providers/Local/LlamaEngine.swift",
-    "bytes": 12644,
-    "sha256": "ceaa5aec18450aef21ec57cf801c8b7f00fcd1584bb709da391fa3d1933830e5"
+    "bytes": 12621,
+    "sha256": "35d3166cc26095ed9a644a1a26ad1a37f7177926d4457ef155c83ac496e98540"
   },
   {
     "path": "JarvisEVO/Providers/Local/LocalModelCatalog.swift",
-    "bytes": 4596,
-    "sha256": "0cd064d6526c8bf106d2207584b7dc6f33e211f7c3a32a973f4c11f974a68183"
+    "bytes": 4735,
+    "sha256": "ec5c2d740ba00a3e88e1a7c66e8d7f0f00f513c07f32d57bf15676f35771077b"
   },
   {
     "path": "JarvisEVO/Providers/Local/LocalPromptBuilder.swift",
-    "bytes": 3457,
-    "sha256": "2883a748543ca47d5fdb1bedcf78e64640364305151e5de27c7436aa1e4e0794"
+    "bytes": 4694,
+    "sha256": "180c58a10da898f6b36a42b48fa6b5024ae5f282ed8c0922055ae520d9b41189"
   },
   {
     "path": "JarvisEVO/Providers/OpenAICompatibleProvider.swift",
@@ -246,8 +246,8 @@
   },
   {
     "path": "JarvisEVO/UI/RootView.swift",
-    "bytes": 39461,
-    "sha256": "bca9eff58d90f763f7928afd52b699ceae6930771dc5213bf38b43a1b064ab38"
+    "bytes": 39772,
+    "sha256": "0b8bfb2d189081674bb73f2a8ff524ff2cf518c1b361b65e3ddd203fcd8dd647"
   },
   {
     "path": "JarvisEVO/UI/RuntimeDiagnosticsView.swift",
@@ -326,8 +326,8 @@
   },
   {
     "path": "Tests/LocalInferenceTests.swift",
-    "bytes": 6556,
-    "sha256": "39810619043465e94e5042b3f076d8f45060d02993d69c85de211adf7d1ca28f"
+    "bytes": 12204,
+    "sha256": "3437fa6fc0c1eebc95f6eefad06fb4510929aac7fed331b4233d6f85e8af2159"
   },
   {
     "path": "Tests/LocalMemoryToolTests.swift",
@@ -473,6 +473,11 @@
     "path": "scripts/run_virtual_desktop_gate.sh",
     "bytes": 3988,
     "sha256": "75437459960cf2e0ca71860fcde7af811687207c0904106c9b20a89f9067834a"
+  },
+  {
+    "path": "scripts/tests/test_attachment_fitting_contract.py",
+    "bytes": 787,
+    "sha256": "4abd229eadd65f66a20f382325c46c948508a460116b23e99d702a2826c0bb9c"
   },
   {
     "path": "scripts/tests/test_attachment_search_contract.py",

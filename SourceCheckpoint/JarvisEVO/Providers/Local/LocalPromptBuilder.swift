@@ -14,10 +14,10 @@ enum LocalPromptBuilder {
         }
     }
 
-    static func messages(from messages: [ChatMessage]) -> [LocalPromptMessage] {
+    static func messages(from messages: [ChatMessage], attachmentCharacterLimit: Int = 4000) -> [LocalPromptMessage] {
         messages.filter { $0.state != .failed && (!$0.content.isEmpty || !$0.attachments.isEmpty) }.map { message in
             var content = message.content
-            var remaining = 4000
+            var remaining = min(4000, max(0, attachmentCharacterLimit))
             var omittedAttachments = 0
             for attachment in message.attachments {
                 guard let text = attachment.extractedText, !text.isEmpty else { continue }
@@ -36,6 +36,25 @@ enum LocalPromptBuilder {
             }
             return LocalPromptMessage(role: message.role.rawValue, content: content)
         }
+    }
+
+    /// Try a fixed, nonzero sequence of excerpt budgets using the real formatted
+    /// prompt token count supplied by the engine (including system/template overhead).
+    /// Each attempt starts with original source data, first removing complete older
+    /// messages through trimToFit. Typed text and source attachment records are untouched.
+    static func prepareMessages(from source: [ChatMessage], maxTokens: Int, contextSize: Int,
+                                tokenCount: ([LocalPromptMessage]) throws -> Int) throws -> [LocalPromptMessage] {
+        for limit in [4000, 2000, 1000, 512, 256, 128] {
+            do {
+                return try trimToFit(messages(from: source, attachmentCharacterLimit: limit),
+                                     maxTokens: maxTokens, contextSize: contextSize, tokenCount: tokenCount)
+            } catch LocalModelError.promptTooLong {
+                // Only a genuine context overflow permits a smaller excerpt retry.
+                // Tokenizer, template, cancellation and other errors propagate unchanged.
+                continue
+            }
+        }
+        throw LocalModelError.promptTooLong
     }
 
     /// Uses the runtime tokenizer's count, including the template and system prompt.

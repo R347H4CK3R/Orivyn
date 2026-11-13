@@ -96,7 +96,7 @@ actor LlamaEngine: LocalResourceReleasing {
             guard let promptVocabulary = llama_model_get_vocab(owned.model) else { throw LocalModelError.loadFailed }
             return try tokenCount(text, vocabulary: promptVocabulary)
         }
-        let messages = try LocalPromptBuilder.trimToFit(LocalPromptBuilder.messages(from: request.messages), maxTokens: request.maxTokens, contextSize: Int(contextSize)) { [owned] entries in
+        let messages = try LocalPromptBuilder.prepareMessages(from: request.messages, maxTokens: request.maxTokens, contextSize: Int(contextSize)) { [owned] entries in
             guard let promptVocabulary = llama_model_get_vocab(owned.model) else { throw LocalModelError.loadFailed }
             let rendered = try format(entries, systemPrompt: request.systemPrompt, model: owned.model)
             return try tokenCount(rendered, vocabulary: promptVocabulary)

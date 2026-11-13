@@ -83,7 +83,7 @@ enum LocalModelError: LocalizedError, Equatable {
         case .loadFailed: "The model could not load. It may be unsupported or exceed available device memory."
         case .missingChatTemplate: "This GGUF has no chat template. Import an instruction model with an embedded chat template."
         case .unsupportedChatTemplate: "This model's chat template is not supported by the bundled runtime."
-        case .promptTooLong: "This conversation exceeds the local model's 2,048-token working limit. Start a new conversation or shorten your message."
+        case .promptTooLong: "This request does not fit the local model's 2,048-token working limit, even after reducing any attachment excerpts. Your message and original attachments are kept. Shorten the message, attach fewer files, or use Search extracted text in an attachment preview."
         case .invalidRequest: "The generation settings or message are not valid."
         case .decodingFailed(let code): "Local inference stopped with runtime code \(code). Try a smaller model or a shorter conversation."
         case .generationLimitReached: "The local reply reached its token limit before finishing. Any partial response is kept but is incomplete. Ask for a shorter answer or split the request."
