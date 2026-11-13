@@ -177,9 +177,7 @@ struct HistoryView: View {
     }
 
     private func markdown(_ conversation: Conversation) -> String {
-        "# \(conversation.title)\n\n" + conversation.messages.map { message in
-            "## \(message.role == .user ? "You" : "Orivyn")\n\n\(message.content)"
-        }.joined(separator: "\n\n")
+        ConversationTranscript.markdown(conversation)
     }
 }
 
