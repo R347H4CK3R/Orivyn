@@ -4,6 +4,9 @@ Requires an already-installed Swift6 toolchain; does not download or dispatch CI
 """
 import argparse, hashlib, json, os, pathlib, subprocess, sys
 SOURCES = [
+ 'JarvisEVO/Core/MCPTypes.swift',
+ 'JarvisEVO/Core/MCPToolSchema.swift',
+ 'JarvisEVO/Services/MCPHTTPClient.swift',
  'JarvisEVO/Core/MemoryNote.swift',
  'JarvisEVO/Core/MemorySearch.swift',
  'JarvisEVO/Core/MemoryContextBuilder.swift',
@@ -17,7 +20,7 @@ SOURCES = [
  'JarvisEVO/Core/LocalSearchExcerpt.swift',
  'JarvisEVO/Providers/Local/UTF8TokenAccumulator.swift',
 ]
-TESTS = ['Tests/MemoryNoteTests.swift','Tests/MemorySearchTests.swift','Tests/MemoryContextBuilderTests.swift','Tests/AutomaticModelRouterTests.swift','Tests/LocalModelCatalogTests.swift','Tests/NativeToolSuggestionTests.swift','Tests/NativeToolDraftsTests.swift','Tests/FeedbackDraftTests.swift','Tests/AttachmentTextSearchTests.swift','Tests/LocalSearchExcerptTests.swift','Tests/UTF8TokenAccumulatorTests.swift']
+TESTS = ['Tests/MCPClientTests.swift','Tests/MemoryNoteTests.swift','Tests/MemorySearchTests.swift','Tests/MemoryContextBuilderTests.swift','Tests/AutomaticModelRouterTests.swift','Tests/LocalModelCatalogTests.swift','Tests/NativeToolSuggestionTests.swift','Tests/NativeToolDraftsTests.swift','Tests/FeedbackDraftTests.swift','Tests/AttachmentTextSearchTests.swift','Tests/LocalSearchExcerptTests.swift','Tests/UTF8TokenAccumulatorTests.swift']
 PACKAGE = '''// swift-tools-version: 6.0
 import PackageDescription
 let package = Package(name: "OrivynFoundationProof", products: [.library(name: "JarvisEVO", targets: ["JarvisEVO"])], targets: [.target(name: "JarvisEVO"), .testTarget(name: "JarvisEVOTests", dependencies: ["JarvisEVO"])])
@@ -39,7 +42,12 @@ def main():
  with (output/'swift-test.log').open('w') as log:
   version=subprocess.run([a.swift,'--version'],stdout=log,stderr=subprocess.STDOUT)
   if version.returncode:return version.returncode
-  result=subprocess.run([a.swift,'test','--jobs','2','--package-path',str(output),'--cache-path',str(output/'.cache'),'--config-path',str(output/'.config'),'--security-path',str(output/'.security')],stdout=log,stderr=subprocess.STDOUT,env=env)
+  command=[a.swift,'test','--jobs','2','--package-path',str(output),'--cache-path',str(output/'.cache'),'--config-path',str(output/'.config'),'--security-path',str(output/'.security')]
+  if sys.platform == 'linux':
+   # corelibs custom URLProtocol redirect callback is unimplemented/fatal; retain this test in the Apple gate.
+   command += ['--skip','MCPURLSessionTransportTests.*testRealAdapterRefusesRedirectWithoutSendingCredentialToTarget']
+   print('Linux exclusion: custom URLProtocol redirect fixture unsupported; Apple redirect test remains required.', file=log)
+  result=subprocess.run(command,stdout=log,stderr=subprocess.STDOUT,env=env)
  print((output/'swift-test.log').read_text())
  print('Foundation-only Swift test exit:',result.returncode,'; iOS build/device validation NOT performed.')
  return result.returncode
