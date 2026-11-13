@@ -21,6 +21,7 @@ final class JarvisEVOUITests: XCTestCase {
 
     // Regression: an empty composer must not create an empty saved message.
     func testEmptyComposerCannotSend() {
+        launchWithoutAvailableProvider()
         XCTAssertTrue(app.textViews["composer.input"].waitForExistence(timeout: 10))
         XCTAssertFalse(app.buttons["composer.send"].exists)
         XCTAssertTrue(app.buttons["composer.voice"].isEnabled)
@@ -30,6 +31,16 @@ final class JarvisEVOUITests: XCTestCase {
         XCTAssertFalse(app.descendants(matching: .any).matching(identifier: "assistant.response").firstMatch.exists)
         error.buttons["OK"].tap()
         XCTAssertEqual(app.textViews["composer.input"].value as? String, "")
+    }
+
+    // Availability of Apple's system model is independent of this app's storage.
+    // Isolate only the two negative-provider cases; real-inference tests are unchanged.
+    private func launchWithoutAvailableProvider() {
+        app.terminate()
+        app.launchArguments = ["--uitesting", "--root-view-fixture", "unavailable-provider"]
+        app.launch()
+        XCTAssertTrue(app.staticTexts["fixture.notice"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.textViews["composer.input"].waitForExistence(timeout: 10))
     }
 
     // Regression: selecting a suggestion must populate the real editable composer.
@@ -81,19 +92,16 @@ final class JarvisEVOUITests: XCTestCase {
 
     // Regression: an unavailable provider must report a real error and preserve the input.
     func testUnavailableProviderDoesNotInventResponse() throws {
+        launchWithoutAvailableProvider()
         let composer = app.textViews["composer.input"]
         composer.tap()
         composer.typeText("Explain gravity")
         app.buttons["composer.send"].tap()
         let error = app.alerts.firstMatch
-        if error.waitForExistence(timeout: 5) {
-            XCTAssertFalse(app.staticTexts["assistant.response"].exists)
-            error.buttons["OK"].tap()
-            XCTAssertEqual(composer.value as? String, "Explain gravity")
-        } else {
-            // On hardware with a configured real provider, inference is an integration test.
-            throw XCTSkip("A provider is available; unavailable-provider fixture does not apply.")
-        }
+        XCTAssertTrue(error.waitForExistence(timeout: 5), "The explicitly unavailable provider must fail preflight.")
+        XCTAssertFalse(app.descendants(matching: .any).matching(identifier: "assistant.response").firstMatch.exists)
+        error.buttons["OK"].tap()
+        XCTAssertEqual(composer.value as? String, "Explain gravity")
     }
 
     // Cancelling the real Files picker repeatedly must not discard or disable the draft.

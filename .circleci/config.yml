@@ -1,0 +1,77 @@
+# Native CircleCI configuration, not the GitHub Actions compatibility engine.
+# Trigger only via the configured run-ci PR label or manual request.
+# Approve the hold ONLY after checking FREE credit balance. No automatic compute.
+# This config neither publishes releases nor changes repository visibility/billing.
+version: 2.1
+
+parameters:
+  run_native:
+    type: boolean
+    default: true
+
+jobs:
+  native-ios-gate:
+    macos:
+      xcode: "26.4.1"
+    resource_class: m4pro.medium
+    environment:
+      HOMEBREW_NO_AUTO_UPDATE: "1"
+      CI: "true"
+    steps:
+      - checkout
+      - run:
+          name: Record checked-out source and native environment
+          command: |
+            mkdir -p artifacts
+            git rev-parse HEAD | tee artifacts/source-commit.txt
+            git status --short > artifacts/source-status.txt
+            xcodebuild -version | tee artifacts/circleci-xcode.txt
+            xcrun simctl list runtimes > artifacts/circleci-runtimes.txt
+            df -h > artifacts/circleci-disk.txt
+      - run:
+          name: Mandatory simulator inference, native tests and unsigned IPA (50 minute ceiling)
+          no_output_timeout: 15m
+          command: |
+            # Preserve the original gate exit status and stop its whole process group
+            # before the free-plan job limit, leaving time to upload failure evidence.
+            python3 - \<<'PY'
+            import os, signal, subprocess, sys
+            with open("artifacts/native-gate-console.log", "w") as log:
+                p = subprocess.Popen(["bash", "-c",
+                    f"set -o pipefail; bash scripts/ci_macos.sh 2>&1 | tee /dev/fd/{log.fileno()}"],
+                    pass_fds=(log.fileno(),), start_new_session=True)
+                try:
+                    status = p.wait(timeout=3000)
+                except subprocess.TimeoutExpired:
+                    os.killpg(p.pid, signal.SIGTERM)
+                    try:
+                        p.wait(timeout=10)
+                    except subprocess.TimeoutExpired:
+                        os.killpg(p.pid, signal.SIGKILL)
+                        p.wait()
+                    status = 124
+                with open("artifacts/native-gate-exit-status.txt", "w") as result:
+                    result.write(str(status) + "\n")
+                sys.exit(status)
+            PY
+      - run:
+          name: Collect final diagnostics even after failures
+          when: always
+          command: |
+            mkdir -p artifacts
+            date -u > artifacts/finished-at.txt
+            xcrun simctl list devices available > artifacts/final-simulators.txt || true
+            df -h > artifacts/final-disk.txt || true
+      - store_artifacts:
+          path: artifacts
+          destination: Orivyn-native-gate-evidence
+
+workflows:
+  controlled-native-validation:
+    when: << pipeline.parameters.run_native >>
+    jobs:
+      - authorize-free-credit-run:
+          type: approval
+      - native-ios-gate:
+          requires:
+            - authorize-free-credit-run
