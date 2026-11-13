@@ -31,6 +31,7 @@ xcodebuild -project JarvisEVO.xcodeproj -scheme JarvisEVO \
   -only-testing:JarvisEVOTests/LocalReminderTests \
   -only-testing:JarvisEVOTests/ReminderSchedulerTests \
   -only-testing:JarvisEVOTests/OneShotLocationTests \
+  -only-testing:JarvisEVOTests/ExternalWorkspaceTests \
   -only-testing:JarvisEVOTests/IncomingTextRequestTests \
   -only-testing:JarvisEVOTests/IncomingTextTests \
   -only-testing:JarvisEVOTests/MarkdownDocumentTests \
