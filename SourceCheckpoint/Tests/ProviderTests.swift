@@ -86,6 +86,31 @@ final class ProviderTests: XCTestCase {
         for _ in 0..<16 { XCTAssertNil(try decoder.consume(byte: 65)) }
         XCTAssertThrowsError(try decoder.consume(byte: 65))
     }
+    func testSSEByteDecoderSupportsAllStandardLineEndings() throws {
+        for ending in ["\n", "\r\n", "\r"] {
+            var decoder = SSEByteDecoder()
+            let lines = [#"data: {"choices":[{"delta":{"content":"café 🦉"}}]}"#,
+                         #"data: {"choices":[{"delta":{},"finish_reason":"stop"}]}"#, "data: [DONE]"]
+            var events: [SSEEvent] = []
+            for byte in (lines.joined(separator: ending) + ending).utf8 {
+                if let event = try decoder.consume(byte: byte) { events.append(event) }
+            }
+            XCTAssertEqual(events, [.token("café 🦉"), .ignored, .done], ending.debugDescription)
+        }
+    }
+
+    func testSSEByteDecoderLineLimitDoesNotCountCRLFDelimiters() throws {
+        let line = ":0123456789abcdef"
+        for ending in ["\n", "\r\n", "\r"] {
+            var decoder = SSEByteDecoder(maximumLineBytes: line.utf8.count)
+            var events: [SSEEvent] = []
+            XCTAssertNoThrow(try (line + ending).utf8.forEach { byte in
+                if let event = try decoder.consume(byte: byte) { events.append(event) }
+            })
+            XCTAssertEqual(events, [.ignored])
+        }
+    }
+
     func testMissingOrEmptyRemoteModelIsRejected() {
         XCTAssertThrowsError(try RemoteEndpoint(baseURL: "https://example.com/v1", model: "  "))
     }

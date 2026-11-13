@@ -1,8 +1,8 @@
 [
   {
     "path": "JarvisEVO/Core/AIProvider.swift",
-    "bytes": 1336,
-    "sha256": "5ec6c56cd35af4ca8a84ffccb5c69349e89f7d3bb7264084275ce88695ee844a"
+    "bytes": 496,
+    "sha256": "d2a6f7c17cd7c6069d30ddb8a0311a1f8b82106c45b8e66629a63646e9ea71d5"
   },
   {
     "path": "JarvisEVO/Core/AttachmentTextSearch.swift",
@@ -110,6 +110,11 @@
     "sha256": "fdb380c06cee2cfbbfd375b115d2466453107ce817c79c6d2439eec57d33e944"
   },
   {
+    "path": "JarvisEVO/Core/ProviderError.swift",
+    "bytes": 858,
+    "sha256": "249b122f068857626c9ce9bb75adf0964f015fa1d85aff937f5f5f87351f6e88"
+  },
+  {
     "path": "JarvisEVO/Core/RepositoryInspection.swift",
     "bytes": 11776,
     "sha256": "67e89770b1ddf14d3951a74759f8f414ed6c931fc7e2581cab05b352ce301cfd"
@@ -171,8 +176,13 @@
   },
   {
     "path": "JarvisEVO/Providers/OpenAICompatibleProvider.swift",
-    "bytes": 9472,
-    "sha256": "6ccf56efc6d53d9ff301d26f0d4c654437ded39d74193d8322b2dfdc4352defd"
+    "bytes": 4337,
+    "sha256": "ab80a2928fcad713167ad1df9634a21d44ac6f4208d1473910f9c25890f2ce03"
+  },
+  {
+    "path": "JarvisEVO/Providers/RemoteStreamDecoding.swift",
+    "bytes": 5464,
+    "sha256": "f0019059aba01d34966652cee1918ab31cb577b42d3661c3cb89189c8f5dd8e8"
   },
   {
     "path": "JarvisEVO/Resources/LocalAgentCore.js",
@@ -541,8 +551,8 @@
   },
   {
     "path": "Tests/ProviderTests.swift",
-    "bytes": 5334,
-    "sha256": "2426e2bd85cb53a8611f12c81ffc70650487632a50dd4fdaa07edc3e19aebd91"
+    "bytes": 6525,
+    "sha256": "1f6d7385cee4136ffcf9f3ff117f2ce63ed3fd2a8a7936da289f48a5580606e7"
   },
   {
     "path": "Tests/ReminderSchedulerTests.swift",
@@ -666,8 +676,8 @@
   },
   {
     "path": "scripts/run_foundation_tests.py",
-    "bytes": 4273,
-    "sha256": "23867c1f9de20c2bbafa14ea303180770040e96e2f821c367aab82fdec4e5348"
+    "bytes": 4391,
+    "sha256": "3f1e602599f8be006f982c8dff236a1b138df9a325cff660c1b606a8f1a00e37"
   },
   {
     "path": "scripts/run_self_knowledge_gate.sh",
@@ -751,8 +761,8 @@
   },
   {
     "path": "scripts/tests/test_remote_provider_contract.py",
-    "bytes": 1426,
-    "sha256": "d34789c36d8a859e599c7c63dc5d2ac138cf9366e317dabeb6c055affd9b225f"
+    "bytes": 1436,
+    "sha256": "71a38e867f1b843023e1d0fc24483144f7e8662cdd1303b308001f7e6e3ca98a"
   },
   {
     "path": "scripts/tests/test_repository_inspection_contract.py",
