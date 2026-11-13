@@ -64,7 +64,11 @@ enum ModelInstallTransaction {
             if source != nil { try prepareFile(newModel) }
             try prepareFile(newManifest)
             // Immutable copies survive replacement of either live destination.
-            if hadModel { try fm.copyItem(at: target, to: directory.appendingPathComponent("old-model")) }
+            if hadModel {
+                let backup = directory.appendingPathComponent("old-model")
+                if source == nil { try retainFile(target, at: backup) }
+                else { try fm.copyItem(at: target, to: backup) }
+            }
             if hadManifest { try fm.copyItem(at: manifestURL, to: directory.appendingPathComponent("old-manifest")) }
             try Task.checkCancellation()
             let journal = Journal(targetName: targetName, hadModel: hadModel, hadManifest: hadManifest, version: 1)
@@ -114,10 +118,19 @@ enum ModelInstallTransaction {
     private static func restore(hadOriginal: Bool, backup: URL, target: URL, scratch: URL) throws {
         if hadOriginal {
             if try regularFileExists(scratch) { try fm.removeItem(at: scratch) }
-            try fm.copyItem(at: backup, to: scratch)
+            try retainFile(backup, at: scratch)
             try atomicRename(scratch, target)
         } else if try regularFileExists(target) { try fm.removeItem(at: target) }
     }
+    /// Same-volume hard links retain the old inode without duplicating model bytes.
+    /// No linked inode is written by this transaction. Unsupported filesystems use
+    /// a full copy; allocation failure still occurs before live mutation or retains
+    /// the existing recovery marker/backups. This is not a low-disk guarantee.
+    private static func retainFile(_ source: URL, at destination: URL) throws {
+        do { try fm.linkItem(at: source, to: destination) }
+        catch { try fm.copyItem(at: source, to: destination) }
+    }
+
     private static func validName(_ name: String) -> Bool {
         name.hasSuffix(".gguf") && name.utf8.count <= 255 && !name.contains("/") && !name.contains("\\") &&
         !name.contains("..") && !name.unicodeScalars.contains(where: { CharacterSet.controlCharacters.contains($0) })

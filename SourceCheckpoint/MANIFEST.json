@@ -161,8 +161,8 @@
   },
   {
     "path": "JarvisEVO/Providers/Local/ModelInstallTransaction.swift",
-    "bytes": 8180,
-    "sha256": "2b065ba1a786b45c311a4db047fb45df60dfa3460cb8b15f978ab27491f6c239"
+    "bytes": 8864,
+    "sha256": "16bd530f5d19d4d27f7f1c73be76183f4dc3cdcdec90aaca2aed2d139d5d902e"
   },
   {
     "path": "JarvisEVO/Providers/Local/UTF8TokenAccumulator.swift",
@@ -501,8 +501,8 @@
   },
   {
     "path": "Tests/ModelInstallTransactionTests.swift",
-    "bytes": 12552,
-    "sha256": "46e906810ad1f85f3c61051c53ddf9990d71eaa38fb28c56bb7d55d2f6f3b62a"
+    "bytes": 13594,
+    "sha256": "6a6d55529049426beec83bffee7eb1c9ebb8e220dab82c1bf49c7ad76ccc7fc4"
   },
   {
     "path": "Tests/NativeToolDraftsTests.swift",

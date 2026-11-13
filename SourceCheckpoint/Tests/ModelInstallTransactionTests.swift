@@ -161,6 +161,21 @@ final class ModelInstallTransactionTests: XCTestCase {
         XCTAssertEqual(try read("installed-models.json", root), "old manifest")
     }
 
+    func testDeletionRetainsOriginalInodeWithoutCopyingLargeModelWhenLinksSupported() throws {
+        let root = try fixture(); defer { try? FileManager.default.removeItem(at: root) }
+        try write("model bytes", "model.gguf", root); try write("manifest", "installed-models.json", root)
+        let original = try FileManager.default.attributesOfItem(atPath: root.appendingPathComponent("model.gguf").path)[.systemFileNumber] as? NSNumber
+        XCTAssertNotNil(original)
+        try ModelInstallTransaction.remove(root: root, targetName: "model.gguf", manifest: Data("[]".utf8), didPublish: { phase in
+            if phase == .model {
+                let backup = root.appendingPathComponent(".model-install-transaction/old-model")
+                let retained = try FileManager.default.attributesOfItem(atPath: backup.path)[.systemFileNumber] as? NSNumber
+                XCTAssertEqual(retained, original)
+                XCTAssertEqual(try String(contentsOf: backup, encoding: .utf8), "model bytes")
+            }
+        })
+    }
+
     func testTraversalAndSymlinkTargetsAreRejected() throws {
         let root = try fixture(); defer { try? FileManager.default.removeItem(at: root) }
         try write("input", "input", root)
