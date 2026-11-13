@@ -20,7 +20,9 @@ final class VerifiedLocalPlanCoreTests: XCTestCase {
         let core = try VerifiedLocalPlanCore()
         XCTAssertThrowsError(try core.call("create", [#"{"appInfo":false,"installedModels":false,"searchQuery":null}"#, UUID().uuidString]))
         XCTAssertThrowsError(try core.call("create", [#"{"appInfo":true,"installedModels":false,"searchQuery":null,"sendEmail":true}"#, UUID().uuidString]))
-    }    func testNaturalLanguageRoutingIsOnlyAReviewedProposal() throws {
+    }
+
+    func testNaturalLanguageRoutingIsOnlyAReviewedProposal() throws {
         let core = try VerifiedLocalPlanCore()
         let matched = try core.route("What app is this and what models are installed?")
         XCTAssertEqual(matched.status, "matched")

@@ -426,8 +426,8 @@
   },
   {
     "path": "Tests/VerifiedLocalPlanCoreTests.swift",
-    "bytes": 1994,
-    "sha256": "fe4f3b5eccc4da306d7053e49685a6cdd042bb76b8954e2ace2e6ac8797b0e38"
+    "bytes": 1996,
+    "sha256": "e4b8edf83e2b37d5a5bfdda4de9e0425f6213770758ee271753a573e7ff2444e"
   },
   {
     "path": "Tests/VoiceServiceTests.swift",
@@ -485,6 +485,11 @@
     "sha256": "4650446b9eb325669139ff1ea8c89ccf85a6769b5c3663389c0a297cc755bcef"
   },
   {
+    "path": "scripts/run_foundation_tests.py",
+    "bytes": 2444,
+    "sha256": "c5722636fed66b22b053b25b03638350a5c4ef53e28f442717c2c33a79b27361"
+  },
+  {
     "path": "scripts/run_self_knowledge_gate.sh",
     "bytes": 898,
     "sha256": "fdb8de21d0d08d33341340fd241c07d9d609fde54c44cddcc2301b1b5b8843c5"
@@ -523,6 +528,11 @@
     "path": "scripts/tests/test_document_ocr_contract.py",
     "bytes": 1317,
     "sha256": "6e21aa117caa1dc4ff7a0ca7d5ef06cfd313e0b1e6886eaf1b8b699ea8ae602f"
+  },
+  {
+    "path": "scripts/tests/test_foundation_harness.py",
+    "bytes": 1370,
+    "sha256": "577935bb3c294276868b385b52cb98e4c4650b684aec5950d8d336126f67bef0"
   },
   {
     "path": "scripts/tests/test_guest_materializer.py",
