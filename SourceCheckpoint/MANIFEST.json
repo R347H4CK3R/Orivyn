@@ -770,6 +770,11 @@
     "sha256": "cc08f6c9c30594e3fd6058f4483ca578eb6efb6a02d8b98d980df3edbb512b77"
   },
   {
+    "path": "scripts/run_offline_chat_smoke.py",
+    "bytes": 7637,
+    "sha256": "94c71cf10bed996eca290ae6dd5dbe2786512d16651f09f0c299a9c5d8d00de2"
+  },
+  {
     "path": "scripts/run_persistence_tests.py",
     "bytes": 2804,
     "sha256": "1184aa9353036c0375432dfbbf3903fe16bed47f7f50b2584ce31c6f24205e84"
@@ -808,6 +813,11 @@
     "path": "scripts/swift-smoke/ObservationSmoke.swift",
     "bytes": 6917,
     "sha256": "32e8eec650c880467f4b30b67c17c9b81b85e53465414f5b7350edcd05f132aa"
+  },
+  {
+    "path": "scripts/swift-smoke/OfflineChatSmoke.swift",
+    "bytes": 6559,
+    "sha256": "f141b65d1681d17a128ca0b964a9e0c77ed4016c6e3eb1b8c6811fd6c1e33505"
   },
   {
     "path": "scripts/swift-smoke/ProviderReloadSmoke.swift",
