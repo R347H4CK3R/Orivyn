@@ -120,9 +120,16 @@ actor SQLiteConversationStore {
     }
 
     func exportData() throws -> Data {
-        let data = try encoder.encode(ConversationBackup(conversations: list(includeArchived: true), memories: memories()))
-        guard data.count <= ConversationBackup.maximumBytes else { throw ConversationError.tooLarge }
-        return data
+        // A backup must represent one committed database snapshot. Another
+        // connection may import both tables between these reads; actor isolation
+        // only serializes this connection, not every store using the same file.
+        try database.execute("BEGIN")
+        do {
+            let data = try encoder.encode(ConversationBackup(conversations: list(includeArchived: true), memories: memories()))
+            guard data.count <= ConversationBackup.maximumBytes else { throw ConversationError.tooLarge }
+            try database.execute("COMMIT")
+            return data
+        } catch { try? database.execute("ROLLBACK"); throw error }
     }
 
     /// Merges a complete validated snapshot transactionally. Attachments remain local references.

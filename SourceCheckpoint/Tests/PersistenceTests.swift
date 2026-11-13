@@ -189,5 +189,61 @@ final class PersistenceTests: XCTestCase {
         XCTAssertEqual(retried, replacement)
     }
 
+    func testExportUsesOneSnapshotAcrossConversationAndMemoryTables() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let url = root.appendingPathComponent("snapshot.sqlite")
+        let reader = try SQLiteConversationStore(url: url), writer = try SQLiteConversationStore(url: url)
+        let conversationID = UUID(), memoryID = UUID()
+        let filler = (0..<400).map { _ in Conversation(messages: [ChatMessage(role: .user, content: String(repeating: "x", count: 2000))]) }
+        func snapshot(_ generation: Int, initial: Bool = false) throws -> Data {
+            try JSONEncoder().encode(ConversationBackup(
+                conversations: (initial ? filler : []) + [Conversation(id: conversationID, title: String(generation))],
+                memories: [MemoryNote(id: memoryID, content: String(generation))]))
+        }
+        try await writer.importData(snapshot(0, initial: true))
+        let inputs = try (1...120).map { try snapshot($0) }
+        let writes = Task.detached { for data in inputs { try await writer.importData(data) } }
+        var mismatch: String?
+        do {
+            for _ in 0..<120 {
+                let backup = try JSONDecoder().decode(ConversationBackup.self, from: await reader.exportData())
+                let conversation = try XCTUnwrap(backup.conversations.first { $0.id == conversationID })
+                let memory = try XCTUnwrap(backup.memories.first { $0.id == memoryID })
+                if conversation.title != memory.content {
+                    mismatch = "conversation generation \(conversation.title), memory generation \(memory.content)"
+                    break
+                }
+            }
+        } catch {
+            _ = await writes.result
+            throw error
+        }
+        try await writes.value
+        XCTAssertNil(mismatch, "Export combined independently committed snapshots: \(mismatch ?? "")")
+        // A completed export must also release its read transaction for subsequent writes.
+        try await reader.save(Conversation(title: "Reader can write after export"))
+    }
+
+    func testFailedExportReleasesReadTransactionForRepairAndLaterWrites() async throws {
+        let url = temporaryDatabase()
+        let store = try SQLiteConversationStore(url: url)
+        let original = Conversation(title: "Recoverable")
+        try await store.save(original)
+        var connection: OpaquePointer?
+        XCTAssertEqual(sqlite3_open(url.path, &connection), SQLITE_OK)
+        defer { sqlite3_close(connection) }
+        XCTAssertEqual(sqlite3_exec(connection, "UPDATE conversations SET payload = X'7B'", nil, nil, nil), SQLITE_OK)
+        do { _ = try await store.exportData(); XCTFail("Corrupt row must not be exported") }
+        catch { XCTAssertTrue(error is DecodingError) }
+        // Repair the fixture through the same store: BEGIN must no longer be held.
+        try await store.save(original)
+        let restored = try JSONDecoder().decode(ConversationBackup.self, from: await store.exportData())
+        XCTAssertEqual(restored.conversations, [original])
+        try await store.save(Conversation(title: "After recovered export"))
+        let rows = try await store.list()
+        XCTAssertEqual(rows.count, 2)
+    }
+
     private func temporaryDatabase() -> URL { FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".sqlite") }
 }

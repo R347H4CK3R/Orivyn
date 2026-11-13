@@ -156,8 +156,8 @@
   },
   {
     "path": "JarvisEVO/Persistence/SQLiteConversationStore.swift",
-    "bytes": 15446,
-    "sha256": "617c3c5e14d44464e0af012fd9a30d8e17e25063fb9618ae01e5b044a92ac561"
+    "bytes": 15858,
+    "sha256": "bd1ba9ef71c67a8ad15087f50d5e02e4acb204f2faf2cf3947e7e90a42d5d9c5"
   },
   {
     "path": "JarvisEVO/Providers/Local/LlamaEngine.swift",
@@ -581,8 +581,8 @@
   },
   {
     "path": "Tests/PersistenceTests.swift",
-    "bytes": 11241,
-    "sha256": "b01a14de88cef60f63265abced073d6e670a48b09803e1812afcb476356ac911"
+    "bytes": 14600,
+    "sha256": "b6cfa95abf8f996e9e327e1dd8c63fe2669d013f8104a3f370ea9e5db63819a3"
   },
   {
     "path": "Tests/PluginBrokerTests.swift",
