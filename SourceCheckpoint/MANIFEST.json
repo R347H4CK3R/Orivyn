@@ -675,6 +675,11 @@
     "sha256": "80075b0622686e7553c317969a45dba73b673752665b03c03582f8d88e0247bf"
   },
   {
+    "path": "scripts/agent-tests/bridge-smoke.cjs",
+    "bytes": 4075,
+    "sha256": "62cee52e498faeb68d2093d253c46edfd0c3f47378cbcf040d23d2fe5932580d"
+  },
+  {
     "path": "scripts/agent-tests/core.test.cjs",
     "bytes": 12288,
     "sha256": "3edd492f0c3663cac33acca278ac410c08f54bdf34366ef3bb9266eb9b33b946"
@@ -705,6 +710,11 @@
     "sha256": "4650446b9eb325669139ff1ea8c89ccf85a6769b5c3663389c0a297cc755bcef"
   },
   {
+    "path": "scripts/run_agent_bridge_smoke.py",
+    "bytes": 1823,
+    "sha256": "5253cff6029283c30563f2f6d834bf2fbd81443059f983a66be4c13abe20abf1"
+  },
+  {
     "path": "scripts/run_foundation_tests.py",
     "bytes": 4600,
     "sha256": "fcf7841b5897ded7cb6e451888007048516093a9aad7d1b9fcc44db8f152124a"
@@ -723,6 +733,11 @@
     "path": "scripts/run_virtual_desktop_gate.sh",
     "bytes": 5234,
     "sha256": "b54271d6e0b5f0eec17974bff32b366a5f101eae9486ffcdd659e5a324d9307e"
+  },
+  {
+    "path": "scripts/swift-smoke/AgentBridge.swift",
+    "bytes": 1706,
+    "sha256": "f62b664216f042b4e29fe75c8d8feac82a58441b84c462af4bc4a04fa19e6ef5"
   },
   {
     "path": "scripts/swift-smoke/ObservationSmoke.swift",
