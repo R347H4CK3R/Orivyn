@@ -166,8 +166,8 @@
   },
   {
     "path": "JarvisEVO/Providers/Local/LlamaEngine.swift",
-    "bytes": 12621,
-    "sha256": "35d3166cc26095ed9a644a1a26ad1a37f7177926d4457ef155c83ac496e98540"
+    "bytes": 14036,
+    "sha256": "5c6602b8c8e55843b5d2f81a96699081c5f94712bf164f50dfdcdd3d47503f49"
   },
   {
     "path": "JarvisEVO/Providers/Local/LocalModelCatalog.swift",
@@ -786,8 +786,8 @@
   },
   {
     "path": "scripts/swift-smoke/LlamaEngineSmoke.swift",
-    "bytes": 6277,
-    "sha256": "1cb83bfa065af1dd29bfde180dd2775684dc68fc5643f15b50c2c1af928674d5"
+    "bytes": 7535,
+    "sha256": "8e09b71dec9fe4740572bb79fedcdee4773906052f49c57c2b055e5e77c06182"
   },
   {
     "path": "scripts/swift-smoke/ObservationSmoke.swift",

@@ -10,6 +10,7 @@ actor LlamaEngine: LocalResourceReleasing {
     private let batchSize = 128
     private var resources: LlamaResources?
     private var loadedPath: String?
+    private var loadedIdentity: ModelFileIdentity?
     private var busy = false
     private var workerTask: Task<Void, Never>?
     private var releaseRequests = 0
@@ -48,12 +49,17 @@ actor LlamaEngine: LocalResourceReleasing {
         // Concurrent releasers keep admission closed until every waiter resumes.
         resources = nil
         loadedPath = nil
+        loadedIdentity = nil
     }
 
     private func load(_ url: URL) throws -> LlamaResources {
-        if let resources, loadedPath == url.path { return resources }
+        // Transactions replace a model atomically at the same pathname. A path
+        // match alone can otherwise keep using the old mmap after new bytes were verified.
+        let identity = ModelFileIdentity.read(url)
+        if let resources, loadedPath == url.path, let identity, loadedIdentity == identity { return resources }
         resources = nil
         loadedPath = nil
+        loadedIdentity = nil
         _ = Self.backend
         var modelParameters = llama_model_default_params()
         #if targetEnvironment(simulator)
@@ -79,6 +85,7 @@ actor LlamaEngine: LocalResourceReleasing {
         let loaded = LlamaResources(model: model, context: context)
         resources = loaded
         loadedPath = url.path
+        loadedIdentity = identity
         return loaded
     }
 
@@ -223,4 +230,24 @@ private final class LlamaResources: @unchecked Sendable {
     let context: OpaquePointer
     init(model: OpaquePointer, context: OpaquePointer) { self.model = model; self.context = context }
     deinit { llama_free(context); llama_model_free(model) }
+}
+
+/// Cache invalidation metadata, not a substitute for LocalModelStore SHA verification.
+/// Missing metadata disables reuse. Atomic replacement changes the file number even
+/// when size and timestamps happen to match; in-place changes also compare size/time.
+private struct ModelFileIdentity: Equatable {
+    let device: UInt64
+    let inode: UInt64
+    let size: UInt64
+    let modified: Date
+    static func read(_ url: URL) -> Self? {
+        guard let values = try? FileManager.default.attributesOfItem(atPath: url.path),
+              values[.type] as? FileAttributeType == .typeRegular,
+              let device = values[.systemNumber] as? NSNumber,
+              let inode = values[.systemFileNumber] as? NSNumber,
+              let size = values[.size] as? NSNumber,
+              let modified = values[.modificationDate] as? Date else { return nil }
+        return Self(device: device.uint64Value, inode: inode.uint64Value,
+                    size: size.uint64Value, modified: modified)
+    }
 }

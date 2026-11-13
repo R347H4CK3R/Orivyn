@@ -89,6 +89,24 @@ import llama
                 print("PASS actual grammar sampling requireTool=\(requireTool): \(json)")
             }
             await engine.unload()
+            let fixture = URL(fileURLWithPath: CommandLine.arguments[0]).deletingLastPathComponent().appendingPathComponent("replacement-fixture")
+            let fm = FileManager.default
+            try fm.createDirectory(at: fixture, withIntermediateDirectories: true)
+            defer { try? fm.removeItem(at: fixture) }
+            let linked = fixture.appendingPathComponent("model.gguf")
+            try fm.linkItem(at: url, to: linked)
+            for try await _ in try await engine.stream(request, modelURL: linked) { }
+            let replacement = fixture.appendingPathComponent("replacement")
+            try Data("not a gguf".utf8).write(to: replacement)
+            let renamed = replacement.path.withCString { source in
+                linked.path.withCString { target in rename(source, target) }
+            }
+            guard renamed == 0 else { throw Failure.failed("Fixture replacement failed") }
+            do {
+                for try await _ in try await engine.stream(request, modelURL: linked) { }
+                throw Failure.failed("Replaced model reused stale mapped bytes")
+            } catch LocalModelError.loadFailed { print("PASS atomic same-path replacement invalidates model cache") }
+            await engine.unload()
         } catch {
             await engine.unload()
             throw error
