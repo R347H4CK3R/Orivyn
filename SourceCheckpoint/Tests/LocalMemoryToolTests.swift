@@ -31,6 +31,27 @@ final class LocalMemoryToolTests: XCTestCase {
         XCTAssertThrowsError(try LocalReadTools.execute(name: "search_memory", arguments: .object(["query": .string(""), "limit": .integer(10)]), model: model))
         XCTAssertThrowsError(try LocalReadTools.execute(name: "search_memory", arguments: .object(["query": .string("cafe"), "limit": .integer(11)]), model: model))
     }
+    func testLateMemoryAndConversationMatchesReturnNearbyEvidence() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let suite = "LateEvidence." + UUID().uuidString
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let store = try SQLiteConversationStore(url: root.appendingPathComponent("history.sqlite"))
+        try await store.save(Conversation(title: "Record", messages: [ChatMessage(role: .user, content: String(repeating: "x", count: 5000) + " café closes at nine")]))
+        let model = AppModel(store: store, attachmentService: try AttachmentService(directory: root.appendingPathComponent("Attachments")), modelStore: try LocalModelStore(root: root.appendingPathComponent("Models")), defaults: defaults)
+        await model.bootstrap()
+        let saved = await model.saveMemory(content: String(repeating: "x", count: 3000) + " café opens at seven")
+        XCTAssertTrue(saved)
+        let arguments = MCPJSONValue.object(["query": .string("cafe"), "limit": .integer(10)])
+        let memory = try LocalReadTools.execute(name: "search_memory", arguments: arguments, model: model)
+        let conversation = try LocalReadTools.execute(name: "search_conversations", arguments: arguments, model: model)
+        XCTAssertTrue(memory.contains("opens at seven"))
+        XCTAssertTrue(conversation.contains("closes at nine"))
+        XCTAssertTrue(memory.contains("excerptMayBeTruncated"))
+        XCTAssertFalse(model.isGenerating)
+    }
+
     func testMemoryOnlyPlanAndLanguageProposalAreSupported() throws {
         let core = try VerifiedLocalPlanCore()
         let state = try core.call("create", [#"{"appInfo":false,"installedModels":false,"searchQuery":null,"memoryQuery":"cafe"}"#, UUID().uuidString])

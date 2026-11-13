@@ -30,6 +30,11 @@
     "sha256": "22f57f9fa80ce2ff220528bf8d75416049bd6da2dc843a71d95b8cde93efd677"
   },
   {
+    "path": "JarvisEVO/Core/LocalSearchExcerpt.swift",
+    "bytes": 2153,
+    "sha256": "80411efefffc420769b65b3c9b090f15d1e26d5b59774547602b1fd756d38501"
+  },
+  {
     "path": "JarvisEVO/Core/MemoryContextBuilder.swift",
     "bytes": 4754,
     "sha256": "012fb40ea3365fd701927d8623d84e9cc84e023b117aa54a0ffe8d48c333aeed"
@@ -111,8 +116,8 @@
   },
   {
     "path": "JarvisEVO/Resources/VerifiedLocalPlan.js",
-    "bytes": 10189,
-    "sha256": "f46abacddc86984e17d56c18e777e8da9cfa05a0b40b4479a7664ea2d475bff2"
+    "bytes": 10355,
+    "sha256": "c150b2b631f5c03e8f23b6cebc2e672e1e53e1ea95d445ee85c28e210cd49b19"
   },
   {
     "path": "JarvisEVO/Services/AttachmentService.swift",
@@ -146,8 +151,8 @@
   },
   {
     "path": "JarvisEVO/Services/LocalReadTools.swift",
-    "bytes": 4342,
-    "sha256": "b4dee3d74afbb883fd6abc824cd235465d781def9466a44c0a5b3480dafd390a"
+    "bytes": 4675,
+    "sha256": "add0211f60effa1a2f30d2b52a2aceda7ee17d079f37d99e51d5aaf10f6bfadc"
   },
   {
     "path": "JarvisEVO/Services/PDFTextExtractor.swift",
@@ -326,13 +331,18 @@
   },
   {
     "path": "Tests/LocalInferenceTests.swift",
-    "bytes": 12204,
-    "sha256": "3437fa6fc0c1eebc95f6eefad06fb4510929aac7fed331b4233d6f85e8af2159"
+    "bytes": 13534,
+    "sha256": "82b32b6d18d7f13525249788bb6b6d25030fedcfe746159193519f076baa88af"
   },
   {
     "path": "Tests/LocalMemoryToolTests.swift",
-    "bytes": 2837,
-    "sha256": "774e153dbbae4484ccd2eb7e76a82abdd6f8c90e6a721df56e5b6d4c9d80ff43"
+    "bytes": 4501,
+    "sha256": "e89792b33eab14120a517d318519e3bf2da253adabdab7667bbbe9b00dfa4e2b"
+  },
+  {
+    "path": "Tests/LocalSearchExcerptTests.swift",
+    "bytes": 2694,
+    "sha256": "5de94645a1a564deb06dbde8560647bfa284ccceeb060d6fe09dd23f791c0b55"
   },
   {
     "path": "Tests/MemoryContextBuilderTests.swift",
@@ -451,8 +461,8 @@
   },
   {
     "path": "scripts/agent-tests/verified-plan.test.cjs",
-    "bytes": 11419,
-    "sha256": "d429b0adf06a7c59c28000a53b67436025d066f341b046154de2b08116d4dfa1"
+    "bytes": 14061,
+    "sha256": "2f9e3ca18d1a9509e0318ee04b6e6b6074344a48b0c91ac67504d220612f59a9"
   },
   {
     "path": "scripts/ci_macos.sh",
@@ -471,8 +481,8 @@
   },
   {
     "path": "scripts/run_virtual_desktop_gate.sh",
-    "bytes": 3988,
-    "sha256": "75437459960cf2e0ca71860fcde7af811687207c0904106c9b20a89f9067834a"
+    "bytes": 4045,
+    "sha256": "315bc76fe384cf1155246c3b002b16efd5ff468275a43c99ee23564cb2ac9137"
   },
   {
     "path": "scripts/tests/test_attachment_fitting_contract.py",
@@ -553,6 +563,11 @@
     "path": "scripts/tests/test_runtime_diagnostics_contract.py",
     "bytes": 1036,
     "sha256": "d1e2fd531c355a4a5ca044b9bda256e4c72f9f9e3b53332bc83233f7d306d226"
+  },
+  {
+    "path": "scripts/tests/test_search_evidence_contract.py",
+    "bytes": 600,
+    "sha256": "7a470840c23c48564c17c89844a42fe93209d324a492daedccc691a4baaf30e6"
   },
   {
     "path": "scripts/tests/test_vm_integration_contract.py",

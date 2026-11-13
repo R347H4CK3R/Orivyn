@@ -19,13 +19,13 @@ enum LocalReadTools {
             object = .object(["models": .array(models), "totalInstalled": .integer(Int64(model.installedModels.count)), "truncated": .bool(model.installedModels.count > 10)])
         case "search_conversations":
             guard let args = arguments.objectValue, Set(args.keys) == Set(["query", "limit"]),
-                  let query = args["query"]?.stringValue, !query.isEmpty, query.utf8.count <= 256,
+                  let query = args["query"]?.stringValue, !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, query.utf8.count <= 256,
                   let limit = args["limit"]?.integerValue, (1...10).contains(limit) else { throw LocalAgentError.invalidState }
             let matches = model.conversations.prefix(500).filter {
-                $0.title.localizedCaseInsensitiveContains(query) || $0.messages.contains { $0.content.localizedCaseInsensitiveContains(query) }
+                Self.contains($0.title, query: query) || $0.messages.contains { Self.contains($0.content, query: query) }
             }.prefix(Int(limit)).map { conversation -> MCPJSONValue in
-                let excerpt = conversation.messages.first { $0.content.localizedCaseInsensitiveContains(query) }?.content ?? ""
-                return .object(["id": .string(conversation.id.uuidString), "title": .string(Self.prefix(conversation.title, bytes: 96)), "excerpt": .string(Self.prefix(excerpt, bytes: 160)), "excerptMayBeTruncated": .bool(excerpt.utf8.count > 160)])
+                let excerpt = conversation.messages.first { Self.contains($0.content, query: query) }?.content ?? conversation.title
+                return .object(["id": .string(conversation.id.uuidString), "title": .string(Self.prefix(conversation.title, bytes: 96)), "excerpt": .string(LocalSearchExcerpt.excerpt(text: excerpt, query: query)), "excerptMayBeTruncated": .bool(excerpt.utf8.count > 160)])
             }
             object = .object(["matches": .array(matches), "searchedConversations": .integer(Int64(min(500, model.conversations.count))), "searchLimited": .bool(model.conversations.count > 500)])
         case "search_memory":
@@ -37,7 +37,7 @@ enum LocalReadTools {
                 $0.content.range(of: query, options: [.caseInsensitive, .diacriticInsensitive]) != nil
             }.prefix(Int(limit)).map { note in
                 MCPJSONValue.object(["id": .string(note.id.uuidString),
-                    "excerpt": .string(Self.prefix(note.content, bytes: 160)),
+                    "excerpt": .string(LocalSearchExcerpt.excerpt(text: note.content, query: query)),
                     "excerptMayBeTruncated": .bool(note.content.utf8.count > 160)])
             }
             object = .object(["memories": .array(memories),
@@ -45,9 +45,12 @@ enum LocalReadTools {
                 "searchLimited": .bool(model.memories.count > 500)])
         default: throw LocalAgentError.invalidState
         }
-        let data = try object.encoded(maximumBytes: name == "search_memory" ? 16_384 : 4096)
+        let data = try object.encoded(maximumBytes: name == "search_conversations" ? 20_480 : (name == "search_memory" ? 16_384 : 4096))
         guard let text = String(data: data, encoding: .utf8) else { throw LocalAgentError.invalidState }
         return text
+    }
+    private static func contains(_ text: String, query: String) -> Bool {
+        text.range(of: query, options: [.caseInsensitive, .diacriticInsensitive], locale: Locale(identifier: "en_US_POSIX")) != nil
     }
     private static func prefix(_ text: String, bytes: Int) -> String {
         var result = ""

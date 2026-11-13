@@ -183,4 +183,25 @@ final class LocalPromptBuilderTests: XCTestCase {
         XCTAssertTrue(LocalPromptBuilder.messages(from: source, attachmentCharacterLimit: -1)[0].content.contains("2 additional attachment(s) omitted"))
     }
 
+    func testPrepareCannotRemoveOversizedNewestTypedText() {
+        let typed = String(repeating: "typed", count: 1000)
+        XCTAssertThrowsError(try LocalPromptBuilder.prepareMessages(from: [ChatMessage(role: .user, content: typed)], maxTokens: 100, contextSize: 1000) { entries in
+            XCTAssertEqual(entries.last?.content, typed)
+            return entries.reduce(0) { $0 + $1.content.count }
+        }) { XCTAssertEqual($0 as? LocalModelError, .promptTooLong) }
+    }
+
+    func testPrepareUsesProvidedHighDensityTokenCountRatherThanCharacterEstimate() throws {
+        let file = ChatAttachment(name: "unicode.txt", relativePath: "unicode.txt", mediaType: "text/plain", byteCount: 20000, extractedText: String(repeating: "🦉", count: 5000))
+        var calls = 0
+        let result = try LocalPromptBuilder.prepareMessages(from: [ChatMessage(role: .user, content: "Keep typed", attachments: [file])], maxTokens: 100, contextSize: 1000) { entries in
+            calls += 1
+            return entries.reduce(0) { $0 + $1.content.utf8.count }
+        }
+        XCTAssertGreaterThan(calls, 4)
+        XCTAssertLessThanOrEqual(result.reduce(0) { $0 + $1.content.utf8.count } + 100, 1000)
+        XCTAssertTrue(result[0].content.hasPrefix("Keep typed"))
+        XCTAssertTrue(result[0].content.contains("🦉"))
+    }
+
 }
