@@ -1,12 +1,13 @@
 # Native CircleCI configuration, not the GitHub Actions compatibility engine.
-# Manually trigger with run_native=true only after checking FREE credit balance.
+# Trigger only via the configured run-ci PR label or manual request.
+# Approve the hold ONLY after checking FREE credit balance. No automatic compute.
 # This config neither publishes releases nor changes repository visibility/billing.
 version: 2.1
 
 parameters:
   run_native:
     type: boolean
-    default: false
+    default: true
 
 jobs:
   native-ios-gate:
