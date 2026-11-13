@@ -126,28 +126,26 @@ final class JarvisEVOAttachmentUITests: XCTestCase {
             .withOffset(CGVector(dx: point.x - app.frame.minX, dy: point.y - app.frame.minY)).tap()
     }
 
-    /// Photos hosts its grid in a remote view service. Run9 pixels and AX show
-    /// this Image visibly inside its grid while isHittable is false. Validate
-    /// the live visible hit region, then require Done and real OCR to prove action.
+    /// Photos is a remote view service. Its private grid-container AX identifier
+    /// differs across iOS 26 runtimes; the actual photo and scroll viewport were
+    /// both found on CircleCI while PXGGridLayout-Group was absent. Use their
+    /// live intersection, then require Done and real OCR to prove selection.
     private func selectVisiblePhoto(_ photo: XCUIElement) {
         guard app.state == .runningForeground, !app.alerts.firstMatch.exists else {
             return XCTFail("Photos must be foreground without a blocking alert before selection.")
         }
         let scroll = app.scrollViews["photosView_content_scroll_view"]
-        let grid = app.otherElements.matching(identifier: "PXGGridLayout-Group")
-            .matching(NSPredicate(format: "label == %@", photo.label)).firstMatch
         XCTAssertTrue(scroll.waitForExistence(timeout: 5))
-        XCTAssertTrue(grid.waitForExistence(timeout: 5))
         let imageFrame = photo.frame
-        let frames = [imageFrame, grid.frame, scroll.frame, app.frame]
+        let frames = [imageFrame, scroll.frame, app.frame]
         guard frames.allSatisfy({ frame in
             [frame.minX, frame.minY, frame.width, frame.height].allSatisfy(\.isFinite)
                 && frame.width > 0 && frame.height > 0
-        }) else { return XCTFail("Photos supplied invalid image/grid/viewport geometry.") }
-        let visible = imageFrame.intersection(grid.frame).intersection(scroll.frame).intersection(app.frame)
+        }) else { return XCTFail("Photos supplied invalid image/viewport geometry.") }
+        let visible = imageFrame.intersection(scroll.frame).intersection(app.frame)
         guard !visible.isNull, visible.width >= 44, visible.height >= 44,
               visible.width * visible.height >= imageFrame.width * imageFrame.height * 0.95 else {
-            return XCTFail("The thumbnail must be almost fully visible inside its actual grid and viewport before tapping.")
+            return XCTFail("The thumbnail must be almost fully visible inside its actual scroll viewport before tapping.")
         }
         let point = CGPoint(x: visible.midX, y: visible.midY)
         let navigation = app.navigationBars["Photos"]
@@ -158,11 +156,14 @@ final class JarvisEVOAttachmentUITests: XCTestCase {
               !app.toolbars.allElementsBoundByIndex.contains(where: { $0.frame.contains(point) }) else {
             return XCTFail("The thumbnail center must be inside the image, clear of navigation, privacy banner and toolbars.")
         }
-        let geometry = XCTAttachment(string: "Remote Photos Image isHittable=\(photo.isHittable), image=\(imageFrame), grid=\(grid.frame), scroll=\(scroll.frame), app=\(app.frame), visible=\(visible), verified tap center=\(point)")
+        let geometry = XCTAttachment(string: "Remote Photos Image isHittable=\(photo.isHittable), image=\(imageFrame), scroll=\(scroll.frame), app=\(app.frame), visible=\(visible), verified tap center=\(point)")
         geometry.name = "Native Photos verified visible selection geometry"
         geometry.lifetime = .keepAlways; add(geometry)
         let liveFrame = photo.frame
-        guard imageFrame.insetBy(dx: -1, dy: -1).contains(liveFrame),
+        guard scroll.exists, photo.exists, app.state == .runningForeground,
+              !app.alerts.firstMatch.exists,
+              scroll.frame.intersection(app.frame).contains(point),
+              imageFrame.insetBy(dx: -1, dy: -1).contains(liveFrame),
               liveFrame.insetBy(dx: -1, dy: -1).contains(imageFrame) else {
             return XCTFail("The thumbnail moved after geometry validation; no coordinate tap was attempted.")
         }
