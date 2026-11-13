@@ -1,4 +1,5 @@
 import XCTest
+import SQLite3
 @testable import JarvisEVO
 
 final class PersistenceTests: XCTestCase {
@@ -156,6 +157,36 @@ final class PersistenceTests: XCTestCase {
         catch is CancellationError {} catch { XCTFail("Unexpected error: \(error)") }
         let retained = try await store.load(id: original.id)
         XCTAssertEqual(retained, original)
+    }
+
+    func testFailedMemoryWriteRollsBackEarlierConversationChangesAndAllowsRetry() async throws {
+        let url = temporaryDatabase()
+        let store = try SQLiteConversationStore(url: url)
+        let original = Conversation(title: "Keep original")
+        try await store.save(original)
+        var replacement = original
+        replacement.title = "Replacement"
+        let addition = Conversation(title: "New imported row")
+        let note = MemoryNote(content: "Import memory")
+        let data = try JSONEncoder().encode(ConversationBackup(conversations: [replacement, addition], memories: [note]))
+        var connection: OpaquePointer?
+        XCTAssertEqual(sqlite3_open(url.path, &connection), SQLITE_OK)
+        defer { sqlite3_close(connection) }
+        XCTAssertEqual(sqlite3_exec(connection, "CREATE TRIGGER reject_memory BEFORE INSERT ON memory BEGIN SELECT RAISE(ABORT, 'test failure'); END;", nil, nil, nil), SQLITE_OK)
+        do { _ = try await store.importData(data); XCTFail("Failed memory write must reject the entire import") }
+        catch { XCTAssertTrue(error is DatabaseError) }
+        let retained = try await store.load(id: original.id)
+        let absent = try await store.load(id: addition.id)
+        let memories = try await store.memories()
+        XCTAssertEqual(retained, original)
+        XCTAssertNil(absent)
+        XCTAssertTrue(memories.isEmpty)
+        XCTAssertEqual(sqlite3_exec(connection, "DROP TRIGGER reject_memory", nil, nil, nil), SQLITE_OK)
+        let summary = try await store.importData(data)
+        XCTAssertEqual(summary.writtenConversations, 2)
+        XCTAssertEqual(summary.writtenMemories, 1)
+        let retried = try await store.load(id: original.id)
+        XCTAssertEqual(retried, replacement)
     }
 
     private func temporaryDatabase() -> URL { FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".sqlite") }

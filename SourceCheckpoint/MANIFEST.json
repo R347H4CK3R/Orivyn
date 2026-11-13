@@ -16,8 +16,8 @@
   },
   {
     "path": "JarvisEVO/Core/Conversation.swift",
-    "bytes": 6589,
-    "sha256": "22cf5c4d225af7d25710dcb9c18b1a6a00482f3ac39ffce46fc3c4390d41bd32"
+    "bytes": 6628,
+    "sha256": "a318a37b0ce7d0948c72ce97563be8225fb3f848c232b43c086115018db35ac0"
   },
   {
     "path": "JarvisEVO/Core/ConversationSearch.swift",
@@ -28,6 +28,11 @@
     "path": "JarvisEVO/Core/FeedbackDraft.swift",
     "bytes": 2352,
     "sha256": "516810d5aea2080c479f2639c5f5ae571d9000b07238df40b8647412f290774c"
+  },
+  {
+    "path": "JarvisEVO/Core/ImageOCRResult.swift",
+    "bytes": 2828,
+    "sha256": "c8b789de0797e83ecd7903b67620fa482cb5e91fc12551069898b66a6c318c42"
   },
   {
     "path": "JarvisEVO/Core/IncomingText.swift",
@@ -231,8 +236,8 @@
   },
   {
     "path": "JarvisEVO/Services/ImageAttachmentService.swift",
-    "bytes": 27177,
-    "sha256": "cf52cda9d5c1452037727b677580314f4b7e295e1500d2b749706659f40f93e6"
+    "bytes": 24384,
+    "sha256": "5bdd4a11582f223c37476ac12ceb82b73dbc79e8f9d1413bdf22841ca22a9507"
   },
   {
     "path": "JarvisEVO/Services/LocalAgentCore.swift",
@@ -561,8 +566,8 @@
   },
   {
     "path": "Tests/PersistenceTests.swift",
-    "bytes": 9452,
-    "sha256": "a07d15469865a9a3170d955d7aa1c63ba47c5d5f94eae8faae88dec92dcd064c"
+    "bytes": 11241,
+    "sha256": "b01a14de88cef60f63265abced073d6e670a48b09803e1812afcb476356ac911"
   },
   {
     "path": "Tests/PluginBrokerTests.swift",
@@ -723,6 +728,11 @@
     "path": "scripts/run_observation_smoke.py",
     "bytes": 1865,
     "sha256": "cc08f6c9c30594e3fd6058f4483ca578eb6efb6a02d8b98d980df3edbb512b77"
+  },
+  {
+    "path": "scripts/run_persistence_tests.py",
+    "bytes": 2760,
+    "sha256": "71f422b81a088169f1a62b0992514cbcedfec1be14262137ad69e5199055f957"
   },
   {
     "path": "scripts/run_self_knowledge_gate.sh",

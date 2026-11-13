@@ -4,6 +4,7 @@ enum MessageRole: String, Codable, Sendable { case system, user, assistant }
 enum MessageState: String, Codable, Sendable { case complete, streaming, interrupted, failed }
 
 struct ChatAttachment: Codable, Identifiable, Equatable, Sendable {
+    static let maximumImageBytes = 10 * 1024 * 1024
     var id: UUID = UUID()
     var name: String
     var relativePath: String
@@ -29,7 +30,7 @@ struct ChatAttachment: Codable, Identifiable, Equatable, Sendable {
         if isImage {
             guard let suffix = Self.imageFileExtension(for: mediaType),
                   relativePath == id.uuidString + "." + suffix,
-                  byteCount > 0, byteCount <= ImageAttachmentService.maximumBytes else { return false }
+                  byteCount > 0, byteCount <= Self.maximumImageBytes else { return false }
             return previewRelativePath == nil || previewRelativePath == id.uuidString + "-preview.jpg"
         }
         // An image cannot be relabeled as a document to bypass its ownership or original-share warning.
