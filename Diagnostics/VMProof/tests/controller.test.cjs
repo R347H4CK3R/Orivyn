@@ -32,3 +32,18 @@ test('checkpoint and concurrent input cannot race an outstanding key transfer',a
  await assert.rejects(f.controller.type('overlap'));await assert.rejects(f.controller.diagnosticConsole());
  finish();await typing;await f.controller.saveCheckpoint(async()=>{},{});assert.equal(saved,true);await f.controller.stop();
 });
+test('resume owns transition before asynchronous engine run',async()=>{
+ const f=fixture();const p=f.controller.start();await Promise.resolve();f.ready();await p;
+ global.OfflineVMCheckpoint={save:async()=>({})};await f.controller.saveCheckpoint(async()=>{},{});
+ let calls=0,finish;f.vm.run=()=>{calls++;return new Promise(r=>finish=r)};
+ const first=f.controller.resume();let secondError;const second=f.controller.resume().catch(e=>{secondError=e});
+ await Promise.resolve();assert.equal(calls,1,'repeated Resume must not start another run');
+ await assert.rejects(f.controller.saveCheckpoint(async()=>{},{}));
+ finish();await Promise.all([first,second]);assert.match(secondError.message,/Invalid resume state/);await f.controller.stop();
+});
+test('failed resume reports error and cannot admit another checkpoint',async()=>{
+ const f=fixture();const p=f.controller.start();await Promise.resolve();f.ready();await p;
+ global.OfflineVMCheckpoint={save:async()=>({})};await f.controller.saveCheckpoint(async()=>{},{});
+ f.vm.run=async()=>{throw Error('run failed')};await assert.rejects(f.controller.resume(),/run failed/);
+ assert.equal(f.events.at(-1).event,'error');await assert.rejects(f.controller.saveCheckpoint(async()=>{},{}));await f.controller.stop();
+});
