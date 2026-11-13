@@ -47,6 +47,26 @@ import llama
             for try await part in reloaded { next += part }
             guard next.lowercased().contains("hello") else { throw Failure.failed("Reload reply: \(next)") }
             print("PASS generation succeeds after resource release: \(next)")
+            for requireTool in [true, false] {
+                var agent = GenerationRequest(messages: [ChatMessage(role: .user, content: requireTool ? "Call get_app_info with empty arguments now." : "Return an answer JSON with text hello.")], systemPrompt: "Return exactly one JSON decision, no commentary.", maxTokens: 128, temperature: 0)
+                agent.localAgentRequiresTool = requireTool
+                let result = try await engine.stream(agent, modelURL: url)
+                var json = ""
+                for try await part in result { json += part }
+                guard let object = try JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any],
+                      let type = object["type"] as? String,
+                      (requireTool ? type == "tool" : ["tool", "answer"].contains(type)) else {
+                    throw Failure.failed("Grammar output invalid: \(json)")
+                }
+                if requireTool {
+                    guard let name = object["name"] as? String,
+                          ["get_app_info", "list_models", "search_conversations"].contains(name),
+                          object["arguments"] is [String: Any] else {
+                        throw Failure.failed("Required external tool grammar invalid: \(json)")
+                    }
+                }
+                print("PASS actual grammar sampling requireTool=\(requireTool): \(json)")
+            }
             await engine.unload()
         } catch {
             await engine.unload()

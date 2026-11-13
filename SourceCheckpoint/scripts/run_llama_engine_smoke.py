@@ -15,6 +15,11 @@ def main():
  a=p.parse_args();root=pathlib.Path(__file__).resolve().parents[1];out=a.output.resolve();out.mkdir(parents=True,exist_ok=False);manifest=[];files=[]
  for n in SOURCES:
   b=(root/n).read_bytes();dest=out/pathlib.Path(n).name;dest.write_bytes(b);files.append(str(dest));manifest.append({'source':n,'sha256':hashlib.sha256(b).hexdigest(),'bytes':len(b)})
+ # Bundle.main on this Linux command-line host finds resources beside the executable.
+ # Copy the exact shipped grammar, without claiming Apple bundle packaging validation.
+ resource='JarvisEVO/Resources/LocalAgentDecision.gbnf'
+ b=(root/resource).read_bytes();(out/'LocalAgentDecision.gbnf').write_bytes(b)
+ manifest.append({'source':resource,'sha256':hashlib.sha256(b).hexdigest(),'bytes':len(b)})
  module=out/'llama';module.mkdir();shutil.copytree(a.headers,module/'include')
  (module/'module.modulemap').write_text('module llama [system] { header "include/llama.h" link "llama" export * }\n')
  for f in sorted((module/'include').glob('*.h')):

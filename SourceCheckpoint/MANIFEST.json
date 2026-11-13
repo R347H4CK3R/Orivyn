@@ -751,8 +751,8 @@
   },
   {
     "path": "scripts/run_llama_engine_smoke.py",
-    "bytes": 3697,
-    "sha256": "3366a401478c0c1cb5eca95c9f9af06f8c135f29a9c5489324e4ed75a29735f8"
+    "bytes": 4097,
+    "sha256": "8a0eaefeac8878b129b16f4d9281b222b700bead6d11289e5c99b310b7a2ac45"
   },
   {
     "path": "scripts/run_observation_smoke.py",
@@ -786,8 +786,8 @@
   },
   {
     "path": "scripts/swift-smoke/LlamaEngineSmoke.swift",
-    "bytes": 3352,
-    "sha256": "02f26b5752103bf22305020b1e5f4e1a629085a74da67d871d5492e4cf0b2a04"
+    "bytes": 4785,
+    "sha256": "e7cca27e22d999222014973a61a382e98cb77af71455dfa4a60be0433a6f34dc"
   },
   {
     "path": "scripts/swift-smoke/ObservationSmoke.swift",
