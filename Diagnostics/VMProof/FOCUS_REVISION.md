@@ -1,0 +1,6 @@
+# Mapped and focused guest terminal readiness candidate
+Native4a806945 passed23unit checks but failed real-file acceptance: shell readiness arrived around75seconds before its graphical terminal appeared. This is NOT a verified desktop.
+
+The source-only candidate in guest-source waits for X11 IsViewable and input focus within the xterm window tree, bounded120seconds, before emitting the readiness marker. It then executes the ordinary guest shell. It opens only local DISPLAY :0/:0.0; no network runtime, host-command bridge or arbitrary command parser. Pinned cross compile with -Wall -Wextra -Werror and incremental image rebuild passed. Actual host GUI typing/save/checkpoint/fresh-engine read passed35.98seconds.
+
+IMPORTANT: The committed compressed fixture still represents4a806945 shell-start readiness, NOT this focused-window candidate. Candidate image and complete723-file corresponding-source package are retained locally, not yet uploaded or native-verified. Free CI496/500 and paid disabled; another full5–6minute native run cannot fit currently. No1.0release. Next step: materialize/hash focused candidate fixture, rerun full native guest file/checkpoint/restore gate with adequate free macOS capacity, then integrate shipping app with resource lease and physical memory/thermal tests.
