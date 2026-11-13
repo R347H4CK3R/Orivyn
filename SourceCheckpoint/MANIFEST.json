@@ -40,6 +40,11 @@
     "sha256": "9402088c17fe3c581c442f819024fe41eccc2299aa3f18d233baeb010e472a90"
   },
   {
+    "path": "JarvisEVO/Core/LocalAgentError.swift",
+    "bytes": 877,
+    "sha256": "69ec40475bf37949be1e7b0f3b207df9ac0158851df7cd5edc0fad962a77c1dc"
+  },
+  {
     "path": "JarvisEVO/Core/LocalAgentGrammar.swift",
     "bytes": 758,
     "sha256": "3a9da5cd0673dc74e5b0ae07bab58869db39a0459239a05525fa73e22f5499b1"
@@ -226,8 +231,8 @@
   },
   {
     "path": "JarvisEVO/Services/LocalAgentCore.swift",
-    "bytes": 3358,
-    "sha256": "422f7e589a341d8a0a2af06666bf3701ccbda1f13a8767aa315bdf01b1fc0869"
+    "bytes": 2500,
+    "sha256": "efd049d157cd2334180411fd255039b5b521ec31f47d31e7808b9209e3c61c24"
   },
   {
     "path": "JarvisEVO/Services/LocalAgentSession.swift",
@@ -236,8 +241,8 @@
   },
   {
     "path": "JarvisEVO/Services/LocalAgentStore.swift",
-    "bytes": 5989,
-    "sha256": "0fb454938232aa2319a0a4bee8888339b3a4be69cbedd1b6f4d0092102a8a071"
+    "bytes": 6011,
+    "sha256": "96f8d2edef6d470998565942e7cddfc4d9faa4d443fa62193a8a7af1ec01407c"
   },
   {
     "path": "JarvisEVO/Services/LocalReadTools.swift",
@@ -443,6 +448,11 @@
     "path": "Tests/LocalAgentCoreTests.swift",
     "bytes": 6293,
     "sha256": "06e4ac4ceab15d4a6deba93027bbb36563d7aec41f09833362135ba3628ccd1e"
+  },
+  {
+    "path": "Tests/LocalAgentStoreTests.swift",
+    "bytes": 3906,
+    "sha256": "51be27d9ab729080aac0ace5aa33fbbf32811792fc0a59bbb4c680e182ff1f30"
   },
   {
     "path": "Tests/LocalHeavyWorkTests.swift",
@@ -686,8 +696,8 @@
   },
   {
     "path": "scripts/run_foundation_tests.py",
-    "bytes": 4391,
-    "sha256": "3f1e602599f8be006f982c8dff236a1b138df9a325cff660c1b606a8f1a00e37"
+    "bytes": 4512,
+    "sha256": "b0ce13c9be072de5800871b47a65fee13eecc2d166ee1b680fcc50700110d829"
   },
   {
     "path": "scripts/run_observation_smoke.py",
@@ -701,8 +711,8 @@
   },
   {
     "path": "scripts/run_virtual_desktop_gate.sh",
-    "bytes": 5120,
-    "sha256": "422443011c74e2dd1e0dca60f11f0e77f3105e94f4679de59a3fe015dcd14b89"
+    "bytes": 5174,
+    "sha256": "5fcc2803e644152f0b00cf10f2a04169795fe3b0b91241243b64a867fb66a4d6"
   },
   {
     "path": "scripts/swift-smoke/ObservationSmoke.swift",

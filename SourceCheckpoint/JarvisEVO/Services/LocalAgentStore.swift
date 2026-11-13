@@ -33,7 +33,7 @@ final class LocalAgentStore {
             let previous = try load(id: id)
             let oldRevision = try JSONDecoder().decode(Revision.self, from: Data(previous.utf8)).revision
             let newRevision = try JSONDecoder().decode(Revision.self, from: Data(raw.utf8)).revision
-            guard newRevision > oldRevision || (newRevision == oldRevision && previous == raw) else { throw LocalAgentError.storage }
+            guard newRevision > oldRevision || (newRevision == oldRevision && previous.utf8.elementsEqual(raw.utf8)) else { throw LocalAgentError.storage }
         } else {
             let archived = directory.appendingPathComponent("Archived", isDirectory: true).appendingPathComponent(file.lastPathComponent)
             guard !FileManager.default.fileExists(atPath: archived.path) else { throw LocalAgentError.storage }
