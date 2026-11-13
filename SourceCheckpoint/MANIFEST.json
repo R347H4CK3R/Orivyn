@@ -755,6 +755,11 @@
     "sha256": "5253cff6029283c30563f2f6d834bf2fbd81443059f983a66be4c13abe20abf1"
   },
   {
+    "path": "scripts/run_catalog_inference_smoke.py",
+    "bytes": 976,
+    "sha256": "f0ea10830b59fba97a9ab7240ed3456844d1f5b7ccdaef4a36fce27395e0312e"
+  },
+  {
     "path": "scripts/run_foundation_tests.py",
     "bytes": 4903,
     "sha256": "d778db5cd78ba8e57b213aeb9028b44923baa79cc24a8bd653b954ac726d9aaf"
@@ -803,6 +808,11 @@
     "path": "scripts/swift-smoke/AgentBridge.swift",
     "bytes": 1706,
     "sha256": "f62b664216f042b4e29fe75c8d8feac82a58441b84c462af4bc4a04fa19e6ef5"
+  },
+  {
+    "path": "scripts/swift-smoke/CatalogInferenceSmoke.swift",
+    "bytes": 2192,
+    "sha256": "693ff3d9f666d8a79873333217498d68f3d2f94c31e909b49d85038c4742b6f8"
   },
   {
     "path": "scripts/swift-smoke/LlamaEngineSmoke.swift",
