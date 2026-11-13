@@ -277,5 +277,55 @@ final class PersistenceTests: XCTestCase {
         XCTAssertEqual(restored, conversation)
     }
 
+    func testBackupRecordCountBoundaryRoundTripsBothCollectionsAtTenThousand() async throws {
+        let first = try SQLiteConversationStore(url: temporaryDatabase())
+        let second = try SQLiteConversationStore(url: temporaryDatabase())
+        let conversations = (0..<10_000).map { Conversation(title: "Boundary conversation \($0)") }
+        let notes = (0..<10_000).map { MemoryNote(content: "Boundary memory \($0)") }
+        try await first.importData(JSONEncoder().encode(ConversationBackup(conversations: conversations, memories: notes)))
+        let exported = try await first.exportData()
+        let decoded = try JSONDecoder().decode(ConversationBackup.self, from: exported)
+        XCTAssertEqual(decoded.conversations.count, 10_000)
+        XCTAssertEqual(decoded.memories.count, 10_000)
+        try await second.importData(exported)
+        let restoredConversations = try await second.list(includeArchived: true)
+        let restoredNotes = try await second.memories()
+        XCTAssertEqual(Dictionary(uniqueKeysWithValues: restoredConversations.map { ($0.id, $0) }),
+                       Dictionary(uniqueKeysWithValues: conversations.map { ($0.id, $0) }))
+        XCTAssertEqual(Dictionary(uniqueKeysWithValues: restoredNotes.map { ($0.id, $0) }),
+                       Dictionary(uniqueKeysWithValues: notes.map { ($0.id, $0) }))
+    }
+
+    func testExportRejectsTenThousandAndOneRecordsWithoutTruncationAndReleasesTransaction() async throws {
+        for memoryOverflow in [true, false] {
+            let store = try SQLiteConversationStore(url: temporaryDatabase())
+            let sentinel = Conversation(title: "Preserve sentinel")
+            let conversations = memoryOverflow ? [sentinel] : (0..<10_000).map { Conversation(title: "Conversation \($0)") }
+            let notes = memoryOverflow ? (0..<10_000).map { MemoryNote(content: "Memory \($0)") } : []
+            try await store.importData(JSONEncoder().encode(ConversationBackup(conversations: conversations, memories: notes)))
+            // Ordinary saves remain allowed. Only a non-restorable export must be rejected.
+            if memoryOverflow { try await store.saveMemory(MemoryNote(content: "Record 10001")) }
+            else { try await store.save(Conversation(title: "Record 10001")) }
+            let beforeConversations = try await store.list(includeArchived: true)
+            let beforeNotes = try await store.memories()
+            XCTAssertEqual(memoryOverflow ? beforeNotes.count : beforeConversations.count, 10_001)
+            do { _ = try await store.exportData(); XCTFail("Non-restorable over-count export accepted") }
+            catch {
+                XCTAssertTrue(error is ConversationError)
+                XCTAssertTrue(error.localizedDescription.contains("10000"), "Count-limit error must identify the supported bound")
+            }
+            let afterConversations = try await store.list(includeArchived: true)
+            let afterNotes = try await store.memories()
+            XCTAssertEqual(afterConversations, beforeConversations)
+            XCTAssertEqual(afterNotes, beforeNotes)
+            // save starts BEGIN IMMEDIATE on the same connection: success proves failed
+            // export rolled back its read transaction rather than leaving it held.
+            var changed = beforeConversations[0]; changed.title = "Write after rejected export"
+            try await store.save(changed)
+            let written = try await store.load(id: changed.id)
+            XCTAssertEqual(written, changed)
+        }
+    }
+
     private func temporaryDatabase() -> URL { FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".sqlite") }
 }

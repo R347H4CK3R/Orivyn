@@ -21,8 +21,8 @@
   },
   {
     "path": "JarvisEVO/Core/Conversation.swift",
-    "bytes": 6628,
-    "sha256": "a318a37b0ce7d0948c72ce97563be8225fb3f848c232b43c086115018db35ac0"
+    "bytes": 7024,
+    "sha256": "3a84b083437e597a4b4adec39ce3b61074713923ea19f85e490a7eddb84f7df0"
   },
   {
     "path": "JarvisEVO/Core/ConversationSearch.swift",
@@ -161,8 +161,8 @@
   },
   {
     "path": "JarvisEVO/Persistence/SQLiteConversationStore.swift",
-    "bytes": 15950,
-    "sha256": "778cc14dc5f1c2cd7ca1026a6b131cdd8e3e5ddff80539061e2372d0fcf1be73"
+    "bytes": 16362,
+    "sha256": "1dbdbf6a7ef748a31cc27bc545f96d05ae85c2936a11a2e60431ed24e077b51a"
   },
   {
     "path": "JarvisEVO/Providers/Local/LlamaEngine.swift",
@@ -586,8 +586,8 @@
   },
   {
     "path": "Tests/PersistenceTests.swift",
-    "bytes": 17157,
-    "sha256": "72de9fe052da4bfc6d437eca266380c95ff6cf20d6449cf393c750c6c69013e5"
+    "bytes": 20708,
+    "sha256": "90ad3605d9a4b28068c9816d1caf46f8495088d1483d09fa60d3fcea51accc75"
   },
   {
     "path": "Tests/PluginBrokerTests.swift",
@@ -750,6 +750,11 @@
     "sha256": "5770510c20e6f0b74d3241995b793de4352e703d7097e02bacd9d8ef15d334d5"
   },
   {
+    "path": "scripts/run_llama_engine_smoke.py",
+    "bytes": 3697,
+    "sha256": "3366a401478c0c1cb5eca95c9f9af06f8c135f29a9c5489324e4ed75a29735f8"
+  },
+  {
     "path": "scripts/run_observation_smoke.py",
     "bytes": 1865,
     "sha256": "cc08f6c9c30594e3fd6058f4483ca578eb6efb6a02d8b98d980df3edbb512b77"
@@ -778,6 +783,11 @@
     "path": "scripts/swift-smoke/AgentBridge.swift",
     "bytes": 1706,
     "sha256": "f62b664216f042b4e29fe75c8d8feac82a58441b84c462af4bc4a04fa19e6ef5"
+  },
+  {
+    "path": "scripts/swift-smoke/LlamaEngineSmoke.swift",
+    "bytes": 3352,
+    "sha256": "02f26b5752103bf22305020b1e5f4e1a629085a74da67d871d5492e4cf0b2a04"
   },
   {
     "path": "scripts/swift-smoke/ObservationSmoke.swift",

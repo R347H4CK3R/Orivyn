@@ -125,7 +125,13 @@ actor SQLiteConversationStore {
         // only serializes this connection, not every store using the same file.
         try database.execute("BEGIN")
         do {
-            let data = try encoder.encode(ConversationBackup(conversations: list(includeArchived: true), memories: memories()))
+            let conversations = try list(includeArchived: true)
+            let notes = try memories()
+            guard conversations.count <= ConversationBackup.maximumRecordsPerCollection,
+                  notes.count <= ConversationBackup.maximumRecordsPerCollection else {
+                throw ConversationError.backupRecordLimit
+            }
+            let data = try encoder.encode(ConversationBackup(conversations: conversations, memories: notes))
             guard data.count <= ConversationBackup.maximumBytes else { throw ConversationError.tooLarge }
             try database.execute("COMMIT")
             return data
@@ -140,7 +146,7 @@ actor SQLiteConversationStore {
         let backup: ConversationBackup
         do { backup = try decoder.decode(ConversationBackup.self, from: data) }
         catch { throw ConversationError.invalidBackup }
-        guard backup.schemaVersion == 1, backup.conversations.count <= 10_000, backup.memories.count <= 10_000,
+        guard backup.schemaVersion == 1, backup.conversations.count <= ConversationBackup.maximumRecordsPerCollection, backup.memories.count <= ConversationBackup.maximumRecordsPerCollection,
               Set(backup.conversations.map(\.id)).count == backup.conversations.count,
               Set(backup.memories.map(\.id)).count == backup.memories.count else { throw ConversationError.invalidBackup }
         try backup.conversations.forEach(validate)

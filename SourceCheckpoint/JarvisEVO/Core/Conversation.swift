@@ -109,6 +109,8 @@ struct BackupImportSummary: Sendable {
 
 struct ConversationBackup: Codable, Sendable {
     static let maximumBytes = 50_000_000
+    /// The exporter and importer must accept the same per-collection record bound.
+    static let maximumRecordsPerCollection = 10_000
     var schemaVersion: Int = 1
     var exportedAt: Date = Date()
     var conversations: [Conversation]
@@ -116,13 +118,14 @@ struct ConversationBackup: Codable, Sendable {
 }
 
 enum ConversationError: LocalizedError {
-    case messageNotFound, notUserMessage, emptyMessage, tooLarge, invalidBackup, unsafeAttachment
+    case messageNotFound, notUserMessage, emptyMessage, tooLarge, invalidBackup, unsafeAttachment, backupRecordLimit
     var errorDescription: String? {
         switch self {
         case .messageNotFound: "The message no longer exists."
         case .notUserMessage: "Only your messages can be edited."
         case .emptyMessage: "Enter a message first."
         case .tooLarge: "This content exceeds the supported size limit."
+        case .backupRecordLimit: "This backup exceeds the supported limit of \(ConversationBackup.maximumRecordsPerCollection) conversations or \(ConversationBackup.maximumRecordsPerCollection) memories. Your existing data was not changed."
         case .invalidBackup: "The backup is invalid or uses an unsupported format. Your existing history was not replaced."
         case .unsafeAttachment: "The backup contains an unsafe attachment path."
         }
