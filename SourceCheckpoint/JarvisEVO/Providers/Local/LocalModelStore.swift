@@ -94,9 +94,13 @@ actor LocalModelStore {
         let url = try destination(for: descriptor)
         var manifest = try readManifest()
         manifest.removeAll { $0.id == descriptor.id }
-        // A failed deletion leaves the manifest intact and reports the error.
-        if fileManager.fileExists(atPath: url.path) { try fileManager.removeItem(at: url) }
-        try writeManifest(manifest)
+        let manifestData = try JSONEncoder().encode(manifest)
+        // Preserve recovery copies until both deletion and metadata publication commit.
+        // If backup allocation fails, no live files have changed.
+        try ModelInstallTransaction.remove(root: root, targetName: url.lastPathComponent,
+            manifest: manifestData, prepareFile: { stagedManifest in
+                try FileManager.default.setAttributes([.protectionKey: FileProtectionType.completeUntilFirstUserAuthentication], ofItemAtPath: stagedManifest.path)
+            })
     }
 
     private func destination(for descriptor: LocalModelDescriptor) throws -> URL {
@@ -154,9 +158,6 @@ actor LocalModelStore {
         try ModelInstallTransaction.recover(root: root)
         guard fileManager.fileExists(atPath: manifestURL.path) else { return [] }
         return try JSONDecoder().decode([LocalModelDescriptor].self, from: Data(contentsOf: manifestURL))
-    }
-    private func writeManifest(_ models: [LocalModelDescriptor]) throws {
-        try JSONEncoder().encode(models).write(to: manifestURL, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
     }
     func availableStorageBytes() -> Int64? {
         try? root.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey]).volumeAvailableCapacityForImportantUsage

@@ -103,6 +103,64 @@ final class ModelInstallTransactionTests: XCTestCase {
         XCTAssertEqual(try read("installed-models.json", root), "live manifest")
     }
 
+    func testDeletionCommitsBytesAndManifestTogether() throws {
+        let root = try fixture(); defer { try? FileManager.default.removeItem(at: root) }
+        try write("old", "model.gguf", root); try write("old manifest", "installed-models.json", root)
+        try ModelInstallTransaction.remove(root: root, targetName: "model.gguf", manifest: Data("[]".utf8))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: root.appendingPathComponent("model.gguf").path))
+        XCTAssertEqual(try read("installed-models.json", root), "[]")
+        try ModelInstallTransaction.recover(root: root)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: root.appendingPathComponent("model.gguf").path))
+    }
+
+    func testDeletionFailureAfterEitherPublicationRestoresOriginalBytes() throws {
+        for phase in [ModelInstallTransaction.Publication.model, .manifest] {
+            let root = try fixture(); defer { try? FileManager.default.removeItem(at: root) }
+            try write("old", "model.gguf", root); try write("old manifest", "installed-models.json", root)
+            XCTAssertThrowsError(try ModelInstallTransaction.remove(root: root, targetName: "model.gguf", manifest: Data("[]".utf8), didPublish: { if $0 == phase { throw Failure.injected } }))
+            XCTAssertEqual(try read("model.gguf", root), "old")
+            XCTAssertEqual(try read("installed-models.json", root), "old manifest")
+        }
+    }
+
+    func testDeletingAlreadyAbsentModelStillUpdatesManifest() throws {
+        let root = try fixture(); defer { try? FileManager.default.removeItem(at: root) }
+        try write("stale manifest", "installed-models.json", root)
+        try ModelInstallTransaction.remove(root: root, targetName: "model.gguf", manifest: Data("[]".utf8))
+        XCTAssertEqual(try read("installed-models.json", root), "[]")
+        XCTAssertFalse(FileManager.default.fileExists(atPath: root.appendingPathComponent("model.gguf").path))
+    }
+
+    func testAbsentModelDeletionFailurePreservesAbsenceAndOldManifest() throws {
+        for phase in [ModelInstallTransaction.Publication.model, .manifest] {
+            let root = try fixture(); defer { try? FileManager.default.removeItem(at: root) }
+            try write("old manifest", "installed-models.json", root)
+            XCTAssertThrowsError(try ModelInstallTransaction.remove(root: root, targetName: "model.gguf", manifest: Data("[]".utf8), didPublish: { if $0 == phase { throw Failure.injected } }))
+            XCTAssertFalse(FileManager.default.fileExists(atPath: root.appendingPathComponent("model.gguf").path))
+            XCTAssertEqual(try read("installed-models.json", root), "old manifest")
+        }
+    }
+
+    func testDeletionPreparationFailureLeavesOriginalBytesAndMetadata() throws {
+        let root = try fixture(); defer { try? FileManager.default.removeItem(at: root) }
+        try write("old", "model.gguf", root); try write("old manifest", "installed-models.json", root)
+        XCTAssertThrowsError(try ModelInstallTransaction.remove(root: root, targetName: "model.gguf", manifest: Data("[]".utf8), prepareFile: { _ in throw Failure.injected }))
+        XCTAssertEqual(try read("model.gguf", root), "old")
+        XCTAssertEqual(try read("installed-models.json", root), "old manifest")
+    }
+
+    func testRestartAfterInterruptedDeletionRestoresModelAndManifest() throws {
+        let root = try fixture(); defer { try? FileManager.default.removeItem(at: root) }
+        let journal = root.appendingPathComponent(".model-install-transaction")
+        try FileManager.default.createDirectory(at: journal, withIntermediateDirectories: true)
+        try write("old", "old-model", journal); try write("old manifest", "old-manifest", journal)
+        try write(#"{"targetName":"model.gguf","hadModel":true,"hadManifest":true,"version":1}"#, "prepared.json", journal)
+        try write("[]", "installed-models.json", root)
+        try ModelInstallTransaction.recover(root: root)
+        XCTAssertEqual(try read("model.gguf", root), "old")
+        XCTAssertEqual(try read("installed-models.json", root), "old manifest")
+    }
+
     func testTraversalAndSymlinkTargetsAreRejected() throws {
         let root = try fixture(); defer { try? FileManager.default.removeItem(at: root) }
         try write("input", "input", root)

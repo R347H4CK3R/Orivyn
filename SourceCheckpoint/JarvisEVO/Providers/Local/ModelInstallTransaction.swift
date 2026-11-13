@@ -14,8 +14,8 @@ enum ModelInstallTransaction {
         case invalidState, recoveryRequired
         var errorDescription: String? {
             switch self {
-            case .invalidState: "Model installation storage is invalid. Existing files have been retained."
-            case .recoveryRequired: "Model installation recovery is incomplete. Recovery files are retained; reopen the app to retry."
+            case .invalidState: "Model storage is invalid. Existing files have been retained."
+            case .recoveryRequired: "Model storage recovery is incomplete. Recovery files are retained; reopen the app to retry."
             }
         }
     }
@@ -32,22 +32,36 @@ enum ModelInstallTransaction {
     static func commit(root: URL, targetName: String, source: URL, manifest: Data,
                        prepareFile: (URL) throws -> Void = { _ in },
                        didPublish: (Publication) throws -> Void = { _ in }) throws {
+        try mutate(root: root, targetName: targetName, source: source, manifest: manifest,
+                   prepareFile: prepareFile, didPublish: didPublish)
+    }
+
+    static func remove(root: URL, targetName: String, manifest: Data,
+                       prepareFile: (URL) throws -> Void = { _ in },
+                       didPublish: (Publication) throws -> Void = { _ in }) throws {
+        try mutate(root: root, targetName: targetName, source: nil, manifest: manifest,
+                   prepareFile: prepareFile, didPublish: didPublish)
+    }
+
+    private static func mutate(root: URL, targetName: String, source: URL?, manifest: Data,
+                               prepareFile: (URL) throws -> Void,
+                               didPublish: (Publication) throws -> Void) throws {
         guard validName(targetName) else { throw Failure.invalidState }
         try recover(root: root)
         let target = root.appendingPathComponent(targetName)
         let manifestURL = root.appendingPathComponent(manifestName)
         let hadModel = try regularFileExists(target)
         let hadManifest = try regularFileExists(manifestURL)
-        guard try regularFileExists(source) else { throw Failure.invalidState }
+        if let source, try !regularFileExists(source) { throw Failure.invalidState }
         let directory = root.appendingPathComponent(folder, isDirectory: true)
         try fm.createDirectory(at: directory, withIntermediateDirectories: false)
         let marker = directory.appendingPathComponent("prepared.json")
         do {
             let newModel = directory.appendingPathComponent("new-model")
             let newManifest = directory.appendingPathComponent("new-manifest")
-            try fm.copyItem(at: source, to: newModel)
+            if let source { try fm.copyItem(at: source, to: newModel) }
             try manifest.write(to: newManifest, options: .atomic)
-            try prepareFile(newModel)
+            if source != nil { try prepareFile(newModel) }
             try prepareFile(newManifest)
             // Immutable copies survive replacement of either live destination.
             if hadModel { try fm.copyItem(at: target, to: directory.appendingPathComponent("old-model")) }
@@ -55,7 +69,8 @@ enum ModelInstallTransaction {
             try Task.checkCancellation()
             let journal = Journal(targetName: targetName, hadModel: hadModel, hadManifest: hadManifest, version: 1)
             try JSONEncoder().encode(journal).write(to: marker, options: .atomic)
-            try atomicRename(newModel, target)
+            if source != nil { try atomicRename(newModel, target) }
+            else if hadModel { try fm.removeItem(at: target) }
             try didPublish(.model)
             try atomicRename(newManifest, manifestURL)
             try didPublish(.manifest)

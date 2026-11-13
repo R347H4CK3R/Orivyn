@@ -4,7 +4,7 @@ Narrow changed-source backup for ongoing phone-only 1.0 development. This is not
 
 Latest local portable evidence: 132 Python, 70 agent JavaScript, 39 VM JavaScript tests passed. iOS compilation, native UI tests, physical iPhone verification and full 1.0 acceptance remain outstanding. No IPA, catalog update or automatic synchronization is claimed. This backup must not trigger paid builds.
 
-Actual Foundation-only Swift 6.1.3 Linux validation: 213 selected XCTest cases passed from exact copied production sources. All 186 app/test Swift files passed syntax parsing; this is not iOS API/type checking or a full app build.
+Actual Foundation-only Swift 6.1.3 Linux validation: 219 selected XCTest cases passed from exact copied production sources. All 186 app/test Swift files passed syntax parsing; this is not iOS API/type checking or a full app build.
 
 The Foundation validation subset includes its exact production/test dependencies. Most unchanged baseline files and full app dependencies remain omitted; this is still not a build-ready iOS checkout.
 
@@ -20,4 +20,4 @@ Dense code highlighting now has a 4,096-run ceiling and lossless plain-text fall
 
 Plugin schema keys and string enums now use exact Unicode codepoints rather than Swift canonical-equivalence matching. Five actual regression tests failed before the fix and passed after; values are not normalized or rewritten. Canonically colliding duplicate JSON keys remain conservatively rejected.
 
-Model installation now uses a prepared on-disk journal, two-file publication and retained rollback copies, with nine real filesystem tests including partial rollback and retry. LocalModelStore is wired to recover before opening/reading. Apple file-protection/inference integration remains unexecuted. This is process-interruption recovery, not guaranteed power-loss durability. Model deletion has a separate pre-existing manifest-failure gap not yet repaired.
+Model installation now uses a prepared on-disk journal, two-file publication and retained rollback copies, with nine real filesystem tests including partial rollback and retry. LocalModelStore is wired to recover before opening/reading. Apple file-protection/inference integration remains unexecuted. This is process-interruption recovery, not guaranteed power-loss durability. Model deletion now shares the journal/rollback transaction; six added filesystem tests cover failure boundaries, absence and recovery. Backup copies require spare disk space, and failure allocating them leaves originals unchanged.
