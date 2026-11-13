@@ -63,10 +63,14 @@ import llama
                     print("PASS actual model decision persisted, exact expression validated and native calculator returned5")
                 } else {
                     guard snapshot["status"]?.stringValue == "answered", let answer = snapshot["answer"]?.stringValue,
-                          answer.range(of: #"\b5\b"#, options: .regularExpression) != nil,
-                          answer.range(of: #"\b14\b"#, options: .regularExpression) == nil else { throw Failure.failed("Actual answer did not report result5") }
+                          answer.trimmingCharacters(in: .whitespacesAndNewlines) == "5" else { throw Failure.failed("Actual answer did not report result5") }
                     let reopened = try LocalAgentStore(directory: root.appendingPathComponent("agent-records"))
                     guard try reopened.load(id: id) == state else { throw Failure.failed("Final task did not reopen") }
+                    let decoded = try JSONDecoder().decode(LocalAgentSnapshot.self, from: Data(state.utf8))
+                    guard decoded.history.first?.calculationEvidence(goal: decoded.goal)?.result == "5" else {
+                        throw Failure.failed("Saved arithmetic evidence did not revalidate")
+                    }
+                    print("PASS saved production snapshot decoded and arithmetic evidence independently revalidated")
                     print("PASS actual tool-grounded answer validated by reducer, persisted and reopened: \(answer)")
                 }
             }

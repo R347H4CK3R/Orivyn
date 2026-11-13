@@ -57,6 +57,8 @@ xcodebuild -project JarvisEVO.xcodeproj -scheme JarvisEVO \
   -only-testing:JarvisEVOTests/LocalCalculatorTests \
   -only-testing:JarvisEVOTests/LocalCalculatorToolTests \
   -only-testing:JarvisEVOTests/LocalCalculatorRequestTests \
+  -only-testing:JarvisEVOTests/LocalCalculationEvidenceTests \
+  -only-testing:JarvisEVOTests/LocalAgentSnapshotEvidenceTests \
   -only-testing:JarvisEVOTests/PluginExecutionTests \
   -only-testing:JarvisEVOTests/PluginJournalTests \
   -only-testing:JarvisEVOTests/WorkspaceStoreTests \

@@ -18,7 +18,7 @@ def main():
  if a.scenario != 'engine':
   driver = 'QwenModeSmoke.swift' if a.scenario == 'qwen-mode' else 'CalculatorAgentSmoke.swift'
   sources = [n for n in sources if n != 'scripts/swift-smoke/LlamaEngineSmoke.swift'] + ['scripts/swift-smoke/'+driver]
- if a.scenario == 'calculator-agent': sources += ['JarvisEVO/Services/LocalAgentStore.swift']
+ if a.scenario == 'calculator-agent': sources += ['JarvisEVO/Services/LocalAgentStore.swift','JarvisEVO/Core/LocalAgentSnapshot.swift','JarvisEVO/Core/LocalCalculationEvidence.swift']
  for n in sources:
   b=(root/n).read_bytes();dest=out/pathlib.Path(n).name;dest.write_bytes(b);files.append(str(dest));manifest.append({'source':n,'sha256':hashlib.sha256(b).hexdigest(),'bytes':len(b)})
  # Bundle.main on this Linux command-line host finds resources beside the executable.

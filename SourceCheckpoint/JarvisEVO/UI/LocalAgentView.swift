@@ -39,8 +39,19 @@ struct LocalAgentView: View {
                         }
                         Button("Archive task") { confirmArchive = true }
                             .disabled(!session.canManageSavedTasks).accessibilityIdentifier("agent.archive")
+                        ForEach(task.history) { event in
+                            if let evidence = event.calculationEvidence(goal: task.goal) {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("Recomputed arithmetic").font(.caption).foregroundStyle(.secondary)
+                                    Text(evidence.expression + " = " + evidence.result).textSelection(.enabled)
+                                        .accessibilityIdentifier("agent.calculationEvidence")
+                                    Text("Approximate arithmetic, checked against your expression. This does not verify the model answer below.")
+                                        .font(.caption).foregroundStyle(.secondary)
+                                }
+                            }
+                        }
                         if let answer = task.answer {
-                            Text("Model answer · no external action performed").font(.caption).foregroundStyle(.secondary)
+                            Text("Model answer · not verified; no external action performed").font(.caption).foregroundStyle(.secondary)
                             Text(answer).textSelection(.enabled).accessibilityIdentifier("agent.answer")
                         }
                         if let failure = task.error { Text(failure).font(.caption).foregroundStyle(.orange) }

@@ -1,30 +1,6 @@
 import Foundation
 import JavaScriptCore
 
-struct LocalAgentSnapshot: Decodable, Identifiable {
-    struct Intent: Decodable {
-        let operationID: String
-        let name: String
-        let arguments: MCPJSONValue
-    }
-    struct Event: Decodable, Identifiable {
-        let operationID: String
-        let name: String
-        let outcome: String
-        let result: String?
-        var id: String { operationID }
-    }
-    let history: [Event]
-    let id: String
-    let goal: String
-    let status: String
-    let revision: Int
-    let steps: Int
-    let pending: Intent?
-    let answer: String?
-    let error: String?
-}
-
 /// Executes only the trusted bundled reducer. Model/task strings are function arguments,
 /// never executable JavaScript, and this context exposes no network or native objects.
 @MainActor

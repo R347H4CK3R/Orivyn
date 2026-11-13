@@ -20,6 +20,14 @@ class LocalAgentContract(unittest.TestCase):
   for name in ['ci_macos.sh','run_virtual_desktop_gate.sh']:
    self.assertIn('node --test scripts/agent-tests/*.test.cjs',(ROOT/'scripts'/name).read_text())
   self.assertIn('-only-testing:JarvisEVOTests/LocalAgentCoreTests',(ROOT/'scripts/run_virtual_desktop_gate.sh').read_text())
+ def test_arithmetic_evidence_is_separate_from_model_answer(self):
+  source=(ROOT/'JarvisEVO/Core/LocalAgentSnapshot.swift').read_text()
+  event=source[source.index('struct Event:'):source.index('let history:')]
+  self.assertIn('let arguments: MCPJSONValue',event)
+  ui=(ROOT/'JarvisEVO/UI/LocalAgentView.swift').read_text()
+  self.assertIn('event.calculationEvidence(goal: task.goal)',ui)
+  self.assertIn('Recomputed arithmetic',ui)
+  self.assertIn('Model answer · not verified',ui)
  def test_verified_mode_does_not_invoke_inference_and_persists_before_read(self):
   s=(ROOT/'JarvisEVO/Services/VerifiedLocalReadSession.swift').read_text()
   self.assertNotIn('GenerationRequest',s)
