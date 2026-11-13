@@ -51,8 +51,8 @@
   },
   {
     "path": "JarvisEVO/Core/MCPTypes.swift",
-    "bytes": 14348,
-    "sha256": "f7d7fc541d2b1779d97237ac3d3f725736230123df8d0b0058fb7445b97c9592"
+    "bytes": 14897,
+    "sha256": "675f5301eafd51bc447d568e3b46c494fb4a4824d13700ed30b33c2bd3b2e0a3"
   },
   {
     "path": "JarvisEVO/Core/MemoryContextBuilder.swift",
@@ -420,6 +420,11 @@
     "sha256": "7da9f6cc50942d85bebe841a73e58d9f5a38385a9e026b66ccd4cc28f755bd50"
   },
   {
+    "path": "Tests/MCPNumberIntegrityTests.swift",
+    "bytes": 1791,
+    "sha256": "f64c15df1f1cd1c9bb765a656e75167464dd68950f437b98584228d8a4b5cde3"
+  },
+  {
     "path": "Tests/MemoryContextBuilderTests.swift",
     "bytes": 4458,
     "sha256": "e1627ceff78ce2593b15d9192d0064169b9638ec7c5ecf81872c74b9d0a9eb8d"
@@ -586,8 +591,8 @@
   },
   {
     "path": "scripts/run_foundation_tests.py",
-    "bytes": 3862,
-    "sha256": "57f48597a0e05e0c1528747651a9ee0dc930971ce984aba7be4e8bc380e4c394"
+    "bytes": 3900,
+    "sha256": "f90b3f0f2bd47f341896e2b7d8b5940a9ab8171983b3da4999b5b5ecbd13a573"
   },
   {
     "path": "scripts/run_self_knowledge_gate.sh",
@@ -596,8 +601,8 @@
   },
   {
     "path": "scripts/run_virtual_desktop_gate.sh",
-    "bytes": 4421,
-    "sha256": "d3ebde5b62c7bfb0a565364537bf70cadeac64c2ae0a38fa0d106c6c59d0168d"
+    "bytes": 4478,
+    "sha256": "a60aba726ee52880b15b0c99566adb00c78bf61595d073f9a1fe4ffae161fe6f"
   },
   {
     "path": "scripts/tests/test_attachment_fitting_contract.py",

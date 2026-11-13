@@ -138,7 +138,11 @@ indirect enum MCPJSONValue: Codable, Equatable, Sendable {
             guard value.utf8.count <= 1_048_576 else { throw MCPClientFailure(.responseTooLarge) }
         case .integer(let value):
             guard (-Self.maximumSafeInteger...Self.maximumSafeInteger).contains(value) else { throw MCPClientFailure(.invalidArguments) }
-        case .number(let value): guard value.isFinite else { throw MCPClientFailure(.invalidArguments) }
+        case .number(let value):
+            guard value.isFinite,
+                  value.rounded() != value || abs(value) <= Double(Self.maximumSafeInteger) else {
+                throw MCPClientFailure(.invalidArguments)
+            }
         case .bool, .null: break
         }
     }
@@ -204,6 +208,11 @@ private struct MCPJSONParser {
                 return .integer(number)
             }
             guard let number = Double(token), number.isFinite else { throw MCPClientFailure(.invalidResponse) }
+            // A nonzero JSON value must not become zero and bypass sign/range checks.
+            // Exponent digits do not make a zero significand nonzero (0e-999 is zero).
+            let significand = token.prefix { $0 != "e" && $0 != "E" }
+            let nonzero = significand.utf8.contains { (49...57).contains($0) }
+            guard number != 0 || !nonzero else { throw MCPClientFailure(.invalidResponse) }
             return .number(number)
         }
     }
