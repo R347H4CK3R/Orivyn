@@ -4,8 +4,9 @@ final class VMHarnessUITests: XCTestCase {
     func testRealGuestFileSurvivesCheckpointAndFreshAppRead() throws {
         continueAfterFailure = false
         let app = XCUIApplication(); app.launch(); app.buttons["vm.start"].tap()
-        // Settling delay is NOT a readiness claim; only fresh guest UART output passes.
-        Thread.sleep(forTimeInterval: 35)
+        // Actual xterm child emits this over the emulated UART. No timer-only readiness.
+        let ready = NSPredicate(format: "label CONTAINS %@", "ORIVYN_DESKTOP_SHELL_READY_v1")
+        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: ready, object: app.staticTexts["vm.console"])], timeout: 120), .completed, "Real guest terminal did not become ready")
         func command(_ text: String) {
             let field = app.textFields["vm.input"]; field.tap()
             field.typeText(text)

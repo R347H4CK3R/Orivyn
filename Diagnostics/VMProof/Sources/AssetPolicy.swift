@@ -9,7 +9,7 @@ enum VMPolicyError: Error { case rejected }
 struct VMAssetStore: Sendable {
     static func acceptedSize(_ asset: VMAsset) -> Bool {
         if asset.name == "maintained.img" {
-            return asset.bytes == 135266304 && asset.sha256 == "0897e5f867267c209f2866e2ee960971caf25886eb0345fe2f514b11e19cf0f1" && asset.mime == "application/octet-stream"
+            return asset.bytes == 135266304 && asset.sha256 == "c318b702448a2f08400321446719af10568a9ef878a5fe898c1cb815c1bebe72" && asset.mime == "application/octet-stream"
         }
         return asset.bytes > 0 && asset.bytes <= 12 * 1024 * 1024
     }

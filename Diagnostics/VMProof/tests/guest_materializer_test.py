@@ -4,7 +4,7 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 import materialize_guest as m
 class MaterializerTests(unittest.TestCase):
  def test_fixed_profile(self):
-  self.assertEqual(m.DISK_BYTES,135266304);self.assertEqual(m.DISK_SHA,'0897e5f867267c209f2866e2ee960971caf25886eb0345fe2f514b11e19cf0f1')
+  self.assertEqual(m.DISK_BYTES,135266304);self.assertEqual(m.DISK_SHA,'c318b702448a2f08400321446719af10568a9ef878a5fe898c1cb815c1bebe72')
  def test_rejects_corrupt_without_overwrite(self):
   with tempfile.TemporaryDirectory() as t:
    p=Path(t);(p/'bad.gz').write_bytes(gzip.compress(b'bad'));(p/'out.img').write_bytes(b'keep')

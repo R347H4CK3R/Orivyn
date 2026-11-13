@@ -4,7 +4,7 @@ import CryptoKit
 
 final class VMPolicyTests: XCTestCase {
     func testOnlyPinnedGuestMayExceedSmallAssetLimit() {
-        let disk = VMAsset(name: "maintained.img", bytes: 135266304, sha256: "0897e5f867267c209f2866e2ee960971caf25886eb0345fe2f514b11e19cf0f1", mime: "application/octet-stream")
+        let disk = VMAsset(name: "maintained.img", bytes: 135266304, sha256: "c318b702448a2f08400321446719af10568a9ef878a5fe898c1cb815c1bebe72", mime: "application/octet-stream")
         XCTAssertTrue(VMAssetStore.acceptedSize(disk))
         XCTAssertFalse(VMAssetStore.acceptedSize(VMAsset(name: "other.img", bytes: disk.bytes, sha256: disk.sha256, mime: disk.mime)))
         XCTAssertFalse(VMAssetStore.acceptedSize(VMAsset(name: disk.name, bytes: disk.bytes, sha256: String(repeating: "0", count: 64), mime: disk.mime)))

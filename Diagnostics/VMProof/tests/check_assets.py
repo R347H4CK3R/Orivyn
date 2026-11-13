@@ -8,7 +8,7 @@ for item in manifest:
  assert len(data)==item['bytes'] and hashlib.sha256(data).hexdigest()==item['sha256']
 assert not list((root/'Assets').glob('*.iso'))
 assert [p.name for p in (root/'Assets').glob('*.img')] == ['maintained.img']
-assert hashlib.sha256((root/'Assets/maintained.img').read_bytes()).hexdigest() == '0897e5f867267c209f2866e2ee960971caf25886eb0345fe2f514b11e19cf0f1'
+assert hashlib.sha256((root/'Assets/maintained.img').read_bytes()).hexdigest() == 'c318b702448a2f08400321446719af10568a9ef878a5fe898c1cb815c1bebe72'
 html=(root/'Assets/index.html').read_text()
 assert "default-src 'none'" in html and "worker-src 'none'" in html
 assert 'https:' not in html and 'http:' not in html

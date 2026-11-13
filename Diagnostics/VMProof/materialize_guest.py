@@ -2,8 +2,8 @@
 from pathlib import Path
 import argparse, gzip, hashlib, os, stat, tempfile
 DISK_BYTES = 135266304
-DISK_SHA = '0897e5f867267c209f2866e2ee960971caf25886eb0345fe2f514b11e19cf0f1'
-ARCHIVE_SHA = 'e3f9b8a21f15d7dcfca9c30caeb268b7d443027ae46d2f2ecff260c4f91e8815'
+DISK_SHA = 'c318b702448a2f08400321446719af10568a9ef878a5fe898c1cb815c1bebe72'
+ARCHIVE_SHA = '00c0c2391e7762d32621c146b488d8331635f86a3595e0876db079df4ba332b6'
 ARCHIVE_LIMIT = 32 * 1024 * 1024
 
 def materialize(source, destination):

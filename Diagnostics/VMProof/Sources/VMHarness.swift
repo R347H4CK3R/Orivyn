@@ -65,7 +65,7 @@ final class VMHarnessController: NSObject, @preconcurrency WKScriptMessageHandle
                 checkpointStore = try VMCheckpointStore(root: directory)
                 self.checkpointStore = checkpointStore
             }
-            let configurationDigest = SHA256.hash(data: Data("maintained;ram=134217728;vga=8388608;network=none;disk=0897e5f867267c209f2866e2ee960971caf25886eb0345fe2f514b11e19cf0f1;schema=1".utf8)).map { String(format: "%02x", $0) }.joined()
+            let configurationDigest = SHA256.hash(data: Data("maintained;ram=134217728;vga=8388608;network=none;disk=c318b702448a2f08400321446719af10568a9ef878a5fe898c1cb815c1bebe72;schema=1".utf8)).map { String(format: "%02x", $0) }.joined()
             func assetGroupDigest(_ names: Set<String>) -> String {
                 let text = VMAssetCatalog.files.filter { names.contains($0.name) }.sorted { $0.name < $1.name }.map { $0.name + ":" + $0.sha256 }.joined(separator: "\n")
                 return SHA256.hash(data: Data(text.utf8)).map { String(format: "%02x", $0) }.joined()

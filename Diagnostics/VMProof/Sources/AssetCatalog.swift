@@ -9,7 +9,7 @@ enum VMAssetCatalog {
         VMAsset(name: "guest-profile.js", bytes: 448, sha256: "c07eaf7565b9ec61b2e109133ae8be311ba677d41953e055526c7d9e5705ecc5", mime: "text/javascript"),
         VMAsset(name: "index.html", bytes: 974, sha256: "ad139fe4513dc788958d0c7b5262778b9cba0775e6d00fb32add9eb474a5b3ad", mime: "text/html"),
         VMAsset(name: "libv86.js", bytes: 359857, sha256: "e257912c4a1129e36a86c1e2df69904ab969d87bffd24aa6676e84d6ddffc1c6", mime: "text/javascript"),
-        VMAsset(name: "maintained.img", bytes: 135266304, sha256: "0897e5f867267c209f2866e2ee960971caf25886eb0345fe2f514b11e19cf0f1", mime: "application/octet-stream"),
+        VMAsset(name: "maintained.img", bytes: 135266304, sha256: "c318b702448a2f08400321446719af10568a9ef878a5fe898c1cb815c1bebe72", mime: "application/octet-stream"),
         VMAsset(name: "scheduler-policy.js", bytes: 265, sha256: "c67d77a5bf691de5323f7174a92ff4cc89fee944c39fe998060f931c6a33fdd7", mime: "text/javascript"),
         VMAsset(name: "seabios.bin", bytes: 131072, sha256: "73e3f359102e3a9982c35fce98eb7cd08f18303ac7f1ba6ebfbe6cdc1c244d98", mime: "application/octet-stream"),
         VMAsset(name: "style.css", bytes: 216, sha256: "91879ad79b2a55b713ed9c576326a6fba2ca20448cfbf67069ee62e548491912", mime: "text/css"),
