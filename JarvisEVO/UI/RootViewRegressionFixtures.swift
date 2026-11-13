@@ -16,7 +16,7 @@ struct RootViewRegressionFixtureHost: View {
         guard arguments.contains("--uitesting"),
               let index = arguments.firstIndex(of: "--root-view-fixture"),
               arguments.indices.contains(index + 1),
-              ["voice-ownership", "history-scroll", "model-download"].contains(arguments[index + 1]) else { return nil }
+              ["voice-ownership", "history-scroll", "model-download", "unavailable-provider"].contains(arguments[index + 1]) else { return nil }
         return arguments[index + 1]
     }
 
@@ -28,6 +28,8 @@ struct RootViewRegressionFixtureHost: View {
                         .font(.caption2.bold()).accessibilityIdentifier("fixture.notice")
                     if mode == "model-download" {
                         ModelManagerView(model: fixture.model)
+                    } else if mode == "unavailable-provider" {
+                        RootView(model: fixture.model)
                     } else if mode == "voice-ownership" {
                         HStack {
                             Button("Permission") { fixture.prepareVoice("permission") }.accessibilityIdentifier("fixture.voice.permission")
@@ -100,7 +102,12 @@ private final class RootViewRegressionFixture {
         await model.bootstrap()
         if mode == "model-download" { model.beginControlledModelDownloadFixture() }
         let tokens = RootViewFixtureTokens()
-        model.replaceProviders([ProviderOption(id: "root-ui-fixture", title: "Controlled UI fixture", detail: "Not an AI model", provider: RootViewFixtureProvider(tokens: tokens))])
+        if mode == "unavailable-provider" {
+            model.replaceProviders([ProviderOption(id: "root-unavailable-fixture", title: "Unavailable provider fixture",
+                detail: "Deliberately unavailable for negative preflight testing", provider: nil)])
+        } else {
+            model.replaceProviders([ProviderOption(id: "root-ui-fixture", title: "Controlled UI fixture", detail: "Not an AI model", provider: RootViewFixtureProvider(tokens: tokens))])
+        }
         if mode == "history-scroll" { model.selectConversation(a.id) }
         return RootViewRegressionFixture(model: model, audio: RootViewFixtureAudio(), tokens: tokens, histories: [a.id, b.id, short.id])
     }
