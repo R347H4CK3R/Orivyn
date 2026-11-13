@@ -150,9 +150,19 @@
     "sha256": "a1f030679978e39860f4ce6e38251e4b2045867d27dba04f44d31321d2f9aa99"
   },
   {
+    "path": "JarvisEVO/Providers/Local/LocalModelStore.swift",
+    "bytes": 11019,
+    "sha256": "1e48f5ce01a866c92bc6155e74566b9227787cd58727e227c4e451bbdd811620"
+  },
+  {
     "path": "JarvisEVO/Providers/Local/LocalPromptBuilder.swift",
     "bytes": 4694,
     "sha256": "180c58a10da898f6b36a42b48fa6b5024ae5f282ed8c0922055ae520d9b41189"
+  },
+  {
+    "path": "JarvisEVO/Providers/Local/ModelInstallTransaction.swift",
+    "bytes": 7275,
+    "sha256": "8e994de587274ea33179717711358644cbdcabe5d9870ce61b7a9987f865b3dc"
   },
   {
     "path": "JarvisEVO/Providers/Local/UTF8TokenAccumulator.swift",
@@ -440,6 +450,11 @@
     "sha256": "9935062016e9e40b4e0f26c156adfb7c613bb8c3a5a923a5136901b12b9a30da"
   },
   {
+    "path": "Tests/LocalModelStoreTests.swift",
+    "bytes": 5126,
+    "sha256": "acfc5969fa8f7cc87078424cf81b42b6a6fe06d36f877aa1ceb0e1dd56dab3a6"
+  },
+  {
     "path": "Tests/LocalReminderTests.swift",
     "bytes": 2596,
     "sha256": "6df4226ba931c04983e195355f9174904e2599f75436aae9c8b3e408849126a2"
@@ -483,6 +498,11 @@
     "path": "Tests/MemorySearchTests.swift",
     "bytes": 839,
     "sha256": "ce36e312564464ce50d64d9b600c13339adadfe5fe97de426ceeefbb296a680c"
+  },
+  {
+    "path": "Tests/ModelInstallTransactionTests.swift",
+    "bytes": 8433,
+    "sha256": "db652c339f2edb1d7bb70ee991b6245eff3a9097af3696c5d16974ee80296f20"
   },
   {
     "path": "Tests/NativeToolDraftsTests.swift",
@@ -646,8 +666,8 @@
   },
   {
     "path": "scripts/run_foundation_tests.py",
-    "bytes": 4170,
-    "sha256": "07091fd45a704a25a884eb4ec67eb3710d5e1ddfbb7a0d342269073c475e767a"
+    "bytes": 4273,
+    "sha256": "23867c1f9de20c2bbafa14ea303180770040e96e2f821c367aab82fdec4e5348"
   },
   {
     "path": "scripts/run_self_knowledge_gate.sh",
@@ -656,8 +676,8 @@
   },
   {
     "path": "scripts/run_virtual_desktop_gate.sh",
-    "bytes": 4862,
-    "sha256": "157515703e8199e4b4446b33b84c348e3e4b92594da6cf58f1a09f0fbe85665e"
+    "bytes": 4978,
+    "sha256": "ec4d4b1cd029a7b6a933e45500001bd9062826c533efa5b599202ab08bf45a7b"
   },
   {
     "path": "scripts/tests/test_attachment_fitting_contract.py",

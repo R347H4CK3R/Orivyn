@@ -4,6 +4,7 @@ Requires an already-installed Swift6 toolchain; does not download or dispatch CI
 """
 import argparse, hashlib, json, os, pathlib, subprocess, sys
 SOURCES = [
+ 'JarvisEVO/Providers/Local/ModelInstallTransaction.swift',
  'JarvisEVO/Core/LocalReminder.swift',
  'JarvisEVO/Core/IncomingTextRequest.swift',
  'JarvisEVO/Core/MarkdownDocument.swift',
@@ -25,7 +26,7 @@ SOURCES = [
  'JarvisEVO/Core/LocalSearchExcerpt.swift',
  'JarvisEVO/Providers/Local/UTF8TokenAccumulator.swift',
 ]
-TESTS = ['Tests/MCPUnicodeSchemaTests.swift','Tests/LocalReminderTests.swift','Tests/IncomingTextRequestTests.swift','Tests/MarkdownDocumentTests.swift','Tests/MCPNumberIntegrityTests.swift','Tests/PluginExecutionTests.swift','Tests/RepositorySourceDiagnosticsTests.swift','Tests/MCPClientTests.swift','Tests/MemoryNoteTests.swift','Tests/MemorySearchTests.swift','Tests/MemoryContextBuilderTests.swift','Tests/AutomaticModelRouterTests.swift','Tests/LocalModelCatalogTests.swift','Tests/NativeToolSuggestionTests.swift','Tests/NativeToolDraftsTests.swift','Tests/FeedbackDraftTests.swift','Tests/AttachmentTextSearchTests.swift','Tests/LocalSearchExcerptTests.swift','Tests/UTF8TokenAccumulatorTests.swift']
+TESTS = ['Tests/ModelInstallTransactionTests.swift','Tests/MCPUnicodeSchemaTests.swift','Tests/LocalReminderTests.swift','Tests/IncomingTextRequestTests.swift','Tests/MarkdownDocumentTests.swift','Tests/MCPNumberIntegrityTests.swift','Tests/PluginExecutionTests.swift','Tests/RepositorySourceDiagnosticsTests.swift','Tests/MCPClientTests.swift','Tests/MemoryNoteTests.swift','Tests/MemorySearchTests.swift','Tests/MemoryContextBuilderTests.swift','Tests/AutomaticModelRouterTests.swift','Tests/LocalModelCatalogTests.swift','Tests/NativeToolSuggestionTests.swift','Tests/NativeToolDraftsTests.swift','Tests/FeedbackDraftTests.swift','Tests/AttachmentTextSearchTests.swift','Tests/LocalSearchExcerptTests.swift','Tests/UTF8TokenAccumulatorTests.swift']
 PACKAGE = '''// swift-tools-version: 6.0
 import PackageDescription
 let package = Package(name: "OrivynFoundationProof", products: [.library(name: "JarvisEVO", targets: ["JarvisEVO"])], targets: [.target(name: "JarvisEVO"), .testTarget(name: "JarvisEVOTests", dependencies: ["JarvisEVO"])])
