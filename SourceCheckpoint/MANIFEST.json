@@ -65,6 +65,11 @@
     "sha256": "80411efefffc420769b65b3c9b090f15d1e26d5b59774547602b1fd756d38501"
   },
   {
+    "path": "JarvisEVO/Core/LocalToolResultBudget.swift",
+    "bytes": 1340,
+    "sha256": "9b1c1acd9f9ea706b2a961768f7f359b889f8ddcd5cb570435d68b0accd1ddbf"
+  },
+  {
     "path": "JarvisEVO/Core/MCPToolSchema.swift",
     "bytes": 8972,
     "sha256": "c533a3c9f38f850c272686fccca11801f593c8aaf6270e7866112de159b2c806"
@@ -191,8 +196,8 @@
   },
   {
     "path": "JarvisEVO/Resources/LocalAgentCore.js",
-    "bytes": 10107,
-    "sha256": "245e64617223ba5e3e653a475817870166721f487e382806a845e4273c8a8dff"
+    "bytes": 10197,
+    "sha256": "010555b26d8a1d8630f6fb6c576d273114ef7eda833c961ae495d8a3febe50a7"
   },
   {
     "path": "JarvisEVO/Resources/LocalAgentDecision.gbnf",
@@ -236,8 +241,8 @@
   },
   {
     "path": "JarvisEVO/Services/LocalAgentSession.swift",
-    "bytes": 9410,
-    "sha256": "c240407dc581ca071c819176fe4e7d67f4345c53020b6ad8272db8f1b1868d92"
+    "bytes": 9433,
+    "sha256": "fe9bd5b707b0b59550720759c313c56687960a06bb055dbe959fff5071a464ae"
   },
   {
     "path": "JarvisEVO/Services/LocalAgentStore.swift",
@@ -246,8 +251,8 @@
   },
   {
     "path": "JarvisEVO/Services/LocalReadTools.swift",
-    "bytes": 4675,
-    "sha256": "add0211f60effa1a2f30d2b52a2aceda7ee17d079f37d99e51d5aaf10f6bfadc"
+    "bytes": 5270,
+    "sha256": "821bf544f3f08b3e27e74183bb08724639e6d18f023b7e6c1e8cf0521cf9d755"
   },
   {
     "path": "JarvisEVO/Services/MCPHTTPClient.swift",
@@ -490,6 +495,11 @@
     "sha256": "5de94645a1a564deb06dbde8560647bfa284ccceeb060d6fe09dd23f791c0b55"
   },
   {
+    "path": "Tests/LocalToolResultBudgetTests.swift",
+    "bytes": 2710,
+    "sha256": "4515bb38a28c7d7748d2c7f91986326fe9cfff4e5c296d5f6bcb4d3e82304f06"
+  },
+  {
     "path": "Tests/MCPClientTests.swift",
     "bytes": 38902,
     "sha256": "7da9f6cc50942d85bebe841a73e58d9f5a38385a9e026b66ccd4cc28f755bd50"
@@ -696,8 +706,8 @@
   },
   {
     "path": "scripts/run_foundation_tests.py",
-    "bytes": 4512,
-    "sha256": "b0ce13c9be072de5800871b47a65fee13eecc2d166ee1b680fcc50700110d829"
+    "bytes": 4600,
+    "sha256": "fcf7841b5897ded7cb6e451888007048516093a9aad7d1b9fcc44db8f152124a"
   },
   {
     "path": "scripts/run_observation_smoke.py",
@@ -711,8 +721,8 @@
   },
   {
     "path": "scripts/run_virtual_desktop_gate.sh",
-    "bytes": 5174,
-    "sha256": "5fcc2803e644152f0b00cf10f2a04169795fe3b0b91241243b64a867fb66a4d6"
+    "bytes": 5234,
+    "sha256": "b54271d6e0b5f0eec17974bff32b366a5f101eae9486ffcdd659e5a324d9307e"
   },
   {
     "path": "scripts/swift-smoke/ObservationSmoke.swift",

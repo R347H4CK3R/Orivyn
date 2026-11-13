@@ -3,7 +3,7 @@ import Foundation
 /// Shared native read-only tool implementation; no network or model interpretation.
 @MainActor
 enum LocalReadTools {
-    static func execute(name: String, arguments: MCPJSONValue, model: AppModel) throws -> String {
+    static func execute(name: String, arguments: MCPJSONValue, model: AppModel, resultByteLimit: Int? = nil) throws -> String {
         let object: MCPJSONValue
         switch name {
         case "get_app_info":
@@ -45,7 +45,20 @@ enum LocalReadTools {
                 "searchLimited": .bool(model.memories.count > 500)])
         default: throw LocalAgentError.invalidState
         }
-        let data = try object.encoded(maximumBytes: name == "search_conversations" ? 20_480 : (name == "search_memory" ? 16_384 : 4096))
+        let data: Data
+        if let resultByteLimit {
+            let collection: String
+            switch name {
+            case "get_app_info": collection = "capabilities"
+            case "list_models": collection = "models"
+            case "search_conversations": collection = "matches"
+            case "search_memory": collection = "memories"
+            default: throw LocalAgentError.invalidState
+            }
+            data = try LocalToolResultBudget.encode(object, collection: collection, maximumBytes: resultByteLimit)
+        } else {
+            data = try object.encoded(maximumBytes: name == "search_conversations" ? 20_480 : (name == "search_memory" ? 16_384 : 4096))
+        }
         guard let text = String(data: data, encoding: .utf8) else { throw LocalAgentError.invalidState }
         return text
     }

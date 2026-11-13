@@ -167,7 +167,7 @@ final class LocalAgentSession {
     }
 
     private func executeLocalTool(_ pending: LocalAgentSnapshot.Intent) throws -> String {
-        try LocalReadTools.execute(name: pending.name, arguments: pending.arguments, model: model)
+        try LocalReadTools.execute(name: pending.name, arguments: pending.arguments, model: model, resultByteLimit: 4096)
     }
 
 }

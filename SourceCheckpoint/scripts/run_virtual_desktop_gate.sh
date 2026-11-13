@@ -67,6 +67,7 @@ xcodebuild -project JarvisEVO.xcodeproj -scheme JarvisEVO \
   -only-testing:JarvisEVOTests/RepositoryInspectionTests \
   -only-testing:JarvisEVOTests/RepositorySourceDiagnosticsTests \
   -only-testing:JarvisEVOTests/VerifiedLocalPlanCoreTests \
+  -only-testing:JarvisEVOTests/LocalToolResultBudgetTests \
   -only-testing:JarvisEVOTests/LocalAgentStoreTests \
   -only-testing:JarvisEVOTests/LocalAgentCoreTests \
   -only-testing:JarvisEVOTests/AttachmentServiceTests \
