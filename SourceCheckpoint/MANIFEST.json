@@ -90,6 +90,11 @@
     "sha256": "180c58a10da898f6b36a42b48fa6b5024ae5f282ed8c0922055ae520d9b41189"
   },
   {
+    "path": "JarvisEVO/Providers/Local/UTF8TokenAccumulator.swift",
+    "bytes": 2405,
+    "sha256": "1e0ddc65e05a0e1a80ebab06c6bd05a585f93a2cc9b0ed7c8e19d2adbf6cb00c"
+  },
+  {
     "path": "JarvisEVO/Providers/OpenAICompatibleProvider.swift",
     "bytes": 9472,
     "sha256": "6ccf56efc6d53d9ff301d26f0d4c654437ded39d74193d8322b2dfdc4352defd"
@@ -395,6 +400,11 @@
     "sha256": "64c4ab9fab5931a1d5f2bbd9ac313fa60268c32140a5db0b2b6342d9551346c0"
   },
   {
+    "path": "Tests/UTF8TokenAccumulatorTests.swift",
+    "bytes": 3471,
+    "sha256": "6fb8651b490ecf0c6a3305b96a40fd25a49cd52c4bdcfd45fbd7f4b50c991ad7"
+  },
+  {
     "path": "Tests/VMCheckpointBridgeTests.swift",
     "bytes": 8465,
     "sha256": "02fea866a55670714350b1cf5a040e2968d8e306ad343333356d40742863e7d4"
@@ -481,8 +491,8 @@
   },
   {
     "path": "scripts/run_virtual_desktop_gate.sh",
-    "bytes": 4045,
-    "sha256": "315bc76fe384cf1155246c3b002b16efd5ff468275a43c99ee23564cb2ac9137"
+    "bytes": 4104,
+    "sha256": "edb1ef96b85cc10050d00b466032baf0fbfc07459a16c27e4fbcd47079815e2c"
   },
   {
     "path": "scripts/tests/test_attachment_fitting_contract.py",
@@ -568,6 +578,11 @@
     "path": "scripts/tests/test_search_evidence_contract.py",
     "bytes": 600,
     "sha256": "7a470840c23c48564c17c89844a42fe93209d324a492daedccc691a4baaf30e6"
+  },
+  {
+    "path": "scripts/tests/test_stream_decoder_contract.py",
+    "bytes": 712,
+    "sha256": "007376d7d5174b6f76100c17f95041acadaba680f2a023be1a58aecf6a7ba02f"
   },
   {
     "path": "scripts/tests/test_vm_integration_contract.py",
