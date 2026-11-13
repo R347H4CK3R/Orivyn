@@ -49,6 +49,7 @@ xcodebuild -project JarvisEVO.xcodeproj -scheme JarvisEVO \
   -only-testing:JarvisEVOTests/PluginExecutionTests \
   -only-testing:JarvisEVOTests/PluginJournalTests \
   -only-testing:JarvisEVOTests/WorkspaceStoreTests \
+  -only-testing:JarvisEVOTests/MCPUnicodeSchemaTests \
   -only-testing:JarvisEVOTests/MCPNumberIntegrityTests \
   -only-testing:JarvisEVOTests/MCPClientTests \
   -only-testing:JarvisEVOTests/MCPURLSessionTransportTests \

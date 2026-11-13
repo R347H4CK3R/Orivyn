@@ -61,8 +61,8 @@
   },
   {
     "path": "JarvisEVO/Core/MCPToolSchema.swift",
-    "bytes": 8321,
-    "sha256": "cbdd94655db5ef42560e1f9f5d5140d8778400d662f67be23514d0f89a16865e"
+    "bytes": 8972,
+    "sha256": "c533a3c9f38f850c272686fccca11801f593c8aaf6270e7866112de159b2c806"
   },
   {
     "path": "JarvisEVO/Core/MCPTypes.swift",
@@ -460,6 +460,11 @@
     "sha256": "f64c15df1f1cd1c9bb765a656e75167464dd68950f437b98584228d8a4b5cde3"
   },
   {
+    "path": "Tests/MCPUnicodeSchemaTests.swift",
+    "bytes": 2565,
+    "sha256": "8513b56eb4101b557a4da3ab636e004608d672f83aac07b756779076f54c68bc"
+  },
+  {
     "path": "Tests/MarkdownDocumentTests.swift",
     "bytes": 13820,
     "sha256": "b81eb8d309c7feeed7005e8bb5cdf261fd469dbf454b0828141010bedcc83eae"
@@ -641,8 +646,8 @@
   },
   {
     "path": "scripts/run_foundation_tests.py",
-    "bytes": 4134,
-    "sha256": "4317e6095c2285affc0f2f500b3e98dc7368b08c9d11c898a805b3e58940a166"
+    "bytes": 4170,
+    "sha256": "07091fd45a704a25a884eb4ec67eb3710d5e1ddfbb7a0d342269073c475e767a"
   },
   {
     "path": "scripts/run_self_knowledge_gate.sh",
@@ -651,8 +656,8 @@
   },
   {
     "path": "scripts/run_virtual_desktop_gate.sh",
-    "bytes": 4807,
-    "sha256": "d04563787af88041623b1058cf58f6c7ed22f750fc7139d78bcfce8e2b04132f"
+    "bytes": 4862,
+    "sha256": "157515703e8199e4b4446b33b84c348e3e4b92594da6cf58f1a09f0fbe85665e"
   },
   {
     "path": "scripts/tests/test_attachment_fitting_contract.py",
