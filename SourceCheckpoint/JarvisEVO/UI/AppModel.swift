@@ -85,6 +85,7 @@ final class AppModel {
     private var composerRevision = UUID()
     private var isApplyingOwnedComposerUpdate = false
     private var downloadTask: Task<Void, Never>?
+    private var manualDownloadOwner: UUID?
     private var automaticTask: Task<Void, Never>?
     private var automaticTicket: AutomaticPreparationTicket?
     private var automaticDownloadOwner: UUID?
@@ -1066,17 +1067,24 @@ final class AppModel {
 
     func downloadModel(_ descriptor: LocalModelDescriptor) {
         guard downloadTask == nil, !isPreparingAutomaticModel else { return }
+        let owner = UUID()
+        manualDownloadOwner = owner
         downloadingModelID = descriptor.id
         downloadProgress = 0
         downloadTask = Task { [weak self] in
             guard let self else { return }
             do {
                 try await self.modelStore.download(descriptor) { [weak self] progress in
-                    Task { @MainActor [weak self] in self?.downloadProgress = progress }
+                    Task { @MainActor [weak self] in
+                        guard let self, self.manualDownloadOwner == owner else { return }
+                        self.downloadProgress = progress
+                    }
                 }
                 try await self.reloadProviders()
                 self.selectedProviderID = descriptor.id
             } catch { if !Task.isCancelled { self.report(error) } }
+            guard self.manualDownloadOwner == owner else { return }
+            self.manualDownloadOwner = nil
             self.downloadingModelID = nil
             self.downloadProgress = nil
             self.downloadTask = nil
