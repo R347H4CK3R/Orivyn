@@ -52,10 +52,10 @@ final class VerifiedLocalReadSession {
         guard canManage else { throw LocalAgentError.staleOwner }
         return try core.route(text)
     }
-    func create(appInfo: Bool, installedModels: Bool, searchQuery: String?) {
+    func create(appInfo: Bool, installedModels: Bool, searchQuery: String?, memoryQuery: String? = nil) {
         guard canManage else { return }
         do {
-            let request = MCPJSONValue.object(["appInfo": .bool(appInfo), "installedModels": .bool(installedModels), "searchQuery": searchQuery.map(MCPJSONValue.string) ?? .null])
+            let request = MCPJSONValue.object(["appInfo": .bool(appInfo), "installedModels": .bool(installedModels), "searchQuery": searchQuery.map(MCPJSONValue.string) ?? .null, "memoryQuery": memoryQuery.map(MCPJSONValue.string) ?? .null])
             let data = try request.encoded(maximumBytes: 2048)
             guard let text = String(data: data, encoding: .utf8) else { throw LocalAgentError.invalidState }
             try persist(core.call("create", [text, UUID().uuidString])); error = nil; try reload()

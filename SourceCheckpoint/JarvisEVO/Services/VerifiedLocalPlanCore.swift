@@ -32,7 +32,7 @@ final class VerifiedLocalPlanCore {
         self.context = context; self.api = api; self.router = router
     }
     struct Route: Decodable {
-        struct Request: Decodable { let appInfo: Bool; let installedModels: Bool; let searchQuery: String? }
+        struct Request: Decodable { let appInfo: Bool; let installedModels: Bool; let searchQuery: String?; let memoryQuery: String? }
         let status: String
         let message: String
         let request: Request?

@@ -7,6 +7,8 @@ struct VerifiedLocalReadView: View {
     @State private var installedModels = true
     @State private var searchEnabled = false
     @State private var query = ""
+    @State private var memoryEnabled = false
+    @State private var memoryQuery = ""
     @State private var requestText = ""
     @State private var routingMessage: String?
     @State private var setupError: String?
@@ -15,7 +17,8 @@ struct VerifiedLocalReadView: View {
     var body: some View {
         Form {
             Section("Describe a supported read") {
-                Text("English request matching for these three tools only, not general AI autonomy. Example: What app is this and what models are installed? Search example: Search conversations for \"USB restore\".").font(.caption)
+                Text("English request matching for these four tools only, not general AI autonomy. Example: What app is this and what models are installed? Search example: Search conversations for \"USB restore\".").font(.caption)
+                Text("Memory example: Search saved memories for \"cafe\".").font(.caption)
                 TextField("Describe the local reads", text: $requestText, axis: .vertical)
                 Button("Suggest a read plan") {
                     do {
@@ -24,8 +27,10 @@ struct VerifiedLocalReadView: View {
                         if proposal.status == "matched", let request = proposal.request {
                             appInfo = request.appInfo; installedModels = request.installedModels
                             searchEnabled = request.searchQuery != nil; query = request.searchQuery ?? ""
+                            memoryEnabled = request.memoryQuery != nil; memoryQuery = request.memoryQuery ?? ""
                         } else {
                             appInfo = false; installedModels = false; searchEnabled = false; query = ""
+                            memoryEnabled = false; memoryQuery = ""
                         }
                     } catch { routingMessage = error.localizedDescription }
                 }.disabled(session?.canManage != true || requestText.utf8.count > 1024)
@@ -41,8 +46,13 @@ struct VerifiedLocalReadView: View {
                     TextField("Exact search query", text: $query)
                     Text("Searches at most 500 conversations and returns up to 10 matches. Names and excerpts can be shortened; result limits are shown.").font(.caption)
                 }
-                Button("Create read plan") { session?.create(appInfo: appInfo, installedModels: installedModels, searchQuery: searchEnabled ? query : nil) }
-                    .disabled(session?.canManage != true || !(appInfo || installedModels || searchEnabled) || searchEnabled && (query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || query.utf8.count > 256))
+                Toggle("Search saved memory", isOn: $memoryEnabled)
+                if memoryEnabled {
+                    TextField("Literal saved-memory query", text: $memoryQuery)
+                    Text("Reads at most 500 saved notes and returns up to 10 matching excerpts. Matching ignores case and accents. Excerpts may be shortened and are evidence of what you saved, not independently verified facts. Selected excerpts are saved in this on-device plan report. Nothing is sent to a model or server.").font(.caption)
+                }
+                Button("Create read plan") { session?.create(appInfo: appInfo, installedModels: installedModels, searchQuery: searchEnabled ? query : nil, memoryQuery: memoryEnabled ? memoryQuery : nil) }
+                    .disabled(session?.canManage != true || !(appInfo || installedModels || searchEnabled || memoryEnabled) || searchEnabled && (query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || query.utf8.count > 256) || memoryEnabled && (memoryQuery.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || memoryQuery.utf8.count > 256))
                     .accessibilityIdentifier("verified.create")
             }
             if let setupError { Text(setupError).foregroundStyle(.orange) }
