@@ -21,7 +21,16 @@ struct LocalReminder: Identifiable, Equatable, Sendable {
         let delay = date.timeIntervalSince(now)
         guard date.timeIntervalSince1970.isFinite, now.timeIntervalSince1970.isFinite,
               delay >= 5, delay <= maximumDelay else { throw ReminderError.invalidDate }
-        return LocalReminder(id: UUID(), title: title, notes: notes, date: date)
+        // Match the calendar notification's whole-second precision. Persist the
+        // actual trigger time, rounded upward, so Unix epoch conversion cannot
+        // change equality during confirmation or schedule before the selection.
+        var triggerDate = Date(timeIntervalSince1970: ceil(date.timeIntervalSince1970))
+        // Epoch conversion can itself round a subsecond selection down to an
+        // integer. Compare Date values before accepting that apparent integer.
+        if triggerDate < date { triggerDate = triggerDate.addingTimeInterval(1) }
+        let triggerDelay = triggerDate.timeIntervalSince(now)
+        guard triggerDelay >= 5, triggerDelay <= maximumDelay else { throw ReminderError.invalidDate }
+        return LocalReminder(id: UUID(), title: title, notes: notes, date: triggerDate)
     }
 
     static func validatedTitle(_ title: String, notes: String) throws -> String {

@@ -32,6 +32,26 @@ final class ReminderSchedulerTests: XCTestCase {
         XCTAssertEqual(SystemReminderNotifications.reminder(from: request, now: now), reminder)
     }
 
+    func testFractionalEpochConversionDoesNotBreakOSConfirmation() throws {
+        let selected = Date(timeIntervalSinceReferenceDate: 800_000_120.0000001)
+        let current = selected.addingTimeInterval(-120)
+        let reminder = try LocalReminder.validated(title: "Precise selection", notes: "", date: selected, now: current)
+        XCTAssertGreaterThanOrEqual(reminder.date, selected)
+        XCTAssertEqual(reminder.date, Date(timeIntervalSince1970: reminder.date.timeIntervalSince1970))
+        let request = SystemReminderNotifications.request(for: reminder)
+        XCTAssertEqual(SystemReminderNotifications.reminder(from: request, now: current), reminder)
+    }
+
+    func testLegacySubULPFractionNeverSchedulesBeforeStoredDate() throws {
+        let selected = Date(timeIntervalSinceReferenceDate: 800_000_120.0000001)
+        let legacy = LocalReminder(id: UUID(), title: "Legacy", notes: "", date: selected)
+        let request = SystemReminderNotifications.request(for: legacy)
+        let trigger = try XCTUnwrap(request.trigger as? UNCalendarNotificationTrigger)
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        XCTAssertGreaterThanOrEqual(try XCTUnwrap(calendar.date(from: trigger.dateComponents)), selected)
+    }
+
     func testAdapterIgnoresUnrelatedMalformedAndRepeatingRequests() throws {
         let reminder = try sample()
         let valid = SystemReminderNotifications.request(for: reminder)

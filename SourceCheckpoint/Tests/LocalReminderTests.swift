@@ -44,4 +44,22 @@ final class LocalReminderTests: XCTestCase {
         }
     }
 
+    func testFractionalDatesUseNextWholeSecondAndSurviveUnixRoundtrip() throws {
+        for fraction in [0.0000001, 0.1234568, 0.9999999] {
+            let selected = Date(timeIntervalSinceReferenceDate: 800_000_120 + fraction)
+            let reminder = try LocalReminder.validated(title: "Read", notes: "", date: selected, now: selected.addingTimeInterval(-120))
+            XCTAssertGreaterThanOrEqual(reminder.date, selected)
+            XCTAssertEqual(reminder.date.timeIntervalSince1970.rounded(.down), reminder.date.timeIntervalSince1970)
+            XCTAssertEqual(reminder.date, Date(timeIntervalSince1970: reminder.date.timeIntervalSince1970))
+            XCTAssertLessThanOrEqual(reminder.date.timeIntervalSince(selected), 1)
+        }
+    }
+    func testRoundedTriggerMustStillRespectMaximumDelay() {
+        let fractionalNow = now.addingTimeInterval(0.25)
+        let selected = fractionalNow.addingTimeInterval(LocalReminder.maximumDelay)
+        XCTAssertThrowsError(try LocalReminder.validated(title: "Read", notes: "", date: selected, now: fractionalNow)) {
+            XCTAssertEqual($0 as? ReminderError, .invalidDate)
+        }
+    }
+
 }
