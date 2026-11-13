@@ -231,6 +231,23 @@ final class MarkdownDocumentTests: XCTestCase {
         XCTAssertLessThan(Date().timeIntervalSince(start), 5.0)
     }
 
+    func testDenseHighlightingFallsBackWithoutCreatingUnboundedStyledRuns() {
+        for source in [String(repeating: "1 ", count: 50_000), String(repeating: "let ", count: 10_000)] {
+            let tokens = MarkdownSyntaxHighlighter.tokens(source, language: "swift")
+            XCTAssertEqual(tokens, [.init(text: source, style: .plain)])
+            XCTAssertEqual(tokens.map(\.text).joined(), source)
+        }
+    }
+
+    func testHighlightRunBoundaryRetainsEveryCharacter() {
+        for count in [1, 2_047, 2_048, 2_049] {
+            let source = String(repeating: "1 ", count: count)
+            let tokens = MarkdownSyntaxHighlighter.tokens(source, language: "swift")
+            XCTAssertLessThanOrEqual(tokens.count, 4_096)
+            XCTAssertEqual(tokens.map(\.text).joined(), source)
+        }
+    }
+
     private func kinds(_ source: String) -> [MarkdownBlock.Kind] { MarkdownDocument(source: source).blocks.map(\.kind) }
     private func codeBlocks(_ source: String) -> [MarkdownCodeBlock] { kinds(source).compactMap { if case .code(let code) = $0 { return code }; return nil } }
     private func tables(_ source: String) -> [MarkdownTable] { kinds(source).compactMap { if case .table(let table) = $0 { return table }; return nil } }
