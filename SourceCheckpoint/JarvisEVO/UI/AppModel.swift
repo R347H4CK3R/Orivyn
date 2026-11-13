@@ -55,6 +55,12 @@ final class AppModel {
             if oldValue != automaticAllowsCellular { cancelAutomaticPreparation() }
         }
     }
+    var conciseQwen3: Bool {
+        didSet {
+            defaults.set(conciseQwen3, forKey: "orivyn.conciseQwen3")
+            if oldValue != conciseQwen3 { cancelActiveVoiceTurn(); cancelAutomaticPreparation() }
+        }
+    }
     private(set) var automaticDecision: AutomaticModelDecision?
     var isPreparingAutomaticModel: Bool { automaticTicket != nil }
     private(set) var installedModels: [LocalModelDescriptor] = []
@@ -134,6 +140,7 @@ final class AppModel {
         self.defaults = defaults
         workspace = WorkspaceStore(defaults: defaults)
         self.attachmentImporter = attachmentImporter ?? LocalAttachmentImporter(service: attachmentService)
+        conciseQwen3 = defaults.bool(forKey: "orivyn.conciseQwen3")
         automaticModelsEnabled = defaults.bool(forKey: "orivyn.automaticModels")
         automaticAllowsCellular = defaults.bool(forKey: "orivyn.automaticCellular")
         selectedProviderID = defaults.string(forKey: "selectedProviderID") ?? ""
@@ -686,7 +693,7 @@ final class AppModel {
                     + (memoryContext.truncated ? " Some context was omitted or shortened; all original notes remain saved." : "")
 
                 let system = "You are Jarvis, the assistant in Orivyn. Do the useful parts of the request first: explain, draft, analyze or provide concrete steps. When an action needs a device tool, suggest review in the real Email, Calendar, Browser, Location or Reminder screen. Opening a review does not send, save or execute it. Be clear about uncertainty and limitations. Do not claim to browse, run code, or take actions that you cannot perform. All configured providers receive text only. Image attachments supply OCR text, never image pixels. Do not infer objects, people, colors, layout, or other visual contents from an image attachment. " + AppSelfKnowledge.prompt(providerID: self.selectedProviderID) + "\n" + self.workspace.behavior.prompt + (memoryContext.text.isEmpty ? "" : "\n" + memoryContext.text)
-                let request = GenerationRequest(messages: Array(conversation.messages.dropLast()), systemPrompt: system, maxTokens: 1024, temperature: 0.7)
+                let request = GenerationRequest(messages: Array(conversation.messages.dropLast()), systemPrompt: system, maxTokens: 1024, temperature: 0.7, conciseQwen3: self.conciseQwen3)
                 let stream = try await provider.stream(request)
                 var checkpoint = Date()
                 for try await token in stream {

@@ -259,6 +259,20 @@ final class AppModelTests: XCTestCase {
         XCTAssertFalse(model.isGenerating)
     }
 
+    func testConciseQwenModeDefaultsOffPersistsAndReachesRequest() async throws {
+        let (model, _, source) = try await fixture()
+        XCTAssertFalse(model.conciseQwen3)
+        model.conciseQwen3 = true
+        XCTAssertTrue(defaults.bool(forKey: "orivyn.conciseQwen3"))
+        model.draft = "Test response mode"; model.send()
+        try await waitFor { await source.hasSubscriber }
+        let request = await source.lastRequest
+        XCTAssertEqual(request?.conciseQwen3, true)
+        model.stop(); try await waitFor { !model.isGenerating }
+        let (reopened, _, _) = try await fixture()
+        XCTAssertTrue(reopened.conciseQwen3)
+    }
+
     private func fixture() async throws -> (AppModel, SQLiteConversationStore, ControlledTokenSource) {
         let store = try SQLiteConversationStore(url: root.appendingPathComponent("test.sqlite"))
         let attachmentService = try AttachmentService(directory: root.appendingPathComponent("Attachments"))

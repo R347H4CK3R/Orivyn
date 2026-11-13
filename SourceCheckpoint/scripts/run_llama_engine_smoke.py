@@ -11,9 +11,11 @@ SOURCES=['JarvisEVO/Providers/Local/LlamaEngine.swift','JarvisEVO/Providers/Loca
  'JarvisEVO/Core/LocalAgentGrammar.swift','JarvisEVO/Core/LocalAgentError.swift','scripts/swift-smoke/LlamaEngineSmoke.swift']
 def main():
  p=argparse.ArgumentParser(description=__doc__)
+ p.add_argument('--scenario',choices=['engine','qwen-mode'],default='engine')
  for n in ['swiftc','runtime','headers','model','output']:p.add_argument('--'+n,required=True,type=pathlib.Path)
  a=p.parse_args();root=pathlib.Path(__file__).resolve().parents[1];out=a.output.resolve();out.mkdir(parents=True,exist_ok=False);manifest=[];files=[]
- for n in SOURCES:
+ sources = [n for n in SOURCES if n != 'scripts/swift-smoke/LlamaEngineSmoke.swift'] + ['scripts/swift-smoke/QwenModeSmoke.swift'] if a.scenario == 'qwen-mode' else SOURCES
+ for n in sources:
   b=(root/n).read_bytes();dest=out/pathlib.Path(n).name;dest.write_bytes(b);files.append(str(dest));manifest.append({'source':n,'sha256':hashlib.sha256(b).hexdigest(),'bytes':len(b)})
  # Bundle.main on this Linux command-line host finds resources beside the executable.
  # Copy the exact shipped grammar, without claiming Apple bundle packaging validation.
@@ -31,7 +33,7 @@ def main():
    for chunk in iter(lambda:f.read(1048576),b''):h.update(chunk)
   return {'path':str(path.resolve()),'bytes':path.stat().st_size,'sha256':h.hexdigest()}
  runtime=a.runtime.resolve()
- (out/'RUNTIME-MODEL-MANIFEST.json').write_text(json.dumps({'model':digest(a.model),'libraries':[digest(f) for f in sorted(runtime.glob('*.so'))]},indent=2)+'\n')
+ (out/'RUNTIME-MODEL-MANIFEST.json').write_text(json.dumps({'model':digest(a.model),'additionalModels':[digest(a.model.parent/n) for n in ['Qwen3-0.6B-Q8_0.gguf','Qwen3-1.7B-Q8_0.gguf']] if a.scenario == 'qwen-mode' else [],'libraries':[digest(f) for f in sorted(runtime.glob('*.so'))]},indent=2)+'\n')
  env=dict(os.environ,LD_LIBRARY_PATH=str(runtime),CLANG_MODULE_CACHE_PATH=str(out/'module-cache'))
  command=[str(a.swiftc),'-swift-version','6','-parse-as-library','-module-cache-path',str(out/'module-cache'),'-I',str(module),'-L',str(runtime),'-lllama','-lggml','-Xlinker','-rpath','-Xlinker',str(runtime),*files,'-o',str(out/'llama-engine-smoke')]
  (out/'COMMAND.json').write_text(json.dumps(command,indent=2)+'\n')

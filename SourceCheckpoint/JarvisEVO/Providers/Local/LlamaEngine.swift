@@ -105,10 +105,10 @@ actor LlamaEngine: LocalResourceReleasing {
         }
         let messages = try LocalPromptBuilder.prepareMessages(from: request.messages, maxTokens: request.maxTokens, contextSize: Int(contextSize)) { [owned] entries in
             guard let promptVocabulary = llama_model_get_vocab(owned.model) else { throw LocalModelError.loadFailed }
-            let rendered = try format(entries, systemPrompt: request.systemPrompt, model: owned.model)
+            let rendered = try format(entries, systemPrompt: request.systemPrompt, model: owned.model, conciseQwen3: request.conciseQwen3)
             return try tokenCount(rendered, vocabulary: promptVocabulary)
         }
-        let prompt = try format(messages, systemPrompt: request.systemPrompt, model: model)
+        let prompt = try format(messages, systemPrompt: request.systemPrompt, model: model, conciseQwen3: request.conciseQwen3)
         let tokens = try tokenize(prompt, vocabulary: vocabulary)
         guard !tokens.isEmpty, tokens.count + request.maxTokens <= Int(contextSize) else { throw LocalModelError.promptTooLong }
 
@@ -164,7 +164,7 @@ actor LlamaEngine: LocalResourceReleasing {
         guard producedText else { throw LocalModelError.emptyGeneration }
     }
 
-    private func format(_ entries: [LocalPromptMessage], systemPrompt: String, model: OpaquePointer) throws -> String {
+    private func format(_ entries: [LocalPromptMessage], systemPrompt: String, model: OpaquePointer, conciseQwen3: Bool) throws -> String {
         guard let template = llama_model_chat_template(model, nil) else { throw LocalModelError.missingChatTemplate }
         var pairs: [(String, String)] = []
         if !systemPrompt.isEmpty { pairs.append(("system", systemPrompt)) }
@@ -191,7 +191,21 @@ actor LlamaEngine: LocalResourceReleasing {
             llama_chat_apply_template(template, buffer.baseAddress, buffer.count, true, &output, outputCapacity)
         }
         guard written == required else { throw LocalModelError.unsupportedChatTemplate }
-        return String(decoding: output.prefix(Int(written)).map { UInt8(bitPattern: $0) }, as: UTF8.self)
+        let rendered = String(decoding: output.prefix(Int(written)).map { UInt8(bitPattern: $0) }, as: UTF8.self)
+        // Explicit opt-in non-thinking mode for Qwen3's known template. This is
+        // input prefill, never removal of generated tokens. Include it in every
+        // real-tokenizer budget calculation by applying it inside format().
+        if conciseQwen3 {
+            var architecture = [CChar](repeating: 0, count: 64)
+            let length = "general.architecture".withCString { key in
+                llama_model_meta_val_str(model, key, &architecture, architecture.count)
+            }
+            if length > 0, length < 64, String(cString: architecture) == "qwen3" {
+                guard rendered.hasSuffix("<|im_start|>assistant\n") else { throw LocalModelError.unsupportedChatTemplate }
+                return rendered + "<think>\n\n</think>\n\n"
+            }
+        }
+        return rendered
     }
 
     private func tokenCount(_ text: String, vocabulary: OpaquePointer) throws -> Int {

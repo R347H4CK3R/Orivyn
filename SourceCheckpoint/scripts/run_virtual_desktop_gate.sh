@@ -43,6 +43,7 @@ xcodebuild -project JarvisEVO.xcodeproj -scheme JarvisEVO \
   -only-testing:JarvisEVOTests/MemoryNoteTests \
   -only-testing:JarvisEVOTests/MemoryContextBuilderTests \
   -only-testing:JarvisEVOTests/AppModelTests/testLargeMemoryLibraryUsesBoundedRelevantContextWithoutDeletingNotes \
+  -only-testing:JarvisEVOTests/AppModelTests/testConciseQwenModeDefaultsOffPersistsAndReachesRequest \
   -only-testing:JarvisEVOTests/LocalSearchExcerptTests \
   -only-testing:JarvisEVOTests/LocalMemoryToolTests \
   -only-testing:JarvisEVOTests/BackupFileReaderTests \

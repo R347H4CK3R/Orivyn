@@ -1,8 +1,8 @@
 [
   {
     "path": "JarvisEVO/Core/AIProvider.swift",
-    "bytes": 496,
-    "sha256": "d2a6f7c17cd7c6069d30ddb8a0311a1f8b82106c45b8e66629a63646e9ea71d5"
+    "bytes": 612,
+    "sha256": "60f8c16c39db3b24c69885033b2e535cf359ad346b0b170cc25dc868178297ec"
   },
   {
     "path": "JarvisEVO/Core/AppSelfKnowledge.swift",
@@ -166,8 +166,8 @@
   },
   {
     "path": "JarvisEVO/Providers/Local/LlamaEngine.swift",
-    "bytes": 14036,
-    "sha256": "5c6602b8c8e55843b5d2f81a96699081c5f94712bf164f50dfdcdd3d47503f49"
+    "bytes": 14950,
+    "sha256": "32ab976930fe502eb4904b66adaa0d12722a437b918e9c005eabbf32ba8f58cc"
   },
   {
     "path": "JarvisEVO/Providers/Local/LocalModelCatalog.swift",
@@ -336,8 +336,8 @@
   },
   {
     "path": "JarvisEVO/UI/AppModel.swift",
-    "bytes": 65175,
-    "sha256": "43a0727ca46308abf943f6c32e490c7e39649fbb7b751a06c2db1503b073bf28"
+    "bytes": 65506,
+    "sha256": "107e87c16b7463367bcfdc46da5165f0d248c9294764a8784670d6b86fdac5f0"
   },
   {
     "path": "JarvisEVO/UI/AttachmentTextSearchView.swift",
@@ -368,6 +368,11 @@
     "path": "JarvisEVO/UI/MessageRow.swift",
     "bytes": 7021,
     "sha256": "a94aa0a70ec14d7c1e49ab55c8d4f0f89d439aedeb91812b516688cee205a5cf"
+  },
+  {
+    "path": "JarvisEVO/UI/ModelManagerView.swift",
+    "bytes": 12845,
+    "sha256": "86bc1591410b2a30dc0e196da54b26e1e861ec063e88195efa0c2a5654947736"
   },
   {
     "path": "JarvisEVO/UI/RepositoryInspectionView.swift",
@@ -411,8 +416,8 @@
   },
   {
     "path": "Tests/AppModelTests.swift",
-    "bytes": 15517,
-    "sha256": "d33ac8349285e80d37ff87f431bd34273bb035beacad3b3c7fc5b5340942fbc4"
+    "bytes": 16177,
+    "sha256": "670acec9147b22c516669ec8e76a5345cdf0380597a1d2b79caf155682520b50"
   },
   {
     "path": "Tests/AttachmentPromptAvailabilityTests.swift",
@@ -766,8 +771,8 @@
   },
   {
     "path": "scripts/run_llama_engine_smoke.py",
-    "bytes": 4141,
-    "sha256": "9c7bd21ca43847160311eae19ab748dcddd650bb54c8d7552b7a486474e8dc8d"
+    "bytes": 4532,
+    "sha256": "5a7643c64603451d6380eb175b587528a71b6886f72bfd8124499ac257860472"
   },
   {
     "path": "scripts/run_observation_smoke.py",
@@ -796,8 +801,8 @@
   },
   {
     "path": "scripts/run_virtual_desktop_gate.sh",
-    "bytes": 5530,
-    "sha256": "a97d3269acf5f3bd58a2fdc62be67ecba1b5c0cf42d04b1a9531105e9209e91e"
+    "bytes": 5633,
+    "sha256": "49782547f2f572e320420d5e1f22e3800c430f07735bc283ef6a41616799b912"
   },
   {
     "path": "scripts/run_voice_smoke.py",
@@ -833,6 +838,11 @@
     "path": "scripts/swift-smoke/ProviderReloadSmoke.swift",
     "bytes": 4157,
     "sha256": "df00888a41e563bfbdd0cc00b605cb05502d43c7c6135d0cef5f29cce72a8396"
+  },
+  {
+    "path": "scripts/swift-smoke/QwenModeSmoke.swift",
+    "bytes": 2548,
+    "sha256": "05eb33a54b262f2b604f988e309ec932c456c3b682bdd1bb4d26b3a02ca6fcfd"
   },
   {
     "path": "scripts/swift-smoke/VoiceSmoke.swift",
