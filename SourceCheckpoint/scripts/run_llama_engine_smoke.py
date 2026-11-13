@@ -6,7 +6,7 @@ import argparse,hashlib,json,os,pathlib,subprocess,shutil,time
 SOURCES=['JarvisEVO/Providers/Local/LlamaEngine.swift','JarvisEVO/Providers/Local/LocalPromptBuilder.swift',
  'JarvisEVO/Providers/Local/UTF8TokenAccumulator.swift','JarvisEVO/Providers/Local/LocalModelCatalog.swift',
  'JarvisEVO/Providers/Local/LocalModelCatalogData.swift','JarvisEVO/Core/AIProvider.swift',
- 'JarvisEVO/Core/Conversation.swift','JarvisEVO/Core/MemoryNote.swift','JarvisEVO/Core/ImageOCRResult.swift',
+ 'JarvisEVO/Core/MemoryContextBuilder.swift','JarvisEVO/Core/Conversation.swift','JarvisEVO/Core/MemoryNote.swift','JarvisEVO/Core/ImageOCRResult.swift',
  'JarvisEVO/Core/OCRLineEvidence.swift','JarvisEVO/Core/ProviderError.swift','JarvisEVO/Core/LocalHeavyWork.swift',
  'JarvisEVO/Core/LocalAgentGrammar.swift','JarvisEVO/Core/LocalAgentError.swift','scripts/swift-smoke/LlamaEngineSmoke.swift']
 def main():

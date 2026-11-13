@@ -47,6 +47,28 @@ import llama
             for try await part in reloaded { next += part }
             guard next.lowercased().contains("hello") else { throw Failure.failed("Reload reply: \(next)") }
             print("PASS generation succeeds after resource release: \(next)")
+            let document = ChatAttachment(name: "project.txt", relativePath: "project.txt", mediaType: "text/plain", byteCount: 35, extractedText: "The project codename is Cobalt Finch.")
+            let documentRequest = GenerationRequest(messages: [ChatMessage(role: .user, content: "What is the project codename in the attached document? Reply with the codename only.", attachments: [document])], systemPrompt: "Answer from the supplied data only.", maxTokens: 64, temperature: 0)
+            let historyRequest = GenerationRequest(messages: [
+                ChatMessage(role: .user, content: "My test robot is named Copper Owl."),
+                ChatMessage(role: .assistant, content: "Your test robot is named Copper Owl."),
+                ChatMessage(role: .user, content: "What is my test robot named? Reply with its name only.")
+            ], systemPrompt: "Answer from the conversation only.", maxTokens: 64, temperature: 0)
+            let query = "What is my saved project codename? Reply with the codename only."
+            let memory = MemoryContextBuilder.build(notes: [MemoryNote(content: "My project codename is Silver Badger.")], query: query)
+            guard memory.includedCount == 1 else { throw Failure.failed("Saved note was not selected") }
+            let memoryRequest = GenerationRequest(messages: [ChatMessage(role: .user, content: query)], systemPrompt: "Answer from the saved notes. " + memory.text, maxTokens: 64, temperature: 0)
+            for (label, sample, expected) in [
+                ("document extracted-text grounding", documentRequest, "cobalt finch"),
+                ("prior conversation grounding", historyRequest, "copper owl"),
+                ("saved-note context grounding", memoryRequest, "silver badger")
+            ] {
+                var text = ""
+                for try await part in try await engine.stream(sample, modelURL: url) { text += part }
+                guard text.lowercased().contains(expected) else { throw Failure.failed("\(label): \(text)") }
+                print("PASS actual \(label): \(text)")
+            }
+
             let oversized = GenerationRequest(messages: request.messages, systemPrompt: String(repeating: "safety ", count: 4096), maxTokens: 64, temperature: 0)
             do {
                 let overflow = try await engine.stream(oversized, modelURL: url)
