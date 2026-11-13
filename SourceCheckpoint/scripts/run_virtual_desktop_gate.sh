@@ -34,6 +34,7 @@ xcodebuild -project JarvisEVO.xcodeproj -scheme JarvisEVO \
   -only-testing:JarvisEVOTests/ExternalWorkspaceTests \
   -only-testing:JarvisEVOTests/ConversationTranscriptTests \
   -only-testing:JarvisEVOTests/RemoteCredentialIntentTests \
+  -only-testing:JarvisEVOTests/LocalConversationSearchTests \
   -only-testing:JarvisEVOTests/IncomingTextRequestTests \
   -only-testing:JarvisEVOTests/IncomingTextTests \
   -only-testing:JarvisEVOTests/MarkdownDocumentTests \

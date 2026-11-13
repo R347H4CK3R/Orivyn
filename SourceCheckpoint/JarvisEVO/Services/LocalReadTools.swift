@@ -25,13 +25,13 @@ enum LocalReadTools {
             guard let args = arguments.objectValue, Set(args.keys) == Set(["query", "limit"]),
                   let query = args["query"]?.stringValue, !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, query.utf8.count <= 256,
                   let limit = args["limit"]?.integerValue, (1...10).contains(limit) else { throw LocalAgentError.invalidState }
-            let matches = model.conversations.prefix(500).filter {
-                Self.contains($0.title, query: query) || $0.messages.contains { Self.contains($0.content, query: query) }
-            }.prefix(Int(limit)).map { conversation -> MCPJSONValue in
-                let excerpt = conversation.messages.first { Self.contains($0.content, query: query) }?.content ?? conversation.title
-                return .object(["id": .string(conversation.id.uuidString), "title": .string(Self.prefix(conversation.title, bytes: 96)), "excerpt": .string(LocalSearchExcerpt.excerpt(text: excerpt, query: query)), "excerptMayBeTruncated": .bool(excerpt.utf8.count > 160)])
+            let result = try LocalConversationSearch.search(conversations: model.conversations, query: query, limit: Int(limit))
+            let matches = result.matches.map { match -> MCPJSONValue in
+                .object(["id": .string(match.id.uuidString), "title": .string(match.title),
+                    "excerpt": .string(match.excerpt), "excerptMayBeTruncated": .bool(match.excerptMayBeTruncated),
+                    "evidenceSource": .string(match.evidenceSource)])
             }
-            object = .object(["matches": .array(matches), "searchedConversations": .integer(Int64(min(500, model.conversations.count))), "searchLimited": .bool(model.conversations.count > 500)])
+            object = .object(["matches": .array(matches), "searchedConversations": .integer(Int64(result.searchedConversations)), "searchLimited": .bool(result.searchLimited)])
         case "search_memory":
             guard let args = arguments.objectValue, Set(args.keys) == Set(["query", "limit"]),
                   let query = args["query"]?.stringValue,
@@ -65,17 +65,5 @@ enum LocalReadTools {
         }
         guard let text = String(data: data, encoding: .utf8) else { throw LocalAgentError.invalidState }
         return text
-    }
-    private static func contains(_ text: String, query: String) -> Bool {
-        text.range(of: query, options: [.caseInsensitive, .diacriticInsensitive], locale: Locale(identifier: "en_US_POSIX")) != nil
-    }
-    private static func prefix(_ text: String, bytes: Int) -> String {
-        var result = ""
-        for scalar in text.unicodeScalars {
-            let next = String(scalar)
-            guard result.utf8.count + next.utf8.count <= bytes else { break }
-            result += next
-        }
-        return result
     }
 }

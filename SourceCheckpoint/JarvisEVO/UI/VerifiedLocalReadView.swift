@@ -44,7 +44,7 @@ struct VerifiedLocalReadView: View {
                 Toggle("Search local conversations", isOn: $searchEnabled)
                 if searchEnabled {
                     TextField("Exact search query", text: $query)
-                    Text("Searches at most 500 conversations and returns up to 10 matches. Names and excerpts can be shortened; result limits are shown.").font(.caption)
+                    Text("Searches titles, message text, and stored attachment names/extracted text in at most 500 conversations, returning up to 10 matches. Evidence labels identify the source. Original files are not opened; OCR may be wrong or incomplete. Names and excerpts can be shortened.").font(.caption)
                 }
                 Toggle("Search saved memory", isOn: $memoryEnabled)
                 if memoryEnabled {
