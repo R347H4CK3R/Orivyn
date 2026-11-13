@@ -55,6 +55,11 @@
     "sha256": "675f5301eafd51bc447d568e3b46c494fb4a4824d13700ed30b33c2bd3b2e0a3"
   },
   {
+    "path": "JarvisEVO/Core/MarkdownDocument.swift",
+    "bytes": 27158,
+    "sha256": "797d7903a8c6bf33eeb99ba1f8418748a577f537c999ac7e33ab96f8801899c7"
+  },
+  {
     "path": "JarvisEVO/Core/MemoryContextBuilder.swift",
     "bytes": 4754,
     "sha256": "012fb40ea3365fd701927d8623d84e9cc84e023b117aa54a0ffe8d48c333aeed"
@@ -425,6 +430,11 @@
     "sha256": "f64c15df1f1cd1c9bb765a656e75167464dd68950f437b98584228d8a4b5cde3"
   },
   {
+    "path": "Tests/MarkdownDocumentTests.swift",
+    "bytes": 13002,
+    "sha256": "1765ef843050b301fb6859c0eed89f753d1a340bee3c5ad5d683e61d6bd70f47"
+  },
+  {
     "path": "Tests/MemoryContextBuilderTests.swift",
     "bytes": 4458,
     "sha256": "e1627ceff78ce2593b15d9192d0064169b9638ec7c5ecf81872c74b9d0a9eb8d"
@@ -488,6 +498,11 @@
     "path": "Tests/RepositorySourceDiagnosticsTests.swift",
     "bytes": 840,
     "sha256": "bd9377c79899fed167439a39891dc36fc3e01f9d019fc6ea6c104f0ef81631cc"
+  },
+  {
+    "path": "Tests/RichMessageContentTests.swift",
+    "bytes": 3921,
+    "sha256": "dab51550fc2ec1f0d4e981eafd682a2642d88367ccb2b02afbc13fde42b1da1a"
   },
   {
     "path": "Tests/RuntimeDiagnosticsTests.swift",
@@ -591,8 +606,8 @@
   },
   {
     "path": "scripts/run_foundation_tests.py",
-    "bytes": 3900,
-    "sha256": "f90b3f0f2bd47f341896e2b7d8b5940a9ab8171983b3da4999b5b5ecbd13a573"
+    "bytes": 3978,
+    "sha256": "5233a66ad2f5bcd7471a6b7cad5f6a3f1d30517c135415ae5c6a360886f1d86a"
   },
   {
     "path": "scripts/run_self_knowledge_gate.sh",
@@ -601,8 +616,8 @@
   },
   {
     "path": "scripts/run_virtual_desktop_gate.sh",
-    "bytes": 4478,
-    "sha256": "a60aba726ee52880b15b0c99566adb00c78bf61595d073f9a1fe4ffae161fe6f"
+    "bytes": 4590,
+    "sha256": "10585aa9a13092c4b910a7deecfdca9d91c2c4e6acd3182969f03b298e06d905"
   },
   {
     "path": "scripts/tests/test_attachment_fitting_contract.py",
