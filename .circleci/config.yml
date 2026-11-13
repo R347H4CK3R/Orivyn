@@ -34,7 +34,7 @@ jobs:
           command: |
             # Preserve the original gate exit status and stop its whole process group
             # before the free-plan job limit, leaving time to upload failure evidence.
-            python3 - <<'PY'
+            python3 - \<<'PY'
             import os, signal, subprocess, sys
             with open("artifacts/native-gate-console.log", "w") as log:
                 p = subprocess.Popen(["bash", "-c",
