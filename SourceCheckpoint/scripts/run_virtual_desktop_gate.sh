@@ -40,6 +40,9 @@ xcodebuild -project JarvisEVO.xcodeproj -scheme JarvisEVO \
   -only-testing:JarvisEVOTests/BackupFileReaderTests \
   -only-testing:JarvisEVOTests/RuntimeDiagnosticsTests \
   -only-testing:JarvisEVOTests/PersistenceTests \
+  -only-testing:JarvisEVOTests/PluginExecutionTests \
+  -only-testing:JarvisEVOTests/PluginJournalTests \
+  -only-testing:JarvisEVOTests/WorkspaceStoreTests \
   -only-testing:JarvisEVOTests/MCPClientTests \
   -only-testing:JarvisEVOTests/MCPURLSessionTransportTests \
   -only-testing:JarvisEVOTests/ProviderTests \

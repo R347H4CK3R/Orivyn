@@ -85,6 +85,11 @@
     "sha256": "100c0bc3a78fc20139be459bc17880dc4e07dd2978c75dcc0baf83a08b7b1502"
   },
   {
+    "path": "JarvisEVO/Core/PluginExecution.swift",
+    "bytes": 3822,
+    "sha256": "fdb380c06cee2cfbbfd375b115d2466453107ce817c79c6d2439eec57d33e944"
+  },
+  {
     "path": "JarvisEVO/Core/RepositoryInspection.swift",
     "bytes": 11776,
     "sha256": "67e89770b1ddf14d3951a74759f8f414ed6c931fc7e2581cab05b352ce301cfd"
@@ -455,6 +460,16 @@
     "sha256": "a07d15469865a9a3170d955d7aa1c63ba47c5d5f94eae8faae88dec92dcd064c"
   },
   {
+    "path": "Tests/PluginExecutionTests.swift",
+    "bytes": 4276,
+    "sha256": "d8678b9a3bb7d65b750604185034feac676a8fccc54987fe09c017f1c56899ca"
+  },
+  {
+    "path": "Tests/PluginJournalTests.swift",
+    "bytes": 3703,
+    "sha256": "09b4e5a4bc7d459203918e889ddf72a6c355b9f1338c74309e4ac12b528626fb"
+  },
+  {
     "path": "Tests/ProviderTests.swift",
     "bytes": 5334,
     "sha256": "2426e2bd85cb53a8611f12c81ffc70650487632a50dd4fdaa07edc3e19aebd91"
@@ -515,6 +530,11 @@
     "sha256": "f720fd9675c64799114f0f6ed8598e997c73c2b2211724406d51503a4a907848"
   },
   {
+    "path": "Tests/WorkspaceStoreTests.swift",
+    "bytes": 5134,
+    "sha256": "a7b6e7dda8d4d92999157fd5134a122659e52f23137c4a73ba5ab10149d02101"
+  },
+  {
     "path": "UITests/LocalAgentIntegrationUITests.swift",
     "bytes": 2001,
     "sha256": "ee0f050e0e70d943c892b811606bcfb4ab6a41b3ebaab0b74a2ccc327ccee2d4"
@@ -566,8 +586,8 @@
   },
   {
     "path": "scripts/run_foundation_tests.py",
-    "bytes": 3686,
-    "sha256": "4c3608b42078c32654070c61f45c356c3e6c51bcd5caa624e5f95c3b8544dbfe"
+    "bytes": 3862,
+    "sha256": "57f48597a0e05e0c1528747651a9ee0dc930971ce984aba7be4e8bc380e4c394"
   },
   {
     "path": "scripts/run_self_knowledge_gate.sh",
@@ -576,8 +596,8 @@
   },
   {
     "path": "scripts/run_virtual_desktop_gate.sh",
-    "bytes": 4262,
-    "sha256": "8e385054bb2c75edf7bf33f6305f6bd95aeb1d7ae903410c5b4f7e97c4c942c5"
+    "bytes": 4421,
+    "sha256": "d3ebde5b62c7bfb0a565364537bf70cadeac64c2ae0a38fa0d106c6c59d0168d"
   },
   {
     "path": "scripts/tests/test_attachment_fitting_contract.py",
