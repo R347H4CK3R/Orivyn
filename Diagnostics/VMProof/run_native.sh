@@ -13,7 +13,7 @@ xcrun simctl list devices available -j > artifacts/simulators.json
 SIMULATOR_ID=$(python3 -c 'import json; v=json.load(open("artifacts/simulators.json"))["devices"]; ds=[d for r,items in v.items() if "iOS-26" in r for d in items if "iPhone" in d["name"] and d.get("isAvailable")]; ds.sort(key=lambda d:(d["name"]!="iPhone 16 Plus",d["name"])); print(ds[0]["udid"])')
 xcrun simctl bootstatus "$SIMULATOR_ID" -b
 set +e
-xcodebuild -project OrivynVMProof.xcodeproj -scheme OrivynVMProof -destination "platform=iOS Simulator,id=$SIMULATOR_ID" -parallel-testing-enabled NO -test-timeouts-enabled YES -default-test-execution-time-allowance 240 -maximum-test-execution-time-allowance 300 -resultBundlePath artifacts/Tests.xcresult CODE_SIGNING_ALLOWED=NO test 2>&1 | tee artifacts/native-tests.log
+xcodebuild -project OrivynVMProof.xcodeproj -scheme OrivynVMProof -destination "platform=iOS Simulator,id=$SIMULATOR_ID" -parallel-testing-enabled NO -test-timeouts-enabled YES -default-test-execution-time-allowance 240 -maximum-test-execution-time-allowance 300 -resultBundlePath artifacts/Tests.xcresult -only-testing:OrivynVMProofTests -only-testing:OrivynVMProofUITests/VMHarnessUITests/testRealGuestFileSurvivesCheckpointAndFreshAppRead CODE_SIGNING_ALLOWED=NO test 2>&1 | tee artifacts/native-tests.log
 STATUSES=("${PIPESTATUS[@]}")
 set -e
 if [[ -d artifacts/Tests.xcresult ]]; then

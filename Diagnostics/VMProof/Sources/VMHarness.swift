@@ -137,6 +137,10 @@ final class VMHarnessController: NSObject, @preconcurrency WKScriptMessageHandle
             }
         }
     }
+    func diagnosticConsole() {
+        guard !checkpointBusy, let view = webView else { return }
+        view.callAsyncJavaScript("await window.orivynDiagnosticConsole();", arguments: [:], in: nil, in: .page) { _ in }
+    }
     func sendInput(_ text: String) {
         guard !checkpointBusy, let view = webView, let identity = owner else { return }
         view.callAsyncJavaScript("await window.orivynType(text);", arguments: ["text": text], in: nil, in: .page) { [weak self, weak view] result in
@@ -245,6 +249,7 @@ struct VMHarnessApp: App {
                 HStack {
                     TextField("Guest keyboard text", text: $guestInput).textInputAutocapitalization(.never).autocorrectionDisabled().accessibilityIdentifier("vm.input")
                     Button("Send line") { controller.sendInput(guestInput + "\n"); guestInput = "" }.disabled(controller.webView == nil || controller.checkpointBusy || guestInput.isEmpty).accessibilityIdentifier("vm.input.send")
+                    Button("Console") { controller.diagnosticConsole() }.accessibilityIdentifier("vm.console.switch")
                     Button("Enter") { controller.sendInput("\n") }.disabled(controller.webView == nil || controller.checkpointBusy).accessibilityIdentifier("vm.input.enter")
                 }
                 if let view = controller.webView { VMWebSurface(webView: view).accessibilityIdentifier("vm.surface") }

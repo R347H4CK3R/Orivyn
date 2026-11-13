@@ -13,7 +13,16 @@ final class VMHarnessUITests: XCTestCase {
         }
         command("echo NATIVE_FILE_948 > /tmp/home/native.txt; cat /tmp/home/native.txt > /dev/ttyS0")
         let first = NSPredicate(format: "label CONTAINS %@", "NATIVE_FILE_948")
-        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: first, object: app.staticTexts["vm.console"])], timeout: 35), .completed)
+        let firstResult = XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: first, object: app.staticTexts["vm.console"])], timeout: 35)
+        if firstResult != .completed {
+            app.buttons["vm.console.switch"].tap(); Thread.sleep(forTimeInterval: 2)
+            command("root"); Thread.sleep(forTimeInterval: 2)
+            command("cat /tmp/xlogs/session.log >/dev/ttyS0; ps >/dev/ttyS0")
+            Thread.sleep(forTimeInterval: 8)
+            let debug = XCTAttachment(string: app.debugDescription); debug.name = "Guest failure console and native input state"; debug.lifetime = .keepAlways; add(debug)
+            let image = XCTAttachment(screenshot: app.screenshot()); image.name = "Guest failure terminal diagnostic"; image.lifetime = .keepAlways; add(image)
+        }
+        XCTAssertEqual(firstResult, .completed)
         let desktop = XCTAttachment(screenshot: app.screenshot()); desktop.name = "Actual guest before checkpoint; inspect desktop pixels"; desktop.lifetime = .keepAlways; add(desktop)
         app.buttons["vm.checkpoint.save"].tap()
         let saved = NSPredicate(format: "label CONTAINS %@", "Checkpoint verified and saved")

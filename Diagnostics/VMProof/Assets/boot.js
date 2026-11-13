@@ -10,6 +10,7 @@
  window.orivynSaveCheckpoint=()=>controller.saveCheckpoint(bridge,window.orivynCheckpointIdentity);
  window.orivynRestoreCheckpoint=()=>controller.restoreCheckpoint(bridge,window.orivynCheckpointIdentity);
  window.orivynResume=()=>controller.resume();
+ window.orivynDiagnosticConsole=()=>controller.diagnosticConsole();
  window.orivynType=text=>controller.type(text);
  const interval=setInterval(()=>{controller.status();const text=guestConsole.take();if(text)report({version:1,owner,event:'diagnostic',instructions:0,diagnostic:'guest serial: '+text});},1000);
  window.orivynStop=()=>{clearInterval(interval);removeDiagnostics();return controller.stop();};

@@ -2,10 +2,10 @@
 import Foundation
 enum VMAssetCatalog {
     static let files: [VMAsset] = [
-        VMAsset(name: "boot.js", bytes: 2138, sha256: "b67977387835870f93b467700ee6d44876b4c5dd0986f0ae911beafbc79c6b5d", mime: "text/javascript"),
+        VMAsset(name: "boot.js", bytes: 2206, sha256: "4dd89210d308c7bdf75155c02fc34cebd7b00d99807104b05b25faee174d0db2", mime: "text/javascript"),
         VMAsset(name: "checkpoint.js", bytes: 3298, sha256: "ce8dc3c1b8db165ebbdeb720f88da400e1b8ad719c88269ed24deee16a1fc0c7", mime: "text/javascript"),
-        VMAsset(name: "controller.js", bytes: 3390, sha256: "2b3e25b527b67e2e51ae9be0dd9fb8a695505c786b0cf0ff209646461fdfbcc4", mime: "text/javascript"),
-        VMAsset(name: "guest-console.js", bytes: 402, sha256: "64b0a2eee4376dfe52d37780d153e59bb9aefac53f1bc4055248fbe98f5a086e", mime: "text/javascript"),
+        VMAsset(name: "controller.js", bytes: 3579, sha256: "3101e7c80d45b6775892aac848a76e0f58bfd7b260b2fd0fac619090acc4f4f9", mime: "text/javascript"),
+        VMAsset(name: "guest-console.js", bytes: 432, sha256: "88e3757c3c259a18f16862393bf41a33d2e0bd79c9ce9fe226fdaa36270d80f0", mime: "text/javascript"),
         VMAsset(name: "guest-profile.js", bytes: 448, sha256: "c07eaf7565b9ec61b2e109133ae8be311ba677d41953e055526c7d9e5705ecc5", mime: "text/javascript"),
         VMAsset(name: "index.html", bytes: 974, sha256: "ad139fe4513dc788958d0c7b5262778b9cba0775e6d00fb32add9eb474a5b3ad", mime: "text/html"),
         VMAsset(name: "libv86.js", bytes: 359857, sha256: "e257912c4a1129e36a86c1e2df69904ab969d87bffd24aa6676e84d6ddffc1c6", mime: "text/javascript"),

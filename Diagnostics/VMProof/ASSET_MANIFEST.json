@@ -1,8 +1,8 @@
 [
   {
     "name": "boot.js",
-    "bytes": 2138,
-    "sha256": "b67977387835870f93b467700ee6d44876b4c5dd0986f0ae911beafbc79c6b5d",
+    "bytes": 2206,
+    "sha256": "4dd89210d308c7bdf75155c02fc34cebd7b00d99807104b05b25faee174d0db2",
     "mime": "text/javascript"
   },
   {
@@ -13,14 +13,14 @@
   },
   {
     "name": "controller.js",
-    "bytes": 3390,
-    "sha256": "2b3e25b527b67e2e51ae9be0dd9fb8a695505c786b0cf0ff209646461fdfbcc4",
+    "bytes": 3579,
+    "sha256": "3101e7c80d45b6775892aac848a76e0f58bfd7b260b2fd0fac619090acc4f4f9",
     "mime": "text/javascript"
   },
   {
     "name": "guest-console.js",
-    "bytes": 402,
-    "sha256": "64b0a2eee4376dfe52d37780d153e59bb9aefac53f1bc4055248fbe98f5a086e",
+    "bytes": 432,
+    "sha256": "88e3757c3c259a18f16862393bf41a33d2e0bd79c9ce9fe226fdaa36270d80f0",
     "mime": "text/javascript"
   },
   {
