@@ -1051,10 +1051,14 @@ final class AppModel {
         catch { report(error) }
     }
 
-    func saveRemote(baseURL: String, model: String, key: String, enabled: Bool) async {
+    func saveRemote(baseURL: String, model: String, credentialIntent: RemoteCredentialIntent, enabled: Bool) async {
         do {
             if enabled { _ = try RemoteEndpoint(baseURL: baseURL, model: model) }
-            try KeychainService.save(key, endpoint: baseURL.trimmingCharacters(in: .whitespacesAndNewlines))
+            let endpoint = RemoteCredentialIntent.normalizedEndpoint(baseURL)
+            let hasExistingCredential = credentialIntent == .none ? try KeychainService.read(endpoint: endpoint) != nil : false
+            if let value = try credentialIntent.valueToWrite(endpoint: endpoint, savedEndpoint: remoteBaseURL, hasExistingCredential: hasExistingCredential) {
+                try KeychainService.save(value, endpoint: endpoint)
+            }
             remoteBaseURL = baseURL.trimmingCharacters(in: .whitespacesAndNewlines)
             remoteModelName = model.trimmingCharacters(in: .whitespacesAndNewlines)
             remoteEnabled = enabled

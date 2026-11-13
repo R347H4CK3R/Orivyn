@@ -33,6 +33,7 @@ xcodebuild -project JarvisEVO.xcodeproj -scheme JarvisEVO \
   -only-testing:JarvisEVOTests/OneShotLocationTests \
   -only-testing:JarvisEVOTests/ExternalWorkspaceTests \
   -only-testing:JarvisEVOTests/ConversationTranscriptTests \
+  -only-testing:JarvisEVOTests/RemoteCredentialIntentTests \
   -only-testing:JarvisEVOTests/IncomingTextRequestTests \
   -only-testing:JarvisEVOTests/IncomingTextTests \
   -only-testing:JarvisEVOTests/MarkdownDocumentTests \
@@ -80,6 +81,7 @@ xcodebuild -project JarvisEVO.xcodeproj -scheme JarvisEVO \
   -only-testing:JarvisEVOTests/VoiceConversationSessionTests \
   -only-testing:JarvisEVOTests/VoiceAppModelTests \
   -only-testing:JarvisEVOUITests/RootViewOwnershipUITests \
+  -only-testing:JarvisEVOUITests/RemoteCredentialDraftUITests \
   -only-testing:JarvisEVOTests/SourceRepairDraftCoreTests \
   -only-testing:JarvisEVOTests/RepositoryInspectionTests \
   -only-testing:JarvisEVOTests/RepositorySourceDiagnosticsTests \

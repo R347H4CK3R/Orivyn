@@ -124,20 +124,33 @@ struct HistoryDocument: FileDocument {
 struct RemoteSettingsView: View {
     @Bindable var model: AppModel
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.scenePhase) private var scenePhase
     @State private var baseURL = ""
     @State private var modelName = ""
     @State private var key = ""
     @State private var enabled = false
     @State private var saving = false
+    @State private var removeSavedKey = false
+    @State private var saveAttempt: UUID?
 
     var body: some View {
         Form {
             Section {
                 Toggle("Enable remote provider", isOn: $enabled)
-                TextField("https://example.com/v1", text: $baseURL).textContentType(.URL).keyboardType(.URL).textInputAutocapitalization(.never).autocorrectionDisabled()
+                TextField("https://example.com/v1", text: Binding(get: { baseURL }, set: { value in
+                    if !RemoteCredentialIntent.sameEndpoint(baseURL, value) {
+                        key = ""; removeSavedKey = false; saveAttempt = nil
+                    }
+                    baseURL = value
+                })).textContentType(.URL).keyboardType(.URL).textInputAutocapitalization(.never).autocorrectionDisabled()
                     .accessibilityLabel("Endpoint base URL")
                 TextField("Model identifier", text: $modelName).textInputAutocapitalization(.never).autocorrectionDisabled()
-                SecureField("API key (optional)", text: $key).textInputAutocapitalization(.never).autocorrectionDisabled()
+                SecureField("Replacement API key (optional)", text: $key).textInputAutocapitalization(.never).autocorrectionDisabled()
+                    .accessibilityIdentifier("remote.key").disabled(removeSavedKey)
+                Toggle("Remove saved key for this endpoint", isOn: $removeSavedKey).accessibilityIdentifier("remote.key.remove")
+                Text(RemoteCredentialIntent.sameEndpoint(baseURL, model.remoteBaseURL) && !RemoteCredentialIntent.normalizedEndpoint(baseURL).isEmpty
+                     ? "Leave the replacement empty to keep the current endpoint’s saved key. Saved keys are not displayed."
+                     : "A blank replacement uses no key. If this endpoint already has a saved key, saving will ask you to replace or explicitly remove it.").font(.caption)
             } header: { Text("OpenAI-compatible endpoint") } footer: {
                 Text("Use an HTTPS base URL ending in /v1 if your provider requires it. The app appends /chat/completions. Your API key is stored in this device’s Keychain, never in backups.")
             }
@@ -145,25 +158,41 @@ struct RemoteSettingsView: View {
                 Text("When you select this provider and send a message, conversation text, attachment text, saved memories and response preferences are sent to this endpoint. Its privacy policy, account requirements, and usage charges apply. No messages are sent by saving these settings.")
                     .font(.subheadline)
                 Button {
-                    saving = true
-                    Task {
+                    guard !saving, scenePhase == .active else { return }
+                    let capturedURL = baseURL, capturedModel = modelName, capturedEnabled = enabled
+                    let intent = RemoteCredentialIntent.draft(endpoint: capturedURL, savedEndpoint: model.remoteBaseURL, typedKey: key, remove: removeSavedKey)
+                    let attempt = UUID(); saveAttempt = attempt; saving = true
+                    key = ""; removeSavedKey = false
+                    Task { @MainActor in
+                        guard scenePhase == .active, saveAttempt == attempt else {
+                            if saveAttempt == nil || saveAttempt == attempt { saving = false }
+                            return
+                        }
                         model.errorMessage = nil
-                        await model.saveRemote(baseURL: baseURL, model: modelName, key: key, enabled: enabled)
-                        saving = false
+                        await model.saveRemote(baseURL: capturedURL, model: capturedModel, credentialIntent: intent, enabled: capturedEnabled)
+                        if saveAttempt == nil { saving = false; return }
+                        guard saveAttempt == attempt else { return }
+                        saveAttempt = nil; saving = false
                         if model.errorMessage == nil { dismiss() }
                     }
                 } label: { if saving { ProgressView() } else { Text("Save endpoint") } }.disabled(saving || (enabled && (baseURL.isEmpty || modelName.isEmpty)))
             }
         }
+        .disabled(saving)
         .navigationTitle("Remote endpoint").navigationBarTitleDisplayMode(.inline)
-        .onChange(of: baseURL) { old, new in
-            if !old.isEmpty && old != new { key = "" }
+        .onChange(of: Data(RemoteCredentialIntent.normalizedEndpoint(baseURL).utf8)) { _, _ in
+            key = ""; removeSavedKey = false; saveAttempt = nil
         }
+        .onChange(of: removeSavedKey) { _, remove in if remove { key = "" } }
+        .onChange(of: scenePhase) { _, phase in
+            if phase != .active { key = ""; removeSavedKey = false; saveAttempt = nil }
+        }
+        .onDisappear { key = ""; removeSavedKey = false; saveAttempt = nil }
         .onAppear {
             baseURL = model.remoteBaseURL
             modelName = model.remoteModelName
             enabled = model.remoteEnabled
-            do { key = try KeychainService.read(endpoint: model.remoteBaseURL) ?? "" } catch { model.report(error) }
+            key = ""; removeSavedKey = false
         }
     }
 }
