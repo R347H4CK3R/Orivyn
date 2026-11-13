@@ -142,5 +142,21 @@ final class PersistenceTests: XCTestCase {
         XCTAssertEqual(all.count, 2)
     }
 
+    @MainActor
+    func testCancelledImportDoesNotWriteOrReplaceLocalRecords() async throws {
+        let store = try SQLiteConversationStore(url: temporaryDatabase())
+        let original = Conversation(title: "Keep local")
+        try await store.save(original)
+        var replacement = original
+        replacement.title = "Must not commit"
+        let data = try JSONEncoder().encode(ConversationBackup(conversations: [replacement], memories: []))
+        let task = Task { try await store.importData(data) }
+        task.cancel() // The inherited MainActor task cannot start before this cancellation.
+        do { _ = try await task.value; XCTFail("Cancelled import committed") }
+        catch is CancellationError {} catch { XCTFail("Unexpected error: \(error)") }
+        let retained = try await store.load(id: original.id)
+        XCTAssertEqual(retained, original)
+    }
+
     private func temporaryDatabase() -> URL { FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".sqlite") }
 }

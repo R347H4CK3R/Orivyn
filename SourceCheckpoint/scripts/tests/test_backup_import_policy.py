@@ -19,4 +19,13 @@ class BackupImportPolicyContract(unittest.TestCase):
   self.assertIn('importPolicy = .preserveLocal',s)
   self.assertIn('let policy = importPolicy',s)
   self.assertIn('policy: policy',s)
+ def test_import_cancellation_checks_precede_commit_not_follow_it(self):
+  s=(ROOT/'JarvisEVO/Persistence/SQLiteConversationStore.swift').read_text()
+  method=s[s.index('func importData('):s.index('func memories(')]
+  self.assertIn('Task.checkCancellation()',method)
+  self.assertLess(method.index('Task.checkCancellation()'),method.index('BEGIN IMMEDIATE'))
+  self.assertIn('for conversation in incomingConversations { try Task.checkCancellation()',method)
+  self.assertIn('for note in incomingMemories { try Task.checkCancellation()',method)
+  self.assertIn('try Task.checkCancellation()\n            try database.execute("COMMIT")',method)
+  self.assertNotIn('Task.checkCancellation()',method[method.index('database.execute("COMMIT")'):])
 if __name__=='__main__':unittest.main()

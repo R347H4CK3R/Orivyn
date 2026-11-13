@@ -128,6 +128,7 @@ actor SQLiteConversationStore {
     /// Merges a complete validated snapshot transactionally. Attachments remain local references.
     @discardableResult
     func importData(_ data: Data, policy: BackupImportPolicy = .replaceMatching) throws -> BackupImportSummary {
+        try Task.checkCancellation()
         guard data.count <= ConversationBackup.maximumBytes else { throw ConversationError.tooLarge }
         let backup: ConversationBackup
         do { backup = try decoder.decode(ConversationBackup.self, from: data) }
@@ -137,6 +138,7 @@ actor SQLiteConversationStore {
               Set(backup.memories.map(\.id)).count == backup.memories.count else { throw ConversationError.invalidBackup }
         try backup.conversations.forEach(validate)
         try backup.memories.forEach(validateMemory)
+        try Task.checkCancellation()
         try database.execute("BEGIN IMMEDIATE")
         do {
             // Resolve preservation against the same locked snapshot used for writes.
@@ -153,8 +155,9 @@ actor SQLiteConversationStore {
             // Do not call save here: intermediate rows may conflict while a consistent batch
             // replaces every reference to an identity, and the transaction is already owned.
             try validateMergedImageIdentities(replacing: incomingConversations)
-            for conversation in incomingConversations { try writeConversation(conversation) }
-            for note in incomingMemories { try saveMemory(note) }
+            for conversation in incomingConversations { try Task.checkCancellation(); try writeConversation(conversation) }
+            for note in incomingMemories { try Task.checkCancellation(); try saveMemory(note) }
+            try Task.checkCancellation()
             try database.execute("COMMIT")
             return BackupImportSummary(writtenConversations: incomingConversations.count,
                                        writtenMemories: incomingMemories.count,
