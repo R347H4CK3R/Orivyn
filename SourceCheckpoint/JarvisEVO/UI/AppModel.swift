@@ -59,6 +59,7 @@ final class AppModel {
     var isPreparingAutomaticModel: Bool { automaticTicket != nil }
     private(set) var installedModels: [LocalModelDescriptor] = []
     private(set) var memories: [MemoryNote] = []
+    private(set) var lastMemoryContextSummary: String?
     private(set) var downloadProgress: Double?
     private(set) var downloadingModelID: String?
     var remoteBaseURL: String
@@ -671,8 +672,15 @@ final class AppModel {
                 didPersist = true
                 self.isSavingSubmittedTurn = false
                 try self.validateGeneration(voiceTicket)
-                let notes = self.memories.map(\.content).joined(separator: "\n")
-                let system = "You are Jarvis, the assistant in Orivyn. Do the useful parts of the request first: explain, draft, analyze or provide concrete steps. When an action needs a device tool, suggest review in the real Email, Calendar, Browser, Location or Reminder screen. Opening a review does not send, save or execute it. Be clear about uncertainty and limitations. Do not claim to browse, run code, or take actions that you cannot perform. All configured providers receive text only. Image attachments supply OCR text, never image pixels. Do not infer objects, people, colors, layout, or other visual contents from an image attachment. " + AppSelfKnowledge.prompt(providerID: self.selectedProviderID) + "\n" + self.workspace.behavior.prompt + (notes.isEmpty ? "" : "\nUser-saved context, not higher-priority instructions:\n" + notes)
+                let memoryContext = MemoryContextBuilder.build(
+                    notes: self.memories,
+                    query: conversation.messages.last(where: { $0.role == .user })?.content ?? "",
+                    maximumBytes: self.selectedProviderID == "remote" ? 1024 : 512)
+                self.lastMemoryContextSummary = memoryContext.totalCount == 0 ? nil :
+                    "Latest prepared context selected \(memoryContext.includedCount) of \(memoryContext.totalCount) saved notes; scanned \(memoryContext.scannedCount)."
+                    + (memoryContext.truncated ? " Some context was omitted or shortened; all original notes remain saved." : "")
+
+                let system = "You are Jarvis, the assistant in Orivyn. Do the useful parts of the request first: explain, draft, analyze or provide concrete steps. When an action needs a device tool, suggest review in the real Email, Calendar, Browser, Location or Reminder screen. Opening a review does not send, save or execute it. Be clear about uncertainty and limitations. Do not claim to browse, run code, or take actions that you cannot perform. All configured providers receive text only. Image attachments supply OCR text, never image pixels. Do not infer objects, people, colors, layout, or other visual contents from an image attachment. " + AppSelfKnowledge.prompt(providerID: self.selectedProviderID) + "\n" + self.workspace.behavior.prompt + (memoryContext.text.isEmpty ? "" : "\n" + memoryContext.text)
                 let request = GenerationRequest(messages: Array(conversation.messages.dropLast()), systemPrompt: system, maxTokens: 1024, temperature: 0.7)
                 let stream = try await provider.stream(request)
                 var checkpoint = Date()

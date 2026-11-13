@@ -176,8 +176,9 @@ struct MemoryView: View {
     var body: some View {
         List {
             Section {
-                Text("Only notes you save here are added to future conversations. You can edit or remove them at any time. These notes are also sent if you choose a remote provider.")
+                Text("A bounded selection of notes you save here is added to future conversations. Literal query-word matching and recency choose excerpts; this is not semantic memory or a guarantee every relevant note is found. All originals stay saved. Selected notes are also sent if you choose a remote provider.")
                     .font(.footnote).foregroundStyle(.secondary)
+                if let summary = model.lastMemoryContextSummary { Text(summary).font(.caption).foregroundStyle(.secondary) }
                 Button { editor = MemoryEditorItem(id: nil, content: "") } label: { Label("Add a memory", systemImage: "plus") }
             }
             Section("Saved notes") {

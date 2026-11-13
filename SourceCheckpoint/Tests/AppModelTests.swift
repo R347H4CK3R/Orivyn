@@ -162,6 +162,29 @@ final class AppModelTests: XCTestCase {
         XCTAssertTrue(notes.isEmpty)
     }
 
+    func testLargeMemoryLibraryUsesBoundedRelevantContextWithoutDeletingNotes() async throws {
+        let (model, store, source) = try await fixture()
+        let important = await model.saveMemory(content: "My espresso preference is decaf oat milk.")
+        XCTAssertTrue(important)
+        for index in 0..<25 {
+            let saved = await model.saveMemory(content: "Unrelated note \(index): " + String(repeating: "x", count: 3000))
+            XCTAssertTrue(saved)
+        }
+        model.draft = "What is my espresso preference?"
+        model.send()
+        try await waitFor { await source.hasSubscriber }
+        let captured = await source.lastRequest
+        let request = try XCTUnwrap(captured)
+        XCTAssertTrue(request.systemPrompt.contains("decaf oat milk"))
+        XCTAssertLessThan(request.systemPrompt.utf8.count, 8_000)
+        XCTAssertFalse(request.systemPrompt.contains(String(repeating: "x", count: 1000)))
+        XCTAssertNotNil(model.lastMemoryContextSummary)
+        let retained = try await store.memories()
+        XCTAssertEqual(retained.count, 26)
+        model.stop()
+        try await waitFor { !model.isGenerating }
+    }
+
     func testSavedBehaviorReachesActualGenerationRequest() async throws {
         let (model, _, source) = try await fixture()
         var behavior = ResponseBehavior(); behavior.instructions = "Use concise explanations."; behavior.style = "Efficient"
