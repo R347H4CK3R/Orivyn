@@ -360,10 +360,12 @@ final class AppModel {
     func reloadProviders() async throws {
         installedModels = try await modelStore.installedModels()
         var options: [ProviderOption] = []
+        var refreshedLocalProviders: [String: LocalAIProvider] = [:]
         for model in installedModels {
             let provider: LocalAIProvider
-            if let existing = localProviders[model.id] { provider = existing }
-            else { provider = LocalAIProvider(store: modelStore, model: model, engine: localEngine); localProviders[model.id] = provider }
+            if let existing = localProviders[model.id], existing.model == model { provider = existing }
+            else { provider = LocalAIProvider(store: modelStore, model: model, engine: localEngine) }
+            refreshedLocalProviders[model.id] = provider
             options.append(ProviderOption(id: model.id, title: model.name, detail: "On this iPhone · works offline", provider: provider))
         }
         if options.isEmpty {
@@ -378,6 +380,9 @@ final class AppModel {
             let provider = OpenAICompatibleProvider(endpoint: endpoint, apiKey: try KeychainService.read(endpoint: remoteBaseURL))
             options.append(ProviderOption(id: "remote", title: remoteModelName, detail: "Remote · sends conversation and extracted attachment text to your endpoint", provider: provider))
         }
+        // Publish only the current installed descriptors; do not retain removed IDs
+        // or an old hash/path behind an updated display name. The shared runtime stays owned.
+        localProviders = refreshedLocalProviders
         replaceProviders(options)
     }
 
