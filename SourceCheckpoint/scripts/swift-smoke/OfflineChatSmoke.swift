@@ -54,9 +54,29 @@ import llama
             try await generateAndPersist(memoryChat, system: "Answer from the saved notes. " + selected.text, expected: "silver badger", store: reopened, engine: engine, model: modelURL)
             print("PASS persisted memory selection grounds actual answer")
 
+            // Exercise the actual branching/edit value operations against saved data.
+            guard let originalComplete = try await reopened.load(id: history.id),
+                  let firstUser = originalComplete.messages.first else { throw Failure.failed("Original chat missing") }
+            var branch = try originalComplete.branching(through: firstUser.id)
+            try branch.editUserMessage(id: firstUser.id, content: "My test robot is named Amber Fox.")
+            branch.messages.append(ChatMessage(role: .user, content: "What is my test robot named? Reply with its name only."))
+            try await generateAndPersist(branch, system: "Answer from this conversation only.", expected: "amber fox", store: reopened, engine: engine, model: modelURL)
+            guard try await reopened.load(id: history.id) == originalComplete else { throw Failure.failed("Branch overwrote original history") }
+            print("PASS edited branch generates its own answer without overwriting original")
+            guard var savedBranch = try await reopened.load(id: branch.id) else { throw Failure.failed("Generated branch missing") }
+            savedBranch.title = "Archived Amber Robot"
+            savedBranch.isArchived = true
+            try await reopened.save(savedBranch)
+            let active = try await reopened.list()
+            let found = try await reopened.list(includeArchived: true, query: "Archived Amber Robot")
+            guard !active.contains(where: { $0.id == branch.id }), found.map(\.id) == [branch.id] else {
+                throw Failure.failed("Renamed archived conversation discovery failed")
+            }
+            print("PASS rename/archive/search preserve generated branch")
+
             let verified = try SQLiteConversationStore(url: database)
             let completed = try await verified.list(includeArchived: true)
-            guard completed.count == 3, completed.allSatisfy({ $0.messages.last?.role == .assistant && $0.messages.last?.state == .complete }) else {
+            guard completed.count == 4, completed.allSatisfy({ $0.messages.last?.role == .assistant && $0.messages.last?.state == .complete }) else {
                 throw Failure.failed("Completed responses did not survive reopen")
             }
             print("PASS generated complete responses survive separate connection reopen")

@@ -816,8 +816,8 @@
   },
   {
     "path": "scripts/swift-smoke/OfflineChatSmoke.swift",
-    "bytes": 6559,
-    "sha256": "f141b65d1681d17a128ca0b964a9e0c77ed4016c6e3eb1b8c6811fd6c1e33505"
+    "bytes": 8280,
+    "sha256": "ab4f500f616cf7608c61496231ff5b76f099f8f11d96fe0af924d2c78a004bb3"
   },
   {
     "path": "scripts/swift-smoke/ProviderReloadSmoke.swift",
