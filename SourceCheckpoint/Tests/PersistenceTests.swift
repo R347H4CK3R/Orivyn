@@ -245,5 +245,37 @@ final class PersistenceTests: XCTestCase {
         XCTAssertEqual(rows.count, 2)
     }
 
+    func testDuplicateDocumentAndMixedAttachmentIDsRejectBeforeChangingBackupState() async throws {
+        let store = try SQLiteConversationStore(url: temporaryDatabase())
+        let original = Conversation(title: "Keep original")
+        try await store.save(original)
+        let id = UUID()
+        let document = ChatAttachment(id: id, name: "First", relativePath: "first.txt", mediaType: "text/plain", byteCount: 10, extractedText: "First document")
+        let second = ChatAttachment(id: id, name: "Second", relativePath: "second.txt", mediaType: "text/plain", byteCount: 20, extractedText: "Different document")
+        let image = ChatAttachment(id: id, name: "Image", relativePath: id.uuidString + ".png", mediaType: "image/png", byteCount: 30)
+        for duplicate in [second, image] {
+            let malformed = Conversation(messages: [ChatMessage(role: .user, content: "Ambiguous IDs", attachments: [document, duplicate])])
+            do { try await store.save(malformed); XCTFail("Duplicate per-message attachment IDs accepted by save") }
+            catch { XCTAssertEqual(error as? ConversationError, .unsafeAttachment) }
+            var replacement = original; replacement.title = "Must not replace"
+            let data = try JSONEncoder().encode(ConversationBackup(conversations: [replacement, malformed], memories: [MemoryNote(content: "Must not import")]))
+            do { _ = try await store.importData(data); XCTFail("Duplicate attachment IDs accepted by import") }
+            catch { XCTAssertEqual(error as? ConversationError, .unsafeAttachment) }
+            let rows = try await store.list(), notes = try await store.memories()
+            XCTAssertEqual(rows, [original]); XCTAssertTrue(notes.isEmpty)
+        }
+    }
+    func testAttachmentIdentityCanBeSharedAcrossMessagesButDistinctWithinEachMessage() async throws {
+        let store = try SQLiteConversationStore(url: temporaryDatabase())
+        let first = ChatAttachment(name: "Shared", relativePath: "shared.txt", mediaType: "text/plain", byteCount: 10)
+        let second = ChatAttachment(name: "Other", relativePath: "other.txt", mediaType: "text/plain", byteCount: 20)
+        let conversation = Conversation(messages: [
+            ChatMessage(role: .user, content: "First turn", attachments: [first, second]),
+            ChatMessage(role: .user, content: "Second turn", attachments: [first])])
+        try await store.save(conversation)
+        let restored = try await store.load(id: conversation.id)
+        XCTAssertEqual(restored, conversation)
+    }
+
     private func temporaryDatabase() -> URL { FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".sqlite") }
 }

@@ -214,8 +214,9 @@ actor SQLiteConversationStore {
               Set(value.messages.map(\.id)).count == value.messages.count else { throw ConversationError.tooLarge }
         for message in value.messages {
             guard message.content.utf8.count <= 1_000_000, message.attachments.count <= 20 else { throw ConversationError.tooLarge }
-            let imageIDs = message.attachments.filter(\.isImage).map(\.id)
-            guard Set(imageIDs).count == imageIDs.count else { throw ConversationError.unsafeAttachment }
+            // Message rows use every attachment UUID as an Identifiable key, not only images.
+            let attachmentIDs = message.attachments.map(\.id)
+            guard Set(attachmentIDs).count == attachmentIDs.count else { throw ConversationError.unsafeAttachment }
             for attachment in message.attachments {
                 guard attachment.hasValidStorageBinding,
                       attachment.byteCount >= 0, attachment.byteCount <= 50_000_000,

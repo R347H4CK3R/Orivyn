@@ -155,9 +155,14 @@
     "sha256": "2b59455407055cd99091522b64886425948b1707988bd9b0993ba7e981151368"
   },
   {
+    "path": "JarvisEVO/Core/VoiceError.swift",
+    "bytes": 941,
+    "sha256": "9609c6c84a8722094a9ff6d2d7a75cd030c71bd15b082b95c0f42ddbe7788177"
+  },
+  {
     "path": "JarvisEVO/Persistence/SQLiteConversationStore.swift",
-    "bytes": 15858,
-    "sha256": "bd1ba9ef71c67a8ad15087f50d5e02e4acb204f2faf2cf3947e7e90a42d5d9c5"
+    "bytes": 15950,
+    "sha256": "778cc14dc5f1c2cd7ca1026a6b131cdd8e3e5ddff80539061e2372d0fcf1be73"
   },
   {
     "path": "JarvisEVO/Providers/Local/LlamaEngine.swift",
@@ -326,8 +331,8 @@
   },
   {
     "path": "JarvisEVO/Services/VoiceService.swift",
-    "bytes": 18474,
-    "sha256": "4e82cfca60c65f3468aa157c6a6d7fa3d693af2cd8ba87b88fb70b6b6799efc6"
+    "bytes": 17551,
+    "sha256": "47f4562cc1dbd3c4f85efdc57186eeaa38c15433a9a3b2722034d7475953fce0"
   },
   {
     "path": "JarvisEVO/UI/AppModel.swift",
@@ -581,8 +586,8 @@
   },
   {
     "path": "Tests/PersistenceTests.swift",
-    "bytes": 14600,
-    "sha256": "b6cfa95abf8f996e9e327e1dd8c63fe2669d013f8104a3f370ea9e5db63819a3"
+    "bytes": 17157,
+    "sha256": "72de9fe052da4bfc6d437eca266380c95ff6cf20d6449cf393c750c6c69013e5"
   },
   {
     "path": "Tests/PluginBrokerTests.swift",
@@ -765,6 +770,11 @@
     "sha256": "5e1cc437ea51fca60b999d1b17ecd691063bd0aab8f671e8acab174f4fcddcfd"
   },
   {
+    "path": "scripts/run_voice_smoke.py",
+    "bytes": 3272,
+    "sha256": "110e4598a4895ece5e6891e916106eeb16b5e8aec6d072c9676046d81f62442f"
+  },
+  {
     "path": "scripts/swift-smoke/AgentBridge.swift",
     "bytes": 1706,
     "sha256": "f62b664216f042b4e29fe75c8d8feac82a58441b84c462af4bc4a04fa19e6ef5"
@@ -773,6 +783,11 @@
     "path": "scripts/swift-smoke/ObservationSmoke.swift",
     "bytes": 6917,
     "sha256": "32e8eec650c880467f4b30b67c17c9b81b85e53465414f5b7350edcd05f132aa"
+  },
+  {
+    "path": "scripts/swift-smoke/VoiceSmoke.swift",
+    "bytes": 8159,
+    "sha256": "c16d2b890e44b2f9d6fa732689d2094bfbe1295c7d605bab73f8a1c5e33e4f16"
   },
   {
     "path": "scripts/tests/test_attachment_fitting_contract.py",
