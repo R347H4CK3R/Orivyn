@@ -285,6 +285,7 @@ struct CustomizeWorkspaceView: View {
                 NavigationLink { IntegrationDetailView(title: "Location") } label: { row("Location", icon: "location", color: .purple, detail: "One-time request") }
             }
             Section("On this iPhone") {
+                NavigationLink { CalculatorView() } label: { row("Calculator", icon: "number", color: .green, detail: "Offline arithmetic") }
                 NavigationLink { ShortcutsHelpView() } label: { row("Shortcuts & sharing", icon: "square.and.arrow.up", color: .purple, detail: "Review first") }
                 NavigationLink { ScheduledRemindersView().navigationTitle("Scheduled") } label: { row("Local reminders", icon: "bell", color: .orange, detail: "One-time alerts") }
             }
@@ -371,6 +372,9 @@ struct IntegrationCatalogView: View {
             else if let setupError { Section { Text(setupError).font(.footnote).foregroundStyle(.red) } }
             if let pluginError { Section { Text(pluginError).font(.footnote).foregroundStyle(.red) } }
             Section("On this iPhone") {
+                if query.isEmpty || "Calculator arithmetic offline".localizedCaseInsensitiveContains(query) {
+                    NavigationLink { CalculatorView() } label: { Label("Calculator", systemImage: "number") }
+                }
                 if query.isEmpty || "Shortcuts sharing text".localizedCaseInsensitiveContains(query) {
                     NavigationLink { ShortcutsHelpView() } label: { Label("Shortcuts & sharing", systemImage: "square.and.arrow.up") }
                 }

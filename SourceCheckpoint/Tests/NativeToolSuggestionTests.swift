@@ -2,6 +2,17 @@ import XCTest
 @testable import JarvisEVO
 
 final class NativeToolSuggestionTests: XCTestCase {
+    func testDirectArithmeticOffersCalculatorReview() {
+        for text in ["Calculate 2 + 2", "Please calculate (3 * 4) / 2", "Open the calculator"] {
+            XCTAssertEqual(NativeToolSuggestion.forText(text), .calculator, text)
+        }
+    }
+    func testCalculatorDiscussionAndQuotedTextDoNotOfferReview() {
+        for text in ["How do I calculate 2 + 2?", "Do not calculate 2+2", "\"Calculate 2+2\"", "Calculate the chances of rain", "Open the calculatorless app"] {
+            XCTAssertNil(NativeToolSuggestion.forText(text), text)
+        }
+    }
+
     func testDirectSourceRequestsOfferReviewWithoutStartingRepositoryAccess() {
         for text in ["Inspect Orivyn source", "Open private source", "Please inspect the Orivyn source", "Review Orivyn source code"] {
             XCTAssertEqual(NativeToolSuggestion.forText(text), .sourceInspection, text)

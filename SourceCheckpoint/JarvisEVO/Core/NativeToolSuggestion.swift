@@ -3,11 +3,12 @@ import Foundation
 /// A navigation suggestion, never a permission or execution instruction. Only
 /// directly typed user text belongs here, not attachments, model or server output.
 enum NativeToolSuggestion: String, Identifiable, Sendable {
-    case email, calendar, browser, location, reminder, sourceInspection
+    case email, calendar, browser, location, reminder, sourceInspection, calculator
 
     var id: String { rawValue }
     var title: String {
         switch self {
+        case .calculator: "Calculator"
         case .email: "Email"
         case .calendar: "Calendar"
         case .browser: "Browser"
@@ -25,6 +26,7 @@ enum NativeToolSuggestion: String, Identifiable, Sendable {
         // Every expression is anchored. Quotes, code blocks, negations, how-to
         // questions and requests embedded in prose therefore remain ordinary chat.
         let patterns: [(Self, String)] = [
+            (.calculator, #"^(?:calculate\s+[-+0-9.(]|open\s+(?:the\s+)?calculator\b)"#),
             (.sourceInspection, #"^(?:inspect|open|review)\s+(?:the\s+)?(?:orivyn|private)\s+source\b"#),
             (.email, #"^(?:draft|write|send|compose)\s+(?:an?\s+)?(?:email|e-mail)\b"#),
             (.calendar, #"^(?:add|create|schedule)\s+(?:an?\s+)?(?:calendar\s+event|event|meeting)\b"#),

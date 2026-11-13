@@ -392,6 +392,7 @@ struct RootView: View {
         case .location: LocationToolView()
         case .reminder: ScheduledRemindersView()
         case .sourceInspection: RepositoryInspectionView()
+        case .calculator: CalculatorView(request: model.draft)
         }
     }
 

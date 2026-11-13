@@ -60,6 +60,11 @@
     "sha256": "3a9da5cd0673dc74e5b0ae07bab58869db39a0459239a05525fa73e22f5499b1"
   },
   {
+    "path": "JarvisEVO/Core/LocalCalculator.swift",
+    "bytes": 6225,
+    "sha256": "3474bef00ec5ecbd10e7d08c27aaa266027edacdc12c18bfe8d9f3ce39d03290"
+  },
+  {
     "path": "JarvisEVO/Core/LocalHeavyWork.swift",
     "bytes": 1023,
     "sha256": "22f57f9fa80ce2ff220528bf8d75416049bd6da2dc843a71d95b8cde93efd677"
@@ -116,8 +121,8 @@
   },
   {
     "path": "JarvisEVO/Core/NativeToolSuggestion.swift",
-    "bytes": 1994,
-    "sha256": "46f36903eebe65307fdafb89671e40391a6897fc60acec306def4a3e996b1a75"
+    "bytes": 2135,
+    "sha256": "d410a373e6be31f092494817df5506bbe51280a2bba3396b0df66a3e5c7d0e19"
   },
   {
     "path": "JarvisEVO/Core/OCRLineEvidence.swift",
@@ -226,8 +231,8 @@
   },
   {
     "path": "JarvisEVO/Resources/OrivynCapabilities.json",
-    "bytes": 3458,
-    "sha256": "c4d81610b89bde9412bf927f4bc9bcf665ad7dac3639c735c5388444d59a1695"
+    "bytes": 3807,
+    "sha256": "38a09c660f81c9f2ca743ed3c2e6701a8629178b0854439571c4946ed26870c3"
   },
   {
     "path": "JarvisEVO/Resources/SourceRepairDraft.js",
@@ -336,8 +341,8 @@
   },
   {
     "path": "JarvisEVO/UI/AppModel.swift",
-    "bytes": 65506,
-    "sha256": "107e87c16b7463367bcfdc46da5165f0d248c9294764a8784670d6b86fdac5f0"
+    "bytes": 65518,
+    "sha256": "501b4efe90b9b8651f6faabd4ddc0a5edc46695ce1219d5b0203328aac4fde92"
   },
   {
     "path": "JarvisEVO/UI/AttachmentTextSearchView.swift",
@@ -348,6 +353,11 @@
     "path": "JarvisEVO/UI/AttachmentViews.swift",
     "bytes": 13090,
     "sha256": "6b76011477428bdd2ed576e752236264d6d88c5ada51e5b611028e0e8ee3e0f1"
+  },
+  {
+    "path": "JarvisEVO/UI/CalculatorView.swift",
+    "bytes": 2559,
+    "sha256": "4813d34605a41408990bfcaed08e73da50dc8141e56714db9ba2f7eb3779e277"
   },
   {
     "path": "JarvisEVO/UI/HistoryView.swift",
@@ -381,8 +391,8 @@
   },
   {
     "path": "JarvisEVO/UI/RootView.swift",
-    "bytes": 39831,
-    "sha256": "ec783204e0a7026d83e17dbfc702cc3a74ad2d35706306e1a468dd4c3f20edd6"
+    "bytes": 39894,
+    "sha256": "b686b755c4bec39e1a945b791e852ea16299792fd41c42a7e1e51f28a297128e"
   },
   {
     "path": "JarvisEVO/UI/RuntimeDiagnosticsView.swift",
@@ -411,8 +421,8 @@
   },
   {
     "path": "JarvisEVO/UI/WorkspaceViews.swift",
-    "bytes": 30996,
-    "sha256": "2af6a6af53bc5d962786612fcccbab191889320a0995076bd0c814023ba59601"
+    "bytes": 31376,
+    "sha256": "2f5f270c0d8daedfdb70507d10b17d36b625707a9db4ade718a93b0963ed8e44"
   },
   {
     "path": "Tests/AppModelTests.swift",
@@ -493,6 +503,11 @@
     "path": "Tests/LocalAgentStoreTests.swift",
     "bytes": 3906,
     "sha256": "51be27d9ab729080aac0ace5aa33fbbf32811792fc0a59bbb4c680e182ff1f30"
+  },
+  {
+    "path": "Tests/LocalCalculatorTests.swift",
+    "bytes": 3695,
+    "sha256": "c3a4b4519736c71f5f0811f903feb906518b9c16bca4cfd5ed204a4f863ad2e0"
   },
   {
     "path": "Tests/LocalHeavyWorkTests.swift",
@@ -581,8 +596,8 @@
   },
   {
     "path": "Tests/NativeToolSuggestionTests.swift",
-    "bytes": 4414,
-    "sha256": "c6974c92131748118ae793ee40a4e5e2d7e14b0177383be798561b9235d7c8b5"
+    "bytes": 4977,
+    "sha256": "bac58d444e41f7262e73af29864a264d73468b8c471968dd31149069d31a68b9"
   },
   {
     "path": "Tests/OCRLineEvidenceTests.swift",
@@ -766,8 +781,8 @@
   },
   {
     "path": "scripts/run_foundation_tests.py",
-    "bytes": 4903,
-    "sha256": "d778db5cd78ba8e57b213aeb9028b44923baa79cc24a8bd653b954ac726d9aaf"
+    "bytes": 4979,
+    "sha256": "06f55b14f94a1d83dbbeddba5ad2800678fe26a07b5982d8d6fb00599af2bb56"
   },
   {
     "path": "scripts/run_llama_engine_smoke.py",
@@ -801,8 +816,8 @@
   },
   {
     "path": "scripts/run_virtual_desktop_gate.sh",
-    "bytes": 5633,
-    "sha256": "49782547f2f572e320420d5e1f22e3800c430f07735bc283ef6a41616799b912"
+    "bytes": 5687,
+    "sha256": "e2f2d8c69590c235df23db5390687fad21902297112e13357f68e56ff23b002c"
   },
   {
     "path": "scripts/run_voice_smoke.py",
@@ -848,6 +863,11 @@
     "path": "scripts/swift-smoke/VoiceSmoke.swift",
     "bytes": 8159,
     "sha256": "c16d2b890e44b2f9d6fa732689d2094bfbe1295c7d605bab73f8a1c5e33e4f16"
+  },
+  {
+    "path": "scripts/tests/test_assistant_identity.py",
+    "bytes": 2357,
+    "sha256": "1048a89d48a19107ee2e5b3093363421e7ed5d4dc5ce9e3577554565a2e3a1ad"
   },
   {
     "path": "scripts/tests/test_attachment_fitting_contract.py",

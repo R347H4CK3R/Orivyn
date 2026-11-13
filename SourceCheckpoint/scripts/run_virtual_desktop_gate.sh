@@ -54,6 +54,7 @@ xcodebuild -project JarvisEVO.xcodeproj -scheme JarvisEVO \
   -only-testing:JarvisEVOTests/ImageIdentityPersistenceTests \
   -only-testing:JarvisEVOTests/ProviderReloadTests \
   -only-testing:JarvisEVOTests/AttachmentPromptAvailabilityTests \
+  -only-testing:JarvisEVOTests/LocalCalculatorTests \
   -only-testing:JarvisEVOTests/PluginExecutionTests \
   -only-testing:JarvisEVOTests/PluginJournalTests \
   -only-testing:JarvisEVOTests/WorkspaceStoreTests \

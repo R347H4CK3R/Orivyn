@@ -62,6 +62,11 @@
       "id": "self-repair",
       "status": "notAvailable",
       "detail": "Chat can explain supplied symptoms and draft a repair proposal. The separate reviewed source-inspection screen can read authorized repository content, but the app cannot modify its signed executable, build an IPA or publish a fix by itself. A reviewed source change, build and installation are required."
+    },
+    {
+      "id": "calculator",
+      "status": "conditional",
+      "detail": "Deterministic on-device arithmetic in the Calculator screen: +, -, multiplication, division, parentheses and decimals. Uses approximate floating-point values, no code execution. Review the expression and tap Calculate; native interface verification is pending."
     }
   ]
 }
