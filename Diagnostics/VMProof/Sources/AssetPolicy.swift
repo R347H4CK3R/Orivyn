@@ -7,6 +7,12 @@ struct VMAsset: Sendable { let name: String; let bytes: Int; let sha256: String;
 enum VMPolicyError: Error { case rejected }
 
 struct VMAssetStore: Sendable {
+    static func acceptedSize(_ asset: VMAsset) -> Bool {
+        if asset.name == "maintained.img" {
+            return asset.bytes == 135266304 && asset.sha256 == "0897e5f867267c209f2866e2ee960971caf25886eb0345fe2f514b11e19cf0f1" && asset.mime == "application/octet-stream"
+        }
+        return asset.bytes > 0 && asset.bytes <= 12 * 1024 * 1024
+    }
     private let assets: [String: Data]
     init(root: URL, catalog: [VMAsset] = VMAssetCatalog.files) throws {
         guard root.isFileURL, (try root.resourceValues(forKeys: [.isSymbolicLinkKey, .isDirectoryKey])).isSymbolicLink != true,
@@ -16,7 +22,7 @@ struct VMAssetStore: Sendable {
         var contents: [String: Data] = [:]
         for asset in catalog {
             guard asset.name.range(of: "^[a-zA-Z0-9.-]+$", options: .regularExpression) != nil,
-                  !asset.name.hasPrefix("."), asset.bytes > 0, asset.bytes <= 12 * 1024 * 1024 else { throw VMPolicyError.rejected }
+                  !asset.name.hasPrefix("."), Self.acceptedSize(asset) else { throw VMPolicyError.rejected }
             let url = canonicalRoot.appendingPathComponent(asset.name)
             let fd = Darwin.open(url.path, O_RDONLY | O_NOFOLLOW | O_CLOEXEC | O_NONBLOCK)
             guard fd >= 0 else { throw VMPolicyError.rejected }
@@ -39,7 +45,7 @@ struct VMAssetStore: Sendable {
             guard SHA256.hash(data: data).map({String(format: "%02x", $0)}).joined() == asset.sha256 else { throw VMPolicyError.rejected }
             contents["/" + asset.name] = data
         }
-        guard contents.values.reduce(0, {$0 + $1.count}) <= 16 * 1024 * 1024 else { throw VMPolicyError.rejected }
+        guard contents.values.reduce(0, {$0 + $1.count}) <= 160 * 1024 * 1024 else { throw VMPolicyError.rejected }
         assets = contents
     }
     static func allowedPath(_ request: URLRequest) -> String? {

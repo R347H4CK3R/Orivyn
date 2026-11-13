@@ -1,15 +1,15 @@
 [
   {
     "name": "boot.js",
-    "bytes": 1789,
-    "sha256": "6ac6029d7b14c79aacf29d5186f7c74e83e046cc2b9f51c25e4ee1549aed1ef2",
+    "bytes": 2138,
+    "sha256": "b67977387835870f93b467700ee6d44876b4c5dd0986f0ae911beafbc79c6b5d",
     "mime": "text/javascript"
   },
   {
     "name": "checkpoint.js",
-    "mime": "text/javascript",
     "bytes": 3298,
-    "sha256": "ce8dc3c1b8db165ebbdeb720f88da400e1b8ad719c88269ed24deee16a1fc0c7"
+    "sha256": "ce8dc3c1b8db165ebbdeb720f88da400e1b8ad719c88269ed24deee16a1fc0c7",
+    "mime": "text/javascript"
   },
   {
     "name": "controller.js",
@@ -18,9 +18,21 @@
     "mime": "text/javascript"
   },
   {
+    "name": "guest-console.js",
+    "bytes": 402,
+    "sha256": "64b0a2eee4376dfe52d37780d153e59bb9aefac53f1bc4055248fbe98f5a086e",
+    "mime": "text/javascript"
+  },
+  {
+    "name": "guest-profile.js",
+    "bytes": 448,
+    "sha256": "c07eaf7565b9ec61b2e109133ae8be311ba677d41953e055526c7d9e5705ecc5",
+    "mime": "text/javascript"
+  },
+  {
     "name": "index.html",
-    "bytes": 856,
-    "sha256": "05bd66b37512c1ca238094b0d1528fdfbe39a3d10503d27f4546bd6031d50e00",
+    "bytes": 974,
+    "sha256": "ad139fe4513dc788958d0c7b5262778b9cba0775e6d00fb32add9eb474a5b3ad",
     "mime": "text/html"
   },
   {
@@ -30,10 +42,16 @@
     "mime": "text/javascript"
   },
   {
+    "name": "maintained.img",
+    "bytes": 135266304,
+    "sha256": "0897e5f867267c209f2866e2ee960971caf25886eb0345fe2f514b11e19cf0f1",
+    "mime": "application/octet-stream"
+  },
+  {
     "name": "scheduler-policy.js",
-    "mime": "text/javascript",
     "bytes": 265,
-    "sha256": "c67d77a5bf691de5323f7174a92ff4cc89fee944c39fe998060f931c6a33fdd7"
+    "sha256": "c67d77a5bf691de5323f7174a92ff4cc89fee944c39fe998060f931c6a33fdd7",
+    "mime": "text/javascript"
   },
   {
     "name": "seabios.bin",

@@ -9,3 +9,5 @@ Assets/vgabios.bin
 __pycache__/
 
 Assets/v86-fallback.wasm
+
+Assets/maintained.img

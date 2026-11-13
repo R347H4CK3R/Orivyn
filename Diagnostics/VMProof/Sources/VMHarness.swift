@@ -25,9 +25,10 @@ final class VMAssetHandler: NSObject, @preconcurrency WKURLSchemeHandler {
 @MainActor @Observable
 final class VMHarnessController: NSObject, @preconcurrency WKScriptMessageHandler, @preconcurrency WKNavigationDelegate, @preconcurrency WKUIDelegate {
     private(set) var webView: WKWebView?
-    private(set) var status = "Stopped. BIOS-only prototype; no guest desktop installed."
+    private(set) var status = "Stopped. Internal maintained guest proof; native acceptance pending."
     private(set) var instructions: UInt64 = 0
     private(set) var diagnostics = ""
+    private(set) var guestConsole = ""
     private func record(_ text: String) {
         diagnostics = String((diagnostics + "\n" + text).suffix(4096))
     }
@@ -56,7 +57,7 @@ final class VMHarnessController: NSObject, @preconcurrency WKScriptMessageHandle
             configuration.preferences.javaScriptCanOpenWindowsAutomatically = false
             configuration.setURLSchemeHandler(handler, forURLScheme: "orivyn-vm")
             configuration.userContentController.add(self, name: "vmStatus")
-            let directory = try FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true).appendingPathComponent("VMProofCheckpoints", isDirectory: true)
+            let directory = try FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true).appendingPathComponent("VMGuestProofCheckpoints", isDirectory: true)
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true, attributes: [.protectionKey: FileProtectionType.complete])
             let checkpointStore: VMCheckpointStore
             if let existing = self.checkpointStore { checkpointStore = existing }
@@ -64,13 +65,13 @@ final class VMHarnessController: NSObject, @preconcurrency WKScriptMessageHandle
                 checkpointStore = try VMCheckpointStore(root: directory)
                 self.checkpointStore = checkpointStore
             }
-            let configurationDigest = SHA256.hash(data: Data("bios-only;ram=67108864;vga=2097152;network=none;schema=1".utf8)).map { String(format: "%02x", $0) }.joined()
+            let configurationDigest = SHA256.hash(data: Data("maintained;ram=134217728;vga=8388608;network=none;disk=0897e5f867267c209f2866e2ee960971caf25886eb0345fe2f514b11e19cf0f1;schema=1".utf8)).map { String(format: "%02x", $0) }.joined()
             func assetGroupDigest(_ names: Set<String>) -> String {
                 let text = VMAssetCatalog.files.filter { names.contains($0.name) }.sorted { $0.name < $1.name }.map { $0.name + ":" + $0.sha256 }.joined(separator: "\n")
                 return SHA256.hash(data: Data(text.utf8)).map { String(format: "%02x", $0) }.joined()
             }
             let checkpointIdentity = VMCheckpointIdentity(engineSHA256: assetGroupDigest(["libv86.js", "v86.wasm", "v86-fallback.wasm"]),
-                guestSHA256: assetGroupDigest(["seabios.bin", "vgabios.bin"]), configurationSHA256: configurationDigest)
+                guestSHA256: assetGroupDigest(["seabios.bin", "vgabios.bin", "maintained.img"]), configurationSHA256: configurationDigest)
             let bridge = VMCheckpointBridge(owner: identity, identity: checkpointIdentity, store: checkpointStore)
             checkpointBridge = bridge
             configuration.userContentController.addScriptMessageHandler(bridge, contentWorld: .page, name: "vmCheckpoint")
@@ -82,12 +83,12 @@ final class VMHarnessController: NSObject, @preconcurrency WKScriptMessageHandle
             view.isInspectable = false
             webView = view
             initialURL = URL(string: "orivyn-vm://bundle/index.html#" + identity.uuidString)!
-            status = "Loading local BIOS and WebAssembly…"
+            status = "Loading pinned local guest, BIOS and WebAssembly…"
             view.load(URLRequest(url: initialURL!))
             proofDeadline = Task { @MainActor [weak self] in
-                do { try await Task.sleep(for: .seconds(60)) } catch { return }
+                do { try await Task.sleep(for: .seconds(180)) } catch { return }
                 guard let self, self.owner == identity else { return }
-                self.stop(); self.status = "60-second BIOS proof limit reached. Start again explicitly."
+                self.stop(); self.status = "180-second guest proof limit reached. Start again explicitly."
             }
         } catch { stop(); status = "Local asset validation failed. Nothing started." }
     }
@@ -127,12 +128,22 @@ final class VMHarnessController: NSObject, @preconcurrency WKScriptMessageHandle
             switch result {
             case .success(let value):
                 switch value as? String {
-                case "saved": self.checkpointStatus = "Checkpoint verified and saved. BIOS is paused."
+                case "saved": self.checkpointStatus = "Checkpoint verified and saved. Guest CPU is paused."
                 case "restored": self.checkpointStatus = "Checkpoint verified and restored. Tap Resume."
                 case "missing": self.checkpointStatus = "No compatible checkpoint saved."
                 default: self.checkpointStatus = "Unexpected checkpoint response; no success claimed."
                 }
             case .failure: self.checkpointStatus = "Checkpoint failed. Previous saved state is retained."
+            }
+        }
+    }
+    func sendInput(_ text: String) {
+        guard !checkpointBusy, let view = webView, let identity = owner else { return }
+        view.callAsyncJavaScript("await window.orivynType(text);", arguments: ["text": text], in: nil, in: .page) { [weak self, weak view] result in
+            guard let self, self.owner == identity, self.webView === view else { return }
+            switch result {
+            case .success: self.record("Guest keyboard input delivered; application action not verified.")
+            case .failure: self.record("Guest keyboard input rejected by runtime state or bounds.")
             }
         }
     }
@@ -152,10 +163,13 @@ final class VMHarnessController: NSObject, @preconcurrency WKScriptMessageHandle
         record("accepted event: \(value.event.rawValue), instructions: \(value.instructions)")
         instructions = value.instructions
         switch value.event {
-        case .diagnostic: record(value.diagnostic ?? "Missing diagnostic")
-        case .ready: status = "BIOS initialized; starting actual emulated CPU."
-        case .paused: status = "BIOS paused. Resume explicitly; checkpoint result is shown separately."
-        case .running: status = "Actual BIOS running. No operating-system guest installed."
+        case .diagnostic:
+            let text = value.diagnostic ?? "Missing diagnostic"
+            if text.hasPrefix("guest serial: ") { guestConsole = String((guestConsole + text.dropFirst(14)).suffix(2048)) }
+            else { record(text) }
+        case .ready: status = "Guest machine initialized; starting emulated CPU."
+        case .paused: status = "Guest CPU paused. Resume explicitly; checkpoint result is shown separately."
+        case .running: status = "Guest CPU running. Desktop readiness has not been verified."
         case .stopped: stop()
         case .error: stop(); status = "Emulator failed. No saved state or external fallback."
         }
@@ -208,16 +222,18 @@ struct VMWebSurface: UIViewRepresentable {
 @main
 struct VMHarnessApp: App {
     @State private var controller = VMHarnessController()
+    @State private var guestInput = ""
     @Environment(\.scenePhase) private var phase
     var body: some Scene {
         WindowGroup {
             VStack {
-                Text("Orivyn native BIOS proof").font(.headline)
+                Text("Orivyn internal guest proof").font(.headline)
                 Text(controller.status).accessibilityIdentifier("vm.status")
                 Text(controller.diagnostics).font(.caption2).lineLimit(5).accessibilityIdentifier("vm.diagnostics")
+                Text(controller.guestConsole).font(.caption2).lineLimit(3).accessibilityIdentifier("vm.console")
                 Text(String(controller.instructions)).accessibilityIdentifier("vm.instructions")
                 HStack {
-                    Button("Start BIOS") { controller.start() }.disabled(controller.webView != nil || controller.isDrainingCheckpoint).accessibilityIdentifier("vm.start")
+                    Button("Start guest") { controller.start() }.disabled(controller.webView != nil || controller.isDrainingCheckpoint).accessibilityIdentifier("vm.start")
                     Button("Stop") { controller.stop() }.disabled(controller.webView == nil).accessibilityIdentifier("vm.stop")
                 }
                 Text(controller.checkpointStatus).font(.caption).accessibilityIdentifier("vm.checkpoint.status")
@@ -226,9 +242,14 @@ struct VMHarnessApp: App {
                     Button("Restore") { controller.checkpoint(restore: true) }.accessibilityIdentifier("vm.checkpoint.restore")
                     Button("Resume") { controller.resume() }.accessibilityIdentifier("vm.resume")
                 }.disabled(controller.webView == nil || controller.checkpointBusy)
+                HStack {
+                    TextField("Guest keyboard text", text: $guestInput).textInputAutocapitalization(.never).autocorrectionDisabled().accessibilityIdentifier("vm.input")
+                    Button("Send line") { controller.sendInput(guestInput + "\n"); guestInput = "" }.disabled(controller.webView == nil || controller.checkpointBusy || guestInput.isEmpty).accessibilityIdentifier("vm.input.send")
+                    Button("Enter") { controller.sendInput("\n") }.disabled(controller.webView == nil || controller.checkpointBusy).accessibilityIdentifier("vm.input.enter")
+                }
                 if let view = controller.webView { VMWebSurface(webView: view).accessibilityIdentifier("vm.surface") }
                 Spacer(minLength: 0)
-                Text("BIOS-only checkpoint test. No guest desktop, networking, host-file access or external computer. Native checkpoint behavior and physical iPhone performance remain unverified.").font(.caption)
+                Text("Internal offline guest test. No network, host files or external computer. Desktop interaction, checkpoint and iPhone performance require verification.").font(.caption)
             }.padding()
             .onChange(of: phase) { _, phase in if phase != .active { controller.stop() } }
             .onReceive(NotificationCenter.default.publisher(for: UIApplication.didReceiveMemoryWarningNotification)) { _ in controller.stop() }

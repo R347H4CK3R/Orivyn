@@ -2,11 +2,14 @@
 import Foundation
 enum VMAssetCatalog {
     static let files: [VMAsset] = [
-        VMAsset(name: "boot.js", bytes: 1789, sha256: "6ac6029d7b14c79aacf29d5186f7c74e83e046cc2b9f51c25e4ee1549aed1ef2", mime: "text/javascript"),
+        VMAsset(name: "boot.js", bytes: 2138, sha256: "b67977387835870f93b467700ee6d44876b4c5dd0986f0ae911beafbc79c6b5d", mime: "text/javascript"),
         VMAsset(name: "checkpoint.js", bytes: 3298, sha256: "ce8dc3c1b8db165ebbdeb720f88da400e1b8ad719c88269ed24deee16a1fc0c7", mime: "text/javascript"),
         VMAsset(name: "controller.js", bytes: 3390, sha256: "2b3e25b527b67e2e51ae9be0dd9fb8a695505c786b0cf0ff209646461fdfbcc4", mime: "text/javascript"),
-        VMAsset(name: "index.html", bytes: 856, sha256: "05bd66b37512c1ca238094b0d1528fdfbe39a3d10503d27f4546bd6031d50e00", mime: "text/html"),
+        VMAsset(name: "guest-console.js", bytes: 402, sha256: "64b0a2eee4376dfe52d37780d153e59bb9aefac53f1bc4055248fbe98f5a086e", mime: "text/javascript"),
+        VMAsset(name: "guest-profile.js", bytes: 448, sha256: "c07eaf7565b9ec61b2e109133ae8be311ba677d41953e055526c7d9e5705ecc5", mime: "text/javascript"),
+        VMAsset(name: "index.html", bytes: 974, sha256: "ad139fe4513dc788958d0c7b5262778b9cba0775e6d00fb32add9eb474a5b3ad", mime: "text/html"),
         VMAsset(name: "libv86.js", bytes: 359857, sha256: "e257912c4a1129e36a86c1e2df69904ab969d87bffd24aa6676e84d6ddffc1c6", mime: "text/javascript"),
+        VMAsset(name: "maintained.img", bytes: 135266304, sha256: "0897e5f867267c209f2866e2ee960971caf25886eb0345fe2f514b11e19cf0f1", mime: "application/octet-stream"),
         VMAsset(name: "scheduler-policy.js", bytes: 265, sha256: "c67d77a5bf691de5323f7174a92ff4cc89fee944c39fe998060f931c6a33fdd7", mime: "text/javascript"),
         VMAsset(name: "seabios.bin", bytes: 131072, sha256: "73e3f359102e3a9982c35fce98eb7cd08f18303ac7f1ba6ebfbe6cdc1c244d98", mime: "application/octet-stream"),
         VMAsset(name: "style.css", bytes: 216, sha256: "91879ad79b2a55b713ed9c576326a6fba2ca20448cfbf67069ee62e548491912", mime: "text/css"),

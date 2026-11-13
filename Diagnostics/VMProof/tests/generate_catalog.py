@@ -1,7 +1,7 @@
 from pathlib import Path
 import hashlib,json
 root=Path(__file__).resolve().parent.parent
-mime={'html':'text/html','css':'text/css','js':'text/javascript','wasm':'application/wasm','bin':'application/octet-stream'}
+mime={'html':'text/html','css':'text/css','js':'text/javascript','wasm':'application/wasm','bin':'application/octet-stream','img':'application/octet-stream'}
 files=[]
 for p in sorted((root/'Assets').iterdir()):
  data=p.read_bytes();files.append({'name':p.name,'bytes':len(data),'sha256':hashlib.sha256(data).hexdigest(),'mime':mime[p.suffix[1:]]})

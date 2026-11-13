@@ -1,7 +1,42 @@
 import XCTest
 @MainActor
 final class VMHarnessUITests: XCTestCase {
-    func testActualBundledBIOSExecutesAndStopReleasesSurface() {
+    func testRealGuestFileSurvivesCheckpointAndFreshAppRead() throws {
+        continueAfterFailure = false
+        let app = XCUIApplication(); app.launch(); app.buttons["vm.start"].tap()
+        // Settling delay is NOT a readiness claim; only fresh guest UART output passes.
+        Thread.sleep(forTimeInterval: 35)
+        func command(_ text: String) {
+            let field = app.textFields["vm.input"]; field.tap()
+            field.typeText(text)
+            app.buttons["vm.input.send"].tap()
+        }
+        command("echo NATIVE_FILE_948 > /tmp/home/native.txt; cat /tmp/home/native.txt > /dev/ttyS0")
+        let first = NSPredicate(format: "label CONTAINS %@", "NATIVE_FILE_948")
+        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: first, object: app.staticTexts["vm.console"])], timeout: 35), .completed)
+        let desktop = XCTAttachment(screenshot: app.screenshot()); desktop.name = "Actual guest before checkpoint; inspect desktop pixels"; desktop.lifetime = .keepAlways; add(desktop)
+        app.buttons["vm.checkpoint.save"].tap()
+        let saved = NSPredicate(format: "label CONTAINS %@", "Checkpoint verified and saved")
+        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: saved, object: app.staticTexts["vm.checkpoint.status"])], timeout: 50), .completed)
+        app.terminate(); app.launch(); app.buttons["vm.start"].tap()
+        let running = NSPredicate(format: "label CONTAINS %@", "Guest CPU running")
+        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: running, object: app.staticTexts["vm.status"])], timeout: 30), .completed)
+        XCTAssertFalse(app.staticTexts["vm.console"].label.contains("NATIVE_FILE_948"))
+        app.buttons["vm.checkpoint.restore"].tap()
+        let restored = NSPredicate(format: "label CONTAINS %@", "Checkpoint verified and restored")
+        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: restored, object: app.staticTexts["vm.checkpoint.status"])], timeout: 50), .completed)
+        app.buttons["vm.resume"].tap()
+        command("cat /tmp/home/native.txt > /dev/ttyS0")
+        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: first, object: app.staticTexts["vm.console"])], timeout: 30), .completed)
+        let restoredImage = XCTAttachment(screenshot: app.screenshot()); restoredImage.name = "Fresh guest read after app relaunch"; restoredImage.lifetime = .keepAlways; add(restoredImage)
+        app.buttons["vm.stop"].tap()
+    }
+    func testGuestInputControlsAreAvailableWithoutClaimingExecution() {
+        let app = XCUIApplication(); app.launch()
+        XCTAssertTrue(app.textFields["vm.input"].exists)
+        XCTAssertFalse(app.buttons["vm.input.send"].isEnabled)
+    }
+    func testPinnedGuestCPUExecutesAndStopReleasesSurface() {
         continueAfterFailure = false
         let app=XCUIApplication();app.launch()
         app.buttons["vm.start"].tap()
@@ -18,8 +53,8 @@ final class VMHarnessUITests: XCTestCase {
             screenshot.lifetime = .keepAlways; add(screenshot)
         }
         XCTAssertEqual(result, .completed, "BIOS did not execute: \(app.staticTexts["vm.status"].label). Trace: \(app.staticTexts["vm.diagnostics"].label)")
-        XCTAssertTrue(app.staticTexts["vm.status"].label.contains("Actual BIOS running"))
-        let capture=XCTAttachment(screenshot:app.screenshot());capture.name="Actual pinned v86 BIOS in system WKWebView, no guest";capture.lifetime = .keepAlways;add(capture)
+        XCTAssertTrue(app.staticTexts["vm.status"].label.contains("Guest CPU running"))
+        let capture=XCTAttachment(screenshot:app.screenshot());capture.name="Pinned maintained guest CPU execution, desktop acceptance still separate";capture.lifetime = .keepAlways;add(capture)
         app.buttons["vm.stop"].tap()
         XCTAssertTrue(app.buttons["vm.start"].isEnabled)
         XCTAssertFalse(app.webViews.firstMatch.exists)
@@ -34,7 +69,7 @@ final class VMHarnessUITests: XCTestCase {
     }
     func testCheckpointSurvivesAppRelaunchAndRequiresResume() {
         let app = XCUIApplication(); app.launch(); app.buttons["vm.start"].tap()
-        let running = NSPredicate(format: "label CONTAINS %@", "Actual BIOS running")
+        let running = NSPredicate(format: "label CONTAINS %@", "Guest CPU running")
         XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: running, object: app.staticTexts["vm.status"])], timeout: 35), .completed)
         app.buttons["vm.checkpoint.save"].tap()
         let saved = NSPredicate(format: "label CONTAINS %@", "Checkpoint verified and saved")
