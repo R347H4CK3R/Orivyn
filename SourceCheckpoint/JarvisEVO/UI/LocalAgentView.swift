@@ -10,8 +10,9 @@ struct LocalAgentView: View {
     var body: some View {
         Form {
             Section("Local read-only tasks") {
-                Text("Jarvis can choose tools to read app information, installed model names and matching conversation excerpts. All reasoning stays on your iPhone. This does not send messages, edit files, access websites or repair the app.").font(.caption)
+                Text("Jarvis can choose tools to read app information, installed model names and matching conversation excerpts, or calculate bounded arithmetic. All reasoning stays on your iPhone. This does not send messages, edit files, access websites or repair the app.").font(.caption)
                 Text("Experimental: small local models can skip needed tools or misread results. Inspect the recorded evidence; an answer is not verified just because the task finished.").font(.caption).foregroundStyle(.orange)
+                Text("For arithmetic, use Calculate followed by the expression. Numbers, signs and parentheses must match; word-problem translations are not verified.").font(.caption)
                 Text("Uses your selected installed local model. Saved task records stay in Orivyn; no external actions are available.").font(.caption)
                 TextEditor(text: $goal).frame(minHeight: 80).accessibilityIdentifier("agent.goal")
                 Text("\(goal.utf8.count)/512 bytes").font(.caption2)

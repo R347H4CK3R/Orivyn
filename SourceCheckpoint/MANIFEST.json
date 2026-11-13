@@ -65,6 +65,16 @@
     "sha256": "3474bef00ec5ecbd10e7d08c27aaa266027edacdc12c18bfe8d9f3ce39d03290"
   },
   {
+    "path": "JarvisEVO/Core/LocalCalculatorRequest.swift",
+    "bytes": 2491,
+    "sha256": "9133d8ba904b218106613078e244097af66063dcd647d5e62d4bb35fb95f2e44"
+  },
+  {
+    "path": "JarvisEVO/Core/LocalCalculatorTool.swift",
+    "bytes": 1407,
+    "sha256": "cbd979fc05d0f22250e53ec5d55efb36a597363e3ecc34357775e64f26c5a23e"
+  },
+  {
     "path": "JarvisEVO/Core/LocalHeavyWork.swift",
     "bytes": 1023,
     "sha256": "22f57f9fa80ce2ff220528bf8d75416049bd6da2dc843a71d95b8cde93efd677"
@@ -216,13 +226,13 @@
   },
   {
     "path": "JarvisEVO/Resources/LocalAgentCore.js",
-    "bytes": 10197,
-    "sha256": "010555b26d8a1d8630f6fb6c576d273114ef7eda833c961ae495d8a3febe50a7"
+    "bytes": 10461,
+    "sha256": "553576be797ace53578ef943ef92e5c5a83e2e03396cab7e8f2abea044332f54"
   },
   {
     "path": "JarvisEVO/Resources/LocalAgentDecision.gbnf",
-    "bytes": 1044,
-    "sha256": "a9b5dcc0fedc97270b8936eb44e4bae5586824039be0318cf7d072b6c293c95f"
+    "bytes": 1190,
+    "sha256": "c67066b148a524bbb49c2f9e7f4caa083a4307fc8309aba0f2a2e7b1e6cdf49c"
   },
   {
     "path": "JarvisEVO/Resources/LocalReadRequestRouter.js",
@@ -266,8 +276,8 @@
   },
   {
     "path": "JarvisEVO/Services/LocalAgentSession.swift",
-    "bytes": 9433,
-    "sha256": "fe9bd5b707b0b59550720759c313c56687960a06bb055dbe959fff5071a464ae"
+    "bytes": 9592,
+    "sha256": "e7a7503c441b7217baec58082c6a3ae9c512af5aa27653cd46b6b86961853227"
   },
   {
     "path": "JarvisEVO/Services/LocalAgentStore.swift",
@@ -276,8 +286,8 @@
   },
   {
     "path": "JarvisEVO/Services/LocalReadTools.swift",
-    "bytes": 5270,
-    "sha256": "821bf544f3f08b3e27e74183bb08724639e6d18f023b7e6c1e8cf0521cf9d755"
+    "bytes": 5559,
+    "sha256": "9aee2f5af5e49ac7ef162a53464576de5038a7b6be76b8020cde57c2f574eb4c"
   },
   {
     "path": "JarvisEVO/Services/MCPHTTPClient.swift",
@@ -371,8 +381,8 @@
   },
   {
     "path": "JarvisEVO/UI/LocalAgentView.swift",
-    "bytes": 6391,
-    "sha256": "cd72351ca70adf8b1da8b038db1474f00031c62fa1e574088920723585c3c8d0"
+    "bytes": 6608,
+    "sha256": "46ddaca4310863d45835aabb765257bfab2157cfc0c7e490f6967a79f9d8a034"
   },
   {
     "path": "JarvisEVO/UI/MessageRow.swift",
@@ -505,9 +515,19 @@
     "sha256": "51be27d9ab729080aac0ace5aa33fbbf32811792fc0a59bbb4c680e182ff1f30"
   },
   {
+    "path": "Tests/LocalCalculatorRequestTests.swift",
+    "bytes": 3754,
+    "sha256": "abb491084d2805ba1eb813d9e75a8c9948149bcb59aecb11353711fee6c457b3"
+  },
+  {
     "path": "Tests/LocalCalculatorTests.swift",
     "bytes": 3695,
     "sha256": "c3a4b4519736c71f5f0811f903feb906518b9c16bca4cfd5ed204a4f863ad2e0"
+  },
+  {
+    "path": "Tests/LocalCalculatorToolTests.swift",
+    "bytes": 2337,
+    "sha256": "4d3b5746fd961b9937f46ca0882cee3678b814c43b39015f2c48dda9da61794e"
   },
   {
     "path": "Tests/LocalHeavyWorkTests.swift",
@@ -741,8 +761,8 @@
   },
   {
     "path": "scripts/agent-tests/core.test.cjs",
-    "bytes": 12288,
-    "sha256": "3edd492f0c3663cac33acca278ac410c08f54bdf34366ef3bb9266eb9b33b946"
+    "bytes": 14450,
+    "sha256": "3e0e307b5fd35de7d202b4177181d9055f06e7f3e3900eb93d9fd8d7e311508f"
   },
   {
     "path": "scripts/agent-tests/local-read-router.test.cjs",
@@ -781,13 +801,13 @@
   },
   {
     "path": "scripts/run_foundation_tests.py",
-    "bytes": 4979,
-    "sha256": "06f55b14f94a1d83dbbeddba5ad2800678fe26a07b5982d8d6fb00599af2bb56"
+    "bytes": 5153,
+    "sha256": "4dad3813bac6507c71afb99c2dc9dc843576fa948747b21e9e8a41f44b762b50"
   },
   {
     "path": "scripts/run_llama_engine_smoke.py",
-    "bytes": 4532,
-    "sha256": "5a7643c64603451d6380eb175b587528a71b6886f72bfd8124499ac257860472"
+    "bytes": 5630,
+    "sha256": "699fd944a6f42625616645c7ff765092af371fe429830cbf66c31dcf70b5a345"
   },
   {
     "path": "scripts/run_observation_smoke.py",
@@ -816,8 +836,8 @@
   },
   {
     "path": "scripts/run_virtual_desktop_gate.sh",
-    "bytes": 5687,
-    "sha256": "e2f2d8c69590c235df23db5390687fad21902297112e13357f68e56ff23b002c"
+    "bytes": 5806,
+    "sha256": "b2bb76c4cddb959e8a634f08f5229ee55577b04bcbc59fffa5a09b375f79b244"
   },
   {
     "path": "scripts/run_voice_smoke.py",
@@ -828,6 +848,16 @@
     "path": "scripts/swift-smoke/AgentBridge.swift",
     "bytes": 1706,
     "sha256": "f62b664216f042b4e29fe75c8d8feac82a58441b84c462af4bc4a04fa19e6ef5"
+  },
+  {
+    "path": "scripts/swift-smoke/CalculatorAgentCore.cjs",
+    "bytes": 370,
+    "sha256": "8a3509ab199e23d00e4dc2fd26886a0ea6e1f183a82eff25884defb5cd0ee808"
+  },
+  {
+    "path": "scripts/swift-smoke/CalculatorAgentSmoke.swift",
+    "bytes": 5525,
+    "sha256": "22d80c0538d76309e9bcfc4675291c8d3c2b9c6716d7042c774c8ee3a1df01d5"
   },
   {
     "path": "scripts/swift-smoke/CatalogInferenceSmoke.swift",

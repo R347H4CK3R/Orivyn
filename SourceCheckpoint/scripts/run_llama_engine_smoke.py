@@ -3,7 +3,7 @@
 No downloads, no model substitute, no Apple framework/device verification.
 """
 import argparse,hashlib,json,os,pathlib,subprocess,shutil,time
-SOURCES=['JarvisEVO/Providers/Local/LlamaEngine.swift','JarvisEVO/Providers/Local/LocalPromptBuilder.swift',
+SOURCES=['JarvisEVO/Core/LocalCalculatorRequest.swift','JarvisEVO/Core/LocalCalculator.swift','JarvisEVO/Core/LocalCalculatorTool.swift','JarvisEVO/Core/MCPTypes.swift','JarvisEVO/Core/MCPToolSchema.swift','JarvisEVO/Providers/Local/LlamaEngine.swift','JarvisEVO/Providers/Local/LocalPromptBuilder.swift',
  'JarvisEVO/Providers/Local/UTF8TokenAccumulator.swift','JarvisEVO/Providers/Local/LocalModelCatalog.swift',
  'JarvisEVO/Providers/Local/LocalModelCatalogData.swift','JarvisEVO/Core/AIProvider.swift',
  'JarvisEVO/Core/MemoryContextBuilder.swift','JarvisEVO/Core/Conversation.swift','JarvisEVO/Core/MemoryNote.swift','JarvisEVO/Core/ImageOCRResult.swift',
@@ -11,10 +11,14 @@ SOURCES=['JarvisEVO/Providers/Local/LlamaEngine.swift','JarvisEVO/Providers/Loca
  'JarvisEVO/Core/LocalAgentGrammar.swift','JarvisEVO/Core/LocalAgentError.swift','scripts/swift-smoke/LlamaEngineSmoke.swift']
 def main():
  p=argparse.ArgumentParser(description=__doc__)
- p.add_argument('--scenario',choices=['engine','qwen-mode'],default='engine')
+ p.add_argument('--scenario',choices=['engine','qwen-mode','calculator-agent'],default='engine')
  for n in ['swiftc','runtime','headers','model','output']:p.add_argument('--'+n,required=True,type=pathlib.Path)
  a=p.parse_args();root=pathlib.Path(__file__).resolve().parents[1];out=a.output.resolve();out.mkdir(parents=True,exist_ok=False);manifest=[];files=[]
- sources = [n for n in SOURCES if n != 'scripts/swift-smoke/LlamaEngineSmoke.swift'] + ['scripts/swift-smoke/QwenModeSmoke.swift'] if a.scenario == 'qwen-mode' else SOURCES
+ sources = list(SOURCES)
+ if a.scenario != 'engine':
+  driver = 'QwenModeSmoke.swift' if a.scenario == 'qwen-mode' else 'CalculatorAgentSmoke.swift'
+  sources = [n for n in sources if n != 'scripts/swift-smoke/LlamaEngineSmoke.swift'] + ['scripts/swift-smoke/'+driver]
+ if a.scenario == 'calculator-agent': sources += ['JarvisEVO/Services/LocalAgentStore.swift']
  for n in sources:
   b=(root/n).read_bytes();dest=out/pathlib.Path(n).name;dest.write_bytes(b);files.append(str(dest));manifest.append({'source':n,'sha256':hashlib.sha256(b).hexdigest(),'bytes':len(b)})
  # Bundle.main on this Linux command-line host finds resources beside the executable.
@@ -22,6 +26,10 @@ def main():
  resource='JarvisEVO/Resources/LocalAgentDecision.gbnf'
  b=(root/resource).read_bytes();(out/'LocalAgentDecision.gbnf').write_bytes(b)
  manifest.append({'source':resource,'sha256':hashlib.sha256(b).hexdigest(),'bytes':len(b)})
+ if a.scenario == 'calculator-agent':
+  for resource in ['JarvisEVO/Resources/LocalAgentCore.js','scripts/swift-smoke/CalculatorAgentCore.cjs']:
+   b=(root/resource).read_bytes();(out/pathlib.Path(resource).name).write_bytes(b)
+   manifest.append({'source':resource,'sha256':hashlib.sha256(b).hexdigest(),'bytes':len(b)})
  module=out/'llama';module.mkdir();shutil.copytree(a.headers,module/'include')
  (module/'module.modulemap').write_text('module llama [system] { header "include/llama.h" link "llama" export * }\n')
  for f in sorted((module/'include').glob('*.h')):
@@ -35,6 +43,11 @@ def main():
  runtime=a.runtime.resolve()
  (out/'RUNTIME-MODEL-MANIFEST.json').write_text(json.dumps({'model':digest(a.model),'additionalModels':[digest(a.model.parent/n) for n in ['Qwen3-0.6B-Q8_0.gguf','Qwen3-1.7B-Q8_0.gguf']] if a.scenario == 'qwen-mode' else [],'libraries':[digest(f) for f in sorted(runtime.glob('*.so'))]},indent=2)+'\n')
  env=dict(os.environ,LD_LIBRARY_PATH=str(runtime),CLANG_MODULE_CACHE_PATH=str(out/'module-cache'))
+ if a.scenario == 'calculator-agent':
+  node=shutil.which('node')
+  if not node: raise RuntimeError('Explicit host Node runtime required for reducer bridge')
+  env['ORIVYN_TEST_NODE']=node
+  (out/'NODE-RUNTIME.json').write_text(json.dumps({'path':node,'version':subprocess.run([node,'--version'],capture_output=True,text=True,check=True).stdout.strip()},indent=2)+'\n')
  command=[str(a.swiftc),'-swift-version','6','-parse-as-library','-module-cache-path',str(out/'module-cache'),'-I',str(module),'-L',str(runtime),'-lllama','-lggml','-Xlinker','-rpath','-Xlinker',str(runtime),*files,'-o',str(out/'llama-engine-smoke')]
  (out/'COMMAND.json').write_text(json.dumps(command,indent=2)+'\n')
  version=subprocess.run([str(a.swiftc),'--version'],capture_output=True,text=True,check=True)

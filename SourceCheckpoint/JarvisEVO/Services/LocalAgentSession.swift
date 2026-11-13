@@ -125,7 +125,9 @@ final class LocalAgentSession {
                     let accepted = try core.snapshot(next)
                     if accepted.status == "ready" { continue } // Reducer-only saved-result paging, never a native tool.
                     guard accepted.status == "running", let pending = accepted.pending else { break }
-                    status = "Reading locally: \(pending.name) · step \(accepted.steps)/6"
+                    status = pending.name == "calculate"
+                        ? "Calculating locally · step \(accepted.steps)/6"
+                        : "Reading locally: \(pending.name) · step \(accepted.steps)/6"
                     let result = try executeLocalTool(pending)
                     try checkOwner(identity)
                     let encoded = try MCPJSONValue.object(["operationID": .string(pending.operationID), "result": .string(result)]).encoded(maximumBytes: 32_768)
@@ -167,7 +169,7 @@ final class LocalAgentSession {
     }
 
     private func executeLocalTool(_ pending: LocalAgentSnapshot.Intent) throws -> String {
-        try LocalReadTools.execute(name: pending.name, arguments: pending.arguments, model: model, resultByteLimit: 4096)
+        try LocalReadTools.execute(name: pending.name, arguments: pending.arguments, model: model, resultByteLimit: 4096, trustedGoal: snapshot?.goal)
     }
 
 }
