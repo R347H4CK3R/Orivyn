@@ -181,8 +181,8 @@
   },
   {
     "path": "JarvisEVO/Providers/RemoteStreamDecoding.swift",
-    "bytes": 5464,
-    "sha256": "f0019059aba01d34966652cee1918ab31cb577b42d3661c3cb89189c8f5dd8e8"
+    "bytes": 7047,
+    "sha256": "9dfb18588b3daf6946a8da50af499b8f192eafa757ee6a080842ab122623d015"
   },
   {
     "path": "JarvisEVO/Resources/LocalAgentCore.js",
@@ -551,8 +551,8 @@
   },
   {
     "path": "Tests/ProviderTests.swift",
-    "bytes": 6525,
-    "sha256": "1f6d7385cee4136ffcf9f3ff117f2ce63ed3fd2a8a7936da289f48a5580606e7"
+    "bytes": 8946,
+    "sha256": "6fa40b5448dcc54e617192b187acbef8dd6bb02c3711eff94f46e835080caef6"
   },
   {
     "path": "Tests/ReminderSchedulerTests.swift",

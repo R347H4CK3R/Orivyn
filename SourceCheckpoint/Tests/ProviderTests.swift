@@ -76,7 +76,7 @@ final class ProviderTests: XCTestCase {
     }
     func testSSEByteDecoderHandlesFragmentedUTF8() throws {
         var decoder = SSEByteDecoder()
-        let bytes = Array("data: {\"choices\":[{\"delta\":{\"content\":\"€\"}}]}\r\n".utf8)
+        let bytes = Array("data: {\"choices\":[{\"delta\":{\"content\":\"€\"}}]}\r\n\r\n".utf8)
         var events: [SSEEvent] = []
         for byte in bytes { if let event = try decoder.consume(byte: byte) { events.append(event) } }
         XCTAssertEqual(events, [.token("€")])
@@ -92,7 +92,7 @@ final class ProviderTests: XCTestCase {
             let lines = [#"data: {"choices":[{"delta":{"content":"café 🦉"}}]}"#,
                          #"data: {"choices":[{"delta":{},"finish_reason":"stop"}]}"#, "data: [DONE]"]
             var events: [SSEEvent] = []
-            for byte in (lines.joined(separator: ending) + ending).utf8 {
+            for byte in (lines.joined(separator: ending + ending) + ending + ending).utf8 {
                 if let event = try decoder.consume(byte: byte) { events.append(event) }
             }
             XCTAssertEqual(events, [.token("café 🦉"), .ignored, .done], ending.debugDescription)
@@ -107,8 +107,53 @@ final class ProviderTests: XCTestCase {
             XCTAssertNoThrow(try (line + ending).utf8.forEach { byte in
                 if let event = try decoder.consume(byte: byte) { events.append(event) }
             })
-            XCTAssertEqual(events, [.ignored])
+            XCTAssertEqual(events, [])
         }
+    }
+
+    func testSSEMultilineJSONDispatchesOnlyAtBlankLine() throws {
+        var decoder = SSEByteDecoder()
+        let source = "data: {\"choices\": [\n" + "data: {\"delta\":{\"content\":\"joined\"}}]}\n"
+        for byte in source.utf8 { XCTAssertNil(try decoder.consume(byte: byte)) }
+        XCTAssertEqual(try decoder.consume(byte: 10), .token("joined"))
+    }
+
+    func testSSEInitialUTF8BOMDoesNotDiscardFirstToken() throws {
+        var decoder = SSEByteDecoder()
+        let source = "\u{feff}" + #"data: {"choices":[{"delta":{"content":"first"}}]}"# + "\n\n"
+        var events: [SSEEvent] = []
+        for byte in source.utf8 { if let event = try decoder.consume(byte: byte), event != .ignored { events.append(event) } }
+        XCTAssertEqual(events, [.token("first")])
+    }
+
+    func testSSEDoneIsNotAcceptedUntilItsEventTerminator() throws {
+        var decoder = SSEByteDecoder()
+        let stop = #"data: {"choices":[{"delta":{},"finish_reason":"stop"}]}"# + "\n\n"
+        for byte in stop.utf8 { _ = try decoder.consume(byte: byte) }
+        for byte in "data: [DONE]\n".utf8 { XCTAssertNil(try decoder.consume(byte: byte)) }
+        XCTAssertEqual(try decoder.consume(byte: 10), .done)
+    }
+
+    func testSSEEventBudgetIncludesInsertedNewlinesAcrossShortLines() throws {
+        var decoder = SSEByteDecoder(maximumLineBytes: 32, maximumEventBytes: 12)
+        for byte in "data:123456\n".utf8 { XCTAssertNil(try decoder.consume(byte: byte)) }
+        for byte in "data:123456".utf8 { XCTAssertNil(try decoder.consume(byte: byte)) }
+        XCTAssertThrowsError(try decoder.consume(byte: 10))
+    }
+
+    func testSSECommentsAndMetadataBetweenDataLinesDoNotAlterPayload() throws {
+        var decoder = SSEByteDecoder()
+        let source = "data:{\"choices\":[\r\n: keep alive\r\nid: 17\r\nretry: 500\r\nevent: message\r\n" +
+            #"data:{"delta":{"content":"literal + café"}}]}"# + "\r\n\r\n"
+        var events: [SSEEvent] = []
+        for byte in source.utf8 { if let event = try decoder.consume(byte: byte) { events.append(event) } }
+        XCTAssertEqual(events, [.token("literal + café")])
+    }
+
+    func testSSEInvalidUTF8IsRejectedBeforeDispatch() throws {
+        var decoder = SSEByteDecoder()
+        for byte in [UInt8(100), 97, 116, 97, 58, 0xff] { XCTAssertNil(try decoder.consume(byte: byte)) }
+        XCTAssertThrowsError(try decoder.consume(byte: 10))
     }
 
     func testMissingOrEmptyRemoteModelIsRejected() {

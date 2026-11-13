@@ -73,29 +73,65 @@ struct SSEDecoder {
     }
 }
 
-/// Bounds each event while receiving bytes, before a remote peer can allocate an unbounded line.
+/// Bounded SSE line and event framing. Only a blank line dispatches data;
+/// incomplete events at EOF never become a completed provider response.
 struct SSEByteDecoder {
     private var bytes: [UInt8] = []
     private var decoder = SSEDecoder()
     private var previousWasCR = false
+    private var firstLine = true
+    private var eventData = ""
+    private var eventBytes = 0
+    private var hasData = false
     let maximumLineBytes: Int
-    init(maximumLineBytes: Int = 1_000_000) { self.maximumLineBytes = maximumLineBytes }
+    let maximumEventBytes: Int
+    init(maximumLineBytes: Int = 1_000_000, maximumEventBytes: Int = 999_995) {
+        self.maximumLineBytes = max(0, maximumLineBytes)
+        // SSEDecoder's payload interface adds the five-byte data: field prefix.
+        self.maximumEventBytes = max(0, min(999_995, maximumEventBytes))
+    }
     mutating func consume(byte: UInt8) throws -> SSEEvent? {
-        // SSE permits LF, CRLF and lone CR. A CR dispatches immediately; only
-        // its following LF is swallowed, so delimiters never consume line budget.
         if previousWasCR {
             previousWasCR = false
             if byte == 10 { return nil }
         }
         if byte == 10 || byte == 13 {
             previousWasCR = byte == 13
-            guard let line = String(bytes: bytes, encoding: .utf8) else { throw ProviderError.invalidResponse }
+            guard var line = String(bytes: bytes, encoding: .utf8) else { throw ProviderError.invalidResponse }
             bytes.removeAll(keepingCapacity: true)
-            return try decoder.consume(line: line)
+            if firstLine {
+                firstLine = false
+                if line.unicodeScalars.first?.value == 0xfeff { line.unicodeScalars.removeFirst() }
+            }
+            return try consumeLine(line)
         }
         guard bytes.count < maximumLineBytes else { throw ProviderError.invalidResponse }
         bytes.append(byte)
         return nil
     }
+    private mutating func consumeLine(_ line: String) throws -> SSEEvent? {
+        if line.isEmpty {
+            guard hasData else { return nil }
+            let payload = eventData
+            eventData = ""; eventBytes = 0; hasData = false
+            return try decoder.consume(line: "data:" + payload)
+        }
+        // Ignore comments and unknown/metadata fields. They never become model text.
+        let raw = line.utf8
+        var value: String
+        if raw.elementsEqual("data".utf8) { value = "" }
+        else if raw.starts(with: "data:".utf8) {
+            let payload = raw.dropFirst(5)
+            value = String(decoding: payload.first == 32 ? payload.dropFirst() : payload, as: UTF8.self)
+        } else { return nil }
+        let separatorBytes = hasData ? 1 : 0
+        let count = value.utf8.count
+        guard separatorBytes <= maximumEventBytes - eventBytes,
+              count <= maximumEventBytes - eventBytes - separatorBytes else { throw ProviderError.invalidResponse }
+        if hasData { eventData += "\n" }
+        eventData += value
+        eventBytes += count + separatorBytes
+        hasData = true
+        return nil
+    }
 }
-
