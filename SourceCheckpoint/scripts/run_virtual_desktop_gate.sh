@@ -32,6 +32,7 @@ xcodebuild -project JarvisEVO.xcodeproj -scheme JarvisEVO \
   -only-testing:JarvisEVOTests/LocalInferenceTests \
   -only-testing:JarvisEVOTests/LocalPromptBuilderTests \
   -only-testing:JarvisEVOTests/AttachmentTextSearchTests \
+  -only-testing:JarvisEVOTests/MemoryNoteTests \
   -only-testing:JarvisEVOTests/MemoryContextBuilderTests \
   -only-testing:JarvisEVOTests/AppModelTests/testLargeMemoryLibraryUsesBoundedRelevantContextWithoutDeletingNotes \
   -only-testing:JarvisEVOTests/LocalSearchExcerptTests \

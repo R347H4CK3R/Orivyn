@@ -4,11 +4,20 @@ Requires an already-installed Swift6 toolchain; does not download or dispatch CI
 """
 import argparse, hashlib, json, os, pathlib, subprocess, sys
 SOURCES = [
+ 'JarvisEVO/Core/MemoryNote.swift',
+ 'JarvisEVO/Core/MemorySearch.swift',
+ 'JarvisEVO/Core/MemoryContextBuilder.swift',
+ 'JarvisEVO/Core/AutomaticModelRouter.swift',
+ 'JarvisEVO/Providers/Local/LocalModelCatalog.swift',
+ 'JarvisEVO/Providers/Local/LocalModelCatalogData.swift',
+ 'JarvisEVO/Core/NativeToolSuggestion.swift',
+ 'JarvisEVO/Core/NativeToolDrafts.swift',
+ 'JarvisEVO/Core/FeedbackDraft.swift',
  'JarvisEVO/Core/AttachmentTextSearch.swift',
  'JarvisEVO/Core/LocalSearchExcerpt.swift',
  'JarvisEVO/Providers/Local/UTF8TokenAccumulator.swift',
 ]
-TESTS = ['Tests/AttachmentTextSearchTests.swift','Tests/LocalSearchExcerptTests.swift','Tests/UTF8TokenAccumulatorTests.swift']
+TESTS = ['Tests/MemoryNoteTests.swift','Tests/MemorySearchTests.swift','Tests/MemoryContextBuilderTests.swift','Tests/AutomaticModelRouterTests.swift','Tests/LocalModelCatalogTests.swift','Tests/NativeToolSuggestionTests.swift','Tests/NativeToolDraftsTests.swift','Tests/FeedbackDraftTests.swift','Tests/AttachmentTextSearchTests.swift','Tests/LocalSearchExcerptTests.swift','Tests/UTF8TokenAccumulatorTests.swift']
 PACKAGE = '''// swift-tools-version: 6.0
 import PackageDescription
 let package = Package(name: "OrivynFoundationProof", products: [.library(name: "JarvisEVO", targets: ["JarvisEVO"])], targets: [.target(name: "JarvisEVO"), .testTarget(name: "JarvisEVOTests", dependencies: ["JarvisEVO"])])

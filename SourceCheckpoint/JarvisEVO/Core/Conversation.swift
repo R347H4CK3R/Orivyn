@@ -94,12 +94,6 @@ struct Conversation: Codable, Identifiable, Equatable, Sendable {
     }
 }
 
-struct MemoryNote: Codable, Identifiable, Equatable, Sendable {
-    var id: UUID = UUID()
-    var content: String
-    var createdAt: Date = Date()
-}
-
 enum BackupImportPolicy: Sendable { case preserveLocal, replaceMatching }
 
 struct BackupImportSummary: Sendable {

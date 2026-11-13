@@ -10,14 +10,24 @@
     "sha256": "50ac56335b1e4469907d4e241bba210f198a234135c8f24f5808344ad6bf1e7a"
   },
   {
+    "path": "JarvisEVO/Core/AutomaticModelRouter.swift",
+    "bytes": 7371,
+    "sha256": "fd113d28b1d7760b561898c16797b727d995964cae93d95c12fedaa768ed1e94"
+  },
+  {
     "path": "JarvisEVO/Core/Conversation.swift",
-    "bytes": 6739,
-    "sha256": "ad9bd992fb90d622469e24b6a4c2a815e2afbffc9797ffbd7c8e26a7a1dab65a"
+    "bytes": 6589,
+    "sha256": "22cf5c4d225af7d25710dcb9c18b1a6a00482f3ac39ffce46fc3c4390d41bd32"
   },
   {
     "path": "JarvisEVO/Core/ConversationSearch.swift",
     "bytes": 991,
     "sha256": "777ad27a00fd365acd64a3bfb9bf1181a06a1375ee0b7542eb633738a55ecb84"
+  },
+  {
+    "path": "JarvisEVO/Core/FeedbackDraft.swift",
+    "bytes": 2352,
+    "sha256": "516810d5aea2080c479f2639c5f5ae571d9000b07238df40b8647412f290774c"
   },
   {
     "path": "JarvisEVO/Core/LocalAgentGrammar.swift",
@@ -40,9 +50,24 @@
     "sha256": "012fb40ea3365fd701927d8623d84e9cc84e023b117aa54a0ffe8d48c333aeed"
   },
   {
+    "path": "JarvisEVO/Core/MemoryNote.swift",
+    "bytes": 168,
+    "sha256": "cccceaa84d497af02f1d466968300a7281f354b4b5e1a1ae913b403023f8967f"
+  },
+  {
     "path": "JarvisEVO/Core/MemorySearch.swift",
     "bytes": 769,
     "sha256": "4d420618f01eee110a9669689f97fe72107c46d28de8e89a03003c113cb1d5f4"
+  },
+  {
+    "path": "JarvisEVO/Core/NativeToolDrafts.swift",
+    "bytes": 5085,
+    "sha256": "08423ecee3657178f130cb6ce5f7752df086140d4c1cd7ccf716d7f02d068117"
+  },
+  {
+    "path": "JarvisEVO/Core/NativeToolSuggestion.swift",
+    "bytes": 1813,
+    "sha256": "2a427779fa750656eee7f986a67736a50195b761d8f00041e7f772a29cc3e261"
   },
   {
     "path": "JarvisEVO/Core/OCRLineEvidence.swift",
@@ -83,6 +108,11 @@
     "path": "JarvisEVO/Providers/Local/LocalModelCatalog.swift",
     "bytes": 4735,
     "sha256": "ec5c2d740ba00a3e88e1a7c66e8d7f0f00f513c07f32d57bf15676f35771077b"
+  },
+  {
+    "path": "JarvisEVO/Providers/Local/LocalModelCatalogData.swift",
+    "bytes": 10947,
+    "sha256": "a1f030679978e39860f4ce6e38251e4b2045867d27dba04f44d31321d2f9aa99"
   },
   {
     "path": "JarvisEVO/Providers/Local/LocalPromptBuilder.swift",
@@ -305,6 +335,11 @@
     "sha256": "e963383bd19063db2e36d8888d51433c5e09528a8a91462e0ff8189500c86dc5"
   },
   {
+    "path": "Tests/AutomaticModelRouterTests.swift",
+    "bytes": 13704,
+    "sha256": "09f6f59fb39bb3ff151c7986331281f33663666ee50982b393ac1eabb7b46a04"
+  },
+  {
     "path": "Tests/BackupFileReaderTests.swift",
     "bytes": 2017,
     "sha256": "ad85fe816ce2fd3e5ebc61f5e773a9557a523ae1d6ce36548003f6801cdd1934"
@@ -323,6 +358,11 @@
     "path": "Tests/ConversationSearchTests.swift",
     "bytes": 994,
     "sha256": "151cbbc644cf81078c3b18b95d8e46e0fc10184ac99884b01a3ad1105fe00cae"
+  },
+  {
+    "path": "Tests/FeedbackDraftTests.swift",
+    "bytes": 1828,
+    "sha256": "3511cc7b87b0e20f3b137cff44b87a6dd07634265745d7b0acfb5e395747d593"
   },
   {
     "path": "Tests/LocalAgentCoreTests.swift",
@@ -345,6 +385,11 @@
     "sha256": "e89792b33eab14120a517d318519e3bf2da253adabdab7667bbbe9b00dfa4e2b"
   },
   {
+    "path": "Tests/LocalModelCatalogTests.swift",
+    "bytes": 2118,
+    "sha256": "9935062016e9e40b4e0f26c156adfb7c613bb8c3a5a923a5136901b12b9a30da"
+  },
+  {
     "path": "Tests/LocalSearchExcerptTests.swift",
     "bytes": 2694,
     "sha256": "5de94645a1a564deb06dbde8560647bfa284ccceeb060d6fe09dd23f791c0b55"
@@ -355,9 +400,24 @@
     "sha256": "e1627ceff78ce2593b15d9192d0064169b9638ec7c5ecf81872c74b9d0a9eb8d"
   },
   {
+    "path": "Tests/MemoryNoteTests.swift",
+    "bytes": 1102,
+    "sha256": "c9ce988e2899412b9701db20bcebd9d109cb2c81380a5ffe1cba2e637d06904d"
+  },
+  {
     "path": "Tests/MemorySearchTests.swift",
     "bytes": 839,
     "sha256": "ce36e312564464ce50d64d9b600c13339adadfe5fe97de426ceeefbb296a680c"
+  },
+  {
+    "path": "Tests/NativeToolDraftsTests.swift",
+    "bytes": 9129,
+    "sha256": "8a634bc84906afe5b77af6d4dd5c6a733568cf3764704684aecaba6f514ba684"
+  },
+  {
+    "path": "Tests/NativeToolSuggestionTests.swift",
+    "bytes": 3596,
+    "sha256": "def04f100a9015a0ae63035ca807da76b596de3d337ff3698daf5065a4742c1a"
   },
   {
     "path": "Tests/OCRLineEvidenceTests.swift",
@@ -486,8 +546,8 @@
   },
   {
     "path": "scripts/run_foundation_tests.py",
-    "bytes": 2444,
-    "sha256": "c5722636fed66b22b053b25b03638350a5c4ef53e28f442717c2c33a79b27361"
+    "bytes": 3137,
+    "sha256": "5ff7a7f0cf3b8e0654d8f3037218510a3ea0b033e3414f6be6e55342863b1118"
   },
   {
     "path": "scripts/run_self_knowledge_gate.sh",
@@ -496,8 +556,8 @@
   },
   {
     "path": "scripts/run_virtual_desktop_gate.sh",
-    "bytes": 4104,
-    "sha256": "edb1ef96b85cc10050d00b466032baf0fbfc07459a16c27e4fbcd47079815e2c"
+    "bytes": 4153,
+    "sha256": "9e71f2766dfa09ff3e4b5808b7edad09d83259ae817be7be75df2dc55ef3d0b8"
   },
   {
     "path": "scripts/tests/test_attachment_fitting_contract.py",
