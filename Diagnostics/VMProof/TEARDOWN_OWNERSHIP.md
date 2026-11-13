@@ -1,0 +1,4 @@
+# Teardown and input ownership regression
+Two real controller races were reproduced with failing tests: repeated stop returned before outstanding engine destruction; checkpoint/input admission could overlap an outstanding keyboard transfer. Controller now shares the same teardown promise across callers and excludes checkpoint/concurrent input during key transfer. These are prerequisites for safe shipping resource-lease handoff, not proof of WebKit process reclamation.
+
+Local full JS suite31tests passes,15assetpins and3materializer tests pass. Native verification and complete shipping integration remain pending, with4freeCodemagicminutes and exhausted privateGitHubActions allowance. No paid billing or tests bypassed. Guest focused-window source candidate remains as documented in FOCUS_REVISION.md; this commit does not replace the current guest image fixture.

@@ -17,3 +17,18 @@ test('diagnostic console emits only fixed guest key chord',async()=>{
  const starting=c.start();await new Promise(r=>setImmediate(r));ready();await starting;
  await c.diagnosticConsole();assert.deepEqual(events,[[0x1d,0x38,0x3b,0xbb,0xb8,0x9d]]);await c.stop();await assert.rejects(()=>c.diagnosticConsole());
 });
+test('repeated stop waits for the same outstanding engine destruction',async()=>{
+ const f=fixture();const p=f.controller.start();await Promise.resolve();f.ready();await p;
+ let finish;f.vm.destroy=()=>new Promise(r=>finish=r);
+ const first=f.controller.stop();let secondDone=false;const second=f.controller.stop().then(()=>secondDone=true);
+ await new Promise(r=>setImmediate(r));assert.equal(secondDone,false,'second caller must not release its lease before teardown');
+ finish();await Promise.all([first,second]);assert.equal(f.events.filter(e=>e.event==='stopped').length,1);
+});
+test('checkpoint and concurrent input cannot race an outstanding key transfer',async()=>{
+ const f=fixture();const p=f.controller.start();await Promise.resolve();f.ready();await p;
+ let finish;f.vm.keyboard_send_text=()=>new Promise(r=>finish=r);
+ const typing=f.controller.type('slow');let saved=false;global.OfflineVMCheckpoint={save:async()=>{saved=true}};
+ await assert.rejects(f.controller.saveCheckpoint(async()=>{},{}));assert.equal(saved,false);
+ await assert.rejects(f.controller.type('overlap'));await assert.rejects(f.controller.diagnosticConsole());
+ finish();await typing;await f.controller.saveCheckpoint(async()=>{},{});assert.equal(saved,true);await f.controller.stop();
+});

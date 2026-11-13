@@ -4,7 +4,7 @@ enum VMAssetCatalog {
     static let files: [VMAsset] = [
         VMAsset(name: "boot.js", bytes: 2206, sha256: "4dd89210d308c7bdf75155c02fc34cebd7b00d99807104b05b25faee174d0db2", mime: "text/javascript"),
         VMAsset(name: "checkpoint.js", bytes: 3298, sha256: "ce8dc3c1b8db165ebbdeb720f88da400e1b8ad719c88269ed24deee16a1fc0c7", mime: "text/javascript"),
-        VMAsset(name: "controller.js", bytes: 3579, sha256: "3101e7c80d45b6775892aac848a76e0f58bfd7b260b2fd0fac619090acc4f4f9", mime: "text/javascript"),
+        VMAsset(name: "controller.js", bytes: 3823, sha256: "044dc322f892ab9887744d93b07e8065fd072a5b6d3cf57a9065b4beed495cee", mime: "text/javascript"),
         VMAsset(name: "guest-console.js", bytes: 432, sha256: "88e3757c3c259a18f16862393bf41a33d2e0bd79c9ce9fe226fdaa36270d80f0", mime: "text/javascript"),
         VMAsset(name: "guest-profile.js", bytes: 448, sha256: "c07eaf7565b9ec61b2e109133ae8be311ba677d41953e055526c7d9e5705ecc5", mime: "text/javascript"),
         VMAsset(name: "index.html", bytes: 974, sha256: "ad139fe4513dc788958d0c7b5262778b9cba0775e6d00fb32add9eb474a5b3ad", mime: "text/html"),
