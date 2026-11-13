@@ -54,6 +54,13 @@ import llama
             try await generateAndPersist(memoryChat, system: "Answer from the saved notes. " + selected.text, expected: "silver badger", store: reopened, engine: engine, model: modelURL)
             print("PASS persisted memory selection grounds actual answer")
 
+            let unavailable = ChatAttachment(name: "unreadable.pdf", relativePath: "unreadable.pdf", mediaType: "application/pdf", byteCount: 32, extractedText: nil)
+            let unavailableChat = Conversation(title: "Unavailable document acceptance", messages: [
+                ChatMessage(role: .user, content: "What is the project codename in the attached document? If the attachment text is unavailable, reply only Unavailable. Do not guess.", attachments: [unavailable])
+            ])
+            try await generateAndPersist(unavailableChat, system: "Answer only from this conversation and its attachment data.", expected: "unavailable", store: reopened, engine: engine, model: modelURL)
+            print("PASS unavailable attachment explicitly acknowledged by actual model and persisted")
+
             // Exercise the actual branching/edit value operations against saved data.
             guard let originalComplete = try await reopened.load(id: history.id),
                   let firstUser = originalComplete.messages.first else { throw Failure.failed("Original chat missing") }
@@ -76,7 +83,7 @@ import llama
 
             let verified = try SQLiteConversationStore(url: database)
             let completed = try await verified.list(includeArchived: true)
-            guard completed.count == 4, completed.allSatisfy({ $0.messages.last?.role == .assistant && $0.messages.last?.state == .complete }) else {
+            guard completed.count == 5, completed.allSatisfy({ $0.messages.last?.role == .assistant && $0.messages.last?.state == .complete }) else {
                 throw Failure.failed("Completed responses did not survive reopen")
             }
             print("PASS generated complete responses survive separate connection reopen")
@@ -108,9 +115,10 @@ import llama
                 conversation.messages[index].content += piece
                 try await store.save(conversation)
             }
-            guard conversation.messages[index].content.lowercased().contains(expected) else {
+            guard conversation.messages[index].content.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == expected else {
                 throw Failure.failed("Unexpected actual answer: \(conversation.messages[index].content)")
             }
+            print("ACTUAL EXACT ANSWER: \(conversation.messages[index].content)")
             conversation.messages[index].state = .complete
             try await store.save(conversation)
         } catch {
