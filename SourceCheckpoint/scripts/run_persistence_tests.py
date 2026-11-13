@@ -5,7 +5,7 @@ Requires local Swift and official SQLite source inputs; never downloads or chang
 import argparse, hashlib, json, os, pathlib, subprocess
 SOURCES = ['JarvisEVO/Core/ConversationSearch.swift','JarvisEVO/Core/ImageOCRResult.swift','JarvisEVO/Core/Conversation.swift','JarvisEVO/Core/MemoryNote.swift',
  'JarvisEVO/Core/OCRLineEvidence.swift','JarvisEVO/Persistence/SQLiteConversationStore.swift']
-TESTS = ['Tests/PersistenceTests.swift','Tests/ConversationTests.swift','Tests/ConversationSearchTests.swift','Tests/OCRLineEvidenceTests.swift']
+TESTS = ['Tests/ImageIdentityPersistenceTests.swift','Tests/PersistenceTests.swift','Tests/ConversationTests.swift','Tests/ConversationSearchTests.swift','Tests/OCRLineEvidenceTests.swift']
 PACKAGE = '''// swift-tools-version: 6.0
 import PackageDescription
 let package = Package(name: "OrivynPersistenceProof", targets: [

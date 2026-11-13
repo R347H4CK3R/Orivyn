@@ -445,6 +445,11 @@
     "sha256": "3511cc7b87b0e20f3b137cff44b87a6dd07634265745d7b0acfb5e395747d593"
   },
   {
+    "path": "Tests/ImageIdentityPersistenceTests.swift",
+    "bytes": 5536,
+    "sha256": "246bc9589a5235af1323687f292b040fe036d0f223815a9edfb918aac1ebd32f"
+  },
+  {
     "path": "Tests/IncomingTextRequestTests.swift",
     "bytes": 2349,
     "sha256": "86d5072c8a7898d126c7105bdd79ab894884261e5f69765a341a7efe3226a3e7"
@@ -731,8 +736,8 @@
   },
   {
     "path": "scripts/run_persistence_tests.py",
-    "bytes": 2760,
-    "sha256": "71f422b81a088169f1a62b0992514cbcedfec1be14262137ad69e5199055f957"
+    "bytes": 2804,
+    "sha256": "1184aa9353036c0375432dfbbf3903fe16bed47f7f50b2584ce31c6f24205e84"
   },
   {
     "path": "scripts/run_self_knowledge_gate.sh",
@@ -741,8 +746,8 @@
   },
   {
     "path": "scripts/run_virtual_desktop_gate.sh",
-    "bytes": 5234,
-    "sha256": "b54271d6e0b5f0eec17974bff32b366a5f101eae9486ffcdd659e5a324d9307e"
+    "bytes": 5297,
+    "sha256": "17bf3517f9a72233b4107d7957da05c18e3fd5ae07d06c23f159ffb4c320dad8"
   },
   {
     "path": "scripts/swift-smoke/AgentBridge.swift",
