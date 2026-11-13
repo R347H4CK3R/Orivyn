@@ -35,6 +35,8 @@ xcodebuild -project JarvisEVO.xcodeproj -scheme JarvisEVO \
   -only-testing:JarvisEVOTests/MarkdownDocumentTests \
   -only-testing:JarvisEVOTests/RichMessageContentTests \
   -only-testing:JarvisEVOTests/UTF8TokenAccumulatorTests \
+  -only-testing:JarvisEVOTests/AutomaticPreparationTests \
+  -only-testing:JarvisEVOTests/PluginBrokerTests \
   -only-testing:JarvisEVOTests/LocalInferenceTests \
   -only-testing:JarvisEVOTests/LocalPromptBuilderTests \
   -only-testing:JarvisEVOTests/AttachmentTextSearchTests \
@@ -83,4 +85,4 @@ xcodebuild -project JarvisEVO.xcodeproj -scheme JarvisEVO \
   -only-testing:JarvisEVOUITests/VerifiedLocalReadUITests \
   -only-testing:JarvisEVOUITests/LocalAgentIntegrationUITests \
   -only-testing:JarvisEVOUITests/VirtualDesktopIntegrationUITests \
-  CODE_SIGNING_ALLOWED=NO test 2>&1 | tee "$OUT/native-tests.log"
+  CODE_SIGNING_ALLOWED=NO JARVIS_REQUIRE_REAL_INFERENCE=1 test 2>&1 | tee "$OUT/native-tests.log"

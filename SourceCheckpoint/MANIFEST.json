@@ -400,6 +400,11 @@
     "sha256": "09f6f59fb39bb3ff151c7986331281f33663666ee50982b393ac1eabb7b46a04"
   },
   {
+    "path": "Tests/AutomaticPreparationTests.swift",
+    "bytes": 12949,
+    "sha256": "4b721d49bd6ecb442aaeb3adc51f6487b07fbaaeb4f2861a63f191a4af6521ab"
+  },
+  {
     "path": "Tests/BackupFileReaderTests.swift",
     "bytes": 2017,
     "sha256": "ad85fe816ce2fd3e5ebc61f5e773a9557a523ae1d6ce36548003f6801cdd1934"
@@ -538,6 +543,11 @@
     "path": "Tests/PersistenceTests.swift",
     "bytes": 9452,
     "sha256": "a07d15469865a9a3170d955d7aa1c63ba47c5d5f94eae8faae88dec92dcd064c"
+  },
+  {
+    "path": "Tests/PluginBrokerTests.swift",
+    "bytes": 14546,
+    "sha256": "44b2a19d962c7ef5f1393b4a3479bfb7f0b23bdf6b6e12a0a08a05fb847089ad"
   },
   {
     "path": "Tests/PluginExecutionTests.swift",
@@ -686,8 +696,8 @@
   },
   {
     "path": "scripts/run_virtual_desktop_gate.sh",
-    "bytes": 4978,
-    "sha256": "ec4d4b1cd029a7b6a933e45500001bd9062826c533efa5b599202ab08bf45a7b"
+    "bytes": 5120,
+    "sha256": "422443011c74e2dd1e0dca60f11f0e77f3105e94f4679de59a3fe015dcd14b89"
   },
   {
     "path": "scripts/tests/test_attachment_fitting_contract.py",
@@ -753,6 +763,11 @@
     "path": "scripts/tests/test_memory_tool_contract.py",
     "bytes": 875,
     "sha256": "28d302842ae23342c3a1313a18846de00f9fe1a0e06ea7b583e03d10c4fc82a9"
+  },
+  {
+    "path": "scripts/tests/test_native_inference_requirement.py",
+    "bytes": 1089,
+    "sha256": "8ebf86ebc1dd219106d7336942731d96c9ccd8406c86dde266eb9c14f722a6d4"
   },
   {
     "path": "scripts/tests/test_persistence_integrity.py",
