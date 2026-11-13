@@ -47,6 +47,8 @@ xcodebuild -project JarvisEVO.xcodeproj -scheme JarvisEVO \
   -only-testing:JarvisEVOTests/LocalMemoryToolTests \
   -only-testing:JarvisEVOTests/BackupFileReaderTests \
   -only-testing:JarvisEVOTests/RuntimeDiagnosticsTests \
+  -only-testing:JarvisEVOTests/AppSelfKnowledgeTests \
+  -only-testing:JarvisEVOTests/SelfKnowledgePromptTests \
   -only-testing:JarvisEVOTests/PersistenceTests \
   -only-testing:JarvisEVOTests/ImageIdentityPersistenceTests \
   -only-testing:JarvisEVOTests/PluginExecutionTests \

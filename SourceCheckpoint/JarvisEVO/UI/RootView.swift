@@ -391,6 +391,7 @@ struct RootView: View {
         case .browser: BrowserToolView()
         case .location: LocationToolView()
         case .reminder: ScheduledRemindersView()
+        case .sourceInspection: RepositoryInspectionView()
         }
     }
 

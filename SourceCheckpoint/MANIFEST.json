@@ -5,6 +5,11 @@
     "sha256": "d2a6f7c17cd7c6069d30ddb8a0311a1f8b82106c45b8e66629a63646e9ea71d5"
   },
   {
+    "path": "JarvisEVO/Core/AppSelfKnowledge.swift",
+    "bytes": 2893,
+    "sha256": "1c29b9faa9e9bdabe67752981775d732ea93f273f9b8f9b6074294fd2e6627c6"
+  },
+  {
     "path": "JarvisEVO/Core/AttachmentTextSearch.swift",
     "bytes": 3256,
     "sha256": "50ac56335b1e4469907d4e241bba210f198a234135c8f24f5808344ad6bf1e7a"
@@ -111,8 +116,8 @@
   },
   {
     "path": "JarvisEVO/Core/NativeToolSuggestion.swift",
-    "bytes": 1813,
-    "sha256": "2a427779fa750656eee7f986a67736a50195b761d8f00041e7f772a29cc3e261"
+    "bytes": 1994,
+    "sha256": "46f36903eebe65307fdafb89671e40391a6897fc60acec306def4a3e996b1a75"
   },
   {
     "path": "JarvisEVO/Core/OCRLineEvidence.swift",
@@ -213,6 +218,11 @@
     "path": "JarvisEVO/Resources/LocalReadRequestRouter.js",
     "bytes": 4342,
     "sha256": "726071d990b821f50f53d025390fdc29df7651bf9870e3f7734be3016c894ef2"
+  },
+  {
+    "path": "JarvisEVO/Resources/OrivynCapabilities.json",
+    "bytes": 3458,
+    "sha256": "c4d81610b89bde9412bf927f4bc9bcf665ad7dac3639c735c5388444d59a1695"
   },
   {
     "path": "JarvisEVO/Resources/SourceRepairDraft.js",
@@ -361,8 +371,8 @@
   },
   {
     "path": "JarvisEVO/UI/RootView.swift",
-    "bytes": 39772,
-    "sha256": "0b8bfb2d189081674bb73f2a8ff524ff2cf518c1b361b65e3ddd203fcd8dd647"
+    "bytes": 39831,
+    "sha256": "ec783204e0a7026d83e17dbfc702cc3a74ad2d35706306e1a468dd4c3f20edd6"
   },
   {
     "path": "JarvisEVO/UI/RuntimeDiagnosticsView.swift",
@@ -556,8 +566,8 @@
   },
   {
     "path": "Tests/NativeToolSuggestionTests.swift",
-    "bytes": 3596,
-    "sha256": "def04f100a9015a0ae63035ca807da76b596de3d337ff3698daf5065a4742c1a"
+    "bytes": 4414,
+    "sha256": "c6974c92131748118ae793ee40a4e5e2d7e14b0177383be798561b9235d7c8b5"
   },
   {
     "path": "Tests/OCRLineEvidenceTests.swift",
@@ -618,6 +628,11 @@
     "path": "Tests/RuntimeDiagnosticsTests.swift",
     "bytes": 846,
     "sha256": "ea261d37df09ac076d60d1a9ee52ef7d5d1104ea3d053bd175452716948fe916"
+  },
+  {
+    "path": "Tests/SelfKnowledgePromptTests.swift",
+    "bytes": 1468,
+    "sha256": "57d76342a0aa1bd938ba7fba5af017c0ab21860e5e94cf2e91443b4d2d09ab34"
   },
   {
     "path": "Tests/SourceRepairDraftCoreTests.swift",
@@ -726,8 +741,8 @@
   },
   {
     "path": "scripts/run_foundation_tests.py",
-    "bytes": 4600,
-    "sha256": "fcf7841b5897ded7cb6e451888007048516093a9aad7d1b9fcc44db8f152124a"
+    "bytes": 4681,
+    "sha256": "5770510c20e6f0b74d3241995b793de4352e703d7097e02bacd9d8ef15d334d5"
   },
   {
     "path": "scripts/run_observation_smoke.py",
@@ -746,8 +761,8 @@
   },
   {
     "path": "scripts/run_virtual_desktop_gate.sh",
-    "bytes": 5297,
-    "sha256": "17bf3517f9a72233b4107d7957da05c18e3fd5ae07d06c23f159ffb4c320dad8"
+    "bytes": 5410,
+    "sha256": "5e1cc437ea51fca60b999d1b17ecd691063bd0aab8f671e8acab174f4fcddcfd"
   },
   {
     "path": "scripts/swift-smoke/AgentBridge.swift",

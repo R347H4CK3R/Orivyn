@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "repository": "https://github.com/R347H4CK3R/Orivyn",
+  "repositoryAccess": "The repository is private. This manifest is product metadata, not source code or credentials. Knowing its address does not grant access.",
+  "capabilities": [
+    {
+      "id": "chat",
+      "status": "available",
+      "detail": "Streaming text chat, local conversation history and conversation management. Generation requires an installed local model, available Apple model or explicitly configured provider."
+    },
+    {
+      "id": "local-models",
+      "status": "conditional",
+      "detail": "Download and manage compatible catalog models; automatic routing can prepare a model under download policy. Model quality, RAM and device temperature limit results."
+    },
+    {
+      "id": "voice",
+      "status": "conditional",
+      "detail": "Speech input and speech playback depend on iOS availability and permissions. Do not claim a live voice session is running without runtime evidence."
+    },
+    {
+      "id": "attachments",
+      "status": "conditional",
+      "detail": "Supported documents and image OCR provide extracted text to chat, not image pixels. Parsing may fail or omit content."
+    },
+    {
+      "id": "native-tools",
+      "status": "conditional",
+      "detail": "Email, Calendar, Browser, Location and Reminder screens provide reviewed actions. Suggesting or opening a screen is not proof an action completed."
+    },
+    {
+      "id": "plugins",
+      "status": "conditional",
+      "detail": "Configured MCP tools require endpoint access and argument review. Never claim execution without its recorded outcome. No computer is required for core offline chat."
+    },
+    {
+      "id": "desktop-workspace",
+      "status": "conditional",
+      "detail": "Desk organizes app-owned panels; external-display support is hardware dependent and physical HDMI testing remains outstanding. It cannot embed arbitrary iOS apps."
+    },
+    {
+      "id": "image-generation",
+      "status": "conditional",
+      "detail": "System Image Playground is available only when iOS reports support. Local text models do not generate images."
+    },
+    {
+      "id": "visual-understanding",
+      "status": "notAvailable",
+      "detail": "General image understanding is not integrated into this app's chat. Experimental native vision tests are not a released capability."
+    },
+    {
+      "id": "virtual-machine",
+      "status": "notAvailable",
+      "detail": "Experimental guest integration exists in development source but native iPhone execution is not verified. Desk panels are not a virtual computer. Do not claim the experimental VM is a verified working iPhone desktop."
+    },
+    {
+      "id": "source-inspection",
+      "status": "conditional",
+      "detail": "Settings > Inspect private source provides user-authorized read-only repository inspection with an ephemeral credential. It is a separate reviewed screen, not automatic chat access. Source review and proposed patches do not apply, compile or publish changes."
+    },
+    {
+      "id": "self-repair",
+      "status": "notAvailable",
+      "detail": "Chat can explain supplied symptoms and draft a repair proposal. The separate reviewed source-inspection screen can read authorized repository content, but the app cannot modify its signed executable, build an IPA or publish a fix by itself. A reviewed source change, build and installation are required."
+    }
+  ]
+}
