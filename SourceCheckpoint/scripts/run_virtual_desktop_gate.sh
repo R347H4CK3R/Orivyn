@@ -28,6 +28,8 @@ xcodebuild -project JarvisEVO.xcodeproj -scheme JarvisEVO \
   -destination "platform=iOS Simulator,id=$SIMULATOR_ID" -parallel-testing-enabled NO \
   -test-timeouts-enabled YES -default-test-execution-time-allowance 240 -maximum-test-execution-time-allowance 300 \
   -resultBundlePath "$OUT/VirtualDesktop.xcresult" \
+  -only-testing:JarvisEVOTests/LocalInferenceTests \
+  -only-testing:JarvisEVOTests/LocalPromptBuilderTests \
   -only-testing:JarvisEVOTests/AttachmentTextSearchTests \
   -only-testing:JarvisEVOTests/MemoryContextBuilderTests \
   -only-testing:JarvisEVOTests/AppModelTests/testLargeMemoryLibraryUsesBoundedRelevantContextWithoutDeletingNotes \

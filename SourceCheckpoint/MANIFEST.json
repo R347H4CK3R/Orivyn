@@ -71,8 +71,18 @@
   },
   {
     "path": "JarvisEVO/Providers/Local/LlamaEngine.swift",
-    "bytes": 12491,
-    "sha256": "2d33988c6136cb26902b2419b7e185e11c5f6cc35f77db4ffc87670f2f6da1ed"
+    "bytes": 12644,
+    "sha256": "ceaa5aec18450aef21ec57cf801c8b7f00fcd1584bb709da391fa3d1933830e5"
+  },
+  {
+    "path": "JarvisEVO/Providers/Local/LocalModelCatalog.swift",
+    "bytes": 4596,
+    "sha256": "0cd064d6526c8bf106d2207584b7dc6f33e211f7c3a32a973f4c11f974a68183"
+  },
+  {
+    "path": "JarvisEVO/Providers/Local/LocalPromptBuilder.swift",
+    "bytes": 3457,
+    "sha256": "2883a748543ca47d5fdb1bedcf78e64640364305151e5de27c7436aa1e4e0794"
   },
   {
     "path": "JarvisEVO/Providers/OpenAICompatibleProvider.swift",
@@ -315,6 +325,11 @@
     "sha256": "e8ff071c586a3d68e5dc71a2ddd7ab5a0f30d50c4cc01b3e97b0770c9f315dca"
   },
   {
+    "path": "Tests/LocalInferenceTests.swift",
+    "bytes": 6556,
+    "sha256": "39810619043465e94e5042b3f076d8f45060d02993d69c85de211adf7d1ca28f"
+  },
+  {
     "path": "Tests/LocalMemoryToolTests.swift",
     "bytes": 2837,
     "sha256": "774e153dbbae4484ccd2eb7e76a82abdd6f8c90e6a721df56e5b6d4c9d80ff43"
@@ -456,8 +471,8 @@
   },
   {
     "path": "scripts/run_virtual_desktop_gate.sh",
-    "bytes": 3878,
-    "sha256": "4647a292893efef4c3be5a1a7a7e7020214c73c84a13ff28168aaf152f5431d6"
+    "bytes": 3988,
+    "sha256": "75437459960cf2e0ca71860fcde7af811687207c0904106c9b20a89f9067834a"
   },
   {
     "path": "scripts/tests/test_attachment_search_contract.py",
@@ -493,6 +508,11 @@
     "path": "scripts/tests/test_local_agent_integration_contract.py",
     "bytes": 2177,
     "sha256": "6f3c9c57926558908ecc3a499c625a27318a60b07282bbf8d303e3459759534b"
+  },
+  {
+    "path": "scripts/tests/test_local_completion_contract.py",
+    "bytes": 873,
+    "sha256": "acac74de58baac12b10b92ce74fa4bd1ddf59c3c4954eeb565024d4ec89f023f"
   },
   {
     "path": "scripts/tests/test_memory_context_contract.py",

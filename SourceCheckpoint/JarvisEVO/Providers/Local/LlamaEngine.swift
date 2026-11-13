@@ -134,10 +134,11 @@ actor LlamaEngine: LocalResourceReleasing {
         }
         var decoder = UTF8TokenAccumulator()
         var producedText = false
+        var sawEndOfGeneration = false
         for _ in 0..<request.maxTokens {
             try Task.checkCancellation()
             var token = llama_sampler_sample(sampler, context, -1)
-            if llama_vocab_is_eog(vocabulary, token) { break }
+            if llama_vocab_is_eog(vocabulary, token) { sawEndOfGeneration = true; break }
             let bytes = try tokenBytes(token, vocabulary: vocabulary)
             if let text = decoder.append(bytes), !text.isEmpty {
                 producedText = true
@@ -152,6 +153,7 @@ actor LlamaEngine: LocalResourceReleasing {
         try Task.checkCancellation()
         let suffix = decoder.finish()
         if !suffix.isEmpty { producedText = true; continuation.yield(suffix) }
+        guard sawEndOfGeneration else { throw LocalModelError.generationLimitReached }
         guard producedText else { throw LocalModelError.emptyGeneration }
     }
 
