@@ -786,8 +786,8 @@
   },
   {
     "path": "scripts/swift-smoke/LlamaEngineSmoke.swift",
-    "bytes": 4785,
-    "sha256": "e7cca27e22d999222014973a61a382e98cb77af71455dfa4a60be0433a6f34dc"
+    "bytes": 6277,
+    "sha256": "1cb83bfa065af1dd29bfde180dd2775684dc68fc5643f15b50c2c1af928674d5"
   },
   {
     "path": "scripts/swift-smoke/ObservationSmoke.swift",

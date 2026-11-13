@@ -47,6 +47,27 @@ import llama
             for try await part in reloaded { next += part }
             guard next.lowercased().contains("hello") else { throw Failure.failed("Reload reply: \(next)") }
             print("PASS generation succeeds after resource release: \(next)")
+            let oversized = GenerationRequest(messages: request.messages, systemPrompt: String(repeating: "safety ", count: 4096), maxTokens: 64, temperature: 0)
+            do {
+                let overflow = try await engine.stream(oversized, modelURL: url)
+                for try await _ in overflow { }
+                throw Failure.failed("Oversized system prompt accepted")
+            } catch ProviderError.rejected(let reason) {
+                guard reason.contains("Nothing was silently removed") else { throw Failure.failed("Unexpected rejection: \(reason)") }
+                print("PASS actual tokenizer rejects oversized system prompt without silent truncation")
+            }
+
+            let absent = url.deletingLastPathComponent().appendingPathComponent(UUID().uuidString + ".gguf")
+            do {
+                let missing = try await engine.stream(request, modelURL: absent)
+                for try await _ in missing { }
+                throw Failure.failed("Missing model accepted")
+            } catch LocalModelError.loadFailed { print("PASS missing model reports load failure") }
+            let recovered = try await engine.stream(request, modelURL: url)
+            var recoveredText = ""
+            for try await part in recovered { recoveredText += part }
+            guard recoveredText.lowercased().contains("hello") else { throw Failure.failed("Recovery reply: \(recoveredText)") }
+            print("PASS valid model reloads after failed model switch")
             for requireTool in [true, false] {
                 var agent = GenerationRequest(messages: [ChatMessage(role: .user, content: requireTool ? "Call get_app_info with empty arguments now." : "Return an answer JSON with text hello.")], systemPrompt: "Return exactly one JSON decision, no commentary.", maxTokens: 128, temperature: 0)
                 agent.localAgentRequiresTool = requireTool
