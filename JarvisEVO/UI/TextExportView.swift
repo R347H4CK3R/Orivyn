@@ -17,7 +17,7 @@ struct TextExportView: View {
         List {
             if let snapshot {
                 Section("Review selected text") {
-                    Text("\(snapshot.conversations.count) conversations · \(snapshot.messageCount) messages · \(snapshot.data.count) bytes")
+                    Text("\(snapshot.conversations.count) conversations · \(snapshot.messageCount) messages · \(snapshot.data.count) bytes").accessibilityIdentifier("text-export.summary")
                     Text("This is a fixed snapshot. The text shown here and conversation metadata, including identifiers and dates, will be saved. Memories, attachment text and original files are excluded.")
                         .font(.footnote).foregroundStyle(.secondary)
                     Text("Prepared \(snapshot.exportedAt.formatted(date: .abbreviated, time: .standard))")
@@ -25,8 +25,8 @@ struct TextExportView: View {
                     Button("Save reviewed text…", systemImage: "square.and.arrow.up") {
                         document = HistoryDocument(data: snapshot.data)
                         exporting = true
-                    }.disabled(exporting)
-                    Button("Change selection") { invalidate() }.disabled(exporting)
+                    }.disabled(exporting).accessibilityIdentifier("text-export.save")
+                    Button("Change selection") { invalidate() }.disabled(exporting).accessibilityIdentifier("text-export.change")
                 }
                 ForEach(snapshot.conversations) { conversation in
                     Section(conversation.title) {
@@ -61,12 +61,12 @@ struct TextExportView: View {
                                 Text(eligible ? "\(conversation.messages.count) messages\(conversation.isArchived ? " · Archived" : "")" : "Contains attachments or unfinished messages")
                                     .font(.caption).foregroundStyle(.secondary)
                             }
-                        }.disabled(!eligible || request != nil || (!selection.contains(conversation.id) && selection.count >= ReviewedTextSnapshot.maximumConversations))
+                        }.accessibilityIdentifier("text-export.choice.\(conversation.id)").disabled(!eligible || request != nil || (!selection.contains(conversation.id) && selection.count >= ReviewedTextSnapshot.maximumConversations))
                     }
                     if model.conversations.isEmpty { Text("No conversations to export.").foregroundStyle(.secondary) }
                 }
                 Section {
-                    Button("Prepare review") { prepare() }
+                    Button("Prepare review") { prepare() }.accessibilityIdentifier("text-export.prepare")
                         .disabled(selection.isEmpty || request != nil || model.isGenerating)
                     if request != nil { ProgressView("Preparing selected text…") }
                 }
@@ -86,7 +86,7 @@ struct TextExportView: View {
         }
         .onChange(of: model.conversations) { _, values in
             invalidate()
-            selection.formIntersection(Set(values.map(\.id)))
+            selection.formIntersection(Set(values.filter { $0.messages.allSatisfy { $0.attachments.isEmpty && $0.state == .complete } }.map(\.id)))
         }
         .onChange(of: scenePhase) { _, phase in if phase != .active { invalidate() } }
         .onDisappear { invalidate() }

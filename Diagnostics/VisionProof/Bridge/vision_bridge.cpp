@@ -20,6 +20,12 @@ struct ov_session {std::atomic<bool> cancel{false};std::mutex execution;std::ato
 };
 static std::mutex engine_slot;
 static std::once_flag backend_once;
+static std::once_flag vision_log_once;
+// mtmd and clip share a process-global logger which can print user prompt text.
+// Configure it before the first owned session and keep it for process lifetime:
+// restoring/toggling it per request would race with other vision callbacks.
+// This bridge owns the app's mtmd entrypoints. Do not change llama/ggml logging.
+static void discard_vision_log(ggml_log_level, const char *, void *) {}
 static std::atomic<int> live{0};
 template<class T,void(*F)(T*)> struct Owner {
  T *p; explicit Owner(T *v):p(v){if(p)++live;} ~Owner(){if(p){F(p);--live;}}
@@ -120,7 +126,10 @@ static void generate(ov_session*s,const ov_request&r,std::string&out,ov_report&r
  }
  check(s);
 }
-extern "C" ov_session*ov_create(void){try{return new ov_session;}catch(...){return nullptr;}}
+extern "C" ov_session*ov_create(void){try{
+ std::call_once(vision_log_once,[]{mtmd_log_set(discard_vision_log,nullptr);});
+ return new ov_session;
+}catch(...){return nullptr;}}
 extern "C" void ov_cancel(ov_session*s){if(s)s->cancel=true;}
 extern "C" void ov_destroy(ov_session*s){if(!s)return;ov_cancel(s);{std::lock_guard<std::mutex>wait(s->execution);}delete s;}
 extern "C" int ov_run(ov_session*s,const ov_request*r,char*out,size_t cap,ov_report*report){

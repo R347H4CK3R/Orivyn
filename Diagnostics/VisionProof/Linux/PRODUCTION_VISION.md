@@ -1,6 +1,6 @@
-# Included private vision path — Linux verification, Apple gate outstanding
+# Development vision path — Linux verification, Apple gate outstanding
 
-The private source now includes actual pixel inference in the image library:
+The development source now includes actual pixel inference in the image library:
 visible eye action or Analyze image menu → explicit verified model setup →
 question → real model output. `ORIVYN_NATIVE_VISION` requires the parent's combined
 single llama framework exporting `ov_*`. Existing official-runtime builds still
@@ -49,12 +49,12 @@ in-memory `VisionSession`. It does **not** automatically append either to chat,
 write an analysis history/backup, or save a new image. Existing imported image
 storage is unchanged. Cancel/dismiss/background cleanup cancels work and clears
 the session answer while resources finish releasing; this is not a secure-memory
-erasure guarantee. The user may explicitly select/copy displayed text. Native
-library diagnostics can include prompt text—the Linux logs demonstrate this—so
-“not automatically saved by the UI” must not be read as a no-logging guarantee.
-Developer diagnostic scripts deliberately save fixture prompts, actual answers,
-and hashes locally as evidence; they were run on generated fixtures and the
-specified repository photograph, not private user images.
+erasure guarantee. The user may explicitly select/copy displayed text. The prior mtmd/clip logger
+printed actual question text to stderr; that concrete leak is now fixed as
+described below. This is not an audit or no-logging guarantee for every other app
+component. Developer diagnostic scripts deliberately save fixture prompts,
+actual answers, and hashes locally as evidence; they were run on generated
+fixtures and the specified repository photograph, not private user images.
 
 ## Model and image correctness
 
@@ -189,3 +189,44 @@ budgets, background transitions, latency and wider natural/spatial quality.
 The projector-loading API has no progress cancellation callback; release can
 wait for that stage. No parallel runtime, resource-cap increase, or native
 verification is inferred from these Linux results.
+
+
+## Prompt-bearing native log fix
+
+Before the fix, mtmd/clip `LOG_DBG` / `add_text` diagnostics wrote the actual
+question to stderr. `ov_create` now calls `mtmd_log_set` with a static no-op
+callback through `std::call_once`, before the first owned vision session is
+returned. The callback has no session/user-data pointer and remains valid for
+the process lifetime. It suppresses **all mtmd/clip message text**, including
+messages whose formatting could contain prompts; `ov_report` status, phase,
+tokens, positions and resource counts remain the diagnostic boundary.
+
+This setter changes a **process-global mtmd/clip logger**. The application uses
+one combined runtime and this bridge owns its mtmd entrypoints. Other code in
+that process must not independently reset that logger or start unmanaged mtmd
+work. Configuring once avoids per-request changes or restoration racing with
+active native callbacks. The fix does **not** call `llama_log_set`,
+`ggml_log_set`, change the text-model logger, redirect stderr, or suppress the
+separate mtmd-helper's non-prompt encode/decode progress messages.
+
+Old and fixed bridges were compiled locally; `log_privacy_check.py` runs them
+in separate processes against the verified pinned 2.2B pair. A generated red square and a unique
+synthetic question marker—not a private image or question—reproduce the issue.
+The old privacy assertion fails because the marker appears in captured stderr;
+the fixed assertion passes because it does not. Both runs return status 0, the
+**identical actual red-square answer**, and zero tracked live handles. Llama
+loader diagnostics remain in fixed stderr, demonstrating that the text/runtime
+logger was not globally muted. Exact library/source/log SHA256 values, reports,
+and the synthetic old-leak excerpt are retained under `Evidence/log-privacy`.
+Full raw logs remain local under `artifacts/vision-log-privacy/results`.
+
+Reproduce with separately built old and fixed shared libraries:
+
+```sh
+python3 Diagnostics/VisionProof/Linux/log_privacy_check.py OLD_SO FIXED_SO VERIFIED_MODEL_DIR OUTPUT_DIR
+```
+
+These are real **Linux CPU** regression results. The next combined Apple
+framework must be rebuilt from this bridge before iOS receives the fix; an Apple
+run already building the old bridge does not validate it. Other diagnostics,
+crash reporting, and unrelated providers are outside this focused regression.

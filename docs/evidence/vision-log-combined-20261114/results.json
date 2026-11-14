@@ -1,0 +1,70 @@
+{
+  "scope": "Linux CPU real pinned pair; synthetic prompt/pixels; not Apple verification",
+  "sentinel": "ORIVYN_SYNTHETIC_LOG_SENTINEL_25e0c704d8384dbb804cfcabc0b6e4be",
+  "model": {
+    "repository": "ggml-org/SmolVLM2-2.2B-Instruct-GGUF",
+    "revision": "1bc3c9f74ceafd4c8d4411cc9cf188bba3798f91",
+    "license": "Apache-2.0",
+    "artifacts": [
+      {
+        "file": "SmolVLM2-2.2B-Instruct-Q4_K_M.gguf",
+        "size": 1112602656,
+        "sha": "0cf76814555b8665149075b74ab6b5c1d428ea1d3d01c1918c12012e8d7c9f58",
+        "actualSHA256": "0cf76814555b8665149075b74ab6b5c1d428ea1d3d01c1918c12012e8d7c9f58"
+      },
+      {
+        "file": "mmproj-SmolVLM2-2.2B-Instruct-f16.gguf",
+        "size": 872303680,
+        "sha": "db9a3a1648cab1ebc3af4a2b0c8145dd8faebf6f7dd7b16e7dc1842229f14ac4",
+        "actualSHA256": "db9a3a1648cab1ebc3af4a2b0c8145dd8faebf6f7dd7b16e7dc1842229f14ac4"
+      }
+    ]
+  },
+  "checks": {
+    "old_reproduces_prompt_leak": true,
+    "fixed_no_prompt_marker": true,
+    "text_logger_unchanged": true,
+    "same_actual_output": true,
+    "normal_inference_and_cleanup": true
+  },
+  "runs": {
+    "old": {
+      "library_sha256": "2f857d71d3a0b4333cdf2705951383ddeb9aba6ac09b54d900daf2a7f58b0638",
+      "sentinel_in_stderr": true,
+      "llama_loader_diagnostics_present": true,
+      "stderr_bytes": 111805,
+      "response": {
+        "status": 0,
+        "output": " The image is a square with a red background.",
+        "report": {
+          "status": 0,
+          "phase": 5,
+          "tokens": 10,
+          "positions": 156,
+          "image_chunks": 1,
+          "callback_count": 6460,
+          "live_resources": 0
+        }
+      }
+    },
+    "fixed": {
+      "library_sha256": "3a36d6d583f93a9b2a378f679b01dd4dea8649b54016bf95c7f1b727f485e0b2",
+      "sentinel_in_stderr": false,
+      "llama_loader_diagnostics_present": true,
+      "stderr_bytes": 46706,
+      "response": {
+        "status": 0,
+        "output": " The image is a square with a red background.",
+        "report": {
+          "status": 0,
+          "phase": 5,
+          "tokens": 10,
+          "positions": 156,
+          "image_chunks": 1,
+          "callback_count": 6460,
+          "live_resources": 0
+        }
+      }
+    }
+  }
+}

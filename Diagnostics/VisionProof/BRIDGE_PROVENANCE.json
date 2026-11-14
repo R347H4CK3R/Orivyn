@@ -1,8 +1,8 @@
 {
   "upstreamCommit": "2496f9c14965c39589f53eea31bdb6d762b1d360",
-  "source": "Orivyn vision C ABI; load cancellation, pixel-only no-detail abstention, explicit incomplete-output failure",
+  "source": "Orivyn vision C ABI; mtmd/clip privacy logger configured once before owned session, with real old/new stderr regression",
   "files": {
-    "vision_bridge.cpp": "82d2f841ba9d0dfeb1b995c8c3c02675360b5fe9743dcdb5eb8aa1798968300c",
+    "vision_bridge.cpp": "37f8b6c823f6401512f4567d4177e76b014c485042ade65309ab11c3ac6d129b",
     "vision_bridge.h": "805d19ded1c2757a398090cb26ff14a613442a1ffcecb2dd3051fcc53bcfd3fe"
   }
 }
