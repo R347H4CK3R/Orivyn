@@ -68,6 +68,40 @@ final class ProviderTests: XCTestCase {
         XCTAssertEqual(try decoder.consume(line: "data: [DONE]"), .done)
     }
 
+    func testSingleIndexedChoiceCompletesNormally() throws {
+        var decoder = SSEDecoder()
+        XCTAssertEqual(try decoder.consume(line: #"data: {"choices":[{"index":0,"delta":{"content":"Answer"}}]}"#), .token("Answer"))
+        XCTAssertEqual(try decoder.consume(line: #"data: {"choices":[{"index":0,"delta":{},"finish_reason":"stop"}]}"#), .ignored)
+        XCTAssertEqual(try decoder.consume(line: "data: [DONE]"), .done)
+    }
+
+    func testUnexpectedChoiceCannotSupplyTextOrCompleteAnotherAnswer() throws {
+        for index in [-1, 1, 2] {
+            var decoder = SSEDecoder()
+            _ = try decoder.consume(line: #"data: {"choices":[{"index":0,"delta":{"content":"Partial"}}]}"#)
+            let line = "data: {\"choices\":[{\"index\":\(index),\"delta\":{\"content\":\"Other answer\"},\"finish_reason\":\"stop\"}]}"
+            XCTAssertThrowsError(try decoder.consume(line: line))
+            XCTAssertThrowsError(try decoder.consume(line: "data: [DONE]"))
+        }
+    }
+
+    func testMultipleChoicesAreRejectedBeforeAnyContentIsEmitted() {
+        for second in [#"{"index":1,"delta":{"content":"Second"}}"#,
+                       #"{"index":0,"delta":{},"finish_reason":"length"}"#] {
+            var decoder = SSEDecoder()
+            let line = #"data: {"choices":[{"index":0,"delta":{"content":"First"},"finish_reason":"stop"},"# + second + "]}"
+            XCTAssertThrowsError(try decoder.consume(line: line))
+            XCTAssertThrowsError(try decoder.consume(line: "data: [DONE]"))
+        }
+    }
+
+    func testMalformedChoiceIndexIsRejected() {
+        for index in ["true", "0.5", "\"0\""] {
+            var decoder = SSEDecoder()
+            XCTAssertThrowsError(try decoder.consume(line: "data: {\"choices\":[{\"index\":\(index),\"delta\":{\"content\":\"Wrong type\"}}]}"))
+        }
+    }
+
     func testRemoteEndpointRequiresHTTPSAndRejectsEmbeddedCredentials() {
         XCTAssertThrowsError(try RemoteEndpoint(baseURL: "http://example.com/v1", model: "test"))
         XCTAssertThrowsError(try RemoteEndpoint(baseURL: "https://user:secret@example.com/v1", model: "test"))
