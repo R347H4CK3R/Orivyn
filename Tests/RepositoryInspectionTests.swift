@@ -113,6 +113,40 @@ final class RepositoryInspectionTests: XCTestCase {
         do { _ = try await client.loadSnapshot(); XCTFail("Invalid branch accepted") } catch { XCTAssertEqual(error as? RepositoryInspectionError, .response) }
         let count = await transport.requests.count; XCTAssertEqual(count, 1)
     }
+    func testExplicitRefUsesEncodedPathAndPinsReturnedCommit() async throws {
+        let transport = InspectionTransport(replies: try fixture())
+        let client = try RepositoryInspectionClient(token: token, transport: transport)
+        let snapshot = try await client.loadSnapshot(reference: "integration/native-fix")
+        XCTAssertEqual(snapshot.branch, "integration/native-fix")
+        XCTAssertEqual(snapshot.commitSHA, commit)
+        let requests = await transport.requests
+        XCTAssertEqual(requests[1].url?.absoluteString, "https://api.github.com/repos/R347H4CK3R/Orivyn/commits/integration%2Fnative-fix")
+    }
+    func testExplicitCommitMustMatchBeforeReadingTree() async throws {
+        let transport = InspectionTransport(replies: try fixture())
+        let client = try RepositoryInspectionClient(token: token, transport: transport)
+        do { _ = try await client.loadSnapshot(reference: String(repeating: "c", count: 40)); XCTFail("Different commit accepted") }
+        catch { XCTAssertEqual(error as? RepositoryInspectionError, .integrity) }
+        let requests = await transport.requests
+        XCTAssertEqual(requests.count, 2)
+    }
+    func testExplicitCommitAcceptedWhenMatched() async throws {
+        let transport = InspectionTransport(replies: try fixture())
+        let client = try RepositoryInspectionClient(token: token, transport: transport)
+        let snapshot = try await client.loadSnapshot(reference: commit)
+        XCTAssertEqual(snapshot.branch, commit)
+        XCTAssertEqual(snapshot.commitSHA, commit)
+    }
+    func testInvalidExplicitRefMakesNoRequest() async throws {
+        for reference in ["../main", "https://other.example", "a?token=secret", "a%2Fb", "a#frag", "a b", "a//b", ".hidden", "a.lock", String(repeating: "x", count: 513)] {
+            let transport = InspectionTransport(replies: [])
+            let client = try RepositoryInspectionClient(token: token, transport: transport)
+            do { _ = try await client.loadSnapshot(reference: reference); XCTFail("Invalid ref accepted") }
+            catch { XCTAssertEqual(error as? RepositoryInspectionError, .reference) }
+            let requests = await transport.requests
+            XCTAssertTrue(requests.isEmpty)
+        }
+    }
     func testRejectsHeaderInjectionToken() {
         XCTAssertThrowsError(try RepositoryInspectionClient(token: "bad\r\nHeader: value"))
     }
@@ -150,3 +184,4 @@ private actor DelayedInspectionTransport: MCPHTTPTransport {
     }
     func complete() { continuation?.resume(); continuation = nil }
 }
+

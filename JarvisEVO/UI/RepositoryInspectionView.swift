@@ -3,6 +3,7 @@ import SwiftUI
 /// User-directed reads only. Private source is never given to a model or plugin.
 struct RepositoryInspectionView: View {
     @State private var token = ""
+    @State private var reference = ""
     @State private var client: RepositoryInspectionClient?
     @State private var snapshot: RepositoryInspectionSnapshot?
     @State private var file: RepositoryInspectionFile?
@@ -23,6 +24,8 @@ struct RepositoryInspectionView: View {
                 Text("Reads R347H4CK3R/Orivyn directly from GitHub on this iPhone. No laptop, repository changes, code execution, builds or automatic fixes. Source content is untrusted data.").font(.caption)
                 Text("Use a fine-grained GitHub token limited to this repository with Contents: Read-only. It is sent only to api.github.com, retained in memory for this screen, never saved, logged or sent to an AI provider.").font(.caption)
                 if client == nil {
+                    TextField("Branch, tag or commit (blank = default)", text: $reference).textInputAutocapitalization(.never).autocorrectionDisabled()
+                    Text("Choose the source version to inspect. This does not prove it matches the installed app.").font(.caption)
                     SecureField("Read-only GitHub token", text: $token).textInputAutocapitalization(.never).autocorrectionDisabled()
                     Button("Connect and read repository") { connect() }.disabled(work != nil || token.isEmpty)
                 } else {
@@ -33,7 +36,7 @@ struct RepositoryInspectionView: View {
             }
             if let snapshot {
                 Section("Pinned source snapshot") {
-                    Text("Branch: " + snapshot.branch)
+                    Text("Source ref: " + snapshot.branch)
                     Text("\(snapshot.files.count) inspectable files; \(snapshot.omittedFiles) oversized or unsupported entries omitted. File limit: 128 KiB.").font(.caption)
                     Text("Commit: " + snapshot.commitSHA).font(.caption.monospaced()).textSelection(.enabled)
                     Text("Files are verified against this commit's Git blob hashes. This is not a build or runtime test.").font(.caption)
@@ -72,12 +75,16 @@ struct RepositoryInspectionView: View {
     private func connect() {
         guard work == nil else { return }
         do {
+            let requestedReference = reference.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard requestedReference.isEmpty || RepositoryInspectionReference.resolve(requestedReference, defaultBranch: "") != nil else {
+                throw RepositoryInspectionError.reference
+            }
             let next = try RepositoryInspectionClient(token: token)
             token = ""; client = next; error = nil
             let id = UUID(); operation = id
             work = Task { @MainActor in
                 do {
-                    let value = try await next.loadSnapshot()
+                    let value = try await next.loadSnapshot(reference: requestedReference)
                     guard operation == id, !Task.isCancelled else { return }
                     snapshot = value
                 } catch {
@@ -104,7 +111,8 @@ struct RepositoryInspectionView: View {
     private func disconnect() {
         repairSelection = nil
         operation = nil; work?.cancel(); work = nil
-        let previous = client; client = nil; snapshot = nil; file = nil; token = ""; error = nil
+        let previous = client; client = nil; snapshot = nil; file = nil; token = ""; reference = ""; error = nil
         Task { await previous?.clearCredentials() }
     }
 }
+

@@ -1,6 +1,32 @@
 import Foundation
 import CryptoKit
 
+/// Explicit read target only, never a URL or permission to execute source.
+/// Deliberately supports a conservative ASCII branch/tag subset and full commit IDs.
+enum RepositoryInspectionReference {
+    static func resolve(_ requested: String, defaultBranch: String) -> String? {
+        if requested.isEmpty {
+            // Preserve existing default-branch support, including Unicode names.
+            guard !defaultBranch.isEmpty, defaultBranch.utf8.count <= 512,
+                  !defaultBranch.contains(".."), !defaultBranch.contains("\\"),
+                  defaultBranch.unicodeScalars.allSatisfy({ $0.value >= 32 && $0.value != 127 }),
+                  defaultBranch.split(separator: "/", omittingEmptySubsequences: false).allSatisfy({ !$0.isEmpty && $0 != "." && $0 != ".." }) else { return nil }
+            return defaultBranch
+        }
+        let value = requested
+        let allowed = Set("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._/".utf8)
+        guard !value.isEmpty, value.utf8.count <= 512,
+              value.utf8.allSatisfy({ allowed.contains($0) }), !value.contains(".."),
+              value.split(separator: "/", omittingEmptySubsequences: false).allSatisfy({
+                  !$0.isEmpty && !$0.hasPrefix(".") && !$0.hasSuffix(".") && !$0.hasSuffix(".lock")
+              }) else { return nil }
+        return value
+    }
+    static func isCommit(_ value: String) -> Bool {
+        value.utf8.count == 40 && value.utf8.allSatisfy { (48...57).contains($0) || (97...102).contains($0) }
+    }
+}
+
 struct RepositoryInspectionEntry: Sendable, Equatable, Identifiable {
     let path: String
     let blobSHA: String
@@ -22,9 +48,10 @@ struct RepositoryInspectionFile: Sendable {
     let text: String
 }
 enum RepositoryInspectionError: Error, LocalizedError, Equatable {
-    case credentials, cancelled, repositoryMismatch, response, bounds, selection, integrity, notText, denied, unavailable, network
+    case reference, credentials, cancelled, repositoryMismatch, response, bounds, selection, integrity, notText, denied, unavailable, network
     var errorDescription: String? {
         switch self {
+        case .reference: "Enter a branch, tag or full lowercase commit ID using letters, numbers, hyphens, underscores, dots and slashes. Leave blank for the default branch."
         case .credentials: "Enter a GitHub token for this session. It is not saved."
         case .cancelled: "Repository inspection was canceled or replaced."
         case .repositoryMismatch: "GitHub did not return the expected private Orivyn repository."
@@ -65,8 +92,11 @@ actor RepositoryInspectionClient {
         for task in pending.values { task.cancel() }
         pending.removeAll()
     }
-    func loadSnapshot() async throws -> RepositoryInspectionSnapshot {
+    func loadSnapshot(reference requestedReference: String = "") async throws -> RepositoryInspectionSnapshot {
         guard token != nil else { throw RepositoryInspectionError.credentials }
+        guard requestedReference.isEmpty || RepositoryInspectionReference.resolve(requestedReference, defaultBranch: "") != nil else {
+            throw RepositoryInspectionError.reference
+        }
         generation = UUID(); let owner = generation; pinned = nil
         for task in pending.values { task.cancel() }
         pending.removeAll()
@@ -75,12 +105,15 @@ actor RepositoryInspectionClient {
             guard repo.fullName.lowercased() == Self.repository.lowercased(), repo.isPrivate else {
                 throw RepositoryInspectionError.repositoryMismatch
             }
-            guard Self.validPath(repo.defaultBranch), !repo.defaultBranch.contains(".."), repo.defaultBranch.utf8.count <= 512,
-                  let branch = repo.defaultBranch.addingPercentEncoding(withAllowedCharacters: Self.segmentCharacters) else {
+            guard let reference = RepositoryInspectionReference.resolve(requestedReference, defaultBranch: repo.defaultBranch),
+                  let branch = reference.addingPercentEncoding(withAllowedCharacters: Self.segmentCharacters) else {
                 throw RepositoryInspectionError.response
             }
             let commit: Commit = try await get(Self.api + "/commits/" + branch, owner: owner, maximum: 1_048_576)
             guard Self.validSHA(commit.sha), Self.validSHA(commit.commit.tree.sha) else { throw RepositoryInspectionError.response }
+            if RepositoryInspectionReference.isCommit(reference), commit.sha != reference {
+                throw RepositoryInspectionError.integrity
+            }
             let tree: Tree = try await get(Self.api + "/git/trees/" + commit.commit.tree.sha + "?recursive=1", owner: owner, maximum: 1_048_576)
             guard tree.sha == commit.commit.tree.sha else { throw RepositoryInspectionError.integrity }
             guard !tree.truncated, tree.tree.count <= 4096 else { throw RepositoryInspectionError.bounds }
@@ -98,7 +131,7 @@ actor RepositoryInspectionClient {
                 files.append(RepositoryInspectionEntry(path: entry.path, blobSHA: entry.sha, size: size))
             }
             try check(owner)
-            let snapshot = RepositoryInspectionSnapshot(id: UUID(), branch: repo.defaultBranch, commitSHA: commit.sha,
+            let snapshot = RepositoryInspectionSnapshot(id: UUID(), branch: reference, commitSHA: commit.sha,
                 treeSHA: tree.sha, files: files.sorted { $0.path < $1.path }, omittedFiles: omitted)
             pinned = snapshot
             return snapshot
@@ -193,3 +226,4 @@ actor RepositoryInspectionClient {
     }
     private struct Blob: Decodable { let sha: String; let size: Int; let encoding: String; let content: String }
 }
+
