@@ -9,6 +9,30 @@ import XCTest
     private func record(_ id: String, revision: Int = 1, goal: String = "goal") -> String {
         "{\"id\":\"\(id)\",\"revision\":\(revision),\"goal\":\"\(goal)\"}"
     }
+    func testInvalidInitialRevisionCannotPoisonFutureTaskUpdates() async throws {
+        let (root, store) = try fixture(); defer { try? FileManager.default.removeItem(at: root) }
+        for field in ["", ",\"revision\":null", ",\"revision\":\"1\"", ",\"revision\":-1", ",\"revision\":true", ",\"revision\":1.5"] {
+            let id = UUID().uuidString
+            XCTAssertThrowsError(try store.save("{\"id\":\"\(id)\"\(field)}", id: id))
+            XCTAssertFalse(FileManager.default.fileExists(atPath: root.appendingPathComponent(id + ".json").path))
+        }
+        let id = UUID().uuidString
+        try store.save(record(id, revision: 0), id: id)
+        try store.save(record(id, revision: 1), id: id)
+        XCTAssertEqual(try store.load(id: id), record(id, revision: 1))
+    }
+    func testInvalidRevisionOnDiskIsUnreadableAndPreserved() async throws {
+        let (root, store) = try fixture(); defer { try? FileManager.default.removeItem(at: root) }
+        let id = UUID().uuidString
+        let file = root.appendingPathComponent(id + ".json")
+        let bytes = Data("{\"id\":\"\(id)\",\"revision\":\"broken\"}".utf8)
+        try bytes.write(to: file)
+        let batch = try store.records()
+        XCTAssertEqual(batch.unreadable, 1)
+        XCTAssertTrue(batch.values.isEmpty)
+        XCTAssertThrowsError(try store.save(record(id), id: id))
+        XCTAssertEqual(try Data(contentsOf: file), bytes)
+    }
     func testSameRevisionRequiresIdenticalBytesNotCanonicalUnicodeEquivalence() async throws {
         let (root, store) = try fixture(); defer { try? FileManager.default.removeItem(at: root) }
         let id = UUID().uuidString

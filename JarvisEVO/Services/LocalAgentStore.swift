@@ -17,11 +17,16 @@ final class LocalAgentStore {
         guard let uuid = UUID(uuidString: id) else { throw LocalAgentError.storage }
         return directory.appendingPathComponent(uuid.uuidString + ".json")
     }
+    // Revision zero is the valid initial state in both current and legacy task
+    // schemas. Reject malformed envelopes before writing, and classify malformed
+    // on-disk records as unreadable without deleting or overwriting their bytes.
     private func verifyIdentity(_ raw: String, id: String) throws {
         guard raw.utf8.count <= 131_072, let data = raw.data(using: .utf8),
               let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let value = object["id"] as? String, let uuid = UUID(uuidString: value),
-              uuid == UUID(uuidString: id) else { throw LocalAgentError.storage }
+              uuid == UUID(uuidString: id),
+              let revision = try? JSONDecoder().decode(Revision.self, from: data).revision,
+              revision >= 0 else { throw LocalAgentError.storage }
     }
     func save(_ raw: String, id: String) throws {
         try verifyIdentity(raw, id: id)
