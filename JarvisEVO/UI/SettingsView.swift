@@ -97,10 +97,11 @@ struct SettingsView: View {
             }
             .confirmationDialog("Import can overwrite current history", isPresented: $confirmingImport, titleVisibility: .visible) {
                 Button("Add missing only (keep local)") { importPolicy = .preserveLocal; importingHistory = true }
+                Button("Keep both versions (copy conflicts)") { importPolicy = .keepBoth; importingHistory = true }
                 Button("Replace matching records…", role: .destructive) { importPolicy = .replaceMatching; importingHistory = true }
                 Button("Cancel", role: .cancel) {}
             } message: {
-                Text("Add missing only keeps all matching local records unchanged. With replacement import, matching conversation and memory identifiers are replaced, not combined. An older backup can remove newer messages. Export your current backup first. Original attachment files are not transferred. This is manual import, not automatic synchronization.")
+                Text("Add missing only keeps all matching local records unchanged. Keep both versions skips identical matching records and imports changed matches as separate copies, preserving the local originals. Repeating a conflicting import creates more copies. With replacement import, matching conversation and memory identifiers are replaced, not combined. An older backup can remove newer messages. Export your current backup first. Original attachment files are not transferred. This is manual import, not automatic synchronization.")
             }
             .confirmationDialog("Delete all conversations and memories?", isPresented: $deletingAll, titleVisibility: .visible) {
                 Button("Delete all content", role: .destructive) { Task { await model.deleteAllContent() } }

@@ -164,6 +164,38 @@ actor SQLiteConversationStore {
                 incomingConversations.removeAll { conversationIDs.contains($0.id) }
                 incomingMemories.removeAll { memoryIDs.contains($0.id) }
             }
+            var copiedConversations = 0
+            var copiedMemories = 0
+            if policy == .keepBoth {
+                let localConversations = try list(includeArchived: true)
+                let localMemories = try memories()
+                let conversationsByID = Dictionary(uniqueKeysWithValues: localConversations.map { ($0.id, $0) })
+                let memoriesByID = Dictionary(uniqueKeysWithValues: localMemories.map { ($0.id, $0) })
+                var reservedIDs = Set(localConversations.map(\.id) + localMemories.map(\.id)
+                                      + incomingConversations.map(\.id) + incomingMemories.map(\.id))
+                func freshID() -> UUID {
+                    var id = UUID()
+                    while reservedIDs.contains(id) { id = UUID() }
+                    reservedIDs.insert(id)
+                    return id
+                }
+                incomingConversations = incomingConversations.compactMap { incoming in
+                    guard let local = conversationsByID[incoming.id] else { return incoming }
+                    guard local != incoming else { return nil }
+                    var copy = incoming
+                    copy.id = freshID()
+                    copiedConversations += 1
+                    return copy
+                }
+                incomingMemories = incomingMemories.compactMap { incoming in
+                    guard let local = memoriesByID[incoming.id] else { return incoming }
+                    guard local != incoming else { return nil }
+                    var copy = incoming
+                    copy.id = freshID()
+                    copiedMemories += 1
+                    return copy
+                }
+            }
             // Validate replacements together with untouched rows before changing either table.
             // Do not call save here: intermediate rows may conflict while a consistent batch
             // replaces every reference to an identity, and the transaction is already owned.
@@ -175,7 +207,8 @@ actor SQLiteConversationStore {
             return BackupImportSummary(writtenConversations: incomingConversations.count,
                                        writtenMemories: incomingMemories.count,
                                        skippedConversations: backup.conversations.count - incomingConversations.count,
-                                       skippedMemories: backup.memories.count - incomingMemories.count)
+                                       skippedMemories: backup.memories.count - incomingMemories.count,
+                                       copiedConversations: copiedConversations, copiedMemories: copiedMemories)
         } catch { try? database.execute("ROLLBACK"); throw error }
     }
 
@@ -285,3 +318,4 @@ actor SQLiteConversationStore {
         guard sqlite3_step(statement) == SQLITE_DONE else { throw DatabaseError.operation("Could not save local changes.") }
     }
 }
+

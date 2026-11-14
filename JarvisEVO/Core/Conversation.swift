@@ -100,15 +100,18 @@ struct Conversation: Codable, Identifiable, Equatable, Sendable {
     }
 }
 
-enum BackupImportPolicy: Sendable { case preserveLocal, replaceMatching }
+enum BackupImportPolicy: Sendable { case preserveLocal, replaceMatching, keepBoth }
 
 struct BackupImportSummary: Sendable {
     let writtenConversations: Int
     let writtenMemories: Int
     let skippedConversations: Int
     let skippedMemories: Int
+    var copiedConversations: Int = 0
+    var copiedMemories: Int = 0
     var description: String {
         "Imported \(writtenConversations) conversations and \(writtenMemories) memories. Kept \(skippedConversations) matching local conversations and \(skippedMemories) matching local memories unchanged. Original attachment files were not transferred."
+        + (copiedConversations + copiedMemories > 0 ? " Kept both versions by creating \(copiedConversations) conversation copies and \(copiedMemories) memory copies. Importing this conflicting backup again creates additional copies." : "")
     }
 }
 
