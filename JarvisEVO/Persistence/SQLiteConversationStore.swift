@@ -202,6 +202,39 @@ actor SQLiteConversationStore {
         } catch { try? database.execute("ROLLBACK"); throw error }
     }
 
+    /// Selects only requested records from one committed read transaction. The
+    /// immutable returned bytes are both reviewed and exported, never re-queried.
+    func exportTextSnapshot(ids: Set<UUID>) throws -> ReviewedTextSnapshot {
+        try Task.checkCancellation()
+        guard (1...ReviewedTextSnapshot.maximumConversations).contains(ids.count) else { throw TextSnapshotError.selection }
+        try database.execute("BEGIN")
+        do {
+            var values: [Conversation] = []
+            var retainedBytes = 0
+            for id in ids.sorted(by: { $0.uuidString < $1.uuidString }) {
+                try Task.checkCancellation()
+                let value = try withStatement("SELECT payload FROM conversations WHERE id = ?") { statement in
+                    bind(id.uuidString, to: 1, in: statement)
+                    let status = sqlite3_step(statement)
+                    guard status != SQLITE_DONE else { throw TextSnapshotError.changed }
+                    guard status == SQLITE_ROW else { throw DatabaseError.operation("Could not read the selected conversation.") }
+                    let count = Int(sqlite3_column_bytes(statement, 0))
+                    guard count > 0, count <= ReviewedTextSnapshot.maximumBytes - retainedBytes else { throw TextSnapshotError.limit }
+                    retainedBytes += count
+                    let conversation = try decodeConversation(blob(statement, at: 0))
+                    try validate(conversation)
+                    guard conversation.id == id else { throw TextSnapshotError.changed }
+                    return conversation
+                }
+                values.append(value)
+            }
+            let snapshot = try ReviewedTextSnapshot(conversations: values)
+            try Task.checkCancellation()
+            try database.execute("COMMIT")
+            return snapshot
+        } catch { try? database.execute("ROLLBACK"); throw error }
+    }
+
     /// Merges a complete validated snapshot transactionally. Attachments remain local references.
     @discardableResult
     func importData(_ data: Data, policy: BackupImportPolicy = .replaceMatching) throws -> BackupImportSummary {

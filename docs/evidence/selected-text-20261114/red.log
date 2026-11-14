@@ -1,0 +1,434 @@
+Building for debugging...
+[0/13] Write sources
+[2/13] Write swift-version--553A0786DAFFE0A1.txt
+[4/18] Emitting module JarvisEVO
+[5/18] Compiling JarvisEVO Conversation.swift
+[6/18] Compiling JarvisEVO ConversationSearch.swift
+[7/18] Compiling JarvisEVO ImageOCRResult.swift
+[8/18] Compiling JarvisEVO MemoryNote.swift
+[9/21] Compiling JarvisEVO OCRLineEvidence.swift
+[10/21] Compiling JarvisEVO PeerSyncControlFrame.swift
+[11/21] Compiling JarvisEVO SQLiteConversationStore.swift
+[12/22] Wrapping AST for JarvisEVO for debugging
+[14/27] Emitting module JarvisEVOTests
+[15/27] Compiling JarvisEVOTests ConversationSearchTests.swift
+[16/27] Compiling JarvisEVOTests ConversationTests.swift
+[17/27] Compiling JarvisEVOTests ImageIdentityPersistenceTests.swift
+[18/27] Compiling JarvisEVOTests OCRLineEvidenceTests.swift
+[19/31] Compiling JarvisEVOTests PeerSyncControlFrameTests.swift
+/workspace/scratch/8352eb8fe69c/orivyn-text-export-proof/Tests/JarvisEVOTests/ReviewedTextSnapshotTests.swift:16:37: error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+14 |         try await db.save(chosen); try await db.save(excluded)
+15 |         try await db.saveMemory(MemoryNote(content: "Do not export this memory"))
+16 |         let snapshot = try await db.exportTextSnapshot(ids: [chosen.id])
+   |                                     `- error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+17 |         let backup = try JSONDecoder().decode(ConversationBackup.self, from: snapshot.data)
+18 |         XCTAssertEqual(backup.conversations, [chosen]); XCTAssertTrue(backup.memories.isEmpty)
+
+/workspace/scratch/8352eb8fe69c/orivyn-text-export-proof/Tests/JarvisEVOTests/ReviewedTextSnapshotTests.swift:25:37: error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+23 |         let db = try store(); var chosen = chat()
+24 |         try await db.save(chosen)
+25 |         let snapshot = try await db.exportTextSnapshot(ids: [chosen.id]), bytes = snapshot.data
+   |                                     `- error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+26 |         chosen.messages[0].content = "Later edit"; try await db.save(chosen)
+27 |         try await db.delete(id: chosen.id)
+
+/workspace/scratch/8352eb8fe69c/orivyn-text-export-proof/Tests/JarvisEVOTests/ReviewedTextSnapshotTests.swift:38:35: error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+36 |         let db = try store(), chosen = chat(); try await db.save(chosen)
+37 |         for ids: Set<UUID> in [[], [chosen.id, UUID()], Set((0..<101).map { _ in UUID() })] {
+38 |             do { _ = try await db.exportTextSnapshot(ids: ids); XCTFail("Invalid selection exported") } catch { }
+   |                                   `- error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+39 |         }
+40 |         let remaining = try await db.list(); XCTAssertEqual(remaining, [chosen])
+
+/workspace/scratch/8352eb8fe69c/orivyn-text-export-proof/Tests/JarvisEVOTests/ReviewedTextSnapshotTests.swift:46:31: error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+44 |         chosen.messages[0].attachments = [ChatAttachment(name: "private.txt", relativePath: "private.txt", mediaType: "text/plain", byteCount: 12, extractedText: "Private attachment text")]
+45 |         try await db.save(chosen)
+46 |         do { _ = try await db.exportTextSnapshot(ids: [chosen.id]); XCTFail("Attachment accepted") } catch { }
+   |                               `- error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+47 |     }
+48 |     func testAllUnfinishedMessageStatesAreRejected() async throws {
+
+/workspace/scratch/8352eb8fe69c/orivyn-text-export-proof/Tests/JarvisEVOTests/ReviewedTextSnapshotTests.swift:52:35: error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+50 |         for state in [MessageState.streaming, .failed, .interrupted] {
+51 |             var chosen = chat(); chosen.messages[0].state = state; try await db.save(chosen)
+52 |             do { _ = try await db.exportTextSnapshot(ids: [chosen.id]); XCTFail("Unfinished text accepted") } catch { }
+   |                                   `- error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+53 |         }
+54 |     }
+
+/workspace/scratch/8352eb8fe69c/orivyn-text-export-proof/Tests/JarvisEVOTests/ReviewedTextSnapshotTests.swift:59:31: error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+57 |         let many = Conversation(messages: (0..<1001).map { _ in ChatMessage(role: .user, content: "x") })
+58 |         try await db.save(many)
+59 |         do { _ = try await db.exportTextSnapshot(ids: [many.id]); XCTFail("Review bound exceeded") } catch { }
+   |                               `- error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+60 |         let large = Conversation(messages: (0..<6).map { _ in ChatMessage(role: .user, content: String(repeating: "x", count: 900_000)) })
+61 |         try await db.save(large)
+
+/workspace/scratch/8352eb8fe69c/orivyn-text-export-proof/Tests/JarvisEVOTests/ReviewedTextSnapshotTests.swift:62:31: error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+60 |         let large = Conversation(messages: (0..<6).map { _ in ChatMessage(role: .user, content: String(repeating: "x", count: 900_000)) })
+61 |         try await db.save(large)
+62 |         do { _ = try await db.exportTextSnapshot(ids: [large.id]); XCTFail("Byte bound exceeded") } catch { }
+   |                               `- error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+63 |     }
+64 |     func testCanceledReadDoesNotLeakTransactionAndNextReadSucceeds() async throws {
+
+/workspace/scratch/8352eb8fe69c/orivyn-text-export-proof/Tests/JarvisEVOTests/ReviewedTextSnapshotTests.swift:66:87: error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+64 |     func testCanceledReadDoesNotLeakTransactionAndNextReadSucceeds() async throws {
+65 |         let db = try store(), chosen = chat(); try await db.save(chosen)
+66 |         let task = Task { withUnsafeCurrentTask { $0?.cancel() }; return try await db.exportTextSnapshot(ids: [chosen.id]) }
+   |                                                                                       `- error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+67 |         do { _ = try await task.value; XCTFail("Canceled export succeeded") } catch is CancellationError { }
+68 |         let snapshot = try await db.exportTextSnapshot(ids: [chosen.id]); XCTAssertEqual(snapshot.conversations, [chosen])
+
+/workspace/scratch/8352eb8fe69c/orivyn-text-export-proof/Tests/JarvisEVOTests/ReviewedTextSnapshotTests.swift:68:37: error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+66 |         let task = Task { withUnsafeCurrentTask { $0?.cancel() }; return try await db.exportTextSnapshot(ids: [chosen.id]) }
+67 |         do { _ = try await task.value; XCTFail("Canceled export succeeded") } catch is CancellationError { }
+68 |         let snapshot = try await db.exportTextSnapshot(ids: [chosen.id]); XCTAssertEqual(snapshot.conversations, [chosen])
+   |                                     `- error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+69 |     }
+70 |     func testArchivedSelectedConversationIsIncluded() async throws {
+
+/workspace/scratch/8352eb8fe69c/orivyn-text-export-proof/Tests/JarvisEVOTests/ReviewedTextSnapshotTests.swift:67:22: warning: no 'async' operations occur within 'await' expression
+65 |         let db = try store(), chosen = chat(); try await db.save(chosen)
+66 |         let task = Task { withUnsafeCurrentTask { $0?.cancel() }; return try await db.exportTextSnapshot(ids: [chosen.id]) }
+67 |         do { _ = try await task.value; XCTFail("Canceled export succeeded") } catch is CancellationError { }
+   |                      `- warning: no 'async' operations occur within 'await' expression
+68 |         let snapshot = try await db.exportTextSnapshot(ids: [chosen.id]); XCTAssertEqual(snapshot.conversations, [chosen])
+69 |     }
+
+/workspace/scratch/8352eb8fe69c/orivyn-text-export-proof/Tests/JarvisEVOTests/ReviewedTextSnapshotTests.swift:67:18: warning: no calls to throwing functions occur within 'try' expression
+65 |         let db = try store(), chosen = chat(); try await db.save(chosen)
+66 |         let task = Task { withUnsafeCurrentTask { $0?.cancel() }; return try await db.exportTextSnapshot(ids: [chosen.id]) }
+67 |         do { _ = try await task.value; XCTFail("Canceled export succeeded") } catch is CancellationError { }
+   |                  `- warning: no calls to throwing functions occur within 'try' expression
+68 |         let snapshot = try await db.exportTextSnapshot(ids: [chosen.id]); XCTAssertEqual(snapshot.conversations, [chosen])
+69 |     }
+
+/workspace/scratch/8352eb8fe69c/orivyn-text-export-proof/Tests/JarvisEVOTests/ReviewedTextSnapshotTests.swift:67:79: warning: 'catch' block is unreachable because no errors are thrown in 'do' block
+65 |         let db = try store(), chosen = chat(); try await db.save(chosen)
+66 |         let task = Task { withUnsafeCurrentTask { $0?.cancel() }; return try await db.exportTextSnapshot(ids: [chosen.id]) }
+67 |         do { _ = try await task.value; XCTFail("Canceled export succeeded") } catch is CancellationError { }
+   |                                                                               `- warning: 'catch' block is unreachable because no errors are thrown in 'do' block
+68 |         let snapshot = try await db.exportTextSnapshot(ids: [chosen.id]); XCTAssertEqual(snapshot.conversations, [chosen])
+69 |     }
+
+/workspace/scratch/8352eb8fe69c/orivyn-text-export-proof/Tests/JarvisEVOTests/ReviewedTextSnapshotTests.swift:72:37: error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+70 |     func testArchivedSelectedConversationIsIncluded() async throws {
+71 |         let db = try store(); var chosen = chat(); chosen.isArchived = true; try await db.save(chosen)
+72 |         let snapshot = try await db.exportTextSnapshot(ids: [chosen.id]); XCTAssertEqual(snapshot.conversations, [chosen])
+   |                                     `- error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+73 |     }
+74 | }
+[20/31] Compiling JarvisEVOTests PersistenceTests.swift
+/workspace/scratch/8352eb8fe69c/orivyn-text-export-proof/Tests/JarvisEVOTests/ReviewedTextSnapshotTests.swift:16:37: error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+14 |         try await db.save(chosen); try await db.save(excluded)
+15 |         try await db.saveMemory(MemoryNote(content: "Do not export this memory"))
+16 |         let snapshot = try await db.exportTextSnapshot(ids: [chosen.id])
+   |                                     `- error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+17 |         let backup = try JSONDecoder().decode(ConversationBackup.self, from: snapshot.data)
+18 |         XCTAssertEqual(backup.conversations, [chosen]); XCTAssertTrue(backup.memories.isEmpty)
+
+/workspace/scratch/8352eb8fe69c/orivyn-text-export-proof/Tests/JarvisEVOTests/ReviewedTextSnapshotTests.swift:25:37: error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+23 |         let db = try store(); var chosen = chat()
+24 |         try await db.save(chosen)
+25 |         let snapshot = try await db.exportTextSnapshot(ids: [chosen.id]), bytes = snapshot.data
+   |                                     `- error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+26 |         chosen.messages[0].content = "Later edit"; try await db.save(chosen)
+27 |         try await db.delete(id: chosen.id)
+
+/workspace/scratch/8352eb8fe69c/orivyn-text-export-proof/Tests/JarvisEVOTests/ReviewedTextSnapshotTests.swift:38:35: error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+36 |         let db = try store(), chosen = chat(); try await db.save(chosen)
+37 |         for ids: Set<UUID> in [[], [chosen.id, UUID()], Set((0..<101).map { _ in UUID() })] {
+38 |             do { _ = try await db.exportTextSnapshot(ids: ids); XCTFail("Invalid selection exported") } catch { }
+   |                                   `- error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+39 |         }
+40 |         let remaining = try await db.list(); XCTAssertEqual(remaining, [chosen])
+
+/workspace/scratch/8352eb8fe69c/orivyn-text-export-proof/Tests/JarvisEVOTests/ReviewedTextSnapshotTests.swift:46:31: error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+44 |         chosen.messages[0].attachments = [ChatAttachment(name: "private.txt", relativePath: "private.txt", mediaType: "text/plain", byteCount: 12, extractedText: "Private attachment text")]
+45 |         try await db.save(chosen)
+46 |         do { _ = try await db.exportTextSnapshot(ids: [chosen.id]); XCTFail("Attachment accepted") } catch { }
+   |                               `- error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+47 |     }
+48 |     func testAllUnfinishedMessageStatesAreRejected() async throws {
+
+/workspace/scratch/8352eb8fe69c/orivyn-text-export-proof/Tests/JarvisEVOTests/ReviewedTextSnapshotTests.swift:52:35: error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+50 |         for state in [MessageState.streaming, .failed, .interrupted] {
+51 |             var chosen = chat(); chosen.messages[0].state = state; try await db.save(chosen)
+52 |             do { _ = try await db.exportTextSnapshot(ids: [chosen.id]); XCTFail("Unfinished text accepted") } catch { }
+   |                                   `- error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+53 |         }
+54 |     }
+
+/workspace/scratch/8352eb8fe69c/orivyn-text-export-proof/Tests/JarvisEVOTests/ReviewedTextSnapshotTests.swift:59:31: error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+57 |         let many = Conversation(messages: (0..<1001).map { _ in ChatMessage(role: .user, content: "x") })
+58 |         try await db.save(many)
+59 |         do { _ = try await db.exportTextSnapshot(ids: [many.id]); XCTFail("Review bound exceeded") } catch { }
+   |                               `- error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+60 |         let large = Conversation(messages: (0..<6).map { _ in ChatMessage(role: .user, content: String(repeating: "x", count: 900_000)) })
+61 |         try await db.save(large)
+
+/workspace/scratch/8352eb8fe69c/orivyn-text-export-proof/Tests/JarvisEVOTests/ReviewedTextSnapshotTests.swift:62:31: error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+60 |         let large = Conversation(messages: (0..<6).map { _ in ChatMessage(role: .user, content: String(repeating: "x", count: 900_000)) })
+61 |         try await db.save(large)
+62 |         do { _ = try await db.exportTextSnapshot(ids: [large.id]); XCTFail("Byte bound exceeded") } catch { }
+   |                               `- error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+63 |     }
+64 |     func testCanceledReadDoesNotLeakTransactionAndNextReadSucceeds() async throws {
+
+/workspace/scratch/8352eb8fe69c/orivyn-text-export-proof/Tests/JarvisEVOTests/ReviewedTextSnapshotTests.swift:66:87: error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+64 |     func testCanceledReadDoesNotLeakTransactionAndNextReadSucceeds() async throws {
+65 |         let db = try store(), chosen = chat(); try await db.save(chosen)
+66 |         let task = Task { withUnsafeCurrentTask { $0?.cancel() }; return try await db.exportTextSnapshot(ids: [chosen.id]) }
+   |                                                                                       `- error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+67 |         do { _ = try await task.value; XCTFail("Canceled export succeeded") } catch is CancellationError { }
+68 |         let snapshot = try await db.exportTextSnapshot(ids: [chosen.id]); XCTAssertEqual(snapshot.conversations, [chosen])
+
+/workspace/scratch/8352eb8fe69c/orivyn-text-export-proof/Tests/JarvisEVOTests/ReviewedTextSnapshotTests.swift:68:37: error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+66 |         let task = Task { withUnsafeCurrentTask { $0?.cancel() }; return try await db.exportTextSnapshot(ids: [chosen.id]) }
+67 |         do { _ = try await task.value; XCTFail("Canceled export succeeded") } catch is CancellationError { }
+68 |         let snapshot = try await db.exportTextSnapshot(ids: [chosen.id]); XCTAssertEqual(snapshot.conversations, [chosen])
+   |                                     `- error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+69 |     }
+70 |     func testArchivedSelectedConversationIsIncluded() async throws {
+
+/workspace/scratch/8352eb8fe69c/orivyn-text-export-proof/Tests/JarvisEVOTests/ReviewedTextSnapshotTests.swift:67:22: warning: no 'async' operations occur within 'await' expression
+65 |         let db = try store(), chosen = chat(); try await db.save(chosen)
+66 |         let task = Task { withUnsafeCurrentTask { $0?.cancel() }; return try await db.exportTextSnapshot(ids: [chosen.id]) }
+67 |         do { _ = try await task.value; XCTFail("Canceled export succeeded") } catch is CancellationError { }
+   |                      `- warning: no 'async' operations occur within 'await' expression
+68 |         let snapshot = try await db.exportTextSnapshot(ids: [chosen.id]); XCTAssertEqual(snapshot.conversations, [chosen])
+69 |     }
+
+/workspace/scratch/8352eb8fe69c/orivyn-text-export-proof/Tests/JarvisEVOTests/ReviewedTextSnapshotTests.swift:67:18: warning: no calls to throwing functions occur within 'try' expression
+65 |         let db = try store(), chosen = chat(); try await db.save(chosen)
+66 |         let task = Task { withUnsafeCurrentTask { $0?.cancel() }; return try await db.exportTextSnapshot(ids: [chosen.id]) }
+67 |         do { _ = try await task.value; XCTFail("Canceled export succeeded") } catch is CancellationError { }
+   |                  `- warning: no calls to throwing functions occur within 'try' expression
+68 |         let snapshot = try await db.exportTextSnapshot(ids: [chosen.id]); XCTAssertEqual(snapshot.conversations, [chosen])
+69 |     }
+
+/workspace/scratch/8352eb8fe69c/orivyn-text-export-proof/Tests/JarvisEVOTests/ReviewedTextSnapshotTests.swift:67:79: warning: 'catch' block is unreachable because no errors are thrown in 'do' block
+65 |         let db = try store(), chosen = chat(); try await db.save(chosen)
+66 |         let task = Task { withUnsafeCurrentTask { $0?.cancel() }; return try await db.exportTextSnapshot(ids: [chosen.id]) }
+67 |         do { _ = try await task.value; XCTFail("Canceled export succeeded") } catch is CancellationError { }
+   |                                                                               `- warning: 'catch' block is unreachable because no errors are thrown in 'do' block
+68 |         let snapshot = try await db.exportTextSnapshot(ids: [chosen.id]); XCTAssertEqual(snapshot.conversations, [chosen])
+69 |     }
+
+/workspace/scratch/8352eb8fe69c/orivyn-text-export-proof/Tests/JarvisEVOTests/ReviewedTextSnapshotTests.swift:72:37: error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+70 |     func testArchivedSelectedConversationIsIncluded() async throws {
+71 |         let db = try store(); var chosen = chat(); chosen.isArchived = true; try await db.save(chosen)
+72 |         let snapshot = try await db.exportTextSnapshot(ids: [chosen.id]); XCTAssertEqual(snapshot.conversations, [chosen])
+   |                                     `- error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+73 |     }
+74 | }
+[21/31] Compiling JarvisEVOTests ReviewedTextSnapshotTests.swift
+/workspace/scratch/8352eb8fe69c/orivyn-text-export-proof/Tests/JarvisEVOTests/ReviewedTextSnapshotTests.swift:16:37: error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+14 |         try await db.save(chosen); try await db.save(excluded)
+15 |         try await db.saveMemory(MemoryNote(content: "Do not export this memory"))
+16 |         let snapshot = try await db.exportTextSnapshot(ids: [chosen.id])
+   |                                     `- error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+17 |         let backup = try JSONDecoder().decode(ConversationBackup.self, from: snapshot.data)
+18 |         XCTAssertEqual(backup.conversations, [chosen]); XCTAssertTrue(backup.memories.isEmpty)
+
+/workspace/scratch/8352eb8fe69c/orivyn-text-export-proof/Tests/JarvisEVOTests/ReviewedTextSnapshotTests.swift:25:37: error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+23 |         let db = try store(); var chosen = chat()
+24 |         try await db.save(chosen)
+25 |         let snapshot = try await db.exportTextSnapshot(ids: [chosen.id]), bytes = snapshot.data
+   |                                     `- error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+26 |         chosen.messages[0].content = "Later edit"; try await db.save(chosen)
+27 |         try await db.delete(id: chosen.id)
+
+/workspace/scratch/8352eb8fe69c/orivyn-text-export-proof/Tests/JarvisEVOTests/ReviewedTextSnapshotTests.swift:38:35: error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+36 |         let db = try store(), chosen = chat(); try await db.save(chosen)
+37 |         for ids: Set<UUID> in [[], [chosen.id, UUID()], Set((0..<101).map { _ in UUID() })] {
+38 |             do { _ = try await db.exportTextSnapshot(ids: ids); XCTFail("Invalid selection exported") } catch { }
+   |                                   `- error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+39 |         }
+40 |         let remaining = try await db.list(); XCTAssertEqual(remaining, [chosen])
+
+/workspace/scratch/8352eb8fe69c/orivyn-text-export-proof/Tests/JarvisEVOTests/ReviewedTextSnapshotTests.swift:46:31: error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+44 |         chosen.messages[0].attachments = [ChatAttachment(name: "private.txt", relativePath: "private.txt", mediaType: "text/plain", byteCount: 12, extractedText: "Private attachment text")]
+45 |         try await db.save(chosen)
+46 |         do { _ = try await db.exportTextSnapshot(ids: [chosen.id]); XCTFail("Attachment accepted") } catch { }
+   |                               `- error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+47 |     }
+48 |     func testAllUnfinishedMessageStatesAreRejected() async throws {
+
+/workspace/scratch/8352eb8fe69c/orivyn-text-export-proof/Tests/JarvisEVOTests/ReviewedTextSnapshotTests.swift:52:35: error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+50 |         for state in [MessageState.streaming, .failed, .interrupted] {
+51 |             var chosen = chat(); chosen.messages[0].state = state; try await db.save(chosen)
+52 |             do { _ = try await db.exportTextSnapshot(ids: [chosen.id]); XCTFail("Unfinished text accepted") } catch { }
+   |                                   `- error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+53 |         }
+54 |     }
+
+/workspace/scratch/8352eb8fe69c/orivyn-text-export-proof/Tests/JarvisEVOTests/ReviewedTextSnapshotTests.swift:59:31: error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+57 |         let many = Conversation(messages: (0..<1001).map { _ in ChatMessage(role: .user, content: "x") })
+58 |         try await db.save(many)
+59 |         do { _ = try await db.exportTextSnapshot(ids: [many.id]); XCTFail("Review bound exceeded") } catch { }
+   |                               `- error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+60 |         let large = Conversation(messages: (0..<6).map { _ in ChatMessage(role: .user, content: String(repeating: "x", count: 900_000)) })
+61 |         try await db.save(large)
+
+/workspace/scratch/8352eb8fe69c/orivyn-text-export-proof/Tests/JarvisEVOTests/ReviewedTextSnapshotTests.swift:62:31: error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+60 |         let large = Conversation(messages: (0..<6).map { _ in ChatMessage(role: .user, content: String(repeating: "x", count: 900_000)) })
+61 |         try await db.save(large)
+62 |         do { _ = try await db.exportTextSnapshot(ids: [large.id]); XCTFail("Byte bound exceeded") } catch { }
+   |                               `- error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+63 |     }
+64 |     func testCanceledReadDoesNotLeakTransactionAndNextReadSucceeds() async throws {
+
+/workspace/scratch/8352eb8fe69c/orivyn-text-export-proof/Tests/JarvisEVOTests/ReviewedTextSnapshotTests.swift:66:87: error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+64 |     func testCanceledReadDoesNotLeakTransactionAndNextReadSucceeds() async throws {
+65 |         let db = try store(), chosen = chat(); try await db.save(chosen)
+66 |         let task = Task { withUnsafeCurrentTask { $0?.cancel() }; return try await db.exportTextSnapshot(ids: [chosen.id]) }
+   |                                                                                       `- error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+67 |         do { _ = try await task.value; XCTFail("Canceled export succeeded") } catch is CancellationError { }
+68 |         let snapshot = try await db.exportTextSnapshot(ids: [chosen.id]); XCTAssertEqual(snapshot.conversations, [chosen])
+
+/workspace/scratch/8352eb8fe69c/orivyn-text-export-proof/Tests/JarvisEVOTests/ReviewedTextSnapshotTests.swift:68:37: error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+66 |         let task = Task { withUnsafeCurrentTask { $0?.cancel() }; return try await db.exportTextSnapshot(ids: [chosen.id]) }
+67 |         do { _ = try await task.value; XCTFail("Canceled export succeeded") } catch is CancellationError { }
+68 |         let snapshot = try await db.exportTextSnapshot(ids: [chosen.id]); XCTAssertEqual(snapshot.conversations, [chosen])
+   |                                     `- error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+69 |     }
+70 |     func testArchivedSelectedConversationIsIncluded() async throws {
+
+/workspace/scratch/8352eb8fe69c/orivyn-text-export-proof/Tests/JarvisEVOTests/ReviewedTextSnapshotTests.swift:67:22: warning: no 'async' operations occur within 'await' expression
+65 |         let db = try store(), chosen = chat(); try await db.save(chosen)
+66 |         let task = Task { withUnsafeCurrentTask { $0?.cancel() }; return try await db.exportTextSnapshot(ids: [chosen.id]) }
+67 |         do { _ = try await task.value; XCTFail("Canceled export succeeded") } catch is CancellationError { }
+   |                      `- warning: no 'async' operations occur within 'await' expression
+68 |         let snapshot = try await db.exportTextSnapshot(ids: [chosen.id]); XCTAssertEqual(snapshot.conversations, [chosen])
+69 |     }
+
+/workspace/scratch/8352eb8fe69c/orivyn-text-export-proof/Tests/JarvisEVOTests/ReviewedTextSnapshotTests.swift:67:18: warning: no calls to throwing functions occur within 'try' expression
+65 |         let db = try store(), chosen = chat(); try await db.save(chosen)
+66 |         let task = Task { withUnsafeCurrentTask { $0?.cancel() }; return try await db.exportTextSnapshot(ids: [chosen.id]) }
+67 |         do { _ = try await task.value; XCTFail("Canceled export succeeded") } catch is CancellationError { }
+   |                  `- warning: no calls to throwing functions occur within 'try' expression
+68 |         let snapshot = try await db.exportTextSnapshot(ids: [chosen.id]); XCTAssertEqual(snapshot.conversations, [chosen])
+69 |     }
+
+/workspace/scratch/8352eb8fe69c/orivyn-text-export-proof/Tests/JarvisEVOTests/ReviewedTextSnapshotTests.swift:67:79: warning: 'catch' block is unreachable because no errors are thrown in 'do' block
+65 |         let db = try store(), chosen = chat(); try await db.save(chosen)
+66 |         let task = Task { withUnsafeCurrentTask { $0?.cancel() }; return try await db.exportTextSnapshot(ids: [chosen.id]) }
+67 |         do { _ = try await task.value; XCTFail("Canceled export succeeded") } catch is CancellationError { }
+   |                                                                               `- warning: 'catch' block is unreachable because no errors are thrown in 'do' block
+68 |         let snapshot = try await db.exportTextSnapshot(ids: [chosen.id]); XCTAssertEqual(snapshot.conversations, [chosen])
+69 |     }
+
+/workspace/scratch/8352eb8fe69c/orivyn-text-export-proof/Tests/JarvisEVOTests/ReviewedTextSnapshotTests.swift:72:37: error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+70 |     func testArchivedSelectedConversationIsIncluded() async throws {
+71 |         let db = try store(); var chosen = chat(); chosen.isArchived = true; try await db.save(chosen)
+72 |         let snapshot = try await db.exportTextSnapshot(ids: [chosen.id]); XCTAssertEqual(snapshot.conversations, [chosen])
+   |                                     `- error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+73 |     }
+74 | }
+[22/31] Compiling JarvisEVOTests TextReceivePersistenceTests.swift
+/workspace/scratch/8352eb8fe69c/orivyn-text-export-proof/Tests/JarvisEVOTests/ReviewedTextSnapshotTests.swift:16:37: error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+14 |         try await db.save(chosen); try await db.save(excluded)
+15 |         try await db.saveMemory(MemoryNote(content: "Do not export this memory"))
+16 |         let snapshot = try await db.exportTextSnapshot(ids: [chosen.id])
+   |                                     `- error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+17 |         let backup = try JSONDecoder().decode(ConversationBackup.self, from: snapshot.data)
+18 |         XCTAssertEqual(backup.conversations, [chosen]); XCTAssertTrue(backup.memories.isEmpty)
+
+/workspace/scratch/8352eb8fe69c/orivyn-text-export-proof/Tests/JarvisEVOTests/ReviewedTextSnapshotTests.swift:25:37: error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+23 |         let db = try store(); var chosen = chat()
+24 |         try await db.save(chosen)
+25 |         let snapshot = try await db.exportTextSnapshot(ids: [chosen.id]), bytes = snapshot.data
+   |                                     `- error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+26 |         chosen.messages[0].content = "Later edit"; try await db.save(chosen)
+27 |         try await db.delete(id: chosen.id)
+
+/workspace/scratch/8352eb8fe69c/orivyn-text-export-proof/Tests/JarvisEVOTests/ReviewedTextSnapshotTests.swift:38:35: error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+36 |         let db = try store(), chosen = chat(); try await db.save(chosen)
+37 |         for ids: Set<UUID> in [[], [chosen.id, UUID()], Set((0..<101).map { _ in UUID() })] {
+38 |             do { _ = try await db.exportTextSnapshot(ids: ids); XCTFail("Invalid selection exported") } catch { }
+   |                                   `- error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+39 |         }
+40 |         let remaining = try await db.list(); XCTAssertEqual(remaining, [chosen])
+
+/workspace/scratch/8352eb8fe69c/orivyn-text-export-proof/Tests/JarvisEVOTests/ReviewedTextSnapshotTests.swift:46:31: error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+44 |         chosen.messages[0].attachments = [ChatAttachment(name: "private.txt", relativePath: "private.txt", mediaType: "text/plain", byteCount: 12, extractedText: "Private attachment text")]
+45 |         try await db.save(chosen)
+46 |         do { _ = try await db.exportTextSnapshot(ids: [chosen.id]); XCTFail("Attachment accepted") } catch { }
+   |                               `- error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+47 |     }
+48 |     func testAllUnfinishedMessageStatesAreRejected() async throws {
+
+/workspace/scratch/8352eb8fe69c/orivyn-text-export-proof/Tests/JarvisEVOTests/ReviewedTextSnapshotTests.swift:52:35: error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+50 |         for state in [MessageState.streaming, .failed, .interrupted] {
+51 |             var chosen = chat(); chosen.messages[0].state = state; try await db.save(chosen)
+52 |             do { _ = try await db.exportTextSnapshot(ids: [chosen.id]); XCTFail("Unfinished text accepted") } catch { }
+   |                                   `- error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+53 |         }
+54 |     }
+
+/workspace/scratch/8352eb8fe69c/orivyn-text-export-proof/Tests/JarvisEVOTests/ReviewedTextSnapshotTests.swift:59:31: error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+57 |         let many = Conversation(messages: (0..<1001).map { _ in ChatMessage(role: .user, content: "x") })
+58 |         try await db.save(many)
+59 |         do { _ = try await db.exportTextSnapshot(ids: [many.id]); XCTFail("Review bound exceeded") } catch { }
+   |                               `- error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+60 |         let large = Conversation(messages: (0..<6).map { _ in ChatMessage(role: .user, content: String(repeating: "x", count: 900_000)) })
+61 |         try await db.save(large)
+
+/workspace/scratch/8352eb8fe69c/orivyn-text-export-proof/Tests/JarvisEVOTests/ReviewedTextSnapshotTests.swift:62:31: error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+60 |         let large = Conversation(messages: (0..<6).map { _ in ChatMessage(role: .user, content: String(repeating: "x", count: 900_000)) })
+61 |         try await db.save(large)
+62 |         do { _ = try await db.exportTextSnapshot(ids: [large.id]); XCTFail("Byte bound exceeded") } catch { }
+   |                               `- error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+63 |     }
+64 |     func testCanceledReadDoesNotLeakTransactionAndNextReadSucceeds() async throws {
+
+/workspace/scratch/8352eb8fe69c/orivyn-text-export-proof/Tests/JarvisEVOTests/ReviewedTextSnapshotTests.swift:66:87: error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+64 |     func testCanceledReadDoesNotLeakTransactionAndNextReadSucceeds() async throws {
+65 |         let db = try store(), chosen = chat(); try await db.save(chosen)
+66 |         let task = Task { withUnsafeCurrentTask { $0?.cancel() }; return try await db.exportTextSnapshot(ids: [chosen.id]) }
+   |                                                                                       `- error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+67 |         do { _ = try await task.value; XCTFail("Canceled export succeeded") } catch is CancellationError { }
+68 |         let snapshot = try await db.exportTextSnapshot(ids: [chosen.id]); XCTAssertEqual(snapshot.conversations, [chosen])
+
+/workspace/scratch/8352eb8fe69c/orivyn-text-export-proof/Tests/JarvisEVOTests/ReviewedTextSnapshotTests.swift:68:37: error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+66 |         let task = Task { withUnsafeCurrentTask { $0?.cancel() }; return try await db.exportTextSnapshot(ids: [chosen.id]) }
+67 |         do { _ = try await task.value; XCTFail("Canceled export succeeded") } catch is CancellationError { }
+68 |         let snapshot = try await db.exportTextSnapshot(ids: [chosen.id]); XCTAssertEqual(snapshot.conversations, [chosen])
+   |                                     `- error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+69 |     }
+70 |     func testArchivedSelectedConversationIsIncluded() async throws {
+
+/workspace/scratch/8352eb8fe69c/orivyn-text-export-proof/Tests/JarvisEVOTests/ReviewedTextSnapshotTests.swift:67:22: warning: no 'async' operations occur within 'await' expression
+65 |         let db = try store(), chosen = chat(); try await db.save(chosen)
+66 |         let task = Task { withUnsafeCurrentTask { $0?.cancel() }; return try await db.exportTextSnapshot(ids: [chosen.id]) }
+67 |         do { _ = try await task.value; XCTFail("Canceled export succeeded") } catch is CancellationError { }
+   |                      `- warning: no 'async' operations occur within 'await' expression
+68 |         let snapshot = try await db.exportTextSnapshot(ids: [chosen.id]); XCTAssertEqual(snapshot.conversations, [chosen])
+69 |     }
+
+/workspace/scratch/8352eb8fe69c/orivyn-text-export-proof/Tests/JarvisEVOTests/ReviewedTextSnapshotTests.swift:67:18: warning: no calls to throwing functions occur within 'try' expression
+65 |         let db = try store(), chosen = chat(); try await db.save(chosen)
+66 |         let task = Task { withUnsafeCurrentTask { $0?.cancel() }; return try await db.exportTextSnapshot(ids: [chosen.id]) }
+67 |         do { _ = try await task.value; XCTFail("Canceled export succeeded") } catch is CancellationError { }
+   |                  `- warning: no calls to throwing functions occur within 'try' expression
+68 |         let snapshot = try await db.exportTextSnapshot(ids: [chosen.id]); XCTAssertEqual(snapshot.conversations, [chosen])
+69 |     }
+
+/workspace/scratch/8352eb8fe69c/orivyn-text-export-proof/Tests/JarvisEVOTests/ReviewedTextSnapshotTests.swift:67:79: warning: 'catch' block is unreachable because no errors are thrown in 'do' block
+65 |         let db = try store(), chosen = chat(); try await db.save(chosen)
+66 |         let task = Task { withUnsafeCurrentTask { $0?.cancel() }; return try await db.exportTextSnapshot(ids: [chosen.id]) }
+67 |         do { _ = try await task.value; XCTFail("Canceled export succeeded") } catch is CancellationError { }
+   |                                                                               `- warning: 'catch' block is unreachable because no errors are thrown in 'do' block
+68 |         let snapshot = try await db.exportTextSnapshot(ids: [chosen.id]); XCTAssertEqual(snapshot.conversations, [chosen])
+69 |     }
+
+/workspace/scratch/8352eb8fe69c/orivyn-text-export-proof/Tests/JarvisEVOTests/ReviewedTextSnapshotTests.swift:72:37: error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+70 |     func testArchivedSelectedConversationIsIncluded() async throws {
+71 |         let db = try store(); var chosen = chat(); chosen.isArchived = true; try await db.save(chosen)
+72 |         let snapshot = try await db.exportTextSnapshot(ids: [chosen.id]); XCTAssertEqual(snapshot.conversations, [chosen])
+   |                                     `- error: value of type 'SQLiteConversationStore' has no member 'exportTextSnapshot'
+73 |     }
+74 | }
+error: fatalError

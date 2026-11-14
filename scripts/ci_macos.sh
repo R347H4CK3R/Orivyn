@@ -32,8 +32,8 @@ echo "$SIMULATOR_ID" > "$ARTIFACTS/simulator-id.txt"
 xcrun simctl bootstatus "$SIMULATOR_ID" -b
 # Deterministic real Core Location simulator input, not physical GPS evidence.
 xcrun simctl location "$SIMULATOR_ID" set 37.3349,-122.0090
-bash scripts/run_native_tests.sh "$ARTIFACTS" xcodebuild -project JarvisEVO.xcodeproj -scheme JarvisEVO -destination "platform=iOS Simulator,id=$SIMULATOR_ID" -destination-timeout 120 -parallel-testing-enabled NO -test-timeouts-enabled YES -default-test-execution-time-allowance 120 -maximum-test-execution-time-allowance 720 -resultBundlePath "$ARTIFACTS/Tests.xcresult" CODE_SIGNING_ALLOWED=NO JARVIS_REQUIRE_REAL_INFERENCE=1 test
-xcodebuild -project JarvisEVO.xcodeproj -scheme JarvisEVO -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build 2>&1 | tee "$ARTIFACTS/device-build.log"
+bash scripts/run_native_tests.sh "$ARTIFACTS" xcodebuild -project JarvisEVO.xcodeproj -scheme JarvisEVO -destination "platform=iOS Simulator,id=$SIMULATOR_ID" -destination-timeout 120 -parallel-testing-enabled NO -test-timeouts-enabled YES -default-test-execution-time-allowance 120 -maximum-test-execution-time-allowance 720 -resultBundlePath "$ARTIFACTS/Tests.xcresult" CODE_SIGNING_ALLOWED=NO "ORIVYN_NATIVE_FEATURES=${ORIVYN_NATIVE_FEATURES:-}" JARVIS_REQUIRE_REAL_INFERENCE=1 test
+xcodebuild -project JarvisEVO.xcodeproj -scheme JarvisEVO -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO "ORIVYN_NATIVE_FEATURES=${ORIVYN_NATIVE_FEATURES:-}" build 2>&1 | tee "$ARTIFACTS/device-build.log"
 APP=build/Build/Products/Release-iphoneos/JarvisEVO.app
 test -x "$APP/JarvisEVO"
 mkdir -p "$PACKAGE/Payload"

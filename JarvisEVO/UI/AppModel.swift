@@ -1029,6 +1029,14 @@ final class AppModel {
 
     func exportData() async throws -> Data { try await store.exportData() }
 
+    func prepareTextExport(ids: Set<UUID>) async throws -> ReviewedTextSnapshot {
+        guard !isGenerating, !isChangingHistory, !isLoading, !isSavingSubmittedTurn else { throw TextSnapshotError.busy }
+        let value = try await store.exportTextSnapshot(ids: ids)
+        try Task.checkCancellation()
+        return value
+    }
+
+
     func importHistory(from url: URL, policy: BackupImportPolicy = .preserveLocal) async {
         guard !isGenerating else { errorMessage = "Stop the current response before importing history."; return }
         guard beginHistoryChange() else { return }

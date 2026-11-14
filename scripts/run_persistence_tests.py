@@ -3,9 +3,9 @@
 Requires local Swift and official SQLite source inputs; never downloads or changes system packages.
 """
 import argparse, hashlib, json, os, pathlib, subprocess
-SOURCES = ['JarvisEVO/Core/PeerSyncControlFrame.swift','JarvisEVO/Core/ConversationSearch.swift','JarvisEVO/Core/ImageOCRResult.swift','JarvisEVO/Core/Conversation.swift','JarvisEVO/Core/MemoryNote.swift',
+SOURCES = ['JarvisEVO/Core/ReviewedTextSnapshot.swift','JarvisEVO/Core/PeerSyncControlFrame.swift','JarvisEVO/Core/ConversationSearch.swift','JarvisEVO/Core/ImageOCRResult.swift','JarvisEVO/Core/Conversation.swift','JarvisEVO/Core/MemoryNote.swift',
  'JarvisEVO/Core/OCRLineEvidence.swift','JarvisEVO/Persistence/SQLiteConversationStore.swift']
-TESTS = ['Tests/PeerSyncControlFrameTests.swift','Tests/TextReceivePersistenceTests.swift','Tests/ImageIdentityPersistenceTests.swift','Tests/PersistenceTests.swift','Tests/ConversationTests.swift','Tests/ConversationSearchTests.swift','Tests/OCRLineEvidenceTests.swift']
+TESTS = ['Tests/ReviewedTextSnapshotTests.swift','Tests/PeerSyncControlFrameTests.swift','Tests/TextReceivePersistenceTests.swift','Tests/ImageIdentityPersistenceTests.swift','Tests/PersistenceTests.swift','Tests/ConversationTests.swift','Tests/ConversationSearchTests.swift','Tests/OCRLineEvidenceTests.swift']
 PACKAGE = '''// swift-tools-version: 6.0
 import PackageDescription
 let package = Package(name: "OrivynPersistenceProof", targets: [

@@ -8,12 +8,68 @@ compile without this flag and explain that the runtime is unavailable. No app
 preview/release was published, no server or paid service is used, and no 1.0 or
 physical-iPhone completion is claimed.
 
+## Who processes pixels, consent, and data flow
+
+This feature uses the **local SmolVLM2 2.2B vision-language model**, not the
+currently selected chat provider. `NativeVisionRuntime` → `VisionWorker` → the
+`ov_*` C bridge invokes llama.cpp's **mtmd** vision encoder/projector and local
+language-model decoding in the same runtime. It has no remote inference provider,
+cloud fallback, OCR-as-vision substitution, or tool-execution path. An answer does
+not authorize or trigger any autonomous action.
+
+In the production source, `VisionImageFile` reads the already imported,
+app-owned image into bounded owned bytes. Apple's **ImageIO** validates metadata
+and decodes an orientation-aware thumbnail (maximum dimension 512); CoreGraphics
+normalizes sRGB and composites transparency onto white, then packs RGB pixels.
+Only those pixels and the user's question enter model inference. The image's
+filename, OCR extraction, and metadata descriptions do not enter the prompt.
+This Apple decoding path has **not** been compiled or exercised here. Linux's
+nine-case gate instead uses Pillow-generated RGB for the synthetic fixtures and
+Pillow-decoded RGB for the existing natural photograph. The separate production
+Swift adapter check also substitutes generated RGB for unavailable ImageIO.
+
+Consent is two explicit app actions: **Download or verify vision model** fetches
+or verifies the pinned weights; **Analyze image** runs analysis of the selected
+existing image and the question shown in the field. Opening the image-analysis
+screen does neither automatically. Analysis never silently downloads a missing
+pair. Downloads use HTTPS from Hugging Face's pinned model URLs (including its
+asset-delivery redirects); this network operation requests model files only.
+**No image pixels, questions, or answers are uploaded by this feature.** After
+verified installation, inference itself is local and requires no network. Actual
+physical-iPhone airplane-mode operation remains an outstanding test.
+
+There is no new per-image OS camera or photo-library permission request: this
+screen reads an existing imported attachment. Any system file-picker selection
+and security-scoped access occurred during the prior import; the imported copy
+is then read from the app's private attachment storage. The Analyze button is
+app-level consent, not a claim that iOS displays an additional permission dialog.
+
+The current screen holds the question in SwiftUI state and the answer in the
+in-memory `VisionSession`. It does **not** automatically append either to chat,
+write an analysis history/backup, or save a new image. Existing imported image
+storage is unchanged. Cancel/dismiss/background cleanup cancels work and clears
+the session answer while resources finish releasing; this is not a secure-memory
+erasure guarantee. The user may explicitly select/copy displayed text. Native
+library diagnostics can include prompt text—the Linux logs demonstrate this—so
+“not automatically saved by the UI” must not be read as a no-logging guarantee.
+Developer diagnostic scripts deliberately save fixture prompts, actual answers,
+and hashes locally as evidence; they were run on generated fixtures and the
+specified repository photograph, not private user images.
+
 ## Model and image correctness
 
 Official pinned `ggml-org/SmolVLM2-2.2B-Instruct-GGUF` revision
 `1bc3c9f74ceafd4c8d4411cc9cf188bba3798f91`, Q4_K_M text model plus f16 projector:
 1,112,602,656 + 872,303,680 = **1,984,906,336 bytes**. Both exact LFS SHA256 values
-were verified. This fits below the existing 2,000,000,000-byte file cap without
+were verified:
+
+- `SmolVLM2-2.2B-Instruct-Q4_K_M.gguf` SHA256:
+  `0cf76814555b8665149075b74ab6b5c1d428ea1d3d01c1918c12012e8d7c9f58`.
+- `mmproj-SmolVLM2-2.2B-Instruct-f16.gguf` SHA256:
+  `db9a3a1648cab1ebc3af4a2b0c8145dd8faebf6f7dd7b16e7dc1842229f14ac4`.
+
+The exact manifest is `Evidence/production/MODEL_PAIR.json`. This fits below the
+existing 2,000,000,000-byte file cap without
 raising it; model file size is not an iPhone memory budget. Apache-2.0 declared
 in both official conversion/base model metadata; standard license is retained at
 `JarvisEVO/Resources/VisionModel-LICENSE.txt`. No LICENSE/NOTICE-named file was
@@ -46,6 +102,33 @@ hallucination detector.
 | Three circles | Pass | Pass |
 | Natural mountain/river image | Pass | Pass |
 | Uniform white blank | Abstains before model load | Abstains before model load |
+
+The **nine** checks below are the actual assertions in `extended_gate.py`,
+not nine categories of general vision capability. For each nonblank case the
+script requires C status 0 and the listed case-insensitive **substring** matches.
+It does not perform semantic grading or reject every additional incorrect claim.
+The final gate also requires zero tracked native handles for every case; this
+counter is not a heap-leak proof.
+
+| Check | Fixed input | Exact question | Output assertion |
+| --- | --- | --- | --- |
+| 1 | Red circle, white background | “Describe the visible image in one sentence.” | Contains `red` and `circle` |
+| 2 | Red square, white background | Same question as check 1 | Contains `red` and `square` |
+| 3 | Blue circle, white background | Same question as check 1 | Contains `blue` and `circle` |
+| 4 | Blue square, white background | Same question as check 1 | Contains `blue` and `square` |
+| 5 | Red circle left of blue square | “Where is the circle relative to the square? Answer in one sentence.” | Contains `left` |
+| 6 | Same shapes with positions swapped | Same question as check 5 | Contains `right` |
+| 7 | Three red circles in a row | “How many circles are visible? Answer briefly.” | Contains `three` or `3` |
+| 8 | Existing mountain/river photograph | “Describe the visible scene in one sentence.” | Contains `mountain` or `cliff`, and `water`, `river`, or `lake` |
+| 9 | Uniform white RGB image | Same question as check 1 (not sent to a model) | Status 10, empty output, zero evaluated positions |
+
+Check 9 is **pixel-boundary abstention, not successful model inference**. The
+blank guard prevents a call that previously hallucinated. Checks 1–8 actually
+encode pixels and generate model text. Synthetic images are 384×384; the natural
+image is resized to fit within 512×512. Both pairs receive identical fixtures and
+questions. The recorded outputs, reports, model identities, and transformed RGB
+hashes are in `Evidence/production/baseline-results.json` and
+`Evidence/production/stronger-results.json`.
 
 Final gate: **500M 7/9, exit 1; stronger pair 9/9, exit 0**. The earlier broad
 “describe briefly” prompt had only 2/5 baseline passes; concise prompting improves
@@ -89,7 +172,15 @@ fixture directory. It is not a SwiftUI/AppModel/download/Apple integration test.
 A real one-token generation returns status8, empty output and zero tracked
 handles. `run_production_runtime.sh` reproduces the exact runtime compilation.
 
-## Remaining verification
+## Verification scope and remaining work
+
+The reported inference runs used **Linux CPU execution**: two threads,
+`n_gpu_layers=0`, mtmd `use_gpu=false`, a 2048-position context, and at most 128
+output tokens. They do not demonstrate Apple Metal execution, an iOS simulator,
+a signed iPhone build, camera use, or general agent autonomy. Passing eight
+inference fixtures plus one blank guard is not broad real-world accuracy,
+robustness, accessibility, safety-critical interpretation, or release acceptance.
+
 
 Apple SwiftUI/ImageIO/CryptoKit compilation, combined framework device/simulator
 symbols and runtime uniqueness, actual download/cancellation on iOS, image
