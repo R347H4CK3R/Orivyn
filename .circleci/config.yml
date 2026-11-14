@@ -5,11 +5,34 @@
 version: 2.1
 
 parameters:
+  run_focused_native:
+    type: boolean
+    default: false
   run_native:
     type: boolean
     default: true
 
 jobs:
+  focused-native-regression:
+    macos:
+      xcode: "26.4.1"
+    resource_class: m4pro.medium
+    environment:
+      HOMEBREW_NO_AUTO_UPDATE: "1"
+      CI: "true"
+    steps:
+      - checkout
+      - run:
+          name: Focused native regression only (590s internal limit plus 5s termination)
+          no_output_timeout: 11m
+          command: |
+            mkdir -p artifacts/focused
+            # This limits the command, not provisioning/checkout/artifact billing.
+            python3 scripts/focused_watchdog.py 590 artifacts/focused bash -c 'set -o pipefail; bash scripts/ci_focused_native.sh 2>&1 | tee artifacts/focused/console.log'
+      - store_artifacts:
+          path: artifacts/focused
+          destination: Orivyn-focused-regression-not-release
+
   native-ios-gate:
     macos:
       xcode: "26.4.1"
@@ -67,6 +90,17 @@ jobs:
           destination: Orivyn-native-gate-evidence
 
 workflows:
+  controlled-focused-regression:
+    when:
+      and:
+        - << pipeline.parameters.run_focused_native >>
+        - not: << pipeline.parameters.run_native >>
+    jobs:
+      - authorize-focused-free-credit-run:
+          type: approval
+      - focused-native-regression:
+          requires:
+            - authorize-focused-free-credit-run
   controlled-native-validation:
     when: << pipeline.parameters.run_native >>
     jobs:
@@ -75,3 +109,4 @@ workflows:
       - native-ios-gate:
           requires:
             - authorize-free-credit-run
+
