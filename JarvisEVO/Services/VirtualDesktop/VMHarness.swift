@@ -178,9 +178,11 @@ final class VMHarnessController: NSObject, @preconcurrency WKScriptMessageHandle
             self.checkpointBusy = false
             switch result {
             case .success(let value):
+                // This is the historical checkpoint result. Live CPU state and
+                // Resume guidance belong to status, which follows runtime events.
                 switch value as? String {
-                case "saved": self.checkpointStatus = "Checkpoint verified and saved. Guest CPU is paused."
-                case "restored": self.checkpointStatus = "Checkpoint verified and restored. Tap Resume."
+                case "saved": self.checkpointStatus = "Checkpoint verified and saved."
+                case "restored": self.checkpointStatus = "Checkpoint verified and restored."
                 case "missing": self.checkpointStatus = "No compatible checkpoint saved."
                 default: self.checkpointStatus = "Unexpected checkpoint response; no success claimed."
                 }

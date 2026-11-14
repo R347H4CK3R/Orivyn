@@ -136,6 +136,10 @@ final class VirtualDesktopIntegrationUITests: XCTestCase {
         send("printf 'RESTORED_%s:%s\\n' '\(challenge)' \"$(cat \(file))\" > /dev/ttyS0")
         let restored = NSPredicate(format: "label CONTAINS %@", expected)
         XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: restored, object: app.staticTexts["desktop.console"])], timeout: 40), .completed)
+        // The successful fresh guest read proves Resume ran. The historical
+        // checkpoint result must no longer instruct Resume or claim a paused CPU.
+        XCTAssertFalse(app.buttons["Resume"].isEnabled)
+        XCTAssertEqual(app.staticTexts["desktop.checkpoint.status"].label, "Checkpoint verified and restored.")
         let evidence = XCTAttachment(screenshot: app.screenshot())
         evidence.name = "Fresh guest file read after app relaunch and checkpoint restore"
         evidence.lifetime = .keepAlways; add(evidence)
