@@ -152,6 +152,19 @@ enum ContextWindow {
             selected.append(message)
             remaining -= size
         }
-        return selected.reversed()
+        let ordered = Array(selected.reversed())
+        // A response is not an independent history turn: retaining it after its
+        // question was trimmed can misattribute old assistant text to the new
+        // request. Keep system context, but discard answers before the first
+        // retained user message. Do not cut the user's text or attachments.
+        if messages.contains(where: { $0.role == .user && $0.state != .failed && (!$0.content.isEmpty || !$0.attachments.isEmpty) }),
+           !ordered.contains(where: { $0.role == .user }) {
+            throw ConversationError.tooLarge
+        }
+        var hasUser = false
+        return ordered.filter { message in
+            if message.role == .user { hasUser = true }
+            return message.role != .assistant || hasUser
+        }
     }
 }
