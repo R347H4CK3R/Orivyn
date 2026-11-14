@@ -12,7 +12,7 @@ struct VisionAnalysisView: View {
     @State private var session: VisionSession?
     @State private var work: Task<Void, Never>?
     @State private var working = false
-    @State private var progress: Double?
+    @State private var downloadProgress = VisionDownloadProgressState()
     @State private var error: String?
     @State private var stopping = false
 
@@ -32,7 +32,7 @@ struct VisionAnalysisView: View {
                         .font(.caption).foregroundStyle(.secondary)
                     Button("Download or verify vision model") { install() }
                         .disabled(working || stopping || !VisionServices.nativeAvailable || !model.canBeginHeavyWork)
-                    if let progress { ProgressView(value: progress) }
+                    if let value = downloadProgress.value { ProgressView(value: value) }
                 }
                 Section("Ask about this image") {
                     TextField("Question", text: $question, axis: .vertical).lineLimit(2...5)
@@ -65,12 +65,15 @@ struct VisionAnalysisView: View {
 
     private func install() {
         guard !working, !stopping else { return }
-        working = true; error = nil; progress = 0
+        working = true; error = nil
+        let operation = downloadProgress.begin()
         work = Task { @MainActor in
-            defer { working = false; progress = nil }
+            defer { working = false; downloadProgress.finish(operation) }
             do {
                 let store = try VisionServices.store.get()
-                try await store.install { value in Task { @MainActor in progress = value } }
+                try await store.install { value in
+                    Task { @MainActor in downloadProgress.update(value, for: operation) }
+                }
             } catch { if !Task.isCancelled { self.error = error.localizedDescription } }
         }
     }
@@ -100,6 +103,9 @@ struct VisionAnalysisView: View {
     private func stop() async {
         guard !stopping else { return }
         stopping = true
+        // Invalidate before awaiting native/download teardown: queued callbacks
+        // from this operation can no longer publish progress during or after stop.
+        downloadProgress.cancel()
         work?.cancel()
         if let session { _ = await session.close() }
         await work?.value

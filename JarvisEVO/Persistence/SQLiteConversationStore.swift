@@ -36,6 +36,7 @@ private final class DatabaseHandle: @unchecked Sendable {
                 try execute("CREATE TABLE text_receive_epoch (singleton INTEGER PRIMARY KEY CHECK(singleton=1), epoch TEXT NOT NULL); INSERT INTO text_receive_epoch VALUES (1, '\(UUID().uuidString)');")
                 try execute("CREATE TABLE text_receive_receipts (transfer TEXT PRIMARY KEY, peer BLOB NOT NULL, generation TEXT NOT NULL, payload BLOB NOT NULL, summary BLOB NOT NULL);")
             }
+            try execute("CREATE TABLE IF NOT EXISTS text_send_outbox (transfer TEXT PRIMARY KEY, sender BLOB NOT NULL, peer BLOB NOT NULL, generation TEXT NOT NULL, receiver_epoch TEXT NOT NULL, payload BLOB NOT NULL, delivered INTEGER NOT NULL DEFAULT 0 CHECK(delivered IN (0,1)));")
             try execute("COMMIT")
         } catch { try? execute("ROLLBACK"); throw error }
         #if os(iOS)
@@ -50,11 +51,32 @@ private final class DatabaseHandle: @unchecked Sendable {
 }
 
 /// Local commit identity only: these fields do not authenticate a transport or grant consent.
-struct ReviewedTextReceiveIdentity: Sendable {
+struct ReviewedTextReceiveIdentity: Equatable, Sendable {
     let epoch: UUID
     let transfer: UUID
     let peerCertificateSHA256: Data
     let pairingGeneration: UUID
+}
+
+/// Durable local draft, not authentication, live transfer consent, or proof of
+/// delivery. Only a future authenticated receipt handler may record delivery.
+struct TextSendIdentity: Equatable, Sendable {
+    let receiverEpoch: UUID
+    let transfer: UUID
+    let senderCertificateSHA256: Data
+    let receiverCertificateSHA256: Data
+    let pairingGeneration: UUID
+    /// Receiver-side pin identifies the sender, not the destination certificate.
+    var receiveIdentity: ReviewedTextReceiveIdentity {
+        ReviewedTextReceiveIdentity(epoch: receiverEpoch, transfer: transfer,
+            peerCertificateSHA256: senderCertificateSHA256, pairingGeneration: pairingGeneration)
+    }
+}
+
+struct StagedTextSend: Sendable {
+    let identity: TextSendIdentity
+    let payload: Data
+    let delivered: Bool
 }
 
 enum DatabaseError: LocalizedError {
@@ -178,6 +200,10 @@ actor SQLiteConversationStore {
             // Real failures still roll back: otherwise private receipt text could remain.
             try database.execute("DELETE FROM text_receive_receipts")
         }
+        if try tableExists("text_send_outbox") {
+            // Pending and delivered rows both retain exact reviewed private bytes.
+            try database.execute("DELETE FROM text_send_outbox")
+        }
         if try tableExists("text_receive_epoch") {
             try database.execute("UPDATE text_receive_epoch SET epoch='\(UUID().uuidString)' WHERE singleton=1")
         }
@@ -233,6 +259,123 @@ actor SQLiteConversationStore {
             try database.execute("COMMIT")
             return snapshot
         } catch { try? database.execute("ROLLBACK"); throw error }
+    }
+
+    /// Locally stages precisely the reviewed snapshot and destination labels.
+    /// This performs no network operation and grants no authority to send bytes.
+    /// Reject a changed/deleted selection instead of rebuilding reviewed content.
+    func stageTextSend(_ snapshot: ReviewedTextSnapshot, senderCertificateSHA256: Data, peerCertificateSHA256: Data,
+                       pairingGeneration: UUID, receiverEpoch: UUID) throws -> StagedTextSend {
+        try Task.checkCancellation()
+        guard senderCertificateSHA256.count == 32, peerCertificateSHA256.count == 32,
+              senderCertificateSHA256 != peerCertificateSHA256 else { throw DatabaseError.operation("Invalid text send destination.") }
+        try database.execute("BEGIN IMMEDIATE")
+        do {
+            for selected in snapshot.conversations {
+                try Task.checkCancellation()
+                try withStatement("SELECT payload FROM conversations WHERE id=?") { statement in
+                    bind(selected.id.uuidString, to: 1, in: statement)
+                    guard sqlite3_step(statement) == SQLITE_ROW,
+                          (1...ReviewedTextSnapshot.maximumBytes).contains(Int(sqlite3_column_bytes(statement, 0))) else {
+                        throw TextSnapshotError.changed
+                    }
+                    // Preserve persisted stream state here: do not turn an active
+                    // checkpoint into a resumable approved snapshot during reload.
+                    let current = try decoder.decode(Conversation.self, from: blob(statement, at: 0))
+                    guard current == selected else { throw TextSnapshotError.changed }
+                }
+            }
+            try withStatement("SELECT COUNT(*), COALESCE(SUM(length(payload)),0) FROM text_send_outbox") { statement in
+                guard sqlite3_step(statement) == SQLITE_ROW,
+                      sqlite3_column_int64(statement, 0) < 10_000,
+                      sqlite3_column_int64(statement, 1) <= 50_000_000 - Int64(snapshot.data.count) else {
+                    throw DatabaseError.operation("Text send storage is full; no draft was staged.")
+                }
+            }
+            let identity = TextSendIdentity(receiverEpoch: receiverEpoch, transfer: UUID(), senderCertificateSHA256: senderCertificateSHA256,
+                receiverCertificateSHA256: peerCertificateSHA256, pairingGeneration: pairingGeneration)
+            try withStatement("INSERT INTO text_send_outbox (transfer,sender,peer,generation,receiver_epoch,payload) VALUES (?,?,?,?,?,?)") { statement in
+                bind(identity.transfer.uuidString, to: 1, in: statement)
+                bind(identity.senderCertificateSHA256, to: 2, in: statement)
+                bind(identity.receiverCertificateSHA256, to: 3, in: statement)
+                bind(identity.pairingGeneration.uuidString, to: 4, in: statement)
+                bind(identity.receiverEpoch.uuidString, to: 5, in: statement)
+                bind(snapshot.data, to: 6, in: statement)
+                try requireDone(statement)
+            }
+            try Task.checkCancellation()
+            try database.execute("COMMIT")
+            return StagedTextSend(identity: identity, payload: snapshot.data, delivered: false)
+        } catch { try? database.execute("ROLLBACK"); throw error }
+    }
+
+    /// Metadata only. Restart discovers pending drafts; it does not resume sending.
+    func pendingTextSendIDs() throws -> [UUID] {
+        try withStatement("SELECT transfer FROM text_send_outbox WHERE delivered=0 ORDER BY transfer LIMIT 10001") { statement in
+            var result: [UUID] = []
+            while true {
+                let status = sqlite3_step(statement)
+                if status == SQLITE_DONE { return result }
+                guard status == SQLITE_ROW, result.count < 10_000,
+                      let text = sqlite3_column_text(statement, 0), let id = UUID(uuidString: String(cString: text)) else {
+                    throw DatabaseError.operation("Could not read staged text sends.")
+                }
+                result.append(id)
+            }
+        }
+    }
+
+    func textSend(id: UUID) throws -> StagedTextSend? {
+        try withStatement("SELECT peer,generation,receiver_epoch,payload,delivered,sender FROM text_send_outbox WHERE transfer=?") { statement in
+            bind(id.uuidString, to: 1, in: statement)
+            let status = sqlite3_step(statement)
+            if status == SQLITE_DONE { return nil }
+            guard status == SQLITE_ROW,
+                  sqlite3_column_bytes(statement, 0) == 32, sqlite3_column_bytes(statement, 5) == 32,
+                  blob(statement, at: 0) != blob(statement, at: 5),
+                  let generationText = sqlite3_column_text(statement, 1), let generation = UUID(uuidString: String(cString: generationText)),
+                  let epochText = sqlite3_column_text(statement, 2), let epoch = UUID(uuidString: String(cString: epochText)),
+                  (1...ReviewedTextSnapshot.maximumBytes).contains(Int(sqlite3_column_bytes(statement, 3))),
+                  sqlite3_column_type(statement, 4) == SQLITE_INTEGER,
+                  [0, 1].contains(sqlite3_column_int(statement, 4)) else {
+                throw DatabaseError.operation("Staged text send metadata needs recovery.")
+            }
+            let payload = blob(statement, at: 3)
+            let backup = try decoder.decode(ConversationBackup.self, from: payload)
+            guard backup.schemaVersion == 1, backup.memories.isEmpty else { throw ConversationError.invalidBackup }
+            let snapshot = try ReviewedTextSnapshot(conversations: backup.conversations, exportedAt: backup.exportedAt)
+            // Only canonical bytes produced by staging are valid; unknown JSON
+            // fields must not become a hidden unreviewed outgoing payload.
+            guard snapshot.data == payload else { throw ConversationError.invalidBackup }
+            return StagedTextSend(identity: TextSendIdentity(receiverEpoch: epoch, transfer: id,
+                senderCertificateSHA256: blob(statement, at: 5), receiverCertificateSHA256: blob(statement, at: 0), pairingGeneration: generation),
+                payload: payload, delivered: sqlite3_column_int(statement, 4) == 1)
+        }
+    }
+
+    /// Records a receipt only after the native coordinator has authenticated its
+    /// peer and bound the receipt to these exact bytes/scope. This API is not proof
+    /// of those checks. A socket send completion must NEVER call it by itself.
+    func recordTextDeliveryReceipt(identity: TextSendIdentity, payload: Data) throws {
+        try Task.checkCancellation()
+        guard payload.count <= ReviewedTextSnapshot.maximumBytes else { throw TextSnapshotError.limit }
+        try database.execute("BEGIN IMMEDIATE")
+        do {
+            guard let staged = try textSend(id: identity.transfer), staged.identity == identity,
+                  staged.payload == payload else { throw DatabaseError.operation("Text delivery receipt does not match a staged transfer.") }
+            try withStatement("UPDATE text_send_outbox SET delivered=1 WHERE transfer=?") { statement in
+                bind(identity.transfer.uuidString, to: 1, in: statement); try requireDone(statement)
+            }
+            try Task.checkCancellation()
+            try database.execute("COMMIT")
+        } catch { try? database.execute("ROLLBACK"); throw error }
+    }
+
+    /// Explicit local cancellation/cleanup. Cannot retract bytes already delivered.
+    func discardTextSend(id: UUID) throws {
+        try withStatement("DELETE FROM text_send_outbox WHERE transfer=?") { statement in
+            bind(id.uuidString, to: 1, in: statement); try requireDone(statement)
+        }
     }
 
     /// Merges a complete validated snapshot transactionally. Attachments remain local references.

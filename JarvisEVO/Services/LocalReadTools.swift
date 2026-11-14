@@ -3,10 +3,16 @@ import Foundation
 /// Shared native read-only tool implementation; no network or model interpretation.
 @MainActor
 enum LocalReadTools {
-    static func execute(name: String, arguments: MCPJSONValue, model: AppModel, resultByteLimit: Int? = nil, trustedGoal: String? = nil) throws -> String {
+    static func execute(name: String, arguments: MCPJSONValue, model: AppModel, resultByteLimit: Int? = nil, trustedGoal: String? = nil, authorizedConversationIDs: Set<UUID> = []) throws -> String {
         if name == "calculate" {
             guard let trustedGoal else { throw LocalAgentError.invalidState }
             return try LocalCalculatorTool.execute(arguments: arguments, requestedGoal: trustedGoal, maximumBytes: resultByteLimit ?? 4096)
+        }
+        if name == "read_conversation" {
+            let page = try LocalConversationRead.read(conversations: model.conversations, arguments: arguments, authorizedIDs: authorizedConversationIDs)
+            let data = try page.encoded(maximumBytes: resultByteLimit ?? 4096)
+            guard let text = String(data: data, encoding: .utf8) else { throw LocalAgentError.invalidState }
+            return text
         }
         let object: MCPJSONValue
         switch name {

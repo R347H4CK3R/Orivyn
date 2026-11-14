@@ -22,7 +22,9 @@ final class VerifiedLocalReadUITests: XCTestCase {
         let state = app.staticTexts["verified.state"]
         let complete = NSPredicate(format: "label == %@", "State: complete")
         XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: complete, object: state)], timeout: 10), .completed)
-        let report = app.staticTexts["verified.report"]
+        let report = app.descendants(matching: .any).matching(identifier: "verified.report").firstMatch
+        reveal(report, in: app.collectionViews.firstMatch)
+        XCTAssertTrue(report.waitForExistence(timeout: 5))
         XCTAssertTrue(report.label.contains("Orivyn"))
         XCTAssertTrue(report.label.contains("totalInstalled"))
         let image = XCTAttachment(screenshot: app.screenshot()); image.name = "Deterministic app and installed-model reads"; image.lifetime = .keepAlways; add(image)

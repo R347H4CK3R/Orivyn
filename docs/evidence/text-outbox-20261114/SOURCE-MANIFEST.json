@@ -1,0 +1,70 @@
+[
+  {
+    "path": "JarvisEVO/Core/Conversation.swift",
+    "sha256": "bc67dc97a2701c47c419c263d11373331bba3f6238c5112cd9666b5902b5d23a"
+  },
+  {
+    "path": "JarvisEVO/Core/ConversationSearch.swift",
+    "sha256": "777ad27a00fd365acd64a3bfb9bf1181a06a1375ee0b7542eb633738a55ecb84"
+  },
+  {
+    "path": "JarvisEVO/Core/ImageOCRResult.swift",
+    "sha256": "382ea8ed084af0c7afb0ac03721bae8672294e3bf3d4e93917749dc1be735378"
+  },
+  {
+    "path": "JarvisEVO/Core/MemoryNote.swift",
+    "sha256": "cccceaa84d497af02f1d466968300a7281f354b4b5e1a1ae913b403023f8967f"
+  },
+  {
+    "path": "JarvisEVO/Core/OCRLineEvidence.swift",
+    "sha256": "100c0bc3a78fc20139be459bc17880dc4e07dd2978c75dcc0baf83a08b7b1502"
+  },
+  {
+    "path": "JarvisEVO/Core/PeerSyncControlFrame.swift",
+    "sha256": "b8359301a74373afe662a8d45b720010a1478c1228fca45739dde3b00e553190"
+  },
+  {
+    "path": "JarvisEVO/Core/ReviewedTextSnapshot.swift",
+    "sha256": "902727b200f99a481fc511d3e8ceb69aa6f45830481d5130a362fff2d2058459"
+  },
+  {
+    "path": "JarvisEVO/Persistence/SQLiteConversationStore.swift",
+    "sha256": "cc86759f88b0f28322a309b96079a4b08ea48a0dabd10c0ad41ceaedd2e5bd1e"
+  },
+  {
+    "path": "Tests/ConversationSearchTests.swift",
+    "sha256": "151cbbc644cf81078c3b18b95d8e46e0fc10184ac99884b01a3ad1105fe00cae"
+  },
+  {
+    "path": "Tests/ConversationTests.swift",
+    "sha256": "53f35e0e218373bdf1b25050a2142755e7f5cae1f378f693f4d2aab581b77b22"
+  },
+  {
+    "path": "Tests/ImageIdentityPersistenceTests.swift",
+    "sha256": "246bc9589a5235af1323687f292b040fe036d0f223815a9edfb918aac1ebd32f"
+  },
+  {
+    "path": "Tests/OCRLineEvidenceTests.swift",
+    "sha256": "6f55435f0c6612e087c092cd2de77b3edc8769f5042470c66aefd418c5acb026"
+  },
+  {
+    "path": "Tests/PeerSyncControlFrameTests.swift",
+    "sha256": "e1903c706123eda867de56a6e6119376cdef772affbcfa6a67aa26b9cb3de10e"
+  },
+  {
+    "path": "Tests/PersistenceTests.swift",
+    "sha256": "90ad3605d9a4b28068c9816d1caf46f8495088d1483d09fa60d3fcea51accc75"
+  },
+  {
+    "path": "Tests/ReviewedTextSnapshotTests.swift",
+    "sha256": "f09f7fa28600b52addd8ab482666d9789c7988e7b6dcdf37950710f93a392553"
+  },
+  {
+    "path": "Tests/TextReceivePersistenceTests.swift",
+    "sha256": "7a3ff8d04bb09655f4a8f70a1262a8c47a3d9c932f51f6fc5002579ddf747536"
+  },
+  {
+    "path": "Tests/TextSendOutboxTests.swift",
+    "sha256": "a00d128ef59b8b81381e61368aea978e6fc1da891e82996de0fe6d58cde09730"
+  }
+]
