@@ -273,6 +273,72 @@ final class AppModelTests: XCTestCase {
         XCTAssertTrue(reopened.conciseQwen3)
     }
 
+    func testAttachmentCleanupRetainsFilesUntilHistoryHasLoaded() async throws {
+        let (model, store, _) = try await fixture()
+        let source = root.appendingPathComponent("original.txt")
+        try Data("Original saved attachment".utf8).write(to: source)
+        let attachment = try model.attachmentService.importFile(at: source)
+        let saved = Conversation(messages: [ChatMessage(role: .user, content: "Saved", attachments: [attachment])])
+        try await store.save(saved)
+        // A composer cleanup before bootstrap has no authority over persisted files.
+        model.removePendingAttachment(attachment)
+        XCTAssertNotNil(model.attachmentService.url(for: attachment))
+        var connection: OpaquePointer?
+        XCTAssertEqual(sqlite3_open(root.appendingPathComponent("test.sqlite").path, &connection), SQLITE_OK)
+        defer { sqlite3_close(connection) }
+        XCTAssertEqual(sqlite3_exec(connection, "UPDATE conversations SET payload = x'00'", nil, nil, nil), SQLITE_OK)
+        await model.bootstrap()
+        XCTAssertNotNil(model.errorMessage)
+        model.clearPendingAttachments()
+        XCTAssertNotNil(model.attachmentService.url(for: attachment))
+        // Recovery restores cleanup eligibility, but keeps every persisted reference.
+        try await store.save(saved)
+        await model.bootstrap()
+        XCTAssertEqual(model.conversations.count, 1)
+        XCTAssertNotNil(model.attachmentService.url(for: attachment))
+        let orphan = try model.attachmentService.importFile(at: source)
+        model.removePendingAttachment(orphan)
+        XCTAssertNil(model.attachmentService.url(for: orphan))
+        XCTAssertNotNil(model.attachmentService.url(for: attachment))
+    }
+
+    func testFailedHistoryRefreshInvalidatesPreviousCleanupSnapshot() async throws {
+        let (model, store, _) = try await fixture()
+        await model.bootstrap()
+        let source = root.appendingPathComponent("later.txt")
+        try Data("Added after snapshot".utf8).write(to: source)
+        let attachment = try model.attachmentService.importFile(at: source)
+        let saved = Conversation(messages: [ChatMessage(role: .user, content: "Later", attachments: [attachment])])
+        try await store.save(saved)
+        var connection: OpaquePointer?
+        XCTAssertEqual(sqlite3_open(root.appendingPathComponent("test.sqlite").path, &connection), SQLITE_OK)
+        defer { sqlite3_close(connection) }
+        XCTAssertEqual(sqlite3_exec(connection, "UPDATE conversations SET payload = x'00'", nil, nil, nil), SQLITE_OK)
+        await model.bootstrap()
+        model.clearPendingAttachments()
+        XCTAssertNotNil(model.attachmentService.url(for: attachment))
+    }
+
+    func testFailedImportRetainsFilesUntilReloadOrExplicitDeleteAll() async throws {
+        let (model, store, _) = try await fixture()
+        await model.bootstrap()
+        let source = root.appendingPathComponent("retain.txt")
+        try Data("Keep until a complete snapshot".utf8).write(to: source)
+        let attachment = try model.attachmentService.importFile(at: source)
+        let saved = Conversation(messages: [ChatMessage(role: .user, content: "Saved", attachments: [attachment])])
+        try await store.save(saved)
+        // Keep a valid stale snapshot: failed import must not sweep against it.
+        let invalid = root.appendingPathComponent("invalid.json")
+        try Data("not JSON".utf8).write(to: invalid)
+        await model.importHistory(from: invalid)
+        model.clearPendingAttachments()
+        XCTAssertNotNil(model.attachmentService.url(for: attachment))
+        await model.deleteAllContent()
+        XCTAssertNil(model.attachmentService.url(for: attachment))
+        let remaining = try await store.list(includeArchived: true)
+        XCTAssertTrue(remaining.isEmpty)
+    }
+
     private func fixture() async throws -> (AppModel, SQLiteConversationStore, ControlledTokenSource) {
         let store = try SQLiteConversationStore(url: root.appendingPathComponent("test.sqlite"))
         let attachmentService = try AttachmentService(directory: root.appendingPathComponent("Attachments"))
@@ -310,3 +376,4 @@ private actor ControlledTokenSource {
     func emit(_ value: String) { pair.continuation.yield(value) }
     func finish() { pair.continuation.finish() }
 }
+

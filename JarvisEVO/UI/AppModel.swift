@@ -344,10 +344,14 @@ final class AppModel {
     }
 
     func bootstrap() async {
+        // A suspended read must not race another load or a history transaction.
+        guard !isLoading, !isChangingHistory else { return }
+        attachmentHistoryIsLoaded = false
         isLoading = true
         defer { isLoading = false }
         do {
             conversations = try await store.list(includeArchived: true)
+            attachmentHistoryIsLoaded = true
             memories = try await store.memories()
             if selectedConversationID == nil { selectedConversationID = conversations.first(where: { !$0.isArchived })?.id }
             requestAttachmentCleanup()
@@ -820,6 +824,7 @@ final class AppModel {
             let maintenanceWarning = try await store.deleteAll()
             statusMessage = maintenanceWarning
             conversations = []
+            attachmentHistoryIsLoaded = true
             memories = []
             selectedConversationID = nil
             draft = ""
@@ -1030,8 +1035,12 @@ final class AppModel {
         do {
             let data = try await BackupFileReader.read(url)
             try Task.checkCancellation()
+            // A committed import can precede a failing reload. Keep its files until
+            // a complete history snapshot has been read successfully.
+            attachmentHistoryIsLoaded = false
             let summary = try await store.importData(data, policy: policy)
             conversations = try await store.list(includeArchived: true)
+            attachmentHistoryIsLoaded = true
             memories = try await store.memories()
             statusMessage = summary.description
             requestAttachmentCleanup()
@@ -1148,6 +1157,7 @@ final class AppModel {
     func report(_ error: Error) { errorMessage = error.localizedDescription }
 
     private func beginHistoryChange() -> Bool {
+        guard !isLoading else { errorMessage = "Wait for history to finish loading."; return false }
         guard !isLocalResourceAdmissionBlocked else { errorMessage = LocalHeavyWorkError.busy.localizedDescription; return false }
         guard !isChangingHistory else { errorMessage = "Wait for the current history operation to finish."; return false }
         guard !isSavingGeneratedImageRecord else { errorMessage = "Wait for the accepted image to finish saving before changing history."; return false }
@@ -1167,8 +1177,11 @@ final class AppModel {
         performAttachmentCleanupIfReady()
     }
 
+    // Cleanup must never infer orphaned files from an absent or stale history snapshot.
+    private var attachmentHistoryIsLoaded = false
+
     private func performAttachmentCleanupIfReady() {
-        guard attachmentCleanupNeeded, attachmentImportJobs.isEmpty, generatedImageTask == nil, !isChangingHistory else { return }
+        guard attachmentHistoryIsLoaded, attachmentCleanupNeeded, attachmentImportJobs.isEmpty, generatedImageTask == nil, !isChangingHistory else { return }
         let attachments = conversations.flatMap(\.messages).flatMap(\.attachments) + pendingAttachments
         let retained = attachments.reduce(into: Set<String>()) { $0.formUnion($1.localRelativePaths) }
         do {
@@ -1269,4 +1282,5 @@ private struct AutomaticPreparationTicket {
     let draft: String
     let attachments: [UUID]
 }
+
 
