@@ -19,6 +19,8 @@ actor ControlledModelStore {
 @MainActor final class DownloadScaffold {
     let modelStore = ControlledModelStore()
     var isPreparingAutomaticModel = false
+    var isRemovingModel = false
+    var isImportingModel = false
     var automaticDownloadOwner: UUID?
     var manualDownloadOwner: UUID?
     var downloadTask: Task<Void, Never>?
@@ -43,6 +45,14 @@ actor ControlledModelStore {
         let model = DownloadScaffold()
         let descriptor = LocalModelDescriptor(id: "same", name: "Fixture", fileName: "fixture.gguf", downloadURL: nil, sha256: String(repeating: "a", count: 64), byteCount: 1, license: "fixture", sourceURL: nil)
         var checks: [[String: Any]] = []
+        for busy in ["removal", "import"] {
+            let blocked = DownloadScaffold()
+            blocked.isRemovingModel = busy == "removal"
+            blocked.isImportingModel = busy == "import"
+            blocked.downloadModel(descriptor); await settle()
+            let requests = await blocked.modelStore.count()
+            checks.append(["check":"active \(busy) blocks manual download before creating work", "passed":requests == 0 && blocked.downloadTask == nil && blocked.manualDownloadOwner == nil && blocked.downloadingModelID == nil && blocked.downloadProgress == nil && blocked.reloads == 0])
+        }
         model.downloadModel(descriptor); await settle()
         await model.modelStore.emit(0, 0.4); await settle()
         checks.append(["check":"current progress accepted", "passed":model.downloadProgress == 0.4])
