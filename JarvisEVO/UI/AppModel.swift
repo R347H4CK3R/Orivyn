@@ -1085,6 +1085,9 @@ final class AppModel {
                     }
                 }
                 try await self.reloadProviders()
+                // Installation may already be committed when Cancel arrives during
+                // refresh. Keep those bytes/catalog, but skip the explicit selection.
+                try Task.checkCancellation()
                 self.selectedProviderID = descriptor.id
             } catch { if !Task.isCancelled { self.report(error) } }
             guard self.manualDownloadOwner == owner else { return }

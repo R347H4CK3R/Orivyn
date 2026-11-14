@@ -27,7 +27,12 @@ actor ControlledModelStore {
     var selectedProviderID = ""
     var errors = 0
     var reloads = 0
-    func reloadProviders() async throws { reloads += 1 }
+    var suspendReload = false
+    var reloadWait: CheckedContinuation<Void, Never>?
+    func reloadProviders() async throws {
+        reloads += 1
+        if suspendReload { await withCheckedContinuation { reloadWait = $0 } }
+    }
     func report(_ error: any Error) { errors += 1 }
     func cancelAutomaticPreparation() { automaticDownloadOwner = nil }
     // PRODUCTION_METHODS
@@ -54,6 +59,15 @@ actor ControlledModelStore {
         await model.modelStore.finish(1, cancelled: true); await settle()
         await model.modelStore.emit(1, 0.7); await settle()
         checks.append(["check":"cancelled completion stays cleared without reporting error", "passed":model.downloadTask == nil && model.downloadProgress == nil && model.errors == 0])
+        let late = DownloadScaffold()
+        late.selectedProviderID = "existing-provider"
+        late.suspendReload = true
+        late.downloadModel(descriptor); await settle()
+        await late.modelStore.finish(0); await settle()
+        guard let waitingReload = late.reloadWait else { fatalError("Download did not reach reload boundary") }
+        late.cancelDownload()
+        waitingReload.resume(); await settle()
+        checks.append(["check":"late cancellation skips explicit model selection and still clears task", "passed":late.reloads == 1 && late.selectedProviderID == "existing-provider" && late.downloadTask == nil && late.downloadingModelID == nil && late.downloadProgress == nil && late.errors == 0])
         print(String(decoding: try JSONSerialization.data(withJSONObject: ["checks":checks,"nativeVerified":false,"networkUsed":false], options: [.prettyPrinted,.sortedKeys]), as: UTF8.self))
         if checks.contains(where: { $0["passed"] as? Bool != true }) { exit(1) }
     }
