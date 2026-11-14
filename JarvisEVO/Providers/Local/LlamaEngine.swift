@@ -10,6 +10,7 @@ actor LlamaEngine: LocalResourceReleasing {
     private let batchSize = 128
     private var resources: LlamaResources?
     private var loadedPath: String?
+    private var loadedIdentity: ModelFileIdentity?
     private var busy = false
     private var workerTask: Task<Void, Never>?
     private var releaseRequests = 0
@@ -48,12 +49,17 @@ actor LlamaEngine: LocalResourceReleasing {
         // Concurrent releasers keep admission closed until every waiter resumes.
         resources = nil
         loadedPath = nil
+        loadedIdentity = nil
     }
 
     private func load(_ url: URL) throws -> LlamaResources {
-        if let resources, loadedPath == url.path { return resources }
+        // Transactions replace a model atomically at the same pathname. A path
+        // match alone can otherwise keep using the old mmap after new bytes were verified.
+        let identity = ModelFileIdentity.read(url)
+        if let resources, loadedPath == url.path, let identity, loadedIdentity == identity { return resources }
         resources = nil
         loadedPath = nil
+        loadedIdentity = nil
         _ = Self.backend
         var modelParameters = llama_model_default_params()
         #if targetEnvironment(simulator)
@@ -79,6 +85,7 @@ actor LlamaEngine: LocalResourceReleasing {
         let loaded = LlamaResources(model: model, context: context)
         resources = loaded
         loadedPath = url.path
+        loadedIdentity = identity
         return loaded
     }
 
@@ -96,17 +103,25 @@ actor LlamaEngine: LocalResourceReleasing {
             guard let promptVocabulary = llama_model_get_vocab(owned.model) else { throw LocalModelError.loadFailed }
             return try tokenCount(text, vocabulary: promptVocabulary)
         }
-        let messages = try LocalPromptBuilder.trimToFit(LocalPromptBuilder.messages(from: request.messages), maxTokens: request.maxTokens, contextSize: Int(contextSize)) { [owned] entries in
+        let messages = try LocalPromptBuilder.prepareMessages(from: request.messages, maxTokens: request.maxTokens, contextSize: Int(contextSize)) { [owned] entries in
             guard let promptVocabulary = llama_model_get_vocab(owned.model) else { throw LocalModelError.loadFailed }
-            let rendered = try format(entries, systemPrompt: request.systemPrompt, model: owned.model)
+            let rendered = try format(entries, systemPrompt: request.systemPrompt, model: owned.model, conciseQwen3: request.conciseQwen3)
             return try tokenCount(rendered, vocabulary: promptVocabulary)
         }
-        let prompt = try format(messages, systemPrompt: request.systemPrompt, model: model)
+        let prompt = try format(messages, systemPrompt: request.systemPrompt, model: model, conciseQwen3: request.conciseQwen3)
         let tokens = try tokenize(prompt, vocabulary: vocabulary)
         guard !tokens.isEmpty, tokens.count + request.maxTokens <= Int(contextSize) else { throw LocalModelError.promptTooLong }
 
         guard let sampler = llama_sampler_chain_init(llama_sampler_chain_default_params()) else { throw LocalModelError.loadFailed }
         defer { llama_sampler_free(sampler) }
+        if let requireTool = request.localAgentRequiresTool {
+            let grammar = try LocalAgentGrammar.load(requireTool: requireTool)
+            let constrained = grammar.withCString { specification in
+                "root".withCString { name in llama_sampler_init_grammar(vocabulary, specification, name) }
+            }
+            guard let constrained else { throw LocalModelError.loadFailed }
+            llama_sampler_chain_add(sampler, constrained)
+        }
         if request.temperature == 0 {
             llama_sampler_chain_add(sampler, llama_sampler_init_greedy())
         } else {
@@ -126,10 +141,11 @@ actor LlamaEngine: LocalResourceReleasing {
         }
         var decoder = UTF8TokenAccumulator()
         var producedText = false
+        var sawEndOfGeneration = false
         for _ in 0..<request.maxTokens {
             try Task.checkCancellation()
             var token = llama_sampler_sample(sampler, context, -1)
-            if llama_vocab_is_eog(vocabulary, token) { break }
+            if llama_vocab_is_eog(vocabulary, token) { sawEndOfGeneration = true; break }
             let bytes = try tokenBytes(token, vocabulary: vocabulary)
             if let text = decoder.append(bytes), !text.isEmpty {
                 producedText = true
@@ -144,10 +160,11 @@ actor LlamaEngine: LocalResourceReleasing {
         try Task.checkCancellation()
         let suffix = decoder.finish()
         if !suffix.isEmpty { producedText = true; continuation.yield(suffix) }
+        guard sawEndOfGeneration else { throw LocalModelError.generationLimitReached }
         guard producedText else { throw LocalModelError.emptyGeneration }
     }
 
-    private func format(_ entries: [LocalPromptMessage], systemPrompt: String, model: OpaquePointer) throws -> String {
+    private func format(_ entries: [LocalPromptMessage], systemPrompt: String, model: OpaquePointer, conciseQwen3: Bool) throws -> String {
         guard let template = llama_model_chat_template(model, nil) else { throw LocalModelError.missingChatTemplate }
         var pairs: [(String, String)] = []
         if !systemPrompt.isEmpty { pairs.append(("system", systemPrompt)) }
@@ -174,7 +191,21 @@ actor LlamaEngine: LocalResourceReleasing {
             llama_chat_apply_template(template, buffer.baseAddress, buffer.count, true, &output, outputCapacity)
         }
         guard written == required else { throw LocalModelError.unsupportedChatTemplate }
-        return String(decoding: output.prefix(Int(written)).map { UInt8(bitPattern: $0) }, as: UTF8.self)
+        let rendered = String(decoding: output.prefix(Int(written)).map { UInt8(bitPattern: $0) }, as: UTF8.self)
+        // Explicit opt-in non-thinking mode for Qwen3's known template. This is
+        // input prefill, never removal of generated tokens. Include it in every
+        // real-tokenizer budget calculation by applying it inside format().
+        if conciseQwen3 {
+            var architecture = [CChar](repeating: 0, count: 64)
+            let length = "general.architecture".withCString { key in
+                llama_model_meta_val_str(model, key, &architecture, architecture.count)
+            }
+            if length > 0, length < 64, String(cString: architecture) == "qwen3" {
+                guard rendered.hasSuffix("<|im_start|>assistant\n") else { throw LocalModelError.unsupportedChatTemplate }
+                return rendered + "<think>\n\n</think>\n\n"
+            }
+        }
+        return rendered
     }
 
     private func tokenCount(_ text: String, vocabulary: OpaquePointer) throws -> Int {
@@ -213,4 +244,24 @@ private final class LlamaResources: @unchecked Sendable {
     let context: OpaquePointer
     init(model: OpaquePointer, context: OpaquePointer) { self.model = model; self.context = context }
     deinit { llama_free(context); llama_model_free(model) }
+}
+
+/// Cache invalidation metadata, not a substitute for LocalModelStore SHA verification.
+/// Missing metadata disables reuse. Atomic replacement changes the file number even
+/// when size and timestamps happen to match; in-place changes also compare size/time.
+private struct ModelFileIdentity: Equatable {
+    let device: UInt64
+    let inode: UInt64
+    let size: UInt64
+    let modified: Date
+    static func read(_ url: URL) -> Self? {
+        guard let values = try? FileManager.default.attributesOfItem(atPath: url.path),
+              values[.type] as? FileAttributeType == .typeRegular,
+              let device = values[.systemNumber] as? NSNumber,
+              let inode = values[.systemFileNumber] as? NSNumber,
+              let size = values[.size] as? NSNumber,
+              let modified = values[.modificationDate] as? Date else { return nil }
+        return Self(device: device.uint64Value, inode: inode.uint64Value,
+                    size: size.uint64Value, modified: modified)
+    }
 }

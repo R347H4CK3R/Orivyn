@@ -27,8 +27,10 @@ struct OrivynWorkspaceView: View {
         case .customize: CustomizeWorkspaceView(model: model, openModels: openModels)
         case .plugins: IntegrationCatalogView(broker: model.plugins, setupError: model.pluginSetupError)
         case .studio:
-            CapabilityNoticeView(title: "Your coding workspace", icon: "chevron.left.forwardslash.chevron.right",
-                detail: "Ask your selected model to explain or write code. Orivyn cannot yet run builds, edit remote repositories, or connect to a computer. Generated code needs review and testing.") {
+            CapabilityNoticeView(title: "Local tasks and code", icon: "chevron.left.forwardslash.chevron.right",
+                detail: "Run bounded read-only tasks on your iPhone, or ask your model to explain and write code. Code still needs testing; Orivyn does not claim to build or publish its own fixes.") {
+                NavigationLink("Verified local reads") { VerifiedLocalReadView(model: model) }.accessibilityIdentifier("verified.open")
+                NavigationLink("Experimental model tasks") { LocalAgentView(model: model) }.accessibilityIdentifier("agent.open")
                 Button("Start coding conversation") {
                     if model.draft.isEmpty { model.draft = "Help me with this coding task: " }; openChat()
                 }.buttonStyle(.borderedProminent)
@@ -278,11 +280,12 @@ struct CustomizeWorkspaceView: View {
                 }
             }
             Section {
-                NavigationLink { LocalDeviceView() } label: { row("Devices", icon: "desktopcomputer", color: .blue, detail: "This iPhone") }
+                NavigationLink { LocalDeviceView(model: model) } label: { row("Devices", icon: "desktopcomputer", color: .blue, detail: "This iPhone") }
                 NavigationLink { IntegrationDetailView(title: "Browser") } label: { row("Browser", icon: "network", color: .blue, detail: "Open a website") }
                 NavigationLink { IntegrationDetailView(title: "Location") } label: { row("Location", icon: "location", color: .purple, detail: "One-time request") }
             }
             Section("On this iPhone") {
+                NavigationLink { CalculatorView() } label: { row("Calculator", icon: "number", color: .green, detail: "Offline arithmetic") }
                 NavigationLink { ShortcutsHelpView() } label: { row("Shortcuts & sharing", icon: "square.and.arrow.up", color: .purple, detail: "Review first") }
                 NavigationLink { ScheduledRemindersView().navigationTitle("Scheduled") } label: { row("Local reminders", icon: "bell", color: .orange, detail: "One-time alerts") }
             }
@@ -369,6 +372,9 @@ struct IntegrationCatalogView: View {
             else if let setupError { Section { Text(setupError).font(.footnote).foregroundStyle(.red) } }
             if let pluginError { Section { Text(pluginError).font(.footnote).foregroundStyle(.red) } }
             Section("On this iPhone") {
+                if query.isEmpty || "Calculator arithmetic offline".localizedCaseInsensitiveContains(query) {
+                    NavigationLink { CalculatorView() } label: { Label("Calculator", systemImage: "number") }
+                }
                 if query.isEmpty || "Shortcuts sharing text".localizedCaseInsensitiveContains(query) {
                     NavigationLink { ShortcutsHelpView() } label: { Label("Shortcuts & sharing", systemImage: "square.and.arrow.up") }
                 }
@@ -462,6 +468,7 @@ struct IntegrationDetailView: View {
 }
 
 private struct LocalDeviceView: View {
+    @Bindable var model: AppModel
     var body: some View {
         Form {
             Section {
@@ -469,6 +476,11 @@ private struct LocalDeviceView: View {
                 LabeledContent("System", value: "\(UIDevice.current.systemName) \(UIDevice.current.systemVersion)")
                 LabeledContent("Processing", value: "On device")
             } footer: { Text("Orivyn cannot currently control a Mac, PC or another phone. No device has been paired.") }
+            Section("On-device desktop") {
+                NavigationLink { VirtualDesktopView(model: model) } label: {
+                    Label("Virtual desktop", systemImage: "desktopcomputer")
+                }.accessibilityIdentifier("desktop.open")
+            }
             Section("External display") {
                 NavigationLink { DeskControlView(controller: .shared) } label: {
                     Label("Orivyn Desk", systemImage: "display")

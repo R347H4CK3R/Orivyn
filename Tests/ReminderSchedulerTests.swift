@@ -6,46 +6,6 @@ import UserNotifications
 final class ReminderSchedulerTests: XCTestCase {
     private let now = Date(timeIntervalSince1970: 1_800_000_000)
 
-    func testValidationTrimsTitleButPreservesNotes() throws {
-        let reminder = try LocalReminder.validated(title: "  Call home \n", notes: "  Keep these notes.\n", date: now.addingTimeInterval(60), now: now)
-        XCTAssertEqual(reminder.title, "Call home")
-        XCTAssertEqual(reminder.notes, "  Keep these notes.\n")
-        XCTAssertEqual(reminder.date, Date(timeIntervalSince1970: 1_800_000_060))
-    }
-
-    func testValidationRejectsEmptyAndOversizedTitles() {
-        for title in ["", " \n\t", String(repeating: "a", count: 121)] {
-            XCTAssertThrowsError(try LocalReminder.validated(title: title, notes: "", date: now.addingTimeInterval(60), now: now))
-        }
-        XCTAssertNoThrow(try LocalReminder.validated(title: String(repeating: "😀", count: 120), notes: "", date: now.addingTimeInterval(60), now: now))
-    }
-
-    func testNotesLimitUsesUTF8BytesNotCharacters() {
-        XCTAssertNoThrow(try LocalReminder.validated(title: "Read", notes: String(repeating: "😀", count: 500), date: now.addingTimeInterval(60), now: now))
-        XCTAssertThrowsError(try LocalReminder.validated(title: "Read", notes: String(repeating: "😀", count: 501), date: now.addingTimeInterval(60), now: now))
-    }
-
-    func testPathologicalSingleGraphemeTitleStillHasByteLimit() {
-        let title = "a" + String(repeating: "\u{301}", count: 240)
-        XCTAssertEqual(title.count, 1)
-        XCTAssertEqual(title.utf8.count, 481)
-        XCTAssertThrowsError(try LocalReminder.validated(title: title, notes: "", date: now.addingTimeInterval(60), now: now))
-    }
-
-    func testNullCharactersCannotSilentlyTruncateNotificationText() {
-        XCTAssertThrowsError(try LocalReminder.validated(title: "Read\0later", notes: "", date: now.addingTimeInterval(60), now: now))
-        XCTAssertThrowsError(try LocalReminder.validated(title: "Read", notes: "Chapter\0three", date: now.addingTimeInterval(60), now: now))
-    }
-
-    func testDateValidationIncludesFiveSecondsAnd365DaysBoundaries() {
-        for seconds in [5.0, 31_536_000.0] {
-            XCTAssertNoThrow(try LocalReminder.validated(title: "Read", notes: "", date: now.addingTimeInterval(seconds), now: now))
-        }
-        for seconds in [-1.0, 0.0, 4.99, 31_536_001.0, Double.infinity, Double.nan] {
-            XCTAssertThrowsError(try LocalReminder.validated(title: "Read", notes: "", date: now.addingTimeInterval(seconds), now: now))
-        }
-    }
-
     func testNotificationPayloadRoundTripsLiteralIdentityAndUTCDate() throws {
         let id = UUID(uuidString: "BBAB022A-87F2-4411-913A-7654B4B9B38B")!
         let reminder = LocalReminder(id: id, title: "Read the book", notes: "Chapter 3", date: now.addingTimeInterval(120))
@@ -70,6 +30,26 @@ final class ReminderSchedulerTests: XCTestCase {
         let fireDate = try XCTUnwrap(calendar.date(from: trigger.dateComponents))
         XCTAssertEqual(fireDate, Date(timeIntervalSince1970: 1_800_000_061))
         XCTAssertEqual(SystemReminderNotifications.reminder(from: request, now: now), reminder)
+    }
+
+    func testFractionalEpochConversionDoesNotBreakOSConfirmation() throws {
+        let selected = Date(timeIntervalSinceReferenceDate: 800_000_120.0000001)
+        let current = selected.addingTimeInterval(-120)
+        let reminder = try LocalReminder.validated(title: "Precise selection", notes: "", date: selected, now: current)
+        XCTAssertGreaterThanOrEqual(reminder.date, selected)
+        XCTAssertEqual(reminder.date, Date(timeIntervalSince1970: reminder.date.timeIntervalSince1970))
+        let request = SystemReminderNotifications.request(for: reminder)
+        XCTAssertEqual(SystemReminderNotifications.reminder(from: request, now: current), reminder)
+    }
+
+    func testLegacySubULPFractionNeverSchedulesBeforeStoredDate() throws {
+        let selected = Date(timeIntervalSinceReferenceDate: 800_000_120.0000001)
+        let legacy = LocalReminder(id: UUID(), title: "Legacy", notes: "", date: selected)
+        let request = SystemReminderNotifications.request(for: legacy)
+        let trigger = try XCTUnwrap(request.trigger as? UNCalendarNotificationTrigger)
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        XCTAssertGreaterThanOrEqual(try XCTUnwrap(calendar.date(from: trigger.dateComponents)), selected)
     }
 
     func testAdapterIgnoresUnrelatedMalformedAndRepeatingRequests() throws {

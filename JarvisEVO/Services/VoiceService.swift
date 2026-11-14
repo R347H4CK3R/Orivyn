@@ -67,6 +67,7 @@ final class VoiceService: NSObject, VoiceConversationAudio {
     }
 
     private func handleMediaServicesReset() {
+        let wasActive = isRecording || isStarting || isFinishing || isSpeaking
         // QA1749: orphaned media objects must be recreated, not merely stopped.
         // Retire IDs before disposal so queued old delegates cannot affect retry.
         stopRecording()
@@ -77,13 +78,14 @@ final class VoiceService: NSObject, VoiceConversationAudio {
         playback.delegate = self
         // Session category/mode are reapplied only on an explicit subsequent
         // start/speak. Rebuilding resources never activates capture or playback.
-        onInterruption?()
+        if wasActive { onInterruption?() }
     }
 
     private func handleInterruption() {
+        let wasActive = isRecording || isStarting || isFinishing || isSpeaking
         stopRecording()
         stopSpeaking()
-        onInterruption?()
+        if wasActive { onInterruption?() }
     }
 
     func startRecording() async throws {
@@ -265,20 +267,6 @@ private final class RetainedUtteranceIdentity: @unchecked Sendable {
     private let utterance: AVSpeechUtterance
     var id: ObjectIdentifier { ObjectIdentifier(utterance) }
     init(_ utterance: AVSpeechUtterance) { self.utterance = utterance }
-}
-
-enum VoiceError: LocalizedError {
-    case speechPermission, microphonePermission, unavailable, noSpeech, finalizationTimeout, emptyPlayback
-    var errorDescription: String? {
-        switch self {
-        case .speechPermission: return "Speech recognition permission is off. You can enable it for Orivyn in iOS Settings."
-        case .microphonePermission: return "Microphone permission is off. You can enable it for Orivyn in iOS Settings."
-        case .unavailable: return "On-device dictation is unavailable for this device or language. You can still type your message."
-        case .noSpeech: return "No speech was detected. Tap the microphone to try again, or type your message."
-        case .finalizationTimeout: return "Dictation could not finish. Your partial transcript is kept so you can review and send it yourself."
-        case .emptyPlayback: return "There is no text to read aloud."
-        }
-    }
 }
 
 /// Bounded energy-based endpoint detection, not speaker or semantic detection.

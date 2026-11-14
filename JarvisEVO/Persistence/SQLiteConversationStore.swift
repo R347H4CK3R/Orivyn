@@ -103,40 +103,112 @@ actor SQLiteConversationStore {
         }
     }
 
-    func deleteAll() throws {
+    /// A committed deletion must not be reported as rolled back if later disk
+    /// compaction fails. The optional warning is separate from deletion success.
+    @discardableResult
+    func deleteAll() throws -> String? {
         try database.execute("BEGIN IMMEDIATE")
         do {
             try database.execute("DELETE FROM conversations; DELETE FROM memory; COMMIT;")
-            try database.execute("PRAGMA wal_checkpoint(TRUNCATE); VACUUM;")
         } catch { try? database.execute("ROLLBACK"); throw error }
+        do {
+            try database.execute("PRAGMA wal_checkpoint(TRUNCATE); VACUUM;")
+            return nil
+        } catch {
+            return "Your conversations and memories were deleted, but database compaction could not finish. Storage may not be reclaimed yet; this is not a verified secure erase."
+        }
     }
 
     func exportData() throws -> Data {
-        let data = try encoder.encode(ConversationBackup(conversations: list(includeArchived: true), memories: memories()))
-        guard data.count <= ConversationBackup.maximumBytes else { throw ConversationError.tooLarge }
-        return data
+        // A backup must represent one committed database snapshot. Another
+        // connection may import both tables between these reads; actor isolation
+        // only serializes this connection, not every store using the same file.
+        try database.execute("BEGIN")
+        do {
+            let conversations = try list(includeArchived: true)
+            let notes = try memories()
+            guard conversations.count <= ConversationBackup.maximumRecordsPerCollection,
+                  notes.count <= ConversationBackup.maximumRecordsPerCollection else {
+                throw ConversationError.backupRecordLimit
+            }
+            let data = try encoder.encode(ConversationBackup(conversations: conversations, memories: notes))
+            guard data.count <= ConversationBackup.maximumBytes else { throw ConversationError.tooLarge }
+            try database.execute("COMMIT")
+            return data
+        } catch { try? database.execute("ROLLBACK"); throw error }
     }
 
     /// Merges a complete validated snapshot transactionally. Attachments remain local references.
-    func importData(_ data: Data) throws {
+    @discardableResult
+    func importData(_ data: Data, policy: BackupImportPolicy = .replaceMatching) throws -> BackupImportSummary {
+        try Task.checkCancellation()
         guard data.count <= ConversationBackup.maximumBytes else { throw ConversationError.tooLarge }
         let backup: ConversationBackup
         do { backup = try decoder.decode(ConversationBackup.self, from: data) }
         catch { throw ConversationError.invalidBackup }
-        guard backup.schemaVersion == 1, backup.conversations.count <= 10_000, backup.memories.count <= 10_000,
+        guard backup.schemaVersion == 1, backup.conversations.count <= ConversationBackup.maximumRecordsPerCollection, backup.memories.count <= ConversationBackup.maximumRecordsPerCollection,
               Set(backup.conversations.map(\.id)).count == backup.conversations.count,
               Set(backup.memories.map(\.id)).count == backup.memories.count else { throw ConversationError.invalidBackup }
         try backup.conversations.forEach(validate)
         try backup.memories.forEach(validateMemory)
+        try Task.checkCancellation()
         try database.execute("BEGIN IMMEDIATE")
         do {
+            // Resolve preservation against the same locked snapshot used for writes.
+            // No timestamp-based winner: clocks on another device are not trusted.
+            var incomingConversations = backup.conversations
+            var incomingMemories = backup.memories
+            if policy == .preserveLocal {
+                let conversationIDs = Set(try list(includeArchived: true).map(\.id))
+                let memoryIDs = Set(try memories().map(\.id))
+                incomingConversations.removeAll { conversationIDs.contains($0.id) }
+                incomingMemories.removeAll { memoryIDs.contains($0.id) }
+            }
+            var copiedConversations = 0
+            var copiedMemories = 0
+            if policy == .keepBoth {
+                let localConversations = try list(includeArchived: true)
+                let localMemories = try memories()
+                let conversationsByID = Dictionary(uniqueKeysWithValues: localConversations.map { ($0.id, $0) })
+                let memoriesByID = Dictionary(uniqueKeysWithValues: localMemories.map { ($0.id, $0) })
+                var reservedIDs = Set(localConversations.map(\.id) + localMemories.map(\.id)
+                                      + incomingConversations.map(\.id) + incomingMemories.map(\.id))
+                func freshID() -> UUID {
+                    var id = UUID()
+                    while reservedIDs.contains(id) { id = UUID() }
+                    reservedIDs.insert(id)
+                    return id
+                }
+                incomingConversations = incomingConversations.compactMap { incoming in
+                    guard let local = conversationsByID[incoming.id] else { return incoming }
+                    guard local != incoming else { return nil }
+                    var copy = incoming
+                    copy.id = freshID()
+                    copiedConversations += 1
+                    return copy
+                }
+                incomingMemories = incomingMemories.compactMap { incoming in
+                    guard let local = memoriesByID[incoming.id] else { return incoming }
+                    guard local != incoming else { return nil }
+                    var copy = incoming
+                    copy.id = freshID()
+                    copiedMemories += 1
+                    return copy
+                }
+            }
             // Validate replacements together with untouched rows before changing either table.
             // Do not call save here: intermediate rows may conflict while a consistent batch
             // replaces every reference to an identity, and the transaction is already owned.
-            try validateMergedImageIdentities(replacing: backup.conversations)
-            for conversation in backup.conversations { try writeConversation(conversation) }
-            for note in backup.memories { try saveMemory(note) }
+            try validateMergedImageIdentities(replacing: incomingConversations)
+            for conversation in incomingConversations { try Task.checkCancellation(); try writeConversation(conversation) }
+            for note in incomingMemories { try Task.checkCancellation(); try saveMemory(note) }
+            try Task.checkCancellation()
             try database.execute("COMMIT")
+            return BackupImportSummary(writtenConversations: incomingConversations.count,
+                                       writtenMemories: incomingMemories.count,
+                                       skippedConversations: backup.conversations.count - incomingConversations.count,
+                                       skippedMemories: backup.memories.count - incomingMemories.count,
+                                       copiedConversations: copiedConversations, copiedMemories: copiedMemories)
         } catch { try? database.execute("ROLLBACK"); throw error }
     }
 
@@ -157,7 +229,7 @@ actor SQLiteConversationStore {
     func saveMemory(_ note: MemoryNote) throws {
         try validateMemory(note)
         let payload = try encoder.encode(note)
-        try withStatement("INSERT INTO memory (id,content,created,payload) VALUES (?,?,?,?) ON CONFLICT(id) DO UPDATE SET content=excluded.content,payload=excluded.payload") { statement in
+        try withStatement("INSERT INTO memory (id,content,created,payload) VALUES (?,?,?,?) ON CONFLICT(id) DO UPDATE SET content=excluded.content,created=excluded.created,payload=excluded.payload") { statement in
             bind(note.id.uuidString, to: 1, in: statement); bind(note.content, to: 2, in: statement)
             sqlite3_bind_double(statement, 3, note.createdAt.timeIntervalSince1970)
             bind(payload, to: 4, in: statement); try requireDone(statement)
@@ -181,8 +253,9 @@ actor SQLiteConversationStore {
               Set(value.messages.map(\.id)).count == value.messages.count else { throw ConversationError.tooLarge }
         for message in value.messages {
             guard message.content.utf8.count <= 1_000_000, message.attachments.count <= 20 else { throw ConversationError.tooLarge }
-            let imageIDs = message.attachments.filter(\.isImage).map(\.id)
-            guard Set(imageIDs).count == imageIDs.count else { throw ConversationError.unsafeAttachment }
+            // Message rows use every attachment UUID as an Identifiable key, not only images.
+            let attachmentIDs = message.attachments.map(\.id)
+            guard Set(attachmentIDs).count == attachmentIDs.count else { throw ConversationError.unsafeAttachment }
             for attachment in message.attachments {
                 guard attachment.hasValidStorageBinding,
                       attachment.byteCount >= 0, attachment.byteCount <= 50_000_000,
@@ -232,7 +305,7 @@ actor SQLiteConversationStore {
         return try body(statement)
     }
     private func bind(_ value: String, to index: Int32, in statement: OpaquePointer) {
-        _ = value.withCString { sqlite3_bind_text(statement, index, $0, -1, transient) }
+        _ = value.withCString { sqlite3_bind_text(statement, index, $0, Int32(value.utf8.count), transient) }
     }
     private func bind(_ value: Data, to index: Int32, in statement: OpaquePointer) {
         _ = value.withUnsafeBytes { sqlite3_bind_blob(statement, index, $0.baseAddress, Int32($0.count), transient) }
@@ -245,3 +318,4 @@ actor SQLiteConversationStore {
         guard sqlite3_step(statement) == SQLITE_DONE else { throw DatabaseError.operation("Could not save local changes.") }
     }
 }
+

@@ -1,5 +1,68 @@
 # Orivyn 1.0.0 release plan and acceptance ledger
 
+## Current acceptance audit
+
+Source inspected: `ad0a63d94c609c9639baa8210945e95060d566a8`, PR #4. Target **1.0.0** is **not release-ready**. `project.yml` still correctly identifies development **0.1.1 build 5**. The documented public preview remains 0.1.0 build 4; this audit does not activate or revalidate the public catalog.
+
+### Exact native checkpoint and limits
+
+CircleCI pipeline 18 built `cf3bac525aa24113302b2747ca33bb6ab33aa59e`. The preserved console excerpt records **816 unit tests, 1 skipped, zero failures; 50 UI tests, zero failures**, followed by TEST SUCCEEDED and BUILD SUCCEEDED. Its provenance records successful guest file/checkpoint and relaunch tests and inspected desktop screenshots. Evidence retained is a rendered console excerpt plus package/provenance, **not the complete xcresult** and not a new rerun.
+
+The private unsigned IPA was independently re-read during this audit: **35,003,105 bytes**, SHA-256 `f7dc67ede430df17099a4a63e660f71d95532d1bcaac2a1cf1bb9aac9f58dd5d`; its Info.plist identifies `app.jarvisevo.ios`, **0.1.1 build 5**, minimum iOS **26.0**. It is not a 1.0.0 artifact. Later source, including the audited head, has **not been native-tested** together. Earlier test counts do not cover later changes.
+
+### Implementation versus acceptance
+
+| Area | Implemented boundary | Remaining gate |
+|---|---|---|
+| Chat, history, models and memory | Native chat/persistence, local inference, bounded automatic model routing and model downloads; subsequent context/cancellation fixes exist | Full final-source native regression and physical resource/thermal/battery testing |
+| Attachments and images | Document text and OCR extraction; Apple Image Playground UI and persistence integration | AppModel explicitly sends text only, never image pixels. Broad visual understanding is absent; actual physical image generation is unverified |
+| Tools and agent | Native review screens, permissioned MCP, deterministic reviewed local read plans and experimental model decisions | General dependable autonomous decisions and actual authorized external-service results are not established; protocol/parser tests are not service execution |
+| Phone-contained desktop | Real emulator guest, integrated native UI, Simulator file/checkpoint/relaunch evidence | Physical iPhone performance, memory pressure, keyboard/pointer/HDMI/reconnect; final distribution provenance review |
+| Source knowledge and repair | Bundled product metadata plus explicit read-only GitHub snapshot/file inspection, including ref selection and pinned blob identity | Chat does not receive repository source. No self-applied source repair, build or publication is implemented |
+| Synchronization | Local persistence and explicit transfer/backup mechanisms | Automatic cross-device synchronization and conflict/privacy/device acceptance remain unfinished |
+| Voice and configured online providers | Native audio/speech and provider protocol implementation | Physical microphone/interruption/audio-routing tests and authorized real-provider acceptance |
+| Release | Original branding; valid prior development IPA | Current screenshots/documentation, final exact-source native checks, physical install/refresh and catalog-first 1.0.0 publication |
+
+### Next executable gates
+
+1. Preserve the known-good private candidate and keep subsequent fixes isolated from release claims. Review current full source, not just historical selected-source backups.
+2. Obtain sufficient authorized macOS CI capacity, then run the final exact-source aggregate unit/UI/build/package checks. Do not enable billing or launch a knowingly underfunded run. Historical quota numbers below are not current availability.
+3. Complete the missing supported product capabilities rather than hiding them behind controls or metadata. In particular, read-only source inspection is not autonomous self-repair, OCR is not vision, and reviewed deterministic plans are not unrestricted task execution.
+4. Perform the physical iPhone 16 Plus/SideStore, voice, offline/resource and external-display acceptance separately. Simulator success cannot establish these results.
+5. Only when the defined acceptance gates pass, set 1.0.0, rebuild the exact artifact, verify its contents/hash, and stage/validate Strata before activating distribution. Retain the working preview for rollback.
+
+## Historical checkpoints (not current status)
+
+The following earlier ledger is retained for provenance. Its “current”, “latest”, quota, missing-checkout and next-objective statements describe their original checkpoints, not the audited head above. They must not override the current acceptance audit.
+
+### Superseded recovery and acceptance status
+
+#### Prior recovery checklist (historical; superseded by the audit above)
+
+Latest change: local agent search includes stored attachment names/text with bounded labeled evidence. Two exact production-branch tests and unchanged Swift output through the verified-plan reducer pass. It does not read original files or verify OCR facts.
+
+Previous change: endpoint credentials now use explicit keep/replace/remove intent, exact UTF-8 binding, no saved-secret form preload and cleared temporary drafts. Eight core and eight extracted-method host checks pass. Native Keychain/UI lifecycle still require testing.
+
+Previous change: conversation sharing now accurately labels System/Jarvis/You, incomplete responses and attachment exclusions; five new regression tests pass. Native share-sheet behavior remains unverified.
+
+The latest selected private source checkpoint is `dc17fc1c769133d95a6365c25c2b8afe71c873e7`. It is not a complete build-ready checkout and must not be treated as the final release. The canonical candidate remains 0.1.1 build 5; the existing published preview remains 0.1.0 build 4. No 1.0.0 IPA has been produced from this source.
+
+Current portable evidence: 341 Foundation XCTest cases, 142 Python tests, 76 agent tests, 39 VM tests. The exact offline engine/SQLite integration has passed nine checks with each of cached Qwen2.5-0.5B and 1.5B, including five whole-answer assertions. These are bounded host proofs, not Apple SDK type checking or iPhone acceptance. Failed smaller-model tool decisions and catalog instruction cases remain failures, not waived.
+
+Native capacity is blocked: the last account check found Codemagic at 496/500 free minutes and private GitHub compute/storage exhausted. Do not enable billing, make source public, or launch an inadequate four-minute native job. Earlier capacity figures below are historical.
+
+### Build-ready recovery steps
+
+1. Preserve the canonical candidate and `BUILD_RECOVERY_MANIFEST.json`: the current regular build-input files and exact sizes listed in that inventory. Verify every listed SHA-256 after transfer to an authorized private Mac workspace. This inventory is not itself a backup; do not delete the canonical copy. The selected GitHub checkpoint alone lacks required build assets. Do not overlay it onto an arbitrary old checkout and assume parity.
+2. Preserve the pinned compressed guest `Fixtures/maintained.img.gz`, VM JavaScript/WASM/BIOS resources and their license/source provenance. The generated 135,266,304-byte guest disk is excluded from the transfer inventory because `scripts/materialize_guest.py` reconstructs it from the pinned compressed fixture. Do not substitute the older unsupported guest.
+3. On a Mac with Xcode 26+, iOS 26 simulator and sufficient authorized free build time, provide Python, Node and XcodeGen. `scripts/bootstrap_llama.sh` validates official llama.cpp b9049 XCFramework SHA-256 `49c374bf78d98f53bfb3571b2285d315351ca6a5c1112191ae6f8b2616dec1d1`. A validated existing archive can be supplied via `LLAMA_ARCHIVE`; never bypass checksum or device/simulator slice checks. Generated frameworks and `.cache` are not in the inventory.
+4. Run `bash scripts/ci_macos.sh` from the restored candidate. It materializes the guest, runs portable checks, prepares the pinned native dependency/test model, generates Xcode project, runs the full native test target with real inference required, builds unsigned ARM64 and verifies the IPA structure. It does not publish. Repair every actual compilation or runtime failure and rerun; a focused gate alone is not the full release gate.
+5. Inspect `.xcresult`, recordings/screenshots, all test failures/skips and verified IPA metadata. Do not raise the version merely because compilation succeeds. Simulator tests still cannot verify physical file protection, thermals, microphone/audio routing, actual image generation or HDMI behavior.
+6. Install through SideStore on the user's iPhone 16 Plus for physical acceptance: offline model download/select/generation/relaunch, attachments and memory, microphone interruption/denial, location permission/approximate mode, reminder delivery, background cancellation/recovery, storage pressure, external-display privacy/reconnect and actual phone-contained guest usability. Preserve evidence and explicitly record unsupported capabilities.
+7. Resolve remaining product gaps before 1.0.0: dependable general autonomous tool use, broad image understanding quality, automatic cross-device sync, and self-applied source repair are not proved by existing deterministic tools/OCR/manual backup/read-only repository inspection. Obtain real configured-provider/plugin results only within authorized accounts; never substitute parser tests for service execution.
+8. Only after acceptance passes, set 1.0.0 consistently, rebuild and verify the final exact artifact. Stage its valid hosted IPA URL, size/hash and version in Strata, validate the source entry, then activate distribution according to the user's catalog-first requirement. Retain the prior working preview for rollback. No release/cross-device-install claim before verification.
+
+
 Owner directive dated 2026-11-12: application Orivyn, assistant Jarvis, target 1.0.0; original branding; genuinely usable, independently tested native iPhone assistant, not proprietary service parity. Continue ordinary authorized engineering, preserve private source and free builds, stage every verified update in Strata before activation. Never label attempted or missing capability complete.
 
 ## Current checkpoint
@@ -111,3 +174,4 @@ The corrected protection cast still returned raw nil in Simulator. Apple DTS ind
 
 ### Resource ownership native GREEN
 Exact source `730ec2f2e9ced5b8983245956464545eb18cfe76` (local tree `dc94a509ddb8a9d16189be66abce4d67b5088a1c`) passed `6af6257710a05158d81222a1` at 20:50 UTC: 90 selected unit tests passed, one explicitly physical-only Complete-protection test skipped, and all three image/resource UI tests passed. The real model active-stream unload → release → reload/inference regression passed in 14.105 seconds. All 11 ownership, 32 voice bridge, 15 automatic preparation, 12 AppModel and nine accepted-image tests passed, plus ten simulator-supported staging tests. UI cancel and background dismissal preserve the composer and do not reopen the form. Actual nested Image Playground generation on hardware, physical lock protection and OS memory/thermal reclaim remain unverified; no new IPA is implied.
+

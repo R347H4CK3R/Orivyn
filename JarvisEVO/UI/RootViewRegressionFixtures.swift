@@ -103,8 +103,8 @@ private final class RootViewRegressionFixture {
         if mode == "model-download" { model.beginControlledModelDownloadFixture() }
         let tokens = RootViewFixtureTokens()
         if mode == "unavailable-provider" {
-            model.replaceProviders([ProviderOption(id: "root-unavailable-fixture", title: "Unavailable provider fixture",
-                detail: "Deliberately unavailable for negative preflight testing", provider: nil)])
+            model.automaticModelsEnabled = false
+            model.replaceProviders([ProviderOption(id: "fixture-unavailable", title: "Unavailable provider fixture", detail: "No inference or audio permission is expected", provider: nil)])
         } else {
             model.replaceProviders([ProviderOption(id: "root-ui-fixture", title: "Controlled UI fixture", detail: "Not an AI model", provider: RootViewFixtureProvider(tokens: tokens))])
         }

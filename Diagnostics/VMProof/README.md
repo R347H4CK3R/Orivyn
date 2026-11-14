@@ -52,3 +52,30 @@ Build `6af64b1210a05158d8122fa4` at `49e49913` passed seven native policy/delega
 The subsequent checkpoint implementation is intentionally isolated in this harness. It adds owner/origin-pinned request/reply transfer,128KiB chunks,256MiB maximum, a streaming native store with atomic generation publication and reread checksums, generation-pinned restore, free-space checks and explicit cleanup policy. No automatic snapshot deletion is enabled. Saves pause the machine; restores require explicit Resume. The identity covers both WASM variants, JS engine, both BIOS ROMs and exact configuration. This harness still has **no licensed operating-system guest** and has not been integrated into the shipping app.
 
 Local verification:26 JavaScript tests pass, including actual BIOS RAM/instruction-pointer state persisted to disk and restored into a fresh emulator;12 asset/native-manifest checks and79 Python checks pass. Eight native storage tests, five native bridge tests and a native checkpoint/relaunch UI test are authored but **not compiled or run** yet. These new source changes supersede the prior native-verified snapshot, so the complete changed harness requires a new native gate before any checkpoint success claim. No further free build minutes were spent here.
+
+### Native checkpoint verification (2026-11-13)
+
+Codemagic build `6af65a7210a05158d812340b`, exact private commit
+`b6b5c513bb3253f4f18657d13056ae3d2c3f1463`, passed22native unit tests and3UI tests
+on iPhone16Plus simulator/iOS26. The actual WKWebView BIOS checkpoint saved,
+app terminated/relaunched, state restored and waited for explicit Resume.
+Storage corruption/identity/generation tests and both invalidation-drain races pass.
+The Codemagic run retains native logs, xcresult and screenshot evidence.
+This supersedes the earlier unrun checkpoint status only: there is still no guest
+in this native harness and no physical-device or complete-desktop claim.
+Free build usage after verification478/500; subscription remains disabled.
+
+### Maintained guest staging (internal, not native integration)
+
+`materialize_guest.py ARCHIVE DESTINATION` accepts only the pinned locally supplied
+`gzip -n` maintained guest archive. It checks the compressed digest before expansion,
+streams within the exact 135266304-byte bound, checks the resulting disk digest,
+then atomically replaces the destination. Corrupt inputs leave existing data intact;
+leaf symlinks and oversized archives are rejected. This helper never downloads assets
+or runs in the app. Supply a trusted local output directory. Publication/source-license
+approval and native full-guest acceptance remain separate gates.
+
+The exact maintained archive was expanded locally and its disk hash matched
+`0897e5f867267c209f2866e2ee960971caf25886eb0345fe2f514b11e19cf0f1`.
+Three materializer tests passed; the existing26JS tests and12asset checks also passed.
+No Codemagic run or public release was triggered for this staging change.

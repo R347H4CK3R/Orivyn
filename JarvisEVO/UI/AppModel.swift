@@ -55,10 +55,17 @@ final class AppModel {
             if oldValue != automaticAllowsCellular { cancelAutomaticPreparation() }
         }
     }
+    var conciseQwen3: Bool {
+        didSet {
+            defaults.set(conciseQwen3, forKey: "orivyn.conciseQwen3")
+            if oldValue != conciseQwen3 { cancelActiveVoiceTurn(); cancelAutomaticPreparation() }
+        }
+    }
     private(set) var automaticDecision: AutomaticModelDecision?
     var isPreparingAutomaticModel: Bool { automaticTicket != nil }
     private(set) var installedModels: [LocalModelDescriptor] = []
     private(set) var memories: [MemoryNote] = []
+    private(set) var lastMemoryContextSummary: String?
     private(set) var downloadProgress: Double?
     private(set) var downloadingModelID: String?
     var remoteBaseURL: String
@@ -78,6 +85,7 @@ final class AppModel {
     private var composerRevision = UUID()
     private var isApplyingOwnedComposerUpdate = false
     private var downloadTask: Task<Void, Never>?
+    private var manualDownloadOwner: UUID?
     private var automaticTask: Task<Void, Never>?
     private var automaticTicket: AutomaticPreparationTicket?
     private var automaticDownloadOwner: UUID?
@@ -86,13 +94,17 @@ final class AppModel {
     private let localEngine: LlamaEngine
     private let resourceReleaser: any LocalResourceReleasing
     private(set) var heavyWorkLease: LocalHeavyWorkLease?
+    private(set) var localAgentDirectory: URL?
+    private(set) var virtualDesktopDirectory: URL?
     private var heavyReleasePending = false
     private var heavyPresenterDismissed = false
     private var heavyWorkForeground = true
     private var thermalBlocksHeavyWork = false
     private var pressureReleaseTask: Task<Void, Never>?
+    private(set) var isRemovingModel = false
+    private var isImportingModel = false
     var isLocalResourceAdmissionBlocked: Bool {
-        heavyWorkLease != nil || pressureReleaseTask != nil || thermalBlocksHeavyWork
+        isRemovingModel || heavyWorkLease != nil || pressureReleaseTask != nil || thermalBlocksHeavyWork
     }
     var isInferenceAdmissionBlocked: Bool { isLocalResourceAdmissionBlocked || isSavingGeneratedImage }
     var canBeginHeavyWork: Bool {
@@ -131,6 +143,7 @@ final class AppModel {
         self.defaults = defaults
         workspace = WorkspaceStore(defaults: defaults)
         self.attachmentImporter = attachmentImporter ?? LocalAttachmentImporter(service: attachmentService)
+        conciseQwen3 = defaults.bool(forKey: "orivyn.conciseQwen3")
         automaticModelsEnabled = defaults.bool(forKey: "orivyn.automaticModels")
         automaticAllowsCellular = defaults.bool(forKey: "orivyn.automaticCellular")
         selectedProviderID = defaults.string(forKey: "selectedProviderID") ?? ""
@@ -174,6 +187,33 @@ final class AppModel {
         heavyPresenterDismissed = true
         if heavyReleasePending { heavyWorkLease?.phase = .revoked }
         else { heavyWorkLease = nil }
+    }
+
+    private(set) var verifiedReadOwner: UUID?
+    func beginVerifiedReads(id: UUID) -> Bool {
+        guard verifiedReadOwner == nil else { return false }
+        verifiedReadOwner = id; return true
+    }
+    func endVerifiedReads(id: UUID) {
+        if verifiedReadOwner == id { verifiedReadOwner = nil }
+    }
+
+    private(set) var verifiedReadDirectory: URL?
+    func configureLocalWork(directory: URL) {
+        verifiedReadDirectory = directory.appendingPathComponent("VerifiedLocalTasks", isDirectory: true)
+        localAgentDirectory = directory.appendingPathComponent("LocalAgentTasks", isDirectory: true)
+        virtualDesktopDirectory = directory.appendingPathComponent("VirtualDesktopCheckpoints", isDirectory: true)
+    }
+
+    var selectedLocalAgentProvider: LocalAIProvider? { localProviders[selectedProviderID] }
+
+    /// Agent inference may still be unwinding cancellation. Release the actual
+    /// shared engine before dropping this exact lease, never just its view.
+    func finishLocalAgentWork(id: UUID) async {
+        guard heavyWorkLease?.id == id, heavyWorkLease?.kind == .localAgent else { return }
+        revokeHeavyWork(id: id)
+        await resourceReleaser.unload()
+        endHeavyWork(id: id)
     }
 
     func revokeHeavyWork(id: UUID? = nil) {
@@ -301,15 +341,19 @@ final class AppModel {
     }
     var visibleConversations: [Conversation] {
         conversations.filter { conversation in
-            conversation.isArchived == showArchived && (searchText.isEmpty || conversation.title.localizedCaseInsensitiveContains(searchText) || conversation.messages.contains { $0.content.localizedCaseInsensitiveContains(searchText) })
+            conversation.isArchived == showArchived && ConversationSearch.matches(conversation, query: searchText)
         }.sorted { $0.updatedAt > $1.updatedAt }
     }
 
     func bootstrap() async {
+        // A suspended read must not race another load or a history transaction.
+        guard !isLoading, !isChangingHistory else { return }
+        attachmentHistoryIsLoaded = false
         isLoading = true
         defer { isLoading = false }
         do {
             conversations = try await store.list(includeArchived: true)
+            attachmentHistoryIsLoaded = true
             memories = try await store.memories()
             if selectedConversationID == nil { selectedConversationID = conversations.first(where: { !$0.isArchived })?.id }
             requestAttachmentCleanup()
@@ -330,10 +374,12 @@ final class AppModel {
     func reloadProviders() async throws {
         installedModels = try await modelStore.installedModels()
         var options: [ProviderOption] = []
+        var refreshedLocalProviders: [String: LocalAIProvider] = [:]
         for model in installedModels {
             let provider: LocalAIProvider
-            if let existing = localProviders[model.id] { provider = existing }
-            else { provider = LocalAIProvider(store: modelStore, model: model, engine: localEngine); localProviders[model.id] = provider }
+            if let existing = localProviders[model.id], existing.model == model { provider = existing }
+            else { provider = LocalAIProvider(store: modelStore, model: model, engine: localEngine) }
+            refreshedLocalProviders[model.id] = provider
             options.append(ProviderOption(id: model.id, title: model.name, detail: "On this iPhone · works offline", provider: provider))
         }
         if options.isEmpty {
@@ -348,6 +394,9 @@ final class AppModel {
             let provider = OpenAICompatibleProvider(endpoint: endpoint, apiKey: try KeychainService.read(endpoint: remoteBaseURL))
             options.append(ProviderOption(id: "remote", title: remoteModelName, detail: "Remote · sends conversation and extracted attachment text to your endpoint", provider: provider))
         }
+        // Publish only the current installed descriptors; do not retain removed IDs
+        // or an old hash/path behind an updated display name. The shared runtime stays owned.
+        localProviders = refreshedLocalProviders
         replaceProviders(options)
     }
 
@@ -357,8 +406,9 @@ final class AppModel {
         clearPendingAttachments()
     }
 
-    func newConversation() async {
-        guard beginHistoryChange() else { return }
+    @discardableResult
+    func newConversation() async -> Bool {
+        guard beginHistoryChange() else { return false }
         defer { finishHistoryChange() }
         cancelActiveVoiceTurn()
         cancelAttachmentImports()
@@ -369,7 +419,8 @@ final class AppModel {
             selectConversation(conversation.id)
             showArchived = false
             searchText = ""
-        } catch { report(error) }
+            return true
+        } catch { report(error); return false }
     }
 
     /// Safe preflight: does not create a chat or change the composer. The UI may
@@ -403,7 +454,7 @@ final class AppModel {
         // observers can recognize this as our own transition, not a user switch.
         activeVoiceTurn = ticket
         let task = submit(text: text, attachments: [], conversationID: ticket.conversationID,
-                          provider: provider, voiceTicket: ticket)
+                          provider: provider, providerID: ticket.providerID, voiceTicket: ticket)
         return try await withTaskCancellationHandler {
             let result = await task.value
             try Task.checkCancellation()
@@ -487,7 +538,7 @@ final class AppModel {
             errorMessage = "No model is ready yet. Open Models to download or import a local model, or configure your own remote endpoint in Settings."
             return
         }
-        submit(text: draft, attachments: pendingAttachments, conversationID: selectedConversationID ?? UUID(), provider: provider)
+        submit(text: draft, attachments: pendingAttachments, conversationID: selectedConversationID ?? UUID(), provider: provider, providerID: selectedProviderID)
     }
 
     private func prepareAutomaticSend() {
@@ -534,7 +585,7 @@ final class AppModel {
                 self.automaticDecision = decision
                 self.statusMessage = "Automatic: \(decision.model.name) · \(decision.purpose) · on this iPhone"
                 self.submit(text: self.draft, attachments: self.pendingAttachments,
-                    conversationID: self.selectedConversationID ?? UUID(), provider: provider)
+                    conversationID: self.selectedConversationID ?? UUID(), provider: provider, providerID: decision.model.id)
             } catch {
                 guard self.automaticTicket?.id == ticket.id else { return }
                 self.clearAutomaticOwnership(ticket.id)
@@ -580,7 +631,7 @@ final class AppModel {
     }
 
     @discardableResult
-    private func submit(text: String, attachments: [ChatAttachment], conversationID: UUID, provider: any AIProvider,
+    private func submit(text: String, attachments: [ChatAttachment], conversationID: UUID, provider: any AIProvider, providerID: String,
                         voiceTicket: VoiceTurnTicket? = nil) -> Task<Result<String, any Error>, Never> {
         guard !isInferenceAdmissionBlocked else { return Task { .failure(LocalHeavyWorkError.busy) } }
         let content = text.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -603,15 +654,17 @@ final class AppModel {
             cancelAttachmentImports()
         }
         voiceTicket?.acceptedComposerContext = attachmentImportEpoch
-        return startGeneration(conversationID: conversation.id, assistantID: assistant.id, provider: provider,
+        return startGeneration(conversationID: conversation.id, assistantID: assistant.id, provider: provider, providerID: providerID,
                                restoringDraftOnSaveFailure: message, voiceTicket: voiceTicket)
     }
 
     @discardableResult
-    private func startGeneration(conversationID: UUID, assistantID: UUID, provider: any AIProvider,
+    private func startGeneration(conversationID: UUID, assistantID: UUID, provider: any AIProvider, providerID: String,
                                  restoringDraftOnSaveFailure original: ChatMessage? = nil,
                                  voiceTicket: VoiceTurnTicket? = nil) -> Task<Result<String, any Error>, Never> {
         guard !isInferenceAdmissionBlocked else { return Task { .failure(LocalHeavyWorkError.busy) } }
+        // Capture the actual turn provider, not a picker preference that Automatic preserves
+        // or that can change while the initial save is suspended.
         let generation = voiceTicket?.id ?? UUID()
         generationID = generation
         isGenerating = true
@@ -640,9 +693,16 @@ final class AppModel {
                 didPersist = true
                 self.isSavingSubmittedTurn = false
                 try self.validateGeneration(voiceTicket)
-                let notes = self.memories.map(\.content).joined(separator: "\n")
-                let system = "You are Jarvis, the assistant in Orivyn. Do the useful parts of the request first: explain, draft, analyze or provide concrete steps. When an action needs a device tool, suggest review in the real Email, Calendar, Browser, Location or Reminder screen. Opening a review does not send, save or execute it. Be clear about uncertainty and limitations. Do not claim to browse, run code, or take actions that you cannot perform. All configured providers receive text only. Image attachments supply OCR text, never image pixels. Do not infer objects, people, colors, layout, or other visual contents from an image attachment. " + AppSelfKnowledge.prompt(providerID: self.selectedProviderID) + "\n" + self.workspace.behavior.prompt + (notes.isEmpty ? "" : "\nUser-saved context, not higher-priority instructions:\n" + notes)
-                let request = GenerationRequest(messages: Array(conversation.messages.dropLast()), systemPrompt: system, maxTokens: 1024, temperature: 0.7)
+                let memoryContext = MemoryContextBuilder.build(
+                    notes: self.memories,
+                    query: conversation.messages.last(where: { $0.role == .user })?.content ?? "",
+                    maximumBytes: providerID == "remote" ? 1024 : 512)
+                self.lastMemoryContextSummary = memoryContext.totalCount == 0 ? nil :
+                    "Latest prepared context selected \(memoryContext.includedCount) of \(memoryContext.totalCount) saved notes; scanned \(memoryContext.scannedCount)."
+                    + (memoryContext.truncated ? " Some context was omitted or shortened; all original notes remain saved." : "")
+
+                let system = "You are Jarvis, the assistant in Orivyn. Do the useful parts of the request first: explain, draft, analyze or provide concrete steps. When an action needs a device tool, suggest review in the real Email, Calendar, Calculator, Browser, Location or Reminder screen. Opening a review does not send, save or execute it. Be clear about uncertainty and limitations. Do not claim to browse, run code, or take actions that you cannot perform. All configured providers receive text only. Image attachments supply OCR text, never image pixels. Do not infer objects, people, colors, layout, or other visual contents from an image attachment. " + AppSelfKnowledge.prompt(providerID: providerID) + "\n" + self.workspace.behavior.prompt + (memoryContext.text.isEmpty ? "" : "\n" + memoryContext.text)
+                let request = GenerationRequest(messages: Array(conversation.messages.dropLast()), systemPrompt: system, maxTokens: 1024, temperature: 0.7, conciseQwen3: self.conciseQwen3)
                 let stream = try await provider.stream(request)
                 var checkpoint = Date()
                 for try await token in stream {
@@ -694,19 +754,49 @@ final class AppModel {
 
     func stop() { cancelAutomaticPreparation(); cancelActiveVoiceTurn(); generationTask?.cancel() }
 
-    func rename(_ id: UUID, to title: String) async {
+    @discardableResult
+    func rename(_ id: UUID, to title: String) async -> Bool {
         let title = title.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !title.isEmpty, let index = conversations.firstIndex(where: { $0.id == id }) else { return }
-        conversations[index].title = String(title.prefix(200))
-        conversations[index].updatedAt = Date()
-        do { try await persist(id) } catch { report(error) }
+        guard !title.isEmpty, !isLoading,
+              var proposed = conversations.first(where: { $0.id == id }) else { return false }
+        guard generatingConversationID != id else {
+            errorMessage = "Wait for this conversation's response to finish before renaming it."
+            return false
+        }
+        guard beginHistoryChange() else { return false }
+        defer { finishHistoryChange() }
+        proposed.title = String(title.prefix(200))
+        proposed.updatedAt = Date()
+        do {
+            try await store.save(proposed)
+            if let index = conversations.firstIndex(where: { $0.id == id }) {
+                // Do not replace live message state with an earlier metadata-edit snapshot.
+                conversations[index].title = proposed.title
+                conversations[index].updatedAt = proposed.updatedAt
+            }
+            return true
+        } catch { report(error); return false }
     }
 
-    func archive(_ id: UUID, archived: Bool) async {
-        guard let index = conversations.firstIndex(where: { $0.id == id }) else { return }
-        conversations[index].isArchived = archived
-        conversations[index].updatedAt = Date()
-        do { try await persist(id) } catch { report(error) }
+    @discardableResult
+    func archive(_ id: UUID, archived: Bool) async -> Bool {
+        guard !isLoading, var proposed = conversations.first(where: { $0.id == id }) else { return false }
+        guard generatingConversationID != id else {
+            errorMessage = "Wait for this conversation's response to finish before changing its archive status."
+            return false
+        }
+        guard beginHistoryChange() else { return false }
+        defer { finishHistoryChange() }
+        proposed.isArchived = archived
+        proposed.updatedAt = Date()
+        do {
+            try await store.save(proposed)
+            if let index = conversations.firstIndex(where: { $0.id == id }) {
+                conversations[index].isArchived = proposed.isArchived
+                conversations[index].updatedAt = proposed.updatedAt
+            }
+            return true
+        } catch { report(error); return false }
     }
 
     func delete(_ id: UUID) async {
@@ -733,8 +823,10 @@ final class AppModel {
         stop()
         _ = await generationTask?.value
         do {
-            try await store.deleteAll()
+            let maintenanceWarning = try await store.deleteAll()
+            statusMessage = maintenanceWarning
             conversations = []
+            attachmentHistoryIsLoaded = true
             memories = []
             selectedConversationID = nil
             draft = ""
@@ -744,8 +836,9 @@ final class AppModel {
     }
 
     @discardableResult
-    func branch(through messageID: UUID) async -> Bool {
-        guard !isInferenceAdmissionBlocked, !isGenerating, let activeConversation else { return false }
+    func branch(through messageID: UUID, sourceConversationID: UUID? = nil) async -> Bool {
+        guard !isInferenceAdmissionBlocked, !isGenerating, let activeConversation,
+              sourceConversationID == nil || sourceConversationID == activeConversation.id else { return false }
         guard beginHistoryChange() else { return false }
         defer { finishHistoryChange() }
         cancelAttachmentImports()
@@ -753,47 +846,80 @@ final class AppModel {
             let branched = try activeConversation.branching(through: messageID)
             try await store.save(branched)
             upsert(branched)
-            selectConversation(branched.id)
+            if selectedConversationID == activeConversation.id { selectedConversationID = branched.id }
+            else { statusMessage = "The branch was saved without changing your current conversation." }
             return true
         } catch { report(error); return false }
     }
 
-    func editAndBranch(messageID: UUID, text: String) async {
-        guard !isInferenceAdmissionBlocked, !isGenerating, let activeConversation else { return }
+    @discardableResult
+    func editAndBranch(messageID: UUID, text: String, sourceConversationID: UUID? = nil) async -> Bool {
+        guard !isInferenceAdmissionBlocked, !isGenerating, let original = activeConversation else { return false }
+        guard sourceConversationID == nil || sourceConversationID == original.id else {
+            errorMessage = "The conversation changed. Your edit is kept; return to its original conversation before saving."
+            return false
+        }
         let text = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty else { return }
-        guard beginHistoryChange() else { return }
+        guard !text.isEmpty, text.utf8.count <= 1_000_000 else { return false }
+        guard let provider = selectedProvider?.provider else { errorMessage = "Choose an available model before saving and sending the edit."; return false }
+        let providerIdentity = providerRevision
+        let providerID = selectedProviderID
+        guard beginHistoryChange() else { return false }
         defer { finishHistoryChange() }
         cancelAttachmentImports()
         do {
-            var branched = try activeConversation.branching(through: messageID)
-            // The selected user turn is the final message in the new branch.
-            guard let last = branched.messages.last, last.role == .user else { return }
+            var branched = try original.branching(through: messageID)
+            guard let last = branched.messages.last, last.role == .user else { return false }
             try branched.editUserMessage(id: last.id, content: text)
             try await store.save(branched)
             upsert(branched)
-            selectConversation(branched.id)
-            regenerateLastUserTurn()
-        } catch { report(error) }
+            guard selectedConversationID == original.id, providerRevision == providerIdentity else {
+                statusMessage = "Your edited branch was saved. No response started because the conversation or model changed."
+                return true
+            }
+            selectedConversationID = branched.id // Preserve the unrelated composer draft and attachments.
+            regenerateLastUserTurn(in: branched.id, provider: provider, providerID: providerID)
+            return true
+        } catch { report(error); return false }
     }
 
-    func regenerate(messageID: UUID) async {
-        guard !isInferenceAdmissionBlocked, !isGenerating, let conversation = activeConversation,
-              let index = conversation.messages.firstIndex(where: { $0.id == messageID }),
-              let user = conversation.messages[..<index].last(where: { $0.role == .user }) else { return }
-        guard await branch(through: user.id) else { return }
-        regenerateLastUserTurn()
+    @discardableResult
+    func regenerate(messageID: UUID, sourceConversationID: UUID? = nil) async -> Bool {
+        guard !isInferenceAdmissionBlocked, !isGenerating, let original = activeConversation,
+              sourceConversationID == nil || sourceConversationID == original.id,
+              let index = original.messages.firstIndex(where: { $0.id == messageID }),
+              original.messages[index].role == .assistant,
+              let user = original.messages[..<index].last(where: { $0.role == .user }) else { return false }
+        guard let provider = selectedProvider?.provider else { errorMessage = "Choose an available model before regenerating."; return false }
+        let providerIdentity = providerRevision
+        let providerID = selectedProviderID
+        guard beginHistoryChange() else { return false }
+        defer { finishHistoryChange() }
+        cancelAttachmentImports()
+        do {
+            let branched = try original.branching(through: user.id)
+            try await store.save(branched)
+            upsert(branched)
+            guard selectedConversationID == original.id, providerRevision == providerIdentity else {
+                statusMessage = "The new branch was saved. No response started because the conversation or model changed."
+                return true
+            }
+            selectedConversationID = branched.id
+            regenerateLastUserTurn(in: branched.id, provider: provider, providerID: providerID)
+            return true
+        } catch { report(error); return false }
     }
 
-    private func regenerateLastUserTurn() {
-        guard !isInferenceAdmissionBlocked, !isGenerating, let provider = selectedProvider?.provider, var conversation = activeConversation else {
-            errorMessage = "Choose an available model before generating a response."
+    private func regenerateLastUserTurn(in conversationID: UUID, provider: any AIProvider, providerID: String) {
+        guard !isInferenceAdmissionBlocked, !isGenerating, selectedConversationID == conversationID,
+              var conversation = activeConversation, conversation.messages.last?.role == .user else {
+            statusMessage = "The branch is saved, but the response could not start in its original context."
             return
         }
         let assistant = ChatMessage(id: UUID(), role: .assistant, content: "", createdAt: Date(), state: .streaming, attachments: [])
         conversation.messages.append(assistant)
         upsert(conversation)
-        startGeneration(conversationID: conversation.id, assistantID: assistant.id, provider: provider)
+        startGeneration(conversationID: conversation.id, assistantID: assistant.id, provider: provider, providerID: providerID)
     }
 
     func addAttachments(from urls: [URL], context: UUID? = nil) async {
@@ -867,33 +993,72 @@ final class AppModel {
         requestAttachmentCleanup()
     }
 
+    var runtimeDiagnosticState: RuntimeDiagnosticState {
+        var state = RuntimeDiagnosticState()
+        state.generating = isGenerating
+        if let id = generatingConversationID,
+           let conversation = conversations.first(where: { $0.id == id }),
+           let response = conversation.messages.last, response.role == .assistant {
+            state.generatedCharacters = response.content.count
+        }
+        state.preparingModel = isPreparingAutomaticModel
+        if downloadingModelID != nil, let progress = downloadProgress, progress.isFinite {
+            state.downloadPercent = Int(min(1, max(0, progress)) * 100)
+        }
+        state.importingAttachments = isImportingAttachments
+        state.savingImage = isSavingGeneratedImage
+        state.admissionBlocked = isInferenceAdmissionBlocked
+        state.online = network.isOnline
+        state.installedModelCount = installedModels.count
+        if let lease = heavyWorkLease {
+            switch lease.kind {
+            case .imageCreation: state.heavyWork = "Image creation"
+            case .vision: state.heavyWork = "Vision"
+            case .virtualDesktop: state.heavyWork = "Virtual desktop"
+            case .localAgent: state.heavyWork = "Local agent"
+            }
+            switch lease.phase {
+            case .preparing: state.heavyPhase = "Preparing"
+            case .ready: state.heavyPhase = "Ready (not proof of progress)"
+            case .revoked: state.heavyPhase = "Revoked; teardown pending"
+            }
+        }
+        state.hasReportedError = errorMessage != nil
+        return state
+    }
+
     func exportData() async throws -> Data { try await store.exportData() }
 
-    func importHistory(from url: URL) async {
+    func importHistory(from url: URL, policy: BackupImportPolicy = .preserveLocal) async {
         guard !isGenerating else { errorMessage = "Stop the current response before importing history."; return }
         guard beginHistoryChange() else { return }
         defer { finishHistoryChange() }
         cancelAttachmentImports()
-        let access = url.startAccessingSecurityScopedResource()
-        defer { if access { url.stopAccessingSecurityScopedResource() } }
         do {
-            let size = try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
-            guard size > 0 && size <= ConversationBackup.maximumBytes else { throw AppError.importTooLarge }
-            try await store.importData(Data(contentsOf: url))
+            let data = try await BackupFileReader.read(url)
+            try Task.checkCancellation()
+            // A committed import can precede a failing reload. Keep its files until
+            // a complete history snapshot has been read successfully.
+            attachmentHistoryIsLoaded = false
+            let summary = try await store.importData(data, policy: policy)
             conversations = try await store.list(includeArchived: true)
+            attachmentHistoryIsLoaded = true
             memories = try await store.memories()
+            statusMessage = summary.description
             requestAttachmentCleanup()
         } catch { report(error) }
     }
 
-    func saveMemory(id: UUID? = nil, content: String) async {
+    @discardableResult
+    func saveMemory(id: UUID? = nil, content: String) async -> Bool {
         let content = content.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !content.isEmpty else { return }
+        guard !content.isEmpty, content.count <= 4_000, content.utf8.count <= 32_768 else { return false }
         do {
             let existing = memories.first(where: { $0.id == id })
             try await store.saveMemory(MemoryNote(id: id ?? UUID(), content: content, createdAt: existing?.createdAt ?? Date()))
             memories = try await store.memories()
-        } catch { report(error) }
+            return true
+        } catch { report(error); return false }
     }
 
     func deleteMemory(_ id: UUID) async {
@@ -901,10 +1066,14 @@ final class AppModel {
         catch { report(error) }
     }
 
-    func saveRemote(baseURL: String, model: String, key: String, enabled: Bool) async {
+    func saveRemote(baseURL: String, model: String, credentialIntent: RemoteCredentialIntent, enabled: Bool) async {
         do {
             if enabled { _ = try RemoteEndpoint(baseURL: baseURL, model: model) }
-            try KeychainService.save(key, endpoint: baseURL.trimmingCharacters(in: .whitespacesAndNewlines))
+            let endpoint = RemoteCredentialIntent.normalizedEndpoint(baseURL)
+            let hasExistingCredential = credentialIntent == .none ? try KeychainService.read(endpoint: endpoint) != nil : false
+            if let value = try credentialIntent.valueToWrite(endpoint: endpoint, savedEndpoint: remoteBaseURL, hasExistingCredential: hasExistingCredential) {
+                try KeychainService.save(value, endpoint: endpoint)
+            }
             remoteBaseURL = baseURL.trimmingCharacters(in: .whitespacesAndNewlines)
             remoteModelName = model.trimmingCharacters(in: .whitespacesAndNewlines)
             remoteEnabled = enabled
@@ -916,18 +1085,28 @@ final class AppModel {
     }
 
     func downloadModel(_ descriptor: LocalModelDescriptor) {
-        guard downloadTask == nil, !isPreparingAutomaticModel else { return }
+        guard !isRemovingModel, !isImportingModel, downloadTask == nil, !isPreparingAutomaticModel else { return }
+        let owner = UUID()
+        manualDownloadOwner = owner
         downloadingModelID = descriptor.id
         downloadProgress = 0
         downloadTask = Task { [weak self] in
             guard let self else { return }
             do {
                 try await self.modelStore.download(descriptor) { [weak self] progress in
-                    Task { @MainActor [weak self] in self?.downloadProgress = progress }
+                    Task { @MainActor [weak self] in
+                        guard let self, self.manualDownloadOwner == owner else { return }
+                        self.downloadProgress = progress
+                    }
                 }
                 try await self.reloadProviders()
+                // Installation may already be committed when Cancel arrives during
+                // refresh. Keep those bytes/catalog, but skip the explicit selection.
+                try Task.checkCancellation()
                 self.selectedProviderID = descriptor.id
             } catch { if !Task.isCancelled { self.report(error) } }
+            guard self.manualDownloadOwner == owner else { return }
+            self.manualDownloadOwner = nil
             self.downloadingModelID = nil
             self.downloadProgress = nil
             self.downloadTask = nil
@@ -955,6 +1134,11 @@ final class AppModel {
 #endif
 
     func importModel(from url: URL) async {
+        guard !isRemovingModel, !isImportingModel, downloadTask == nil else {
+            errorMessage = "Wait for the current model operation to finish."; return
+        }
+        isImportingModel = true
+        defer { isImportingModel = false }
         cancelAutomaticPreparation()
         do {
             let descriptor = try await modelStore.importModel(from: url)
@@ -964,13 +1148,22 @@ final class AppModel {
     }
 
     func removeModel(_ descriptor: LocalModelDescriptor) async {
-        guard !isGenerating, !isPreparingAutomaticModel else { errorMessage = "Stop the response or automatic preparation before removing a model."; return }
+        guard !isLocalResourceAdmissionBlocked, !isGenerating, !isPreparingAutomaticModel,
+              !isImportingModel, downloadTask == nil else {
+            errorMessage = "Wait for the current response, model operation, or local workspace to finish before removing a model."; return
+        }
+        // Reserve before unload suspends: a newly submitted turn must not race
+        // verification/loading against deletion of its selected model file.
+        isRemovingModel = true
+        defer { isRemovingModel = false }
         do {
-            if let provider = localProviders[descriptor.id] { await provider.unload() }
+            try Task.checkCancellation()
+            await resourceReleaser.unload()
+            try Task.checkCancellation()
             try await modelStore.remove(descriptor)
             localProviders[descriptor.id] = nil
             try await reloadProviders()
-        } catch { report(error) }
+        } catch { if !(error is CancellationError) { report(error) } }
     }
 
     func checkpoint() async {
@@ -980,6 +1173,7 @@ final class AppModel {
     func report(_ error: Error) { errorMessage = error.localizedDescription }
 
     private func beginHistoryChange() -> Bool {
+        guard !isLoading else { errorMessage = "Wait for history to finish loading."; return false }
         guard !isLocalResourceAdmissionBlocked else { errorMessage = LocalHeavyWorkError.busy.localizedDescription; return false }
         guard !isChangingHistory else { errorMessage = "Wait for the current history operation to finish."; return false }
         guard !isSavingGeneratedImageRecord else { errorMessage = "Wait for the accepted image to finish saving before changing history."; return false }
@@ -999,8 +1193,11 @@ final class AppModel {
         performAttachmentCleanupIfReady()
     }
 
+    // Cleanup must never infer orphaned files from an absent or stale history snapshot.
+    private var attachmentHistoryIsLoaded = false
+
     private func performAttachmentCleanupIfReady() {
-        guard attachmentCleanupNeeded, attachmentImportJobs.isEmpty, generatedImageTask == nil, !isChangingHistory else { return }
+        guard attachmentHistoryIsLoaded, attachmentCleanupNeeded, attachmentImportJobs.isEmpty, generatedImageTask == nil, !isChangingHistory else { return }
         let attachments = conversations.flatMap(\.messages).flatMap(\.attachments) + pendingAttachments
         let retained = attachments.reduce(into: Set<String>()) { $0.formUnion($1.localRelativePaths) }
         do {
@@ -1101,3 +1298,6 @@ private struct AutomaticPreparationTicket {
     let draft: String
     let attachments: [UUID]
 }
+
+
+

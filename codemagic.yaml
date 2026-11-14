@@ -38,6 +38,7 @@ workflows:
           # Xcode builds the unit-test target even for UI-only selection.
           # Its real-model resource must exist; optional source does not skip Copy Resources.
           python3 scripts/download_test_model.py
+          python3 scripts/materialize_guest.py Fixtures/maintained.img.gz JarvisEVO/Resources/VMAssets/maintained.img
           xcodegen generate
           mkdir -p artifacts/integration-regression
           xcrun simctl list devices available -j > artifacts/integration-regression/simulators.json
@@ -65,6 +66,7 @@ workflows:
           # Xcode builds the unit-test target even for UI-only selection.
           # Its real-model resource must exist; optional source does not skip Copy Resources.
           python3 scripts/download_test_model.py
+          python3 scripts/materialize_guest.py Fixtures/maintained.img.gz JarvisEVO/Resources/VMAssets/maintained.img
           xcodegen generate
           mkdir -p artifacts/native-tools-regression
           xcrun simctl list devices available -j > artifacts/native-tools-regression/simulators.json
@@ -95,6 +97,7 @@ workflows:
           # Xcode builds the unit-test target even for UI-only selection.
           # Its real-model resource must exist; optional source does not skip Copy Resources.
           python3 scripts/download_test_model.py
+          python3 scripts/materialize_guest.py Fixtures/maintained.img.gz JarvisEVO/Resources/VMAssets/maintained.img
           xcodegen generate
           mkdir -p artifacts/automatic-regression
           xcrun simctl list devices available -j > artifacts/automatic-regression/simulators.json
@@ -125,6 +128,7 @@ workflows:
           # Xcode builds the unit-test target even for UI-only selection.
           # Its real-model resource must exist; optional source does not skip Copy Resources.
           python3 scripts/download_test_model.py
+          python3 scripts/materialize_guest.py Fixtures/maintained.img.gz JarvisEVO/Resources/VMAssets/maintained.img
           xcodegen generate
           mkdir -p artifacts/automatic-real-inference
           xcrun simctl list devices available -j > artifacts/automatic-real-inference/simulators.json
@@ -155,6 +159,7 @@ workflows:
           # Xcode builds the unit-test target even for UI-only selection.
           # Its real-model resource must exist; optional source does not skip Copy Resources.
           python3 scripts/download_test_model.py
+          python3 scripts/materialize_guest.py Fixtures/maintained.img.gz JarvisEVO/Resources/VMAssets/maintained.img
           xcodegen generate
           mkdir -p artifacts/plugin-regression
           xcrun simctl list devices available -j > artifacts/plugin-regression/simulators.json
@@ -186,6 +191,7 @@ workflows:
           # Xcode builds the unit-test target even for UI-only selection.
           # Its real-model resource must exist; optional source does not skip Copy Resources.
           python3 scripts/download_test_model.py
+          python3 scripts/materialize_guest.py Fixtures/maintained.img.gz JarvisEVO/Resources/VMAssets/maintained.img
           xcodegen generate
           mkdir -p artifacts/resource-regression
           xcrun simctl list devices available -j > artifacts/resource-regression/simulators.json

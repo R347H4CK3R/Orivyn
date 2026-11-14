@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+*.token
+.env
+.private/
+
+.test-logs/

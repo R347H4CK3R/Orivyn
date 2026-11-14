@@ -12,3 +12,6 @@ __pycache__/
 Packages/LlamaRuntime/Frameworks/
 .cache/
 artifacts/
+
+# Reconstructed offline from the pinned compressed fixture before build
+JarvisEVO/Resources/VMAssets/maintained.img

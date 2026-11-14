@@ -17,6 +17,7 @@ actor LocalModelStore {
         var values = URLResourceValues()
         values.isExcludedFromBackup = true
         try mutableURL.setResourceValues(values)
+        try ModelInstallTransaction.recover(root: base)
     }
 
     func installedModels() throws -> [LocalModelDescriptor] {
@@ -90,15 +91,20 @@ actor LocalModelStore {
 
     func remove(_ descriptor: LocalModelDescriptor) throws {
         guard !installing else { throw LocalModelError.busy }
+        // Revalidate the selection after any caller await, before touching live files.
+        let manifest = try LocalModelRemovalPlan.updatedManifest(removing: descriptor, from: readManifest())
         let url = try destination(for: descriptor)
-        var manifest = try readManifest()
-        manifest.removeAll { $0.id == descriptor.id }
-        // A failed deletion leaves the manifest intact and reports the error.
-        if fileManager.fileExists(atPath: url.path) { try fileManager.removeItem(at: url) }
-        try writeManifest(manifest)
+        let manifestData = try JSONEncoder().encode(manifest)
+        // Preserve recovery copies until both deletion and metadata publication commit.
+        // If backup allocation fails, no live files have changed.
+        try ModelInstallTransaction.remove(root: root, targetName: url.lastPathComponent,
+            manifest: manifestData, prepareFile: { stagedManifest in
+                try FileManager.default.setAttributes([.protectionKey: FileProtectionType.completeUntilFirstUserAuthentication], ofItemAtPath: stagedManifest.path)
+            })
     }
 
     private func destination(for descriptor: LocalModelDescriptor) throws -> URL {
+        try ModelInstallTransaction.recover(root: root)
         let filename = descriptor.fileName
         guard !descriptor.id.isEmpty, filename == URL(fileURLWithPath: filename).lastPathComponent,
               !filename.contains("/"), !filename.contains("\\"), filename.hasSuffix(".gguf"),
@@ -134,28 +140,22 @@ actor LocalModelStore {
 
     private func install(_ temporaryURL: URL, descriptor: LocalModelDescriptor, target: URL) throws {
         try Task.checkCancellation()
-        let stage = root.appendingPathComponent(".staged-\(UUID().uuidString)")
-        defer { try? fileManager.removeItem(at: stage) }
-        try fileManager.copyItem(at: temporaryURL, to: stage)
-        if fileManager.fileExists(atPath: target.path) {
-            _ = try fileManager.replaceItemAt(target, withItemAt: stage)
-        } else {
-            try fileManager.moveItem(at: stage, to: target)
-        }
-        try fileManager.setAttributes([.protectionKey: FileProtectionType.completeUntilFirstUserAuthentication], ofItemAtPath: target.path)
-        var manifest = try readManifest()
-        manifest.removeAll { $0.id == descriptor.id }
-        manifest.append(descriptor)
-        try writeManifest(manifest)
+        // Prepare/encode metadata before touching any published model bytes.
+        let manifest = try LocalModelInstallationPlan.updatedManifest(installing: descriptor, from: readManifest())
+        let manifestData = try JSONEncoder().encode(manifest)
+        let oldBytes = (try? fileManager.attributesOfItem(atPath: target.path)[.size] as? NSNumber)?.int64Value ?? 0
+        try checkStorage(required: descriptor.byteCount + oldBytes)
+        try ModelInstallTransaction.commit(root: root, targetName: target.lastPathComponent,
+            source: temporaryURL, manifest: manifestData, prepareFile: { url in
+                try FileManager.default.setAttributes([.protectionKey: FileProtectionType.completeUntilFirstUserAuthentication], ofItemAtPath: url.path)
+            })
     }
 
     private var manifestURL: URL { root.appendingPathComponent("installed-models.json") }
     private func readManifest() throws -> [LocalModelDescriptor] {
+        try ModelInstallTransaction.recover(root: root)
         guard fileManager.fileExists(atPath: manifestURL.path) else { return [] }
         return try JSONDecoder().decode([LocalModelDescriptor].self, from: Data(contentsOf: manifestURL))
-    }
-    private func writeManifest(_ models: [LocalModelDescriptor]) throws {
-        try JSONEncoder().encode(models).write(to: manifestURL, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
     }
     func availableStorageBytes() -> Int64? {
         try? root.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey]).volumeAvailableCapacityForImportantUsage

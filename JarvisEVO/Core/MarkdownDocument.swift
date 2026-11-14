@@ -464,6 +464,8 @@ struct MarkdownCodeToken: Equatable, Sendable {
 /// Small lexical highlighter, not a compiler or executor. Unknown languages stay uncolored.
 /// The original code is never rewritten, including incomplete strings and Unicode identifiers.
 enum MarkdownSyntaxHighlighter {
+    /// Each token becomes a native attributed-text run; byte bounds alone are insufficient.
+    static let maximumTokens = 4_096
     static func tokens(_ source: String, language: String) -> [MarkdownCodeToken] {
         let language = language.lowercased()
         let python = ["python", "py"].contains(language)
@@ -491,6 +493,9 @@ enum MarkdownSyntaxHighlighter {
             output.append(.init(text: String(characters[start..<end]), style: style))
         }
         while index < characters.count {
+            // A styled token may flush one pending plain run before appending itself.
+            // Stop before allocating past the run budget; retain the entire source.
+            if output.count >= maximumTokens - 1 { return [.init(text: source, style: .plain)] }
             let start = index
             let ch = characters[index]
             let next = index + 1 < characters.count ? characters[index + 1] : "\0"

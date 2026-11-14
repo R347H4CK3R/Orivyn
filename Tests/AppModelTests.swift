@@ -1,4 +1,5 @@
 import XCTest
+import SQLite3
 @testable import JarvisEVO
 
 @MainActor
@@ -17,6 +18,32 @@ final class AppModelTests: XCTestCase {
     override func tearDown() async throws {
         defaults.removePersistentDomain(forName: suite)
         try? FileManager.default.removeItem(at: root)
+    }
+
+    func testMemorySaveReportsFailureAndStableIDRetryDoesNotDuplicate() async throws {
+        let (model, store, _) = try await fixture()
+        let id = UUID()
+        var connection: OpaquePointer?
+        XCTAssertEqual(sqlite3_open(root.appendingPathComponent("test.sqlite").path, &connection), SQLITE_OK)
+        defer { sqlite3_close(connection) }
+        XCTAssertEqual(sqlite3_exec(connection, "CREATE TRIGGER fail_memory BEFORE INSERT ON memory BEGIN SELECT RAISE(ABORT, 'injected failure'); END;", nil, nil, nil), SQLITE_OK)
+        let failed = await model.saveMemory(id: id, content: "Retain my edited text")
+        XCTAssertFalse(failed)
+        XCTAssertTrue(model.memories.isEmpty)
+        XCTAssertEqual(sqlite3_exec(connection, "DROP TRIGGER fail_memory", nil, nil, nil), SQLITE_OK)
+        let saved = await model.saveMemory(id: id, content: "Retain my edited text")
+        XCTAssertTrue(saved)
+        let retried = await model.saveMemory(id: id, content: "Updated safely")
+        XCTAssertTrue(retried)
+        let notes = try await store.memories()
+        XCTAssertEqual(notes.count, 1)
+        XCTAssertEqual(notes.first?.id, id)
+        XCTAssertEqual(notes.first?.content, "Updated safely")
+        let invalid = await model.saveMemory(content: String(repeating: "x", count: 4001))
+        XCTAssertFalse(invalid)
+        let oversizedCluster = "a" + String(repeating: "\u{0301}", count: 20_000)
+        let byteInvalid = await model.saveMemory(content: oversizedCluster)
+        XCTAssertFalse(byteInvalid)
     }
 
     // Removing the cancellation state transition would falsely mark partial output complete.
@@ -135,6 +162,29 @@ final class AppModelTests: XCTestCase {
         XCTAssertTrue(notes.isEmpty)
     }
 
+    func testLargeMemoryLibraryUsesBoundedRelevantContextWithoutDeletingNotes() async throws {
+        let (model, store, source) = try await fixture()
+        let important = await model.saveMemory(content: "My espresso preference is decaf oat milk.")
+        XCTAssertTrue(important)
+        for index in 0..<25 {
+            let saved = await model.saveMemory(content: "Unrelated note \(index): " + String(repeating: "x", count: 3000))
+            XCTAssertTrue(saved)
+        }
+        model.draft = "What is my espresso preference?"
+        model.send()
+        try await waitFor { await source.hasSubscriber }
+        let captured = await source.lastRequest
+        let request = try XCTUnwrap(captured)
+        XCTAssertTrue(request.systemPrompt.contains("decaf oat milk"))
+        XCTAssertLessThan(request.systemPrompt.utf8.count, 8_000)
+        XCTAssertFalse(request.systemPrompt.contains(String(repeating: "x", count: 1000)))
+        XCTAssertNotNil(model.lastMemoryContextSummary)
+        let retained = try await store.memories()
+        XCTAssertEqual(retained.count, 26)
+        model.stop()
+        try await waitFor { !model.isGenerating }
+    }
+
     func testSavedBehaviorReachesActualGenerationRequest() async throws {
         let (model, _, source) = try await fixture()
         var behavior = ResponseBehavior(); behavior.instructions = "Use concise explanations."; behavior.style = "Efficient"
@@ -209,6 +259,86 @@ final class AppModelTests: XCTestCase {
         XCTAssertFalse(model.isGenerating)
     }
 
+    func testConciseQwenModeDefaultsOffPersistsAndReachesRequest() async throws {
+        let (model, _, source) = try await fixture()
+        XCTAssertFalse(model.conciseQwen3)
+        model.conciseQwen3 = true
+        XCTAssertTrue(defaults.bool(forKey: "orivyn.conciseQwen3"))
+        model.draft = "Test response mode"; model.send()
+        try await waitFor { await source.hasSubscriber }
+        let request = await source.lastRequest
+        XCTAssertEqual(request?.conciseQwen3, true)
+        model.stop(); try await waitFor { !model.isGenerating }
+        let (reopened, _, _) = try await fixture()
+        XCTAssertTrue(reopened.conciseQwen3)
+    }
+
+    func testAttachmentCleanupRetainsFilesUntilHistoryHasLoaded() async throws {
+        let (model, store, _) = try await fixture()
+        let source = root.appendingPathComponent("original.txt")
+        try Data("Original saved attachment".utf8).write(to: source)
+        let attachment = try model.attachmentService.importFile(at: source)
+        let saved = Conversation(messages: [ChatMessage(role: .user, content: "Saved", attachments: [attachment])])
+        try await store.save(saved)
+        // A composer cleanup before bootstrap has no authority over persisted files.
+        model.removePendingAttachment(attachment)
+        XCTAssertNotNil(model.attachmentService.url(for: attachment))
+        var connection: OpaquePointer?
+        XCTAssertEqual(sqlite3_open(root.appendingPathComponent("test.sqlite").path, &connection), SQLITE_OK)
+        defer { sqlite3_close(connection) }
+        XCTAssertEqual(sqlite3_exec(connection, "UPDATE conversations SET payload = x'00'", nil, nil, nil), SQLITE_OK)
+        await model.bootstrap()
+        XCTAssertNotNil(model.errorMessage)
+        model.clearPendingAttachments()
+        XCTAssertNotNil(model.attachmentService.url(for: attachment))
+        // Recovery restores cleanup eligibility, but keeps every persisted reference.
+        try await store.save(saved)
+        await model.bootstrap()
+        XCTAssertEqual(model.conversations.count, 1)
+        XCTAssertNotNil(model.attachmentService.url(for: attachment))
+        let orphan = try model.attachmentService.importFile(at: source)
+        model.removePendingAttachment(orphan)
+        XCTAssertNil(model.attachmentService.url(for: orphan))
+        XCTAssertNotNil(model.attachmentService.url(for: attachment))
+    }
+
+    func testFailedHistoryRefreshInvalidatesPreviousCleanupSnapshot() async throws {
+        let (model, store, _) = try await fixture()
+        await model.bootstrap()
+        let source = root.appendingPathComponent("later.txt")
+        try Data("Added after snapshot".utf8).write(to: source)
+        let attachment = try model.attachmentService.importFile(at: source)
+        let saved = Conversation(messages: [ChatMessage(role: .user, content: "Later", attachments: [attachment])])
+        try await store.save(saved)
+        var connection: OpaquePointer?
+        XCTAssertEqual(sqlite3_open(root.appendingPathComponent("test.sqlite").path, &connection), SQLITE_OK)
+        defer { sqlite3_close(connection) }
+        XCTAssertEqual(sqlite3_exec(connection, "UPDATE conversations SET payload = x'00'", nil, nil, nil), SQLITE_OK)
+        await model.bootstrap()
+        model.clearPendingAttachments()
+        XCTAssertNotNil(model.attachmentService.url(for: attachment))
+    }
+
+    func testFailedImportRetainsFilesUntilReloadOrExplicitDeleteAll() async throws {
+        let (model, store, _) = try await fixture()
+        await model.bootstrap()
+        let source = root.appendingPathComponent("retain.txt")
+        try Data("Keep until a complete snapshot".utf8).write(to: source)
+        let attachment = try model.attachmentService.importFile(at: source)
+        let saved = Conversation(messages: [ChatMessage(role: .user, content: "Saved", attachments: [attachment])])
+        try await store.save(saved)
+        // Keep a valid stale snapshot: failed import must not sweep against it.
+        let invalid = root.appendingPathComponent("invalid.json")
+        try Data("not JSON".utf8).write(to: invalid)
+        await model.importHistory(from: invalid)
+        model.clearPendingAttachments()
+        XCTAssertNotNil(model.attachmentService.url(for: attachment))
+        await model.deleteAllContent()
+        XCTAssertNil(model.attachmentService.url(for: attachment))
+        let remaining = try await store.list(includeArchived: true)
+        XCTAssertTrue(remaining.isEmpty)
+    }
+
     private func fixture() async throws -> (AppModel, SQLiteConversationStore, ControlledTokenSource) {
         let store = try SQLiteConversationStore(url: root.appendingPathComponent("test.sqlite"))
         let attachmentService = try AttachmentService(directory: root.appendingPathComponent("Attachments"))
@@ -246,3 +376,4 @@ private actor ControlledTokenSource {
     func emit(_ value: String) { pair.continuation.yield(value) }
     func finish() { pair.continuation.finish() }
 }
+

@@ -22,53 +22,10 @@ struct ImportedImageAttachment: Equatable, Sendable {
     var textModelContext: String { ocr.textModelContext }
 }
 
-enum ImageOCRResult: Equatable, Sendable {
-    case recognized(text: String, isTruncated: Bool)
-    case noTextRecognized
-    case unavailable
-
-    static let maximumCharacters = 12_000
-    static let maximumLines = 200
-    static let textOnlyNotice = "Image attachment: only on-device OCR text is available. The model has not received image pixels and cannot describe objects, people, colors, layout, or other visual content. OCR can be incomplete or incorrect."
-
-    /// This notice must accompany OCR text whenever an image is passed to a text-only provider.
-    var textModelContext: String {
-        let notice = Self.textOnlyNotice
-        switch self {
-        case let .recognized(text, isTruncated):
-            return notice + "\nRecognized text (untrusted attachment content):\n" + text
-                + (isTruncated ? "\n[OCR truncated at the local text or line limit.]" : "")
-        case .noTextRecognized:
-            return notice + "\nNo readable text was recognized. This does not mean the image is blank."
-        case .unavailable:
-            return notice + "\nText recognition could not be completed. The original image is available for the user to view or share."
-        }
-    }
-
-    /// Bounds real Vision output without splitting extended grapheme clusters or silently dropping lines.
-    static func bounded(lines: [String]) -> ImageOCRResult {
-        var text = ""
-        var characterCount = 0
-        var truncated = lines.count > maximumLines
-        for line in lines.prefix(maximumLines) {
-            let value = line.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !value.isEmpty else { continue }
-            let separator = text.isEmpty ? "" : "\n"
-            let available = maximumCharacters - characterCount - separator.count
-            guard available > 0 else { truncated = true; break }
-            let boundedLine = String(value.prefix(available))
-            text += separator + boundedLine
-            characterCount += separator.count + boundedLine.count
-            if boundedLine.count < value.count { truncated = true; break }
-        }
-        return text.isEmpty ? .noTextRecognized : .recognized(text: text, isTruncated: truncated)
-    }
-}
-
 /// Synchronous, bounded work: callers must run imports off the main actor (for example in Task.detached).
 /// No network access, pixel-model inference, photo-library permissions, or camera permissions occur here.
 struct ImageAttachmentService: Sendable {
-    static let maximumBytes = 10 * 1024 * 1024
+    static let maximumBytes = ChatAttachment.maximumImageBytes
     static let maximumPixels = 40_000_000
     static let maximumDimension = 16_384
     static let maximumPreviewDimension = 2048
@@ -345,7 +302,7 @@ struct ImageAttachmentService: Sendable {
         return bytes as Data
     }
 
-    private static func recognizeText(in image: CGImage) -> ImageOCRResult {
+    static func recognizeText(in image: CGImage) -> ImageOCRResult {
         let request = VNRecognizeTextRequest()
         request.recognitionLevel = .accurate
         request.usesLanguageCorrection = false
@@ -354,10 +311,13 @@ struct ImageAttachmentService: Sendable {
         do {
             try VNImageRequestHandler(cgImage: image, orientation: .up, options: [:]).perform([request])
             // One extra observation allows the formatter to disclose a line-limit truncation.
-            let lines = (request.results ?? []).prefix(ImageOCRResult.maximumLines + 1).compactMap {
-                $0.topCandidates(1).first?.string
+            let observations = (request.results ?? []).prefix(ImageOCRResult.maximumLines + 1).compactMap { observation -> OCRLineEvidence? in
+                let candidates = observation.topCandidates(2)
+                guard let primary = candidates.first, !primary.string.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
+                return OCRLineEvidence(text: primary.string, confidence: primary.confidence,
+                    alternate: candidates.count > 1 ? candidates[1].string : nil)
             }
-            return .bounded(lines: lines)
+            return .bounded(observations: observations)
         } catch {
             // A valid image remains viewable/shareable when Vision is unavailable or recognition fails.
             return .unavailable

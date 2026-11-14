@@ -25,6 +25,31 @@ final class AutomaticModelRouterTests: XCTestCase {
         }
     }
 
+    func testLanguageAndProgrammingArtifactRequestsChooseCoder() throws {
+        for prompt in ["Write a Python program to sort numbers", "Implement a Swift class for a shopping cart", "Create a Rust parser", "Build a Java module", "Generate Python tests for this library", "Explain this Swift method", "Write a program in Python", "Create a Python PROGRAM"] {
+            XCTAssertEqual(try AutomaticModelRouter.route(text: prompt, installed: [], environment: environment()).model.id, coderID, prompt)
+        }
+    }
+
+    func testNewLanguageRoutingRetainsInstalledAndDownloadSafeguards() throws {
+        let prompt = "Write a Python program to sort numbers"
+        let coder = try descriptor(coderID)
+        let offline = try AutomaticModelRouter.route(text: prompt, installed: [coder], environment: environment(storage: nil, network: .offline))
+        XCTAssertEqual(offline.model.id, coderID)
+        XCTAssertFalse(offline.needsDownload)
+        for (network, error) in [(AutomaticDownloadNetwork.offline, AutomaticRoutingError.offline), (.unknown, .networkUnknown), (.constrained, .constrainedNetwork), (.cellular, .cellularNotAllowed)] {
+            XCTAssertThrowsError(try AutomaticModelRouter.route(text: prompt, installed: [], environment: environment(network: network))) { XCTAssertEqual($0 as? AutomaticRoutingError, error) }
+        }
+        XCTAssertThrowsError(try AutomaticModelRouter.route(text: prompt, installed: [coder], environment: environment(memory: 5_999_999_999))) { XCTAssertEqual($0 as? AutomaticRoutingError, .insufficientMemory) }
+        XCTAssertThrowsError(try AutomaticModelRouter.route(text: prompt, installed: [], environment: environment(storage: 0))) { XCTAssertEqual($0 as? AutomaticRoutingError, .insufficientStorage) }
+    }
+
+    func testLanguageWordsAndAmbiguousArtifactsAloneDoNotTriggerCoder() throws {
+        for prompt in ["Write a story about a python", "Explain a swift bird's migration", "Create a program for a dance recital", "Explain rust on my car", "Write about my Java vacation", "Plan a Python programming class", "A swift bird flew over my school class", "Write a story about a python visiting my class", "Write a report about rust for my class", "Explain a swift bird migration to my class", "Create a python exhibit for the zoo program"] {
+            XCTAssertEqual(try AutomaticModelRouter.route(text: prompt, installed: [], environment: environment()).model.id, generalID, prompt)
+        }
+    }
+
     func testLexicalMatchingDoesNotConfuseIncidentalSubstringsOrEverydayWords() throws {
         for prompt in ["Decode this dream", "What is the dress code?", "Make a program for a dance recital", "Explain a swift bird's migration", "Tell me about a python at the zoo", "Transcribe my thoughts about a postcard"] {
             XCTAssertEqual(try AutomaticModelRouter.route(text: prompt, installed: [], environment: environment()).model.id, generalID, prompt)

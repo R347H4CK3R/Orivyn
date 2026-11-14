@@ -163,9 +163,12 @@ final class PluginBroker {
         guard !isBusy else { throw PluginBrokerError.busy }
         guard let value = connections.first(where: { $0.id == id }) else { return }
         if activeConnection?.id == id || stagedConnection?.id == id { disconnect() }
-        try PluginCredentialStore.save(nil, endpoint: value.endpoint)
         let next = connections.filter { $0.id != id }
-        try saveConnections(next); connections = next
+        try PluginConnectionRemoval.perform(
+            readCredential: { try PluginCredentialStore.read(endpoint: value.endpoint) },
+            writeCredential: { try PluginCredentialStore.save($0, endpoint: value.endpoint) },
+            saveMetadata: { try saveConnections(next) })
+        connections = next
     }
     private func checkOwner(_ id: UUID) throws {
         try Task.checkCancellation()

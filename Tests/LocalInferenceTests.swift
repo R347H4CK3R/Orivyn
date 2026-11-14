@@ -39,6 +39,16 @@ final class LocalInferenceTests: XCTestCase {
         var output = ""
         for try await chunk in try await provider.stream(request) { output += chunk }
         XCTAssertFalse(output.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+        // A one-token grammar-constrained tool response cannot finish the JSON schema.
+        // Real engine must preserve any prefix but report exhaustion, never successful completion.
+        var limited = GenerationRequest(messages: [ChatMessage(role: .user, content: "Read app information.")], systemPrompt: "Return a tool request.", maxTokens: 1, temperature: 0)
+        limited.localAgentRequiresTool = true
+        do {
+            for try await _ in try await provider.stream(limited) { }
+            XCTFail("Token-budget exhaustion was incorrectly reported as complete")
+        } catch {
+            XCTAssertEqual(error as? LocalModelError, .generationLimitReached)
+        }
         await provider.unload()
     }
 }
@@ -69,6 +79,15 @@ final class LocalPromptBuilderTests: XCTestCase {
         XCTAssertLessThan(result[0].content.count, 5000)
     }
 
+    func testLaterAttachmentsAreExplicitlyOmittedWhenBudgetIsExhausted() {
+        let first = ChatAttachment(name: "first.txt", relativePath: "first.txt", mediaType: "text/plain", byteCount: 4000, extractedText: String(repeating: "x", count: 4000))
+        let second = ChatAttachment(name: "second.txt", relativePath: "second.txt", mediaType: "text/plain", byteCount: 6, extractedText: "secret")
+        let result = LocalPromptBuilder.messages(from: [ChatMessage(role: .user, content: "Compare both", attachments: [first, second])])
+        XCTAssertTrue(result[0].content.hasPrefix("Compare both"))
+        XCTAssertTrue(result[0].content.contains("1 additional attachment(s) omitted"))
+        XCTAssertFalse(result[0].content.contains("secret"))
+    }
+
     func testContextTrimsOldMessagesWhilePreservingLatestUser() throws {
         let messages = [LocalPromptMessage(role: "user", content: "older"), LocalPromptMessage(role: "assistant", content: "reply"), LocalPromptMessage(role: "user", content: "latest")]
         let result = try LocalPromptBuilder.trimToFit(messages, maxTokens: 2, contextSize: 10) { entries in
@@ -82,4 +101,107 @@ final class LocalPromptBuilderTests: XCTestCase {
             XCTAssertEqual($0 as? LocalModelError, .promptTooLong)
         }
     }
+    func testPreparedAttachmentsShrinkToFitWithoutChangingTypedText() throws {
+        let file = ChatAttachment(name: "long.txt", relativePath: "long.txt", mediaType: "text/plain", byteCount: 6000, extractedText: String(repeating: "z", count: 6000))
+        let source = ChatMessage(role: .user, content: "Keep exactly this question", attachments: [file])
+        let original = source
+        var attempts = 0
+        let result = try LocalPromptBuilder.prepareMessages(from: [source], maxTokens: 100, contextSize: 1000) { entries in
+            attempts += 1
+            return entries.reduce(0) { $0 + $1.content.count }
+        }
+        XCTAssertGreaterThan(attempts, 1)
+        XCTAssertLessThanOrEqual(attempts, 6)
+        XCTAssertTrue(result[0].content.hasPrefix(source.content))
+        XCTAssertTrue(result[0].content.contains("truncated"))
+        XCTAssertTrue(result[0].content.contains("zzzz"))
+        XCTAssertLessThanOrEqual(result[0].content.count + 100, 1000)
+        XCTAssertEqual(source, original)
+    }
+
+    func testPrepareTrimsOldTurnsBeforeReducingAttachmentExcerpt() throws {
+        let file = ChatAttachment(name: "small.txt", relativePath: "small.txt", mediaType: "text/plain", byteCount: 300, extractedText: String(repeating: "q", count: 300))
+        let latest = ChatMessage(role: .user, content: "Newest", attachments: [file])
+        let source = [ChatMessage(role: .user, content: String(repeating: "old", count: 1000)), ChatMessage(role: .assistant, content: "old reply"), latest]
+        let result = try LocalPromptBuilder.prepareMessages(from: source, maxTokens: 100, contextSize: 1000) { $0.reduce(0) { $0 + $1.content.count } }
+        XCTAssertEqual(result.count, 1)
+        XCTAssertEqual(result[0].content, LocalPromptBuilder.messages(from: [latest])[0].content)
+        XCTAssertFalse(result[0].content.contains("truncated"))
+    }
+
+    func testPrepareNeverFallsBackToZeroEvidenceAndBoundsAttempts() {
+        let file = ChatAttachment(name: "long.txt", relativePath: "long.txt", mediaType: "text/plain", byteCount: 6000, extractedText: String(repeating: "z", count: 6000))
+        var attempts = 0
+        XCTAssertThrowsError(try LocalPromptBuilder.prepareMessages(from: [ChatMessage(role: .user, content: "Question", attachments: [file])], maxTokens: 100, contextSize: 200) { entries in
+            attempts += 1
+            XCTAssertTrue(entries[0].content.contains("zzzz"))
+            return 200
+        }) { XCTAssertEqual($0 as? LocalModelError, .promptTooLong) }
+        XCTAssertEqual(attempts, 6)
+    }
+
+    func testPreparePropagatesNonBudgetTokenizerFailureImmediately() {
+        var calls = 0
+        XCTAssertThrowsError(try LocalPromptBuilder.prepareMessages(from: [ChatMessage(role: .user, content: "Question")], maxTokens: 100, contextSize: 1000) { _ in
+            calls += 1
+            throw LocalModelError.decodingFailed(-99)
+        }) { XCTAssertEqual($0 as? LocalModelError, .decodingFailed(-99)) }
+        XCTAssertEqual(calls, 1)
+    }
+
+    func testPreparedOversizedTypedOnlyRequestStillFailsUnchanged() {
+        let text = String(repeating: "Do not cut my question. ", count: 100)
+        XCTAssertThrowsError(try LocalPromptBuilder.prepareMessages(from: [ChatMessage(role: .user, content: text)], maxTokens: 100, contextSize: 1000) { entries in
+            XCTAssertEqual(entries.last?.content, text)
+            return entries.reduce(0) { $0 + $1.content.count }
+        }) { XCTAssertEqual($0 as? LocalModelError, .promptTooLong) }
+    }
+
+    func testPreparedUnicodeUsesSuppliedCountRatherThanCharacterAssumption() throws {
+        let file = ChatAttachment(name: "unicode.txt", relativePath: "unicode.txt", mediaType: "text/plain", byteCount: 12000, extractedText: String(repeating: "日", count: 4000))
+        let result = try LocalPromptBuilder.prepareMessages(from: [ChatMessage(role: .user, content: "Keep", attachments: [file])], maxTokens: 100, contextSize: 1200) { entries in
+            // Deliberately dense counting proxy, not a claim about any model tokenizer.
+            entries.reduce(0) { $0 + $1.content.utf8.count }
+        }
+        XCTAssertTrue(result[0].content.hasPrefix("Keep"))
+        XCTAssertTrue(result[0].content.contains("日日"))
+        XCTAssertTrue(result[0].content.contains("truncated"))
+        XCTAssertLessThanOrEqual(result[0].content.utf8.count + 100, 1200)
+    }
+
+    func testExplicitAttachmentLimitClampsAndKeepsUnicodeAndOmissionMarkers() {
+        let first = ChatAttachment(name: "unicode.txt", relativePath: "unicode.txt", mediaType: "text/plain", byteCount: 30000, extractedText: String(repeating: "🦉日", count: 3000))
+        let second = ChatAttachment(name: "other.txt", relativePath: "other.txt", mediaType: "text/plain", byteCount: 5, extractedText: "other")
+        let source = [ChatMessage(role: .user, content: "Typed text", attachments: [first, second])]
+        let bounded = LocalPromptBuilder.messages(from: source, attachmentCharacterLimit: 128)[0].content
+        XCTAssertTrue(bounded.hasPrefix("Typed text"))
+        XCTAssertTrue(bounded.contains(String(repeating: "🦉日", count: 64)))
+        XCTAssertTrue(bounded.contains("1 additional attachment(s) omitted"))
+        XCTAssertTrue(bounded.contains("END UNTRUSTED ATTACHMENT DATA"))
+        XCTAssertEqual(LocalPromptBuilder.messages(from: source, attachmentCharacterLimit: Int.max)[0].content,
+                       LocalPromptBuilder.messages(from: source)[0].content)
+        XCTAssertTrue(LocalPromptBuilder.messages(from: source, attachmentCharacterLimit: -1)[0].content.contains("2 additional attachment(s) omitted"))
+    }
+
+    func testPrepareCannotRemoveOversizedNewestTypedText() {
+        let typed = String(repeating: "typed", count: 1000)
+        XCTAssertThrowsError(try LocalPromptBuilder.prepareMessages(from: [ChatMessage(role: .user, content: typed)], maxTokens: 100, contextSize: 1000) { entries in
+            XCTAssertEqual(entries.last?.content, typed)
+            return entries.reduce(0) { $0 + $1.content.count }
+        }) { XCTAssertEqual($0 as? LocalModelError, .promptTooLong) }
+    }
+
+    func testPrepareUsesProvidedHighDensityTokenCountRatherThanCharacterEstimate() throws {
+        let file = ChatAttachment(name: "unicode.txt", relativePath: "unicode.txt", mediaType: "text/plain", byteCount: 20000, extractedText: String(repeating: "🦉", count: 5000))
+        var calls = 0
+        let result = try LocalPromptBuilder.prepareMessages(from: [ChatMessage(role: .user, content: "Keep typed", attachments: [file])], maxTokens: 100, contextSize: 1000) { entries in
+            calls += 1
+            return entries.reduce(0) { $0 + $1.content.utf8.count }
+        }
+        XCTAssertGreaterThan(calls, 4)
+        XCTAssertLessThanOrEqual(result.reduce(0) { $0 + $1.content.utf8.count } + 100, 1000)
+        XCTAssertTrue(result[0].content.hasPrefix("Keep typed"))
+        XCTAssertTrue(result[0].content.contains("🦉"))
+    }
+
 }

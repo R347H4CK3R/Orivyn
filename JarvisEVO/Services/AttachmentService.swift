@@ -30,20 +30,12 @@ struct AttachmentService: Sendable {
         let id = UUID()
         let filename = id.uuidString + (isPDF ? ".pdf" : ".txt")
         let destination = directory.appendingPathComponent(filename, isDirectory: false)
-        try FileManager.default.copyItem(at: source, to: destination)
+        let actualSize = try AttachmentFileCopy.copy(from: source, to: destination, maximumBytes: Self.maximumBytes)
         do {
-            let actualSize = try destination.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
-            guard actualSize > 0, actualSize <= Self.maximumBytes else { throw AttachmentError.invalidSize }
             var extracted: String
             if isPDF {
                 guard let document = PDFDocument(url: destination), !document.isLocked else { throw AttachmentError.unreadablePDF }
-                extracted = ""
-                for index in 0..<min(document.pageCount, 500) {
-                    try Task.checkCancellation()
-                    if let text = document.page(at: index)?.string { extracted += text + "\n" }
-                    if extracted.count >= Self.maximumExtractedCharacters { break }
-                }
-                guard !extracted.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { throw AttachmentError.noExtractableText }
+                extracted = try PDFTextExtractor.extract(document: document)
             } else {
                 let data = try Data(contentsOf: destination, options: [.mappedIfSafe])
                 guard let text = String(data: data, encoding: .utf8) else { throw AttachmentError.notUTF8 }
@@ -145,7 +137,7 @@ enum AttachmentError: LocalizedError {
         case .invalidSize: return "Choose a nonempty file up to 10 MB."
         case .unsupportedType: return "Choose a PDF, UTF-8 text file, or JPEG, PNG, HEIC, or HEIF image. Images provide recognized text only to current models."
         case .unreadablePDF: return "This PDF is locked or could not be read."
-        case .noExtractableText: return "This PDF has no selectable text. Scanned PDFs need OCR before attaching."
+        case .noExtractableText: return "No text could be extracted or recognized from this PDF. Inspect the original; absence of recognized text does not prove it is blank."
         case .notUTF8: return "This text file is not UTF-8. Export it as UTF-8 and try again."
         }
     }

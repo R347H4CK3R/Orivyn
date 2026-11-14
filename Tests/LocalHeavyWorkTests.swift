@@ -14,6 +14,82 @@ final class LocalHeavyWorkTests: XCTestCase {
     override func tearDown() async throws {
         defaults.removePersistentDomain(forName: suite); try? FileManager.default.removeItem(at: root)
     }
+    func testOpeningAnotherAgentSessionDoesNotRecoverLiveWork() async throws {
+        let (model, release, _) = try fixture()
+        let directory = root.appendingPathComponent("AgentRecovery")
+        let core = try LocalAgentCore(), store = try LocalAgentStore(directory: directory)
+        let taskID = UUID().uuidString.lowercased()
+        let ready = try core.call("create", ["Read app info", taskID])
+        let running = try core.call("acceptDecision", [ready, "{\"type\":\"tool\",\"name\":\"get_app_info\",\"arguments\":{}}"])
+        try store.save(running, id: taskID)
+        let owner = UUID()
+        let preparing = Task { try await model.beginHeavyWork(id: owner, kind: .localAgent) }
+        try await waitFor { await release.count == 1 }
+        let second = try LocalAgentSession(model: model, directory: directory)
+        try second.reloadRecords()
+        XCTAssertEqual(try store.load(id: taskID), running)
+        await release.finish(0); try await preparing.value
+        model.endHeavyWork(id: owner)
+        try second.reloadRecords()
+        XCTAssertEqual(try core.snapshot(store.load(id: taskID)).status, "interrupted")
+    }
+    func testOpeningAnotherVerifiedSessionDoesNotRecoverLiveWork() async throws {
+        let (model, _, _) = try fixture()
+        let directory = root.appendingPathComponent("VerifiedRecovery")
+        let core = try VerifiedLocalPlanCore(), store = try LocalAgentStore(directory: directory)
+        let taskID = UUID().uuidString.lowercased()
+        let ready = try core.call("create", ["{\"appInfo\":true,\"installedModels\":false,\"searchQuery\":null}", taskID])
+        let running = try core.call("next", [ready])
+        try store.save(running, id: taskID)
+        let owner = UUID(); XCTAssertTrue(model.beginVerifiedReads(id: owner))
+        let second = try VerifiedLocalReadSession(model: model, directory: directory)
+        try second.reload()
+        XCTAssertEqual(try store.load(id: taskID), running)
+        model.endVerifiedReads(id: owner)
+        try second.reload()
+        XCTAssertEqual(try core.snapshot(store.load(id: taskID)).status, "interrupted")
+    }
+    func testSecondSessionCannotArchiveWhileSharedAgentLeaseIsUnwinding() async throws {
+        let (model, release, _) = try fixture()
+        let directory = root.appendingPathComponent("AgentTasks")
+        let first = try LocalAgentSession(model: model, directory: directory)
+        first.create(goal: "Read app info")
+        let savedID = try XCTUnwrap(first.snapshot?.id)
+        let second = try LocalAgentSession(model: model, directory: directory)
+        second.select(id: savedID)
+        let id = UUID()
+        let preparing = Task { try await model.beginHeavyWork(id: id, kind: .localAgent) }
+        try await waitFor { await release.count == 1 }
+        await release.finish(0); try await preparing.value
+        let finishing = Task { await model.finishLocalAgentWork(id: id) }
+        try await waitFor { await release.count == 2 }
+        XCTAssertFalse(second.canManageSavedTasks)
+        second.archiveSelected()
+        XCTAssertEqual(second.snapshot?.id, savedID)
+        XCTAssertEqual(try LocalAgentStore(directory: directory).records().total, 1)
+        await release.finish(1); await finishing.value
+        XCTAssertTrue(second.canManageSavedTasks)
+        second.archiveSelected()
+        XCTAssertEqual(try LocalAgentStore(directory: directory).records().total, 0)
+        XCTAssertEqual(try LocalAgentStore(directory: directory).archivedRecords().total, 1)
+    }
+    func testVerifiedReadsUseActualLocalStateWithoutLoadingAnInferenceModel() async throws {
+        let (model, release, _) = try fixture()
+        model.draft = "Preserve this draft"
+        let session = try VerifiedLocalReadSession(model: model, directory: root.appendingPathComponent("VerifiedReads"))
+        session.create(appInfo: true, installedModels: true, searchQuery: nil)
+        session.run()
+        try await waitFor { await MainActor.run { !session.isRunning } }
+        XCTAssertEqual(session.snapshot?.status, "complete")
+        XCTAssertEqual(session.snapshot?.completed, 2)
+        XCTAssertEqual(session.records.first(where: { $0.id == session.snapshot?.id })?.completed, 2)
+        XCTAssertTrue(session.report.contains("Orivyn"))
+        XCTAssertTrue(session.report.contains("totalInstalled"))
+        XCTAssertEqual(model.draft, "Preserve this draft")
+        let unloads = await release.count
+        XCTAssertEqual(unloads, 0)
+        XCTAssertNil(model.verifiedReadOwner)
+    }
     func testPreparationReservesBeforeAwaitAndKeepsComposerUnchanged() async throws {
         let (model, release, _) = try fixture()
         model.draft = "Keep"; let provider = model.selectedProviderID
@@ -146,6 +222,142 @@ final class LocalHeavyWorkTests: XCTestCase {
         let releases = await release.count; XCTAssertEqual(releases, 0)
     }
 
+    func testVirtualDesktopLeaseSurvivesUntilRuntimeStopAcknowledged() async throws {
+        let (model, release, _) = try fixture()
+        model.draft = "Keep this task"
+        let runtime = ControlledDesktopRuntime()
+        let session = VirtualDesktopSession(model: model, runtime: runtime)
+        session.start()
+        try await waitFor { await release.count == 1 }
+        await release.finish(0)
+        try await waitFor { runtime.started }
+        let closing = Task { await session.close() }
+        try await waitFor { runtime.stopGate != nil }
+        XCTAssertNotNil(model.heavyWorkLease)
+        XCTAssertFalse(model.canSend)
+        runtime.stopGate?.resume(returning: true)
+        let result = await closing.value
+        XCTAssertTrue(result)
+        XCTAssertNil(model.heavyWorkLease)
+        XCTAssertTrue(model.canSend)
+        XCTAssertEqual(model.draft, "Keep this task")
+    }
+
+    func testUncertainDesktopStopRetainsRevokedLease() async throws {
+        let (model, release, _) = try fixture()
+        model.draft = "Keep this task"
+        let runtime = ControlledDesktopRuntime()
+        let session = VirtualDesktopSession(model: model, runtime: runtime)
+        session.start()
+        try await waitFor { await release.count == 1 }
+        await release.finish(0)
+        try await waitFor { runtime.started }
+        let closing = Task { await session.close() }
+        try await waitFor { runtime.stopGate != nil }
+        runtime.stopGate?.resume(returning: false)
+        let result = await closing.value
+        XCTAssertFalse(result)
+        XCTAssertEqual(model.heavyWorkLease?.phase, .revoked)
+        XCTAssertFalse(model.canSend)
+    }
+
+    func testDesktopCloseDuringPreparationCannotStartGuestOrReleaseEarly() async throws {
+        let (model, release, _) = try fixture()
+        let runtime = ControlledDesktopRuntime()
+        let session = VirtualDesktopSession(model: model, runtime: runtime)
+        session.start()
+        try await waitFor { await release.count == 1 }
+        let closing = Task { await session.close() }
+        await Task.yield()
+        XCTAssertFalse(runtime.started)
+        XCTAssertNil(runtime.stopGate)
+        XCTAssertNotNil(model.heavyWorkLease)
+        await release.finish(0)
+        try await waitFor { runtime.stopGate != nil }
+        XCTAssertFalse(runtime.started)
+        runtime.stopGate?.resume(returning: true)
+        let result = await closing.value
+        XCTAssertTrue(result)
+        XCTAssertNil(model.heavyWorkLease)
+    }
+
+    func testAgentLeaseWaitsForActualModelUnloadAfterTaskEnds() async throws {
+        let (model, release, _) = try fixture()
+        model.draft = "Keep this draft"
+        let id = UUID()
+        let acquiring = Task { try await model.beginHeavyWork(id: id, kind: .localAgent) }
+        try await waitFor { await release.count == 1 }
+        await release.finish(0); try await acquiring.value
+        let finishing = Task { await model.finishLocalAgentWork(id: id) }
+        try await waitFor { await release.count == 2 }
+        XCTAssertEqual(model.heavyWorkLease?.phase, .revoked)
+        XCTAssertFalse(model.canSend)
+        await release.finish(1); await finishing.value
+        XCTAssertNil(model.heavyWorkLease)
+        XCTAssertTrue(model.canSend)
+        XCTAssertEqual(model.draft, "Keep this draft")
+    }
+
+    func testModelRemovalOwnsAdmissionUntilReleaseAndDeletionFinish() async throws {
+        let (model, release, source) = try fixture()
+        let descriptor = try await installTestModel(model)
+        model.draft = "Keep my next request"
+        let task = Task { await model.removeModel(descriptor) }
+        try await waitFor { await release.count == 1 }
+        XCTAssertTrue(model.isRemovingModel)
+        XCTAssertFalse(model.canSend)
+        XCTAssertFalse(model.canBeginHeavyWork)
+        XCTAssertThrowsError(try model.makeVoiceTurnTicket(ownerID: UUID()))
+        model.send()
+        XCTAssertFalse(model.isGenerating)
+        XCTAssertEqual(model.draft, "Keep my next request")
+        await model.removeModel(descriptor)
+        let releases = await release.count; XCTAssertEqual(releases, 1)
+        model.downloadModel(LocalModelCatalog.defaultModel)
+        XCTAssertNil(model.downloadingModelID)
+        await model.importModel(from: root.appendingPathComponent("another.gguf"))
+        XCTAssertTrue(model.isRemovingModel)
+        await release.finish(0); await task.value
+        XCTAssertFalse(model.isRemovingModel)
+        XCTAssertTrue(model.canSend)
+        XCTAssertFalse(model.installedModels.contains { $0.id == descriptor.id })
+        let calls = await source.count; XCTAssertEqual(calls, 0)
+    }
+
+    func testCancelledRemovalRetainsModelAndReleasesAdmission() async throws {
+        let (model, release, _) = try fixture()
+        let descriptor = try await installTestModel(model)
+        model.draft = "Keep"
+        let task = Task { await model.removeModel(descriptor) }
+        try await waitFor { await release.count == 1 }
+        task.cancel()
+        XCTAssertFalse(model.canSend, "Cancellation must await actual resource release")
+        await release.finish(0); await task.value
+        XCTAssertFalse(model.isRemovingModel)
+        XCTAssertTrue(model.canSend)
+        XCTAssertTrue(model.installedModels.contains { $0.id == descriptor.id })
+        XCTAssertTrue(FileManager.default.fileExists(atPath: root.appendingPathComponent("Models").appendingPathComponent(descriptor.fileName).path))
+    }
+
+    func testFailedRemovalReleasesAdmission() async throws {
+        let (model, release, _) = try fixture()
+        model.draft = "Keep"
+        let task = Task { await model.removeModel(LocalModelCatalog.defaultModel) }
+        try await waitFor { await release.count == 1 }
+        await release.finish(0); await task.value
+        XCTAssertFalse(model.isRemovingModel)
+        XCTAssertTrue(model.canSend)
+        XCTAssertNotNil(model.errorMessage)
+    }
+
+    private func installTestModel(_ model: AppModel) async throws -> LocalModelDescriptor {
+        // Storage-only GGUF fixture. Never passed to native inference.
+        let input = root.appendingPathComponent("fixture.gguf")
+        try Data([0x47, 0x47, 0x55, 0x46, 3, 0, 0, 0] + Array(repeating: UInt8(0), count: 32)).write(to: input)
+        await model.importModel(from: input)
+        return try XCTUnwrap(model.installedModels.first)
+    }
+
     private func fixture() throws -> (AppModel, ControlledResourceRelease, HeavyReplySource) {
         let release = ControlledResourceRelease(); let source = HeavyReplySource()
         let model = AppModel(store: try SQLiteConversationStore(url: root.appendingPathComponent("test.sqlite")),
@@ -180,3 +392,14 @@ private struct HeavyReplyProvider: AIProvider {
     let id = "test"; let displayName = "Controlled test provider"; let source: HeavyReplySource
     func stream(_ request: GenerationRequest) async throws -> AsyncThrowingStream<String, Error> { await source.respond() }
 }
+
+@MainActor
+private final class ControlledDesktopRuntime: VirtualDesktopRuntime {
+    var started = false
+    var stopGate: CheckedContinuation<Bool, Never>?
+    func startRuntime() -> Bool { started = true; return true }
+    func stopAndWait() async -> Bool {
+        await withCheckedContinuation { stopGate = $0 }
+    }
+}
+

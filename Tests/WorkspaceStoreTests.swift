@@ -5,13 +5,13 @@ import XCTest
 final class WorkspaceStoreTests: XCTestCase {
     private var defaults: UserDefaults!
     private var suite: String!
-    override func setUp() {
+    override func setUp() async throws {
         suite = "Orivyn.WorkspaceTests.\(UUID().uuidString)"
         defaults = UserDefaults(suiteName: suite)!
     }
-    override func tearDown() { defaults.removePersistentDomain(forName: suite) }
+    override func tearDown() async throws { defaults.removePersistentDomain(forName: suite) }
 
-    func testProjectMembershipPinsAndFavoritesSurviveRelaunch() throws {
+    func testProjectMembershipPinsAndFavoritesSurviveRelaunch() async throws {
         let store = WorkspaceStore(defaults: defaults)
         let project = try store.addProject(name: "  Research  ")
         let chat = UUID(), attachment = UUID()
@@ -22,7 +22,7 @@ final class WorkspaceStoreTests: XCTestCase {
         XCTAssertEqual(reloaded.projectID(for: chat), project.id)
         XCTAssertTrue(reloaded.isPinned(chat)); XCTAssertTrue(reloaded.isFavorite(attachment))
     }
-    func testDeletingProjectOnlyRemovesMembership() throws {
+    func testDeletingProjectOnlyRemovesMembership() async throws {
         let store = WorkspaceStore(defaults: defaults)
         let project = try store.addProject(name: "Planning"), chat = UUID()
         try store.assign(chat, to: project.id); try store.togglePin(chat)
@@ -30,14 +30,14 @@ final class WorkspaceStoreTests: XCTestCase {
         XCTAssertNil(store.projectID(for: chat)); XCTAssertTrue(store.projects.isEmpty)
         XCTAssertTrue(store.isPinned(chat))
     }
-    func testInvalidProjectInputDoesNotMutateState() throws {
+    func testInvalidProjectInputDoesNotMutateState() async throws {
         let store = WorkspaceStore(defaults: defaults)
         XCTAssertThrowsError(try store.addProject(name: " \n "))
         XCTAssertThrowsError(try store.addProject(name: String(repeating: "x", count: 81)))
         XCTAssertThrowsError(try store.assign(UUID(), to: UUID()))
         XCTAssertTrue(store.projects.isEmpty)
     }
-    func testCorruptSnapshotIsPreservedAndWritesBlocked() {
+    func testCorruptSnapshotIsPreservedAndWritesBlocked() async {
         let original = Data([0xff, 0, 0xaa])
         defaults.set(original, forKey: WorkspaceStore.storageKey)
         let store = WorkspaceStore(defaults: defaults)
@@ -45,14 +45,14 @@ final class WorkspaceStoreTests: XCTestCase {
         XCTAssertThrowsError(try store.addProject(name: "Do not overwrite"))
         XCTAssertEqual(defaults.data(forKey: WorkspaceStore.storageKey), original)
     }
-    func testUnexpectedStoredTypeIsPreserved() {
+    func testUnexpectedStoredTypeIsPreserved() async {
         defaults.set("not a snapshot", forKey: WorkspaceStore.storageKey)
         let store = WorkspaceStore(defaults: defaults)
         XCTAssertNotNil(store.loadError)
         XCTAssertThrowsError(try store.addProject(name: "Do not overwrite"))
         XCTAssertEqual(defaults.string(forKey: WorkspaceStore.storageKey), "not a snapshot")
     }
-    func testBehaviorRoundTripAndByteLimit() throws {
+    func testBehaviorRoundTripAndByteLimit() async throws {
         let store = WorkspaceStore(defaults: defaults)
         var behavior = ResponseBehavior()
         behavior.instructions = "Use Spanish."; behavior.warmth = 2; behavior.enthusiasm = -1
@@ -64,7 +64,7 @@ final class WorkspaceStoreTests: XCTestCase {
         XCTAssertThrowsError(try store.saveBehavior(behavior))
         XCTAssertEqual(store.behavior.instructions, "Use Spanish.")
     }
-    func testLegacyOversizedInstructionsKeepProjectsEditableAndCanBeCorrected() throws {
+    func testLegacyOversizedInstructionsKeepProjectsEditableAndCanBeCorrected() async throws {
         let store = WorkspaceStore(defaults: defaults)
         let project = try store.addProject(name: "Keep this project")
         let original = try replaceStoredBehavior(instructions: String(repeating: "x", count: 2_000), warmth: 12)

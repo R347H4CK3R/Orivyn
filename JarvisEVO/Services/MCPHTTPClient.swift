@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 /// Tool-only, bounded MCP 2025-06-18. The caller is the permission broker: this
 /// transport neither grants approval nor feeds server text to a model.
@@ -352,7 +355,9 @@ final class URLSessionMCPTransport: MCPHTTPTransport, @unchecked Sendable {
         configuration.urlCache = nil; configuration.urlCredentialStorage = nil; configuration.httpCookieStorage = nil
         configuration.httpShouldSetCookies = false; configuration.httpCookieAcceptPolicy = .never
         configuration.httpAdditionalHeaders = nil; configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
+        #if !os(Linux)
         configuration.waitsForConnectivity = false
+        #endif
         configuration.timeoutIntervalForRequest = timeout; configuration.timeoutIntervalForResource = timeout
         let receiver = MCPBoundedReceiver(limit: maximumResponseBytes)
         return try await receiver.perform(request, configuration: configuration, timeout: timeout)

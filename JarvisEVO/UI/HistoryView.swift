@@ -8,7 +8,6 @@ struct HistoryView: View {
     var selectedSection: WorkspaceSection = .chat
     var onNavigate: (WorkspaceSection) -> Void = { _ in }
     @State private var renaming: Conversation?
-    @State private var newTitle = ""
     @State private var deleting: Conversation?
     @FocusState private var searchFocused: Bool
 
@@ -36,6 +35,10 @@ struct HistoryView: View {
             .padding(.horizontal, 13).padding(.vertical, 11)
             .background(Color.evoSurface, in: RoundedRectangle(cornerRadius: 14))
             .padding(.horizontal, 16).padding(.top, 14).padding(.bottom, 12)
+            if model.searchText.utf8.count > 1_024 {
+                Text("Search is limited to 1,024 UTF-8 bytes. Shorten your query.")
+                    .font(.caption).foregroundStyle(.secondary).padding(.horizontal, 16)
+            }
             HStack(spacing: 12) {
                 shortcut("Models", image: "cpu", action: onModels)
                 shortcut(model.showArchived ? "Recent" : "Archived", image: model.showArchived ? "bubble.left" : "archivebox") {
@@ -45,7 +48,7 @@ struct HistoryView: View {
             }
             .padding(.horizontal, 20).padding(.bottom, 12)
             Button {
-                Task { await model.newConversation(); onNavigate(.chat); onClose() }
+                Task { if await model.newConversation() { onNavigate(.chat); onClose() } }
             } label: {
                 Label("New conversation", systemImage: "square.and.pencil")
                     .font(.body.weight(.medium)).frame(maxWidth: .infinity, alignment: .leading)
@@ -105,7 +108,7 @@ struct HistoryView: View {
                             Button(model.workspace.isPinned(conversation.id) ? "Unpin" : "Pin", systemImage: "pin") {
                                 do { try model.workspace.togglePin(conversation.id) } catch { model.report(error) }
                             }
-                            Button("Rename", systemImage: "pencil") { newTitle = conversation.title; renaming = conversation }
+                            Button("Rename", systemImage: "pencil") { renaming = conversation }
                             Button(conversation.isArchived ? "Unarchive" : "Archive", systemImage: "archivebox") {
                                 Task { await model.archive(conversation.id, archived: !conversation.isArchived) }
                             }
@@ -120,7 +123,7 @@ struct HistoryView: View {
                             }.buttonStyle(.automatic).tint(.gray)
                         }
                         .swipeActions(edge: .leading) {
-                            Button("Rename", systemImage: "pencil") { newTitle = conversation.title; renaming = conversation }
+                            Button("Rename", systemImage: "pencil") { renaming = conversation }
                                 .buttonStyle(.automatic).tint(.gray)
                         }
                     }
@@ -150,12 +153,9 @@ struct HistoryView: View {
         }
         .buttonStyle(.plain)
         .background(Color.evoSidebar)
-        .alert("Rename conversation", isPresented: Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } })) {
-            TextField("Title", text: $newTitle)
-            Button("Cancel", role: .cancel) { renaming = nil }
-            Button("Save") {
-                if let conversation = renaming { Task { await model.rename(conversation.id, to: newTitle) } }
-                renaming = nil
+        .sheet(item: $renaming) { conversation in
+            RenameConversationView(title: conversation.title) { title in
+                await model.rename(conversation.id, to: title)
             }
         }
         .confirmationDialog("Delete conversation?", isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } }), titleVisibility: .visible) {
@@ -177,8 +177,37 @@ struct HistoryView: View {
     }
 
     private func markdown(_ conversation: Conversation) -> String {
-        "# \(conversation.title)\n\n" + conversation.messages.map { message in
-            "## \(message.role == .user ? "You" : "Orivyn")\n\n\(message.content)"
-        }.joined(separator: "\n\n")
+        ConversationTranscript.markdown(conversation)
+    }
+}
+
+private struct RenameConversationView: View {
+    @State var title: String
+    let save: (String) async -> Bool
+    @State private var saving = false
+    @State private var error: String?
+    @Environment(\.dismiss) private var dismiss
+    var body: some View {
+        NavigationStack {
+            Form {
+                TextField("Title", text: $title).disabled(saving)
+                if let error { Text(error).foregroundStyle(.orange) }
+                Text("\(title.count)/200 characters").font(.caption)
+            }.navigationTitle("Rename conversation")
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.disabled(saving) }
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button(saving ? "Saving…" : "Save") {
+                            guard !saving else { return }
+                            saving = true
+                            Task { @MainActor in
+                                let succeeded = await save(title); saving = false
+                                if succeeded { dismiss() }
+                                else { error = "The title was not saved. Your edit is kept here; retry after the response or storage error is resolved." }
+                            }
+                        }.disabled(saving || title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || title.count > 200)
+                    }
+                }.interactiveDismissDisabled(saving)
+        }
     }
 }

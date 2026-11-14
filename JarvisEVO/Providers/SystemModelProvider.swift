@@ -29,8 +29,10 @@ struct SystemModelProvider: AIProvider {
                     for try await snapshot in stream {
                         try Task.checkCancellation()
                         let output = snapshot.content
-                        guard output.hasPrefix(previous) else { throw ProviderError.invalidResponse }
-                        let token = String(output.dropFirst(previous.count))
+                        // Appends may extend the previous grapheme (accent, emoji, or CRLF).
+                        // Compare and slice UTF-8, not Character boundaries; reject real rewrites.
+                        guard output.utf8.starts(with: previous.utf8) else { throw ProviderError.invalidResponse }
+                        let token = String(decoding: output.utf8.dropFirst(previous.utf8.count), as: UTF8.self)
                         if !token.isEmpty { continuation.yield(token) }
                         previous = output
                     }

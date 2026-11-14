@@ -1,0 +1,47 @@
+[
+  {
+    "source": "JarvisEVO/Core/MemoryNote.swift",
+    "sha256": "cccceaa84d497af02f1d466968300a7281f354b4b5e1a1ae913b403023f8967f"
+  },
+  {
+    "source": "JarvisEVO/Core/LocalSearchExcerpt.swift",
+    "sha256": "80411efefffc420769b65b3c9b090f15d1e26d5b59774547602b1fd756d38501"
+  },
+  {
+    "source": "JarvisEVO/Core/LocalAgentError.swift",
+    "sha256": "69ec40475bf37949be1e7b0f3b207df9ac0158851df7cd5edc0fad962a77c1dc"
+  },
+  {
+    "source": "JarvisEVO/Core/MCPTypes.swift",
+    "sha256": "675f5301eafd51bc447d568e3b46c494fb4a4824d13700ed30b33c2bd3b2e0a3"
+  },
+  {
+    "source": "JarvisEVO/Core/MCPToolSchema.swift",
+    "sha256": "c533a3c9f38f850c272686fccca11801f593c8aaf6270e7866112de159b2c806"
+  },
+  {
+    "source": "JarvisEVO/Core/LocalToolResultBudget.swift",
+    "sha256": "9b1c1acd9f9ea706b2a961768f7f359b889f8ddcd5cb570435d68b0accd1ddbf"
+  },
+  {
+    "source": "JarvisEVO/Services/LocalReadTools.swift",
+    "sha256": "33b1e5a0c2954a9e16afd1b57490f7e9adab49547b31373075acf55ce6dc00d9",
+    "extractedBranchSHA256": "900d04122b4e254319424a6d6f6cb54b4671764c1d153a7a72bf87da10fb10c6"
+  },
+  {
+    "source": "JarvisEVO/Resources/LocalAgentCore.js",
+    "sha256": "1d4e5bf572f16fe215973a7e6a675a4399dfbc50046bafbf915a04f9dbbf0a55"
+  },
+  {
+    "source": "JarvisEVO/Resources/VerifiedLocalPlan.js",
+    "sha256": "b2b9c541d59d9c66479eafab78731009df3ae525e45611418d2868c0e9c0f707"
+  },
+  {
+    "source": "JarvisEVO/Resources/LocalAgentDecision.gbnf",
+    "sha256": "0709195882097c6c1e9585a61008d0f2305032029ee979aa56caf569df3371c3"
+  },
+  {
+    "source": "scripts/run_memory_search_smoke.py",
+    "sha256": "edbf1fad83c51132ddb8c4f371fd9b59bf2d29d503c5da735d1aba591ee5a879"
+  }
+]

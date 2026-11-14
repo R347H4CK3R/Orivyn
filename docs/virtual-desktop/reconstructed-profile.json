@@ -1,0 +1,8 @@
+{
+  "guestSHA256": "78418639ecd90573da211b62a502334f569f029b913525f50601b09d928b244d",
+  "archiveSHA256": "143c4dbd1d97e897724ab9f2afb6e6f81ab58a4264dca29e6073be65fdc3120f",
+  "archiveBytes": 28016087,
+  "firmware": "deterministic-a rel-1.16.2 -orivyn-1",
+  "nativeVerified": false,
+  "publicRelease": false
+}

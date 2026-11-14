@@ -233,10 +233,30 @@ final class ImageAttachmentAppFlowTests: XCTestCase {
         saved.messages = [ChatMessage(role: .user, content: "Replacement without image")]
         let backup = root.appendingPathComponent("replacement.json")
         try JSONEncoder().encode(ConversationBackup(conversations: [saved], memories: [])).write(to: backup)
-        await model.importHistory(from: backup)
+        await model.importHistory(from: backup, policy: .replaceMatching)
         XCTAssertNil(model.errorMessage)
         XCTAssertEqual(model.conversations.first?.messages.first?.content, "Replacement without image")
         XCTAssertTrue(try files(model).isEmpty)
+    }
+
+
+    func testDefaultHistoryMergePreservesLocalOriginalAndPreview() async throws {
+        let (model, store) = try fixture()
+        let image = try model.attachmentService.importImage(data: png(), suggestedName: "keep.png")
+        let saved = Conversation(messages: [ChatMessage(role: .user, content: "Keep local", attachments: [image])])
+        try await store.save(saved)
+        await model.bootstrap()
+        let before = try files(model)
+        var replacement = saved
+        replacement.messages = [ChatMessage(role: .user, content: "Backup without image")]
+        let backup = root.appendingPathComponent("preserve.json")
+        try JSONEncoder().encode(ConversationBackup(conversations: [replacement], memories: [])).write(to: backup)
+        await model.importHistory(from: backup)
+        XCTAssertNil(model.errorMessage)
+        XCTAssertEqual(model.conversations.first?.messages, saved.messages)
+        XCTAssertNotNil(model.attachmentService.url(for: image))
+        XCTAssertNotNil(model.attachmentService.previewURL(for: image))
+        XCTAssertEqual(Set(try files(model)), Set(before))
     }
 
     func testRestoredImageMetadataKeepsOCRButDoesNotInventMissingImageFiles() async throws {

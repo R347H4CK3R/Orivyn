@@ -73,10 +73,13 @@ final class AttachmentServiceTests: XCTestCase {
         XCTAssertTrue(try storedFiles().isEmpty)
     }
 
-    func testPDFWithoutSelectableTextIsRejectedWithoutLeavingCopy() throws {
+    func testPDFWithoutRecognizedTextKeepsOriginalAndReportsLimitsWithoutInventedContents() throws {
         let source = try write(pdf(pages: [""]), named: "blank.pdf")
-        assertRejected(source, as: .noExtractableText)
-        XCTAssertTrue(try storedFiles().isEmpty)
+        let attachment = try service.importFile(at: source)
+        XCTAssertEqual(attachment.mediaType, "application/pdf")
+        XCTAssertTrue(attachment.extractedText?.contains("OCR") == true)
+        XCTAssertTrue(attachment.extractedText?.contains("No readable text was recognized") == true)
+        XCTAssertEqual(try Data(contentsOf: XCTUnwrap(service.url(for: attachment))), try Data(contentsOf: source))
     }
 
     func testNonUTF8TextIsRejectedWithoutLeavingCopy() throws {

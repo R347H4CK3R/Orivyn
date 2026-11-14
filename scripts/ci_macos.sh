@@ -6,6 +6,9 @@ ARTIFACTS="artifacts/$RUN_ID"
 PACKAGE="build/package-$RUN_ID"
 mkdir -p "$ARTIFACTS"
 export ARTIFACTS
+python3 scripts/materialize_guest.py Fixtures/maintained.img.gz JarvisEVO/Resources/VMAssets/maintained.img
+node --test scripts/vm-tests/*.test.cjs
+node --test scripts/agent-tests/*.test.cjs
 python3 -m unittest discover -s scripts/tests -v 2>&1 | tee "$ARTIFACTS/package-tests.log"
 if ! command -v xcodebuild >/dev/null; then echo 'Xcode 26+ is required; native tests have not run.' >&2; exit 2; fi
 xcodebuild -version | tee "$ARTIFACTS/xcode-version.txt"
