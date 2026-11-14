@@ -10,20 +10,42 @@ import datetime
 import hashlib
 import json
 import os
+import signal
 from pathlib import Path
 import subprocess
 import sys
 import time
 
 
-def run_stage(name, command, root, output):
+def run_stage(name, command, root, output, timeout_seconds=900):
     started = time.monotonic()
     log_path = output / (name + '.log')
     result = {'name': name, 'command': command, 'log': log_path.name}
     env = dict(os.environ, PYTHONDONTWRITEBYTECODE='1', ORIVYN_TEST_ARTIFACTS=str(output))
     try:
         with log_path.open('w') as log:
-            process = subprocess.run(command, cwd=root, env=env, stdout=log, stderr=subprocess.STDOUT)
+            process = subprocess.Popen(command, cwd=root, env=env, stdout=log,
+                                       stderr=subprocess.STDOUT, start_new_session=os.name == 'posix')
+            try:
+                process.wait(timeout=timeout_seconds)
+            except (subprocess.TimeoutExpired, KeyboardInterrupt) as error:
+                # Test harnesses spawn compilers/runners: stop the whole stage,
+                # not just its parent, before continuing independent checks.
+                if os.name == 'posix':
+                    try:
+                        os.killpg(process.pid, signal.SIGKILL)
+                    except ProcessLookupError:
+                        pass
+                else:
+                    process.kill()
+                process.wait()
+                if isinstance(error, KeyboardInterrupt):
+                    raise
+                log.write(f"\nStage timed out after {timeout_seconds} seconds.\n")
+                result.update(status='failed', exit_code=None, timed_out=True,
+                              timeout_seconds=timeout_seconds)
+                result['seconds'] = round(time.monotonic() - started, 3)
+                return result
         result.update(status='passed' if process.returncode == 0 else 'failed', exit_code=process.returncode)
     except OSError as error:
         log_path.write_text(str(error) + '\n')
@@ -47,10 +69,13 @@ def source_manifest(root):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--swift', required=True, help='Installed Swift 6 executable')
+    parser.add_argument('--stage-timeout', type=int, default=900, help='Maximum seconds per stage (positive; default 900)')
     parser.add_argument('--node', default='node', help='Installed Node executable')
     parser.add_argument('--sqlite-source', type=Path, help='Optional directory containing sqlite3.c and sqlite3.h')
     parser.add_argument('--output', required=True, type=Path, help='New evidence directory outside the source tree')
     args = parser.parse_args(argv)
+    if args.stage_timeout <= 0:
+        parser.error('--stage-timeout must be positive')
     root = Path(__file__).resolve().parents[1]
     output = args.output.resolve()
     if output == root or root in output.parents:
@@ -91,7 +116,7 @@ def main(argv=None):
     try:
         for name, command in stages:
             print('Running ' + name + '...', flush=True)
-            result = run_stage(name, command, root, output)
+            result = run_stage(name, command, root, output, timeout_seconds=args.stage_timeout)
             summary['stages'].append(result)
             save()
             print(name + ': ' + result['status'], flush=True)

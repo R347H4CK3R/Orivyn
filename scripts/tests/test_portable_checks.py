@@ -45,3 +45,23 @@ class PortableChecksTests(unittest.TestCase):
                 checks.main(['--swift', 'unused', '--output', folder])
             self.assertNotEqual(failure.exception.code, 0)
             self.assertEqual(marker.read_text(), 'existing evidence')
+
+    def test_timeout_preserves_partial_log_and_reports_failure(self):
+        with tempfile.TemporaryDirectory() as folder:
+            out = Path(folder)
+            result = checks.run_stage('timeout', [sys.executable, '-u', '-c', 'import time; print("before timeout"); time.sleep(30)'], ROOT, out, timeout_seconds=0.2)
+            self.assertEqual(result['status'], 'failed')
+            self.assertTrue(result['timed_out'])
+            self.assertIsNone(result['exit_code'])
+            self.assertIn('before timeout', (out / result['log']).read_text())
+            self.assertIn('timed out', (out / result['log']).read_text())
+            json.dumps(result)
+            following = checks.run_stage('following', [sys.executable, '-c', 'print("still runs")'], ROOT, out, timeout_seconds=1)
+            self.assertEqual(following['status'], 'passed')
+
+    def test_nonpositive_timeout_rejected_before_creating_evidence(self):
+        with tempfile.TemporaryDirectory() as folder:
+            out = Path(folder) / 'evidence'
+            with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+                checks.main(['--swift', 'unused', '--output', str(out), '--stage-timeout', '0'])
+            self.assertFalse(out.exists())
