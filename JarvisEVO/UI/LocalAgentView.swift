@@ -24,7 +24,7 @@ struct LocalAgentView: View {
                     Text("Search only").tag("conversation_search")
                 }.pickerStyle(.segmented).accessibilityIdentifier("agent.plan.kind")
                     .disabled(session?.isRunning == true || session?.proposedReadPlan != nil)
-                Text("For Read messages, include the exact conversation title and the message numbers you want to read.").font(.caption)
+                Text("For Read messages, put the exact conversation title in quotation marks and include the message numbers. Example: Read message 2 of \"Project notes\".").font(.caption)
                 Button("Draft plan") { session?.prepareReadPlan(goal: goal, kind: planKind) }
                     .disabled(session?.canManageSavedTasks != true || session?.proposedReadPlan != nil || goal.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || goal.utf8.count > 512)
                     .accessibilityIdentifier("agent.plan.draft")
