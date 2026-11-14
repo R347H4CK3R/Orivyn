@@ -58,5 +58,6 @@ xcodebuild test -project JarvisEVO.xcodeproj -scheme JarvisEVO \
  -resultBundlePath "$NATIVE_TOOLS_EVIDENCE_DIR/ProductionNativeTools.xcresult" \
  "ORIVYN_NATIVE_FEATURES=$ORIVYN_NATIVE_FEATURES" CODE_SIGNING_ALLOWED=NO \
  2>&1 | tee "$NATIVE_TOOLS_EVIDENCE_DIR/xcodebuild.log"
+xcrun xcresulttool export attachments --path "$NATIVE_TOOLS_EVIDENCE_DIR/ProductionNativeTools.xcresult" --output-path "$NATIVE_TOOLS_EVIDENCE_DIR/attachments"
 xcrun xcresulttool get test-results summary --path "$NATIVE_TOOLS_EVIDENCE_DIR/ProductionNativeTools.xcresult" > "$NATIVE_TOOLS_EVIDENCE_DIR/test-summary.json"
 python3 Diagnostics/NativeTools/verify_simulator_result.py "$NATIVE_TOOLS_EVIDENCE_DIR/test-summary.json"

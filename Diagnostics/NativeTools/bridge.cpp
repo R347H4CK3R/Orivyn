@@ -97,33 +97,43 @@ extern "C" void ov2_free(char*p){free(p);}
 // Only an empty context is accepted; no user conversation cache is erased.
 // Context is cleared on every exit after admission; caller must not reuse stale logits.
 extern "C" int ov3_generate(void*handle,llama_context*ctx,unsigned max_tokens,char**out){
- if(!out)return 1;*out=nullptr;
- if(!handle||!ctx)return 1;
+ if(!out)return OV3_INVALID_ARGUMENT;*out=nullptr;
+ if(!handle||!ctx)return OV3_INVALID_ARGUMENT;
  auto&s=*(Session*)handle;
- if(s.attempted.exchange(true))return 1;
+ if(s.attempted.exchange(true))return OV3_ALREADY_ATTEMPTED;
  struct Cleanup {Session&s;llama_context*ctx=nullptr;~Cleanup(){s.cancelled=true;if(ctx)llama_memory_clear(llama_get_memory(ctx),true);}} cleanup{s};
+ struct Failure {int status;};
+ auto guard=[](bool ok,int status){if(!ok)throw Failure{status};};
  try{
-  auto alive=[&](){require(!s.cancelled&&std::chrono::steady_clock::now()<s.deadline);};
-  alive();require(max_tokens>0&&max_tokens<=512&&llama_get_model(ctx)==s.model);
-  auto mem=llama_get_memory(ctx);require(mem&&llama_n_seq_max(ctx)==1&&llama_memory_seq_pos_max(mem,0)<0);
+  auto alive=[&](){guard(!s.cancelled,OV3_CANCELLED);guard(std::chrono::steady_clock::now()<s.deadline,OV3_EXPIRED);};
+  alive();guard(max_tokens>0&&max_tokens<=512,OV3_INVALID_ARGUMENT);
+  guard(llama_get_model(ctx)==s.model,OV3_CONTEXT_REJECTED);
+  auto mem=llama_get_memory(ctx);guard(mem&&llama_n_seq_max(ctx)==1&&llama_memory_seq_pos_max(mem,0)<0,OV3_CONTEXT_REJECTED);
   cleanup.ctx=ctx;
   auto tokens=common_tokenize(ctx,s.chat.prompt,true,true);
-  require(!tokens.empty()&&tokens.size()+max_tokens<=llama_n_ctx(ctx));
+  guard(!tokens.empty()&&tokens.size()+max_tokens<=llama_n_ctx(ctx),OV3_PROMPT_LIMIT);
   common_params_sampling sp;sp.temp=0.0;sp.seed=42;
   sp.grammar=common_grammar(COMMON_GRAMMAR_TYPE_TOOL_CALLS,s.chat.grammar);
   sp.grammar_lazy=s.chat.grammar_lazy;sp.grammar_triggers=s.chat.grammar_triggers;
-  for(const auto &word:s.chat.preserved_tokens){auto ids=common_tokenize(ctx,word,false,true);require(ids.size()==1);sp.preserved_tokens.insert(ids[0]);}
-  std::unique_ptr<common_sampler,decltype(&common_sampler_free)> sampler(common_sampler_init(s.model,sp),common_sampler_free);require(bool(sampler));
-  for(size_t i=0;i<tokens.size();){alive();size_t n=std::min<size_t>(llama_n_batch(ctx),tokens.size()-i);require(n>0);auto batch=llama_batch_get_one(tokens.data()+i,n);require(llama_decode(ctx,batch)==0);i+=n;alive();}
+  for(const auto &word:s.chat.preserved_tokens){auto ids=common_tokenize(ctx,word,false,true);guard(ids.size()==1,OV3_SAMPLER_FAILED);sp.preserved_tokens.insert(ids[0]);}
+  std::unique_ptr<common_sampler,decltype(&common_sampler_free)> sampler(common_sampler_init(s.model,sp),common_sampler_free);guard(bool(sampler),OV3_SAMPLER_FAILED);
+  for(size_t i=0;i<tokens.size();){alive();size_t n=std::min<size_t>(llama_n_batch(ctx),tokens.size()-i);guard(n>0,OV3_CONTEXT_REJECTED);auto batch=llama_batch_get_one(tokens.data()+i,n);guard(llama_decode(ctx,batch)==0,OV3_DECODE_FAILED);i+=n;alive();}
   std::string raw;const auto*vocab=llama_model_get_vocab(s.model);
+  auto validate=[&](){
+   alive();int result=ov2_validate(handle,raw.data(),raw.size(),1,out);
+   if(result==0)return int(OV3_SUCCESS);
+   // Validation's own cancellation/TTL checks may reject during its synchronous parse.
+   alive();return int(OV3_COMPLETION_REJECTED);
+  };
   for(unsigned i=0;i<max_tokens;++i){
    alive();auto t=common_sampler_sample(sampler.get(),ctx,-1);common_sampler_accept(sampler.get(),t,true);
-   if(llama_vocab_is_eog(vocab,t)){alive();return ov2_validate(handle,raw.data(),raw.size(),1,out);}
-   raw+=common_token_to_piece(ctx,t,true);require(raw.size()<=65536);
+   if(llama_vocab_is_eog(vocab,t))return validate();
+   raw+=common_token_to_piece(ctx,t,true);guard(raw.size()<=65536,OV3_OUTPUT_LIMIT);
    // Template-specific stops are only accepted on an exact suffix, never truncation.
-   for(const auto&stop:s.chat.additional_stops)if(!stop.empty()&&raw.size()>=stop.size()&&raw.compare(raw.size()-stop.size(),stop.size(),stop)==0){raw.resize(raw.size()-stop.size());alive();return ov2_validate(handle,raw.data(),raw.size(),1,out);}
-   auto batch=llama_batch_get_one(&t,1);require(llama_decode(ctx,batch)==0);alive();
+   for(const auto&stop:s.chat.additional_stops)if(!stop.empty()&&raw.size()>=stop.size()&&raw.compare(raw.size()-stop.size(),stop.size(),stop)==0){raw.resize(raw.size()-stop.size());return validate();}
+   auto batch=llama_batch_get_one(&t,1);guard(llama_decode(ctx,batch)==0,OV3_DECODE_FAILED);alive();
   }
-  return 1; // Token limit is incomplete, never an executable/reservable prefix.
- }catch(...){return 1;}
+  return OV3_TOKEN_LIMIT; // Incomplete output can never reserve a prefix.
+ }catch(const Failure&failure){return failure.status;}
+ catch(...){return OV3_INTERNAL_ERROR;}
 }

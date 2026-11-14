@@ -303,7 +303,12 @@ private final class NativeReadGeneration: @unchecked Sendable {
         guard (1...512).contains(maxTokens), let handle else { throw LocalModelError.invalidRequest }
         var output: UnsafeMutablePointer<CChar>?
         defer { ov2_free(output); close() }
-        guard ov3_generate(handle, owner.context, UInt32(maxTokens), &output) == 0, let output else { throw LocalAgentError.invalidState }
+        let started = ContinuousClock.now
+        let status = ov3_generate(handle, owner.context, UInt32(maxTokens), &output)
+        let duration = started.duration(to: .now).components
+        let elapsed = Double(duration.seconds) + Double(duration.attoseconds) / 1e18
+        guard status == 0 else { throw LocalAgentError.nativeGenerationFailed(status: status, elapsedSeconds: elapsed) }
+        guard let output else { throw LocalAgentError.invalidState }
         return String(cString: output)
     }
     private func close() {

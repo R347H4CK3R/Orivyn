@@ -19,7 +19,12 @@ final class SelectedTextExportUITests: XCTestCase {
         XCTAssertTrue(prepare.waitForExistence(timeout: 5))
         XCTAssertFalse(prepare.isEnabled)
         let choice = app.switches.matching(NSPredicate(format: "identifier BEGINSWITH %@", "text-export.choice.")).firstMatch
-        XCTAssertTrue(choice.waitForExistence(timeout: 5)); choice.tap()
+        XCTAssertTrue(choice.waitForExistence(timeout: 5))
+        XCTAssertEqual(choice.value as? String, "0")
+        // iOS 26 exposes the row as a parent Switch; tap its actual UISwitch.
+        let knob = choice.switches.firstMatch
+        XCTAssertTrue(knob.exists); knob.tap()
+        XCTAssertEqual(choice.value as? String, "1")
         XCTAssertTrue(prepare.isEnabled); prepare.tap()
         let summary = app.staticTexts["text-export.summary"]
         XCTAssertTrue(summary.waitForExistence(timeout: 5))

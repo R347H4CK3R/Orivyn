@@ -1,0 +1,46 @@
+{
+  "sourceCommit": "ed914a5a81da73b5fbd63293458b4efabfb56320",
+  "run": "https://github.com/R347H4CK3R/Orivyn/actions/runs/43628873176",
+  "inferenceJob": 132550791060,
+  "runner": "standard GitHub macos-15, public repository",
+  "xcode": "26.3 (17C529)",
+  "simulator": "iPhone 16 Plus, iOS 26.0.1, arm64",
+  "combinedRuntimeSHA256": "a88ecb979d903f7e5d293501e3a13e8b4c0cfce901f102b3a57a308cb944b113",
+  "productionVision": {
+    "test": "ProductionVisionRuntimeTests.testRequiredProductionPNGInferenceAndRelease",
+    "status": "passed",
+    "tests": 1,
+    "failures": 0,
+    "seconds": 123.483,
+    "completedUTC": "2026-11-14T19:02:10Z",
+    "scope": [
+      "Generated red-square PNG",
+      "Production ImageIO decoding and RGB assertions",
+      "Production full pinned model/projector SHA verification",
+      "NativeVisionRuntime, VisionWorker, combined C bridge inference",
+      "Answer contains red and square",
+      "Close acknowledged and pair reacquired"
+    ],
+    "notEstablished": [
+      "Broad visual accuracy",
+      "VisionSession/UI workflow",
+      "Physical device memory/thermal behavior"
+    ]
+  },
+  "productionNativeTools": {
+    "test": "ProductionNativeToolsRuntimeTests.testRequiredProductionSuggestionAndReload",
+    "status": "failed",
+    "tests": 1,
+    "failures": 1,
+    "seconds": 104.142,
+    "error": "invalidState",
+    "cause": "under investigation; existing wrapper collapses nonzero C results"
+  },
+  "artifact": {
+    "id": 14128320485,
+    "bytes": 48597280,
+    "sha256": "edc3455d9033d153b1024f4136c88d33c8195756cdacde98ecda545939686cc1"
+  },
+  "fullNativeSuite": "still running when this checkpoint was recorded",
+  "release": "not accepted or published"
+}

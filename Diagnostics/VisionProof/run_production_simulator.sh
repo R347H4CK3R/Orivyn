@@ -50,6 +50,7 @@ xcodebuild test -project JarvisEVO.xcodeproj -scheme JarvisEVO \
  -maximum-test-execution-time-allowance 600 \
  -resultBundlePath "$VISION_EVIDENCE_DIR/ProductionVision.xcresult" \
  "ORIVYN_NATIVE_FEATURES=$ORIVYN_NATIVE_FEATURES" CODE_SIGNING_ALLOWED=NO 2>&1 | tee "$VISION_EVIDENCE_DIR/xcodebuild.log"
+xcrun xcresulttool export attachments --path "$VISION_EVIDENCE_DIR/ProductionVision.xcresult" --output-path "$VISION_EVIDENCE_DIR/attachments"
 python3 - "$VISION_EVIDENCE_DIR/xcodebuild.log" <<'PY_CHECK'
 import sys
 from pathlib import Path

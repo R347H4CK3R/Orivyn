@@ -73,3 +73,15 @@ checks. Logs and exact source hashes accompany the record. Foundation excludes
 the unsupported Linux URLProtocol redirect fixture; Apple verification remains
 unrun. The aggregate's optional amalgamation persistence stage is marked skipped;
 the separate recorded host-SQLite run supplies the 64-case evidence.
+
+## First actual production vision simulator result
+
+[GitHub run 43628873176](https://github.com/R347H4CK3R/Orivyn/actions/runs/43628873176)
+on ed914a5a81da73b5fbd63293458b4efabfb56320 passed the real production vision
+smoke in 123.483 seconds: actual PNG/ImageIO, full pair verification, native
+inference, red/square answer assertions, close and pair reacquisition. This is
+one synthetic image case, not a broad accuracy or physical-device result. It
+does not exercise the analysis UI or VisionSession ownership. The native-tools
+smoke failed with invalidState after 104.142 seconds; no pass is claimed for it.
+[Exact checkpoint](evidence/apple-ci-20261114/RESULT.json) records source, model
+scope, runtime hash and archived evidence. The full native suite remains pending.

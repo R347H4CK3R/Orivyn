@@ -5,6 +5,14 @@ extern "C" {
 #endif
 struct llama_model;
 struct llama_context;
+// Stable ov3_generate outcomes. Nonzero always returns no reservation/output.
+// No model text, file paths, prompts or private content are exposed by diagnostics.
+enum ov3_generation_status {
+ OV3_SUCCESS=0, OV3_INVALID_ARGUMENT=1, OV3_CANCELLED=2, OV3_EXPIRED=3,
+ OV3_CONTEXT_REJECTED=4, OV3_PROMPT_LIMIT=5, OV3_SAMPLER_FAILED=6,
+ OV3_DECODE_FAILED=7, OV3_OUTPUT_LIMIT=8, OV3_TOKEN_LIMIT=9,
+ OV3_COMPLETION_REJECTED=10, OV3_INTERNAL_ERROR=11, OV3_ALREADY_ATTEMPTED=12
+};
 // Bounded caller goal, offered tools restricted to reviewed mask; no execution.
 int ov3_create_borrowed(struct llama_model*, unsigned approved_mask, unsigned call_budget, unsigned ttl_ms, const char *goal, size_t goal_length, void **out);
 // One-shot synchronous generation. Requires exclusive, initially empty context.
