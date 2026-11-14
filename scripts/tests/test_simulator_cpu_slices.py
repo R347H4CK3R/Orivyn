@@ -25,7 +25,16 @@ setup_framework_structure() { printf 'setup %s\n' "$*"; }
 combine_static_libraries() { printf 'link %s\n' "$*"; }
 mkdir() { printf 'mkdir %s\n' "$*"; }
 cp() { printf 'cp %s\n' "$*"; }
-xcrun() { printf 'xcrun %s\n' "$*"; }
+xcrun() {
+    printf 'xcrun %s\n' "$*"
+    # Apple lipo treats every token after -verify_arch as an architecture.
+    local verifying=false
+    for arg in "$@"; do
+        if [[ "$arg" == -verify_arch ]]; then verifying=true
+        elif [[ "$verifying" == true && "$arg" != arm64 && "$arg" != x86_64 ]]; then return 19
+        fi
+    done
+}
 '''
 
 class SimulatorSlicesTests(unittest.TestCase):
@@ -48,7 +57,7 @@ class SimulatorSlicesTests(unittest.TestCase):
         merges = [i for i, line in enumerate(lines) if line.startswith('xcrun lipo -create')]
         self.assertEqual(len(merges), 2)
         self.assertGreater(min(merges), max(i for i, line in enumerate(lines) if line.startswith('link ')))
-        self.assertEqual(sum('lipo -verify_arch arm64 x86_64' in line for line in lines), 2)
+        self.assertEqual(sum(line.startswith('xcrun lipo ') and line.endswith(' -verify_arch arm64 x86_64') for line in lines), 2)
         self.assertIn('DWARF/llama', lines[merges[1]])
 
     def test_failed_slice_cannot_package_success(self):

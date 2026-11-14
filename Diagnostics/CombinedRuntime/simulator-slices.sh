@@ -29,5 +29,5 @@ xcrun lipo -create build-ios-sim-arm64/framework/llama.framework/llama \
 xcrun lipo -create build-ios-sim-arm64/dSYMs/llama.dSYM/Contents/Resources/DWARF/llama \
     build-ios-sim-x86_64/dSYMs/llama.dSYM/Contents/Resources/DWARF/llama \
     -output build-ios-sim/dSYMs/llama.dSYM/Contents/Resources/DWARF/llama
-xcrun lipo -verify_arch arm64 x86_64 build-ios-sim/framework/llama.framework/llama
-xcrun lipo -verify_arch arm64 x86_64 build-ios-sim/dSYMs/llama.dSYM/Contents/Resources/DWARF/llama
+xcrun lipo build-ios-sim/framework/llama.framework/llama -verify_arch arm64 x86_64
+xcrun lipo build-ios-sim/dSYMs/llama.dSYM/Contents/Resources/DWARF/llama -verify_arch arm64 x86_64
