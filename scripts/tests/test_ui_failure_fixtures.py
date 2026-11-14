@@ -14,7 +14,9 @@ class UIFailureFixtureContract(unittest.TestCase):
         self.assertIn('app.buttons["Add missing only (keep local)"]',tests)
         self.assertIn('reveal(importButton',tests)
         self.assertIn('NSPredicate(format: "exists == false")', tests)
-        self.assertIn('app.navigationBars.matching(NSPredicate(', tests)
+        self.assertIn('app.navigationBars["FullDocumentManagerViewControllerNavigationBar"]', tests)
+        self.assertIn('app.tabBars["DOC.browsingModeTabBar"]', tests)
+        self.assertIn('pickerNavigation.searchFields["Search"]', tests)
         self.assertIn('pickerNavigation.buttons["Cancel"]', tests)
         self.assertIn('XCTAssertTrue(app.buttons["settings.done"].isHittable)', tests)
     def test_catalog_scrolls_to_lazy_search_and_back_to_active_cancel(self):

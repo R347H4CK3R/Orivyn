@@ -135,16 +135,24 @@ final class JarvisEVOUITests: XCTestCase {
         XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: absent, object: keepLocal)], timeout: 5), .completed,
                        "The import policy confirmation must dismiss before interacting with Files.")
         // A dialog's Cancel is not evidence that the document picker opened.
-        // Identify the Files navigation surface and scope cancellation to it.
-        let pickerNavigation = app.navigationBars.matching(NSPredicate(
-            format: "identifier == %@ OR identifier == %@", "Browse", "Recents")).firstMatch
+        // iOS 26 Files uses this document-manager identifier; Recents is a child
+        // title, not the navigation bar identifier (verified in CI #14 AX evidence).
+        let pickerNavigation = app.navigationBars["FullDocumentManagerViewControllerNavigationBar"]
         XCTAssertTrue(pickerNavigation.waitForExistence(timeout: 10), "The real Files picker must appear.")
+        let browsingTabs = app.tabBars["DOC.browsingModeTabBar"]
+        XCTAssertTrue(browsingTabs.waitForExistence(timeout: 5))
+        XCTAssertTrue(pickerNavigation.searchFields["Search"].exists)
+        let pickerScreenshot = XCTAttachment(screenshot: app.screenshot())
+        pickerScreenshot.name = "Orivyn history import actual Files picker"
+        pickerScreenshot.lifetime = .keepAlways
+        add(pickerScreenshot)
         let cancel = pickerNavigation.buttons["Cancel"]
         XCTAssertTrue(cancel.waitForExistence(timeout: 5))
         XCTAssertTrue(cancel.isHittable)
         cancel.tap()
         XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: absent, object: pickerNavigation)], timeout: 5), .completed,
                        "Cancelling must dismiss the Files picker.")
+        XCTAssertFalse(browsingTabs.exists)
         XCTAssertTrue(app.buttons["settings.done"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["settings.done"].isHittable)
         XCTAssertFalse(app.alerts["Backup exported"].exists)
