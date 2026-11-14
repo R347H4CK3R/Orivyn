@@ -298,6 +298,66 @@ final class LocalHeavyWorkTests: XCTestCase {
         XCTAssertEqual(model.draft, "Keep this draft")
     }
 
+    func testModelRemovalOwnsAdmissionUntilReleaseAndDeletionFinish() async throws {
+        let (model, release, source) = try fixture()
+        let descriptor = try await installTestModel(model)
+        model.draft = "Keep my next request"
+        let task = Task { await model.removeModel(descriptor) }
+        try await waitFor { await release.count == 1 }
+        XCTAssertTrue(model.isRemovingModel)
+        XCTAssertFalse(model.canSend)
+        XCTAssertFalse(model.canBeginHeavyWork)
+        XCTAssertThrowsError(try model.makeVoiceTurnTicket(ownerID: UUID()))
+        model.send()
+        XCTAssertFalse(model.isGenerating)
+        XCTAssertEqual(model.draft, "Keep my next request")
+        await model.removeModel(descriptor)
+        let releases = await release.count; XCTAssertEqual(releases, 1)
+        model.downloadModel(LocalModelCatalog.defaultModel)
+        XCTAssertNil(model.downloadingModelID)
+        await model.importModel(from: root.appendingPathComponent("another.gguf"))
+        XCTAssertTrue(model.isRemovingModel)
+        await release.finish(0); await task.value
+        XCTAssertFalse(model.isRemovingModel)
+        XCTAssertTrue(model.canSend)
+        XCTAssertFalse(model.installedModels.contains { $0.id == descriptor.id })
+        let calls = await source.count; XCTAssertEqual(calls, 0)
+    }
+
+    func testCancelledRemovalRetainsModelAndReleasesAdmission() async throws {
+        let (model, release, _) = try fixture()
+        let descriptor = try await installTestModel(model)
+        model.draft = "Keep"
+        let task = Task { await model.removeModel(descriptor) }
+        try await waitFor { await release.count == 1 }
+        task.cancel()
+        XCTAssertFalse(model.canSend, "Cancellation must await actual resource release")
+        await release.finish(0); await task.value
+        XCTAssertFalse(model.isRemovingModel)
+        XCTAssertTrue(model.canSend)
+        XCTAssertTrue(model.installedModels.contains { $0.id == descriptor.id })
+        XCTAssertTrue(FileManager.default.fileExists(atPath: root.appendingPathComponent("Models").appendingPathComponent(descriptor.fileName).path))
+    }
+
+    func testFailedRemovalReleasesAdmission() async throws {
+        let (model, release, _) = try fixture()
+        model.draft = "Keep"
+        let task = Task { await model.removeModel(LocalModelCatalog.defaultModel) }
+        try await waitFor { await release.count == 1 }
+        await release.finish(0); await task.value
+        XCTAssertFalse(model.isRemovingModel)
+        XCTAssertTrue(model.canSend)
+        XCTAssertNotNil(model.errorMessage)
+    }
+
+    private func installTestModel(_ model: AppModel) async throws -> LocalModelDescriptor {
+        // Storage-only GGUF fixture. Never passed to native inference.
+        let input = root.appendingPathComponent("fixture.gguf")
+        try Data([0x47, 0x47, 0x55, 0x46, 3, 0, 0, 0] + Array(repeating: UInt8(0), count: 32)).write(to: input)
+        await model.importModel(from: input)
+        return try XCTUnwrap(model.installedModels.first)
+    }
+
     private func fixture() throws -> (AppModel, ControlledResourceRelease, HeavyReplySource) {
         let release = ControlledResourceRelease(); let source = HeavyReplySource()
         let model = AppModel(store: try SQLiteConversationStore(url: root.appendingPathComponent("test.sqlite")),
@@ -342,3 +402,4 @@ private final class ControlledDesktopRuntime: VirtualDesktopRuntime {
         await withCheckedContinuation { stopGate = $0 }
     }
 }
+

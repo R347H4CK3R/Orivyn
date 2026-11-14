@@ -101,8 +101,10 @@ final class AppModel {
     private var heavyWorkForeground = true
     private var thermalBlocksHeavyWork = false
     private var pressureReleaseTask: Task<Void, Never>?
+    private(set) var isRemovingModel = false
+    private var isImportingModel = false
     var isLocalResourceAdmissionBlocked: Bool {
-        heavyWorkLease != nil || pressureReleaseTask != nil || thermalBlocksHeavyWork
+        isRemovingModel || heavyWorkLease != nil || pressureReleaseTask != nil || thermalBlocksHeavyWork
     }
     var isInferenceAdmissionBlocked: Bool { isLocalResourceAdmissionBlocked || isSavingGeneratedImage }
     var canBeginHeavyWork: Bool {
@@ -1083,7 +1085,7 @@ final class AppModel {
     }
 
     func downloadModel(_ descriptor: LocalModelDescriptor) {
-        guard downloadTask == nil, !isPreparingAutomaticModel else { return }
+        guard !isRemovingModel, !isImportingModel, downloadTask == nil, !isPreparingAutomaticModel else { return }
         let owner = UUID()
         manualDownloadOwner = owner
         downloadingModelID = descriptor.id
@@ -1132,6 +1134,11 @@ final class AppModel {
 #endif
 
     func importModel(from url: URL) async {
+        guard !isRemovingModel, !isImportingModel, downloadTask == nil else {
+            errorMessage = "Wait for the current model operation to finish."; return
+        }
+        isImportingModel = true
+        defer { isImportingModel = false }
         cancelAutomaticPreparation()
         do {
             let descriptor = try await modelStore.importModel(from: url)
@@ -1141,13 +1148,22 @@ final class AppModel {
     }
 
     func removeModel(_ descriptor: LocalModelDescriptor) async {
-        guard !isGenerating, !isPreparingAutomaticModel else { errorMessage = "Stop the response or automatic preparation before removing a model."; return }
+        guard !isLocalResourceAdmissionBlocked, !isGenerating, !isPreparingAutomaticModel,
+              !isImportingModel, downloadTask == nil else {
+            errorMessage = "Wait for the current response, model operation, or local workspace to finish before removing a model."; return
+        }
+        // Reserve before unload suspends: a newly submitted turn must not race
+        // verification/loading against deletion of its selected model file.
+        isRemovingModel = true
+        defer { isRemovingModel = false }
         do {
-            if let provider = localProviders[descriptor.id] { await provider.unload() }
+            try Task.checkCancellation()
+            await resourceReleaser.unload()
+            try Task.checkCancellation()
             try await modelStore.remove(descriptor)
             localProviders[descriptor.id] = nil
             try await reloadProviders()
-        } catch { report(error) }
+        } catch { if !(error is CancellationError) { report(error) } }
     }
 
     func checkpoint() async {
@@ -1282,5 +1298,6 @@ private struct AutomaticPreparationTicket {
     let draft: String
     let attachments: [UUID]
 }
+
 
 
