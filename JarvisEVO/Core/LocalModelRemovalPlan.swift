@@ -11,7 +11,7 @@ enum LocalModelRemovalPlan {
         guard matches.count == 1 else { throw LocalModelRemovalPlanError.ambiguousManifest }
         let index = matches[0]
         guard manifest[index] == descriptor else { throw LocalModelRemovalPlanError.staleDescriptor }
-        guard !manifest.indices.contains(where: { $0 != index && manifest[$0].fileName == descriptor.fileName }) else {
+        guard !manifest.indices.contains(where: { $0 != index && manifest[$0].sharesFileName(with: descriptor) }) else {
             throw LocalModelRemovalPlanError.ambiguousManifest
         }
         var updated = manifest

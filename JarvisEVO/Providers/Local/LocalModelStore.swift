@@ -141,9 +141,7 @@ actor LocalModelStore {
     private func install(_ temporaryURL: URL, descriptor: LocalModelDescriptor, target: URL) throws {
         try Task.checkCancellation()
         // Prepare/encode metadata before touching any published model bytes.
-        var manifest = try readManifest()
-        manifest.removeAll { $0.id == descriptor.id }
-        manifest.append(descriptor)
+        let manifest = try LocalModelInstallationPlan.updatedManifest(installing: descriptor, from: readManifest())
         let manifestData = try JSONEncoder().encode(manifest)
         let oldBytes = (try? fileManager.attributesOfItem(atPath: target.path)[.size] as? NSNumber)?.int64Value ?? 0
         try checkStorage(required: descriptor.byteCount + oldBytes)

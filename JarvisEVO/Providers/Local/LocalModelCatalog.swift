@@ -10,6 +10,13 @@ struct LocalModelDescriptor: Codable, Identifiable, Hashable, Sendable {
     let license: String
     let sourceURL: URL?
 
+    /// Conservatively treat case variants as one filename on all volumes. This
+    /// may reject distinct names on case-sensitive volumes, rather than overwrite
+    /// or remove another owner's bytes on case-insensitive ones.
+    func sharesFileName(with other: LocalModelDescriptor) -> Bool {
+        fileName.compare(other.fileName, options: [.caseInsensitive], locale: Locale(identifier: "en_US_POSIX")) == .orderedSame
+    }
+
     var formattedSize: String { ByteCountFormatter.string(fromByteCount: byteCount, countStyle: .file) }
 }
 

@@ -42,4 +42,18 @@ final class LocalModelRemovalPlanTests: XCTestCase {
             XCTAssertFalse(error.localizedDescription.isEmpty)
         }
     }
+    func testCaseOnlyAliasBlocksRemovalOfSharedFile() {
+        let selected = model("selected", file: "Model.gguf")
+        let other = model("other", file: "model.gguf")
+        XCTAssertThrowsError(try LocalModelRemovalPlan.updatedManifest(removing: selected, from: [selected,other])) {
+            XCTAssertEqual($0 as? LocalModelRemovalPlanError, .ambiguousManifest)
+        }
+    }
+    func testCanonicalUnicodeAliasBlocksRemovalOfSharedFile() {
+        let selected = model("selected", file: "Caf\u{00e9}.gguf")
+        let other = model("other", file: "cafe\u{0301}.gguf")
+        XCTAssertThrowsError(try LocalModelRemovalPlan.updatedManifest(removing: selected, from: [selected,other])) {
+            XCTAssertEqual($0 as? LocalModelRemovalPlanError, .ambiguousManifest)
+        }
+    }
 }
