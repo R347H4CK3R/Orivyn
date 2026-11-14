@@ -57,12 +57,31 @@ private final class DatabaseHandle: @unchecked Sendable {
             if revocationTables==0 && schemaVersion==0 {
                 try execute("CREATE TABLE text_peer_revocation_state (singleton INTEGER PRIMARY KEY CHECK(singleton=1), version INTEGER NOT NULL CHECK(version=1)); INSERT INTO text_peer_revocation_state VALUES (1,1); CREATE TABLE text_peer_revocations (peer BLOB NOT NULL CHECK(typeof(peer)='blob' AND length(peer)=32), generation TEXT NOT NULL CHECK(typeof(generation)='text' AND length(generation)=36), PRIMARY KEY(peer,generation)); PRAGMA user_version=1;")
             }
+            try migrateTextLineageIfEligible()
             try execute("COMMIT")
         } catch { try? execute("ROLLBACK"); throw error }
         #if os(iOS)
         try FileManager.default.setAttributes([.protectionKey: FileProtectionType.completeUntilFirstUserAuthentication], ofItemAtPath: url.path)
         #endif
         initialized = true
+    }
+    /// Upgrade only a complete, known revocation schema. Lost metadata is not
+    /// reconstructed; ordinary history can still open while sync remains paused.
+    private func migrateTextLineageIfEligible() throws {
+        func scalar(_ sql: String) -> Int64? {
+            var statement: OpaquePointer?
+            guard sqlite3_prepare_v2(raw,sql,-1,&statement,nil)==SQLITE_OK else { return nil }
+            defer { sqlite3_finalize(statement) }
+            guard sqlite3_step(statement)==SQLITE_ROW,sqlite3_column_type(statement,0)==SQLITE_INTEGER else { return nil }
+            let value=sqlite3_column_int64(statement,0)
+            guard sqlite3_step(statement)==SQLITE_DONE else { return nil };return value
+        }
+        guard scalar("PRAGMA user_version")==1,
+              scalar("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name IN ('text_peer_revocation_state','text_peer_revocations')")==2,
+              scalar("SELECT COUNT(*) FROM text_peer_revocation_state")==1,
+              scalar("SELECT version FROM text_peer_revocation_state WHERE singleton=1 AND typeof(singleton)='integer' AND typeof(version)='integer'")==1,
+              scalar("SELECT COUNT(*) FROM sqlite_master WHERE name='text_revision_lineage'")==0 else { return }
+        try execute("CREATE TABLE text_revision_lineage (peer BLOB NOT NULL CHECK(typeof(peer)='blob' AND length(peer)=32), generation TEXT NOT NULL, source TEXT NOT NULL, local_id TEXT NOT NULL, remote_base BLOB NOT NULL, local_base BLOB NOT NULL, PRIMARY KEY(peer,generation,source), UNIQUE(peer,generation,local_id)); PRAGMA user_version=2;")
     }
     deinit { if let raw { sqlite3_close(raw) } }
     func execute(_ sql: String) throws {
@@ -225,6 +244,7 @@ actor SQLiteConversationStore {
             // Pending and delivered rows both retain exact reviewed private bytes.
             try database.execute("DELETE FROM text_send_outbox")
         }
+        if try tableExists("text_revision_lineage") { try database.execute("DELETE FROM text_revision_lineage") }
         if try tableExists("text_receive_epoch") {
             try database.execute("UPDATE text_receive_epoch SET epoch='\(UUID().uuidString)' WHERE singleton=1")
         }
@@ -315,7 +335,7 @@ actor SQLiteConversationStore {
             }
             // Missing unrelated transfer tables cannot prevent revocation. If an
             // existing table cannot be cleared, report failure and roll back both.
-            for table in ["text_send_outbox","text_receive_receipts"] where try tableExists(table) {
+            for table in ["text_send_outbox","text_receive_receipts","text_revision_lineage"] where try tableExists(table) {
                 try withStatement("DELETE FROM \(table) WHERE peer=? AND generation=?") { statement in
                     bind(peerCertificateSHA256,to:1,in:statement);bind(pairingGeneration.uuidString,to:2,in:statement);try requireDone(statement)
                 }
@@ -330,7 +350,7 @@ actor SQLiteConversationStore {
         // The SQLite header sentinel distinguishes a real legacy DB from loss of
         // both metadata tables. It is not authenticated rollback/tamper detection.
         try withStatement("PRAGMA user_version") { statement in
-            guard sqlite3_step(statement)==SQLITE_ROW,sqlite3_column_int64(statement,0)==1 else { throw DatabaseError.operation("Peer revocation schema needs recovery; text sync is paused.") }
+            guard sqlite3_step(statement)==SQLITE_ROW,[1,2].contains(sqlite3_column_int64(statement,0)) else { throw DatabaseError.operation("Peer revocation schema needs recovery; text sync is paused.") }
         }
         guard try tableExists("text_peer_revocations") else { throw DatabaseError.operation("Peer revocation metadata needs recovery; text sync is paused.") }
         try withStatement("SELECT singleton,version FROM text_peer_revocation_state") { statement in
@@ -483,6 +503,191 @@ actor SQLiteConversationStore {
             throw DatabaseError.operation("Invalid text receive scope or size.")
         }
         return try importData(data, policy: .keepBoth, receive: identity)
+    }
+
+
+    /// Receiver-only exact-base reconciliation. The caller must authenticate the
+    /// peer and approve these exact bytes before invoking this dormant boundary.
+    /// Committed local edits are protected; an eventual coordinator must also
+    /// serialize unsaved UI edits and unconditional local saves with receives.
+    func receiveReviewedTextRevisions(_ data: Data, identity: ReviewedTextReceiveIdentity) throws -> TextRevisionReceiveSummary {
+        try Task.checkCancellation()
+        guard identity.peerCertificateSHA256.count == 32 else { throw DatabaseError.operation("Invalid revision receive identity.") }
+        let envelope = try TextRevisionEnvelope.decodeCanonical(data)
+        for record in envelope.records {
+            try validate(record.incoming)
+            if let base = record.base { try validate(base) }
+        }
+        try database.execute("BEGIN IMMEDIATE")
+        do {
+            try requireTextPeerNotRevoked(identity.peerCertificateSHA256, generation: identity.pairingGeneration)
+            guard try textReceiveEpoch() == identity.epoch else { throw DatabaseError.operation("This revision session predates history erasure.") }
+            try withStatement("PRAGMA user_version") { statement in
+                guard sqlite3_step(statement) == SQLITE_ROW, sqlite3_column_int64(statement, 0) == 2 else {
+                    throw DatabaseError.operation("Revision metadata needs recovery; no revision was applied.")
+                }
+            }
+            guard try tableExists("text_revision_lineage") else { throw DatabaseError.operation("Revision lineage is unavailable.") }
+            if let prior = try revisionReceipt(data, identity: identity, sources: envelope.records.map { $0.incoming.id }) {
+                try database.execute("COMMIT")
+                return prior
+            }
+            try withStatement("SELECT COALESCE(SUM(length(payload)),0),COUNT(*) FROM text_receive_receipts") { statement in
+                guard sqlite3_step(statement) == SQLITE_ROW,
+                      sqlite3_column_int64(statement, 1) < 10_000,
+                      sqlite3_column_int64(statement, 0) <= 50_000_000 - Int64(data.count) else {
+                    throw DatabaseError.operation("Receive receipt capacity reached; no revision was applied.")
+                }
+            }
+            var reserved = Set(envelope.records.map { $0.incoming.id })
+            func freshID() throws -> UUID {
+                while true {
+                    let id = UUID()
+                    if reserved.contains(id) { continue }
+                    let exists = try withStatement("SELECT 1 FROM conversations WHERE id=? UNION ALL SELECT 1 FROM memory WHERE id=? LIMIT 1") { statement in
+                        bind(id.uuidString, to: 1, in: statement); bind(id.uuidString, to: 2, in: statement)
+                        let step = sqlite3_step(statement)
+                        guard step == SQLITE_ROW || step == SQLITE_DONE else { throw DatabaseError.operation("Could not reserve revision identity.") }
+                        return step == SQLITE_ROW
+                    }
+                    if !exists { reserved.insert(id); return id }
+                }
+            }
+            var results: [TextRevisionReceiveSummary.Record] = []
+            for record in envelope.records {
+                try Task.checkCancellation()
+                let sourceID = record.incoming.id
+                let incomingBytes = try TextRevisionEnvelope.canonicalConversation(record.incoming)
+                let lineage = try revisionLineage(sourceID: sourceID, identity: identity)
+                var destination = record.incoming
+                var disposition: TextRevisionReceiveSummary.Disposition = .inserted
+                var preserved: UUID?
+                if let lineage {
+                    guard let base = record.base,
+                          try TextRevisionEnvelope.canonicalConversation(base) == lineage.remote,
+                          let current = try rawRevisionConversation(id: lineage.localID) else {
+                        throw DatabaseError.operation("Missing, stale or deleted revision ancestry; no changes were applied.")
+                    }
+                    // Remote no-op never adopts an unrelated local edit as its base.
+                    if incomingBytes == lineage.remote {
+                        results.append(.init(sourceID: sourceID, localID: lineage.localID, disposition: .unchanged, preservedLocalID: nil))
+                        continue
+                    }
+                    if try TextRevisionEnvelope.canonicalConversation(current) == lineage.local {
+                        destination.id = lineage.localID
+                        disposition = .advanced
+                    } else {
+                        destination.id = try freshID()
+                        disposition = .conflict
+                        preserved = lineage.localID
+                    }
+                } else {
+                    guard record.base == nil else { throw DatabaseError.operation("Unknown remote ancestry; no changes were applied.") }
+                    // First contact cannot claim ownership of an existing local row,
+                    // even when its bytes happen to match the incoming conversation.
+                    if try rawRevisionConversation(id: sourceID) != nil {
+                        destination.id = try freshID()
+                        disposition = .conflict
+                        preserved = sourceID
+                    }
+                }
+                try writeConversation(destination)
+                let localBytes = try TextRevisionEnvelope.canonicalConversation(destination)
+                try withStatement("INSERT INTO text_revision_lineage(peer,generation,source,local_id,remote_base,local_base) VALUES(?,?,?,?,?,?) ON CONFLICT(peer,generation,source) DO UPDATE SET local_id=excluded.local_id,remote_base=excluded.remote_base,local_base=excluded.local_base") { statement in
+                    bind(identity.peerCertificateSHA256,to:1,in:statement)
+                    bind(identity.pairingGeneration.uuidString,to:2,in:statement)
+                    bind(sourceID.uuidString,to:3,in:statement)
+                    bind(destination.id.uuidString,to:4,in:statement)
+                    bind(incomingBytes,to:5,in:statement); bind(localBytes,to:6,in:statement)
+                    try requireDone(statement)
+                }
+                results.append(.init(sourceID:sourceID,localID:destination.id,disposition:disposition,preservedLocalID:preserved))
+            }
+            try withStatement("SELECT COALESCE(SUM(length(remote_base)+length(local_base)),0),COUNT(*) FROM text_revision_lineage") { statement in
+                guard sqlite3_step(statement) == SQLITE_ROW,
+                      sqlite3_column_int64(statement,0) <= 50_000_000,
+                      sqlite3_column_int64(statement,1) <= 10_000 else {
+                    throw DatabaseError.operation("Revision lineage capacity reached; changes rolled back.")
+                }
+            }
+            let summary = TextRevisionReceiveSummary(records: results)
+            let canonical = JSONEncoder(); canonical.outputFormatting = .sortedKeys
+            try withStatement("INSERT INTO text_receive_receipts(transfer,peer,generation,payload,summary) VALUES(?,?,?,?,?)") { statement in
+                bind(identity.transfer.uuidString,to:1,in:statement)
+                bind(identity.peerCertificateSHA256,to:2,in:statement)
+                bind(identity.pairingGeneration.uuidString,to:3,in:statement)
+                bind(data,to:4,in:statement); bind(try canonical.encode(summary),to:5,in:statement)
+                try requireDone(statement)
+            }
+            try Task.checkCancellation()
+            try database.execute("COMMIT")
+            return summary
+        } catch { try? database.execute("ROLLBACK"); throw error }
+    }
+
+    private func rawRevisionConversation(id: UUID) throws -> Conversation? {
+        try withStatement("SELECT payload FROM conversations WHERE id=?") { statement in
+            bind(id.uuidString,to:1,in:statement)
+            let step=sqlite3_step(statement)
+            if step == SQLITE_DONE { return nil }
+            guard step == SQLITE_ROW, (1...TextRevisionEnvelope.maximumBytes).contains(Int(sqlite3_column_bytes(statement,0))) else {
+                throw DatabaseError.operation("Revision target is unavailable or exceeds its bound.")
+            }
+            let value=try decoder.decode(Conversation.self,from:blob(statement,at:0))
+            guard value.id==id else { throw DatabaseError.operation("Revision target identity is inconsistent.") }
+            return value
+        }
+    }
+
+    private func revisionLineage(sourceID: UUID, identity: ReviewedTextReceiveIdentity) throws -> (localID:UUID,remote:Data,local:Data)? {
+        try withStatement("SELECT local_id,remote_base,local_base FROM text_revision_lineage WHERE peer=? AND generation=? AND source=?") { statement in
+            bind(identity.peerCertificateSHA256,to:1,in:statement)
+            bind(identity.pairingGeneration.uuidString,to:2,in:statement)
+            bind(sourceID.uuidString,to:3,in:statement)
+            let step=sqlite3_step(statement)
+            if step == SQLITE_DONE { return nil }
+            guard step == SQLITE_ROW, sqlite3_column_type(statement,0)==SQLITE_TEXT, sqlite3_column_bytes(statement,0)==36, let raw=sqlite3_column_text(statement,0),
+                  let localID=UUID(uuidString:String(cString:raw)),
+                  (1...TextRevisionEnvelope.maximumBytes).contains(Int(sqlite3_column_bytes(statement,1))),
+                  (1...TextRevisionEnvelope.maximumBytes).contains(Int(sqlite3_column_bytes(statement,2))) else {
+                throw DatabaseError.operation("Revision lineage needs recovery.")
+            }
+            let remote=blob(statement,at:1),local=blob(statement,at:2)
+            let remoteValue=try decoder.decode(Conversation.self,from:remote)
+            let localValue=try decoder.decode(Conversation.self,from:local)
+            guard remoteValue.id==sourceID,localValue.id==localID,
+                  try TextRevisionEnvelope.canonicalConversation(remoteValue)==remote,
+                  try TextRevisionEnvelope.canonicalConversation(localValue)==local else {
+                throw DatabaseError.operation("Revision lineage is inconsistent.")
+            }
+            return (localID,remote,local)
+        }
+    }
+
+    private func revisionReceipt(_ data: Data, identity: ReviewedTextReceiveIdentity, sources: [UUID]) throws -> TextRevisionReceiveSummary? {
+        try withStatement("SELECT peer,generation,payload,summary FROM text_receive_receipts WHERE transfer=?") { statement in
+            bind(identity.transfer.uuidString,to:1,in:statement)
+            let step=sqlite3_step(statement)
+            if step == SQLITE_DONE { return nil }
+            guard step == SQLITE_ROW,
+                  sqlite3_column_type(statement,0)==SQLITE_BLOB,sqlite3_column_bytes(statement,0)==32,
+                  sqlite3_column_type(statement,1)==SQLITE_TEXT,sqlite3_column_bytes(statement,1)==36,
+                  blob(statement,at:0)==identity.peerCertificateSHA256,
+                  let generation=sqlite3_column_text(statement,1),
+                  String(cString:generation)==identity.pairingGeneration.uuidString,
+                  sqlite3_column_bytes(statement,2)==data.count,
+                  blob(statement,at:2)==data,
+                  (1...50_000).contains(Int(sqlite3_column_bytes(statement,3))) else {
+                throw DatabaseError.operation("Revision transfer identity was reused with different scope or bytes.")
+            }
+            let bytes=blob(statement,at:3)
+            let summary=try decoder.decode(TextRevisionReceiveSummary.self,from:bytes)
+            let canonical=JSONEncoder();canonical.outputFormatting = .sortedKeys
+            guard summary.records.map(\.sourceID)==sources,try canonical.encode(summary)==bytes else {
+                throw DatabaseError.operation("Revision receipt is inconsistent.")
+            }
+            return summary
+        }
     }
 
     func textReceiveEpoch() throws -> UUID {
