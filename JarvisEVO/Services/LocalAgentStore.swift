@@ -20,10 +20,12 @@ final class LocalAgentStore {
     // Revision zero is the valid initial state in both current and legacy task
     // schemas. Reject malformed envelopes before writing, and classify malformed
     // on-disk records as unreadable without deleting or overwriting their bytes.
+    // Use the bounded strict parser before decoding: Foundation JSON readers can
+    // disagree on duplicate keys, while the task reducer rejects such records.
     private func verifyIdentity(_ raw: String, id: String) throws {
         guard raw.utf8.count <= 131_072, let data = raw.data(using: .utf8),
-              let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let value = object["id"] as? String, let uuid = UUID(uuidString: value),
+              let object = try? MCPJSONValue.parse(data, maximumBytes: 131_072).objectValue,
+              let value = object["id"]?.stringValue, let uuid = UUID(uuidString: value),
               uuid == UUID(uuidString: id),
               let revision = try? JSONDecoder().decode(Revision.self, from: data).revision,
               revision >= 0 else { throw LocalAgentError.storage }

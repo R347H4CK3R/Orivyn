@@ -9,6 +9,64 @@ import XCTest
     private func record(_ id: String, revision: Int = 1, goal: String = "goal") -> String {
         "{\"id\":\"\(id)\",\"revision\":\(revision),\"goal\":\"\(goal)\"}"
     }
+    func testDuplicateKeysCannotCreateOrOverwriteTask() async throws {
+        let (root, store) = try fixture(); defer { try? FileManager.default.removeItem(at: root) }
+        let id = UUID().uuidString
+        let ambiguous = "{\"id\":\"\(id)\",\"revision\":99,\"revision\":1}"
+        XCTAssertThrowsError(try store.save(ambiguous, id: id))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: root.appendingPathComponent(id + ".json").path))
+        let second = UUID().uuidString
+        let original = record(second, revision: 2)
+        let ambiguousUpdate = "{\"id\":\"\(second)\",\"revision\":99,\"revision\":1}"
+        try store.save(original, id: second)
+        XCTAssertThrowsError(try store.save(ambiguousUpdate, id: second))
+        XCTAssertEqual(Array(try store.load(id: second).utf8), Array(original.utf8))
+    }
+    func testDuplicateKeysOnDiskRemainUnreadableAndUnchanged() async throws {
+        let (root, store) = try fixture(); defer { try? FileManager.default.removeItem(at: root) }
+        let id = UUID().uuidString, file = root.appendingPathComponent(id + ".json")
+        let bytes = Data("{\"id\":\"\(id)\",\"revision\":99,\"revision\":1}".utf8)
+        try bytes.write(to: file)
+        XCTAssertThrowsError(try store.load(id: id))
+        XCTAssertEqual(try store.records().unreadable, 1)
+        XCTAssertThrowsError(try store.save(record(id, revision: 100), id: id))
+        XCTAssertEqual(try Data(contentsOf: file), bytes)
+    }
+    func testEscapedAndNestedDuplicateKeysAreRejectedWithoutWriting() async throws {
+        let (root, store) = try fixture(); defer { try? FileManager.default.removeItem(at: root) }
+        let id = UUID().uuidString
+        let invalid = [
+            #"{"id":"\#(id)","revision":1,"revi\u0073ion":2}"#,
+            #"{"id":"\#(id)","id":"\#(id)","revision":1}"#,
+            #"{"id":"\#(id)","revision":1,"pending":{"arguments":{"query":"safe","query":"changed"}}}"#,
+            #"{"id":"\#(id)","revision":1,"history":[{"outcome":"succeeded","outcome":"failed"}]}"#
+        ]
+        for raw in invalid {
+            XCTAssertThrowsError(try store.save(raw, id: id))
+            XCTAssertFalse(FileManager.default.fileExists(atPath: root.appendingPathComponent(id + ".json").path))
+        }
+    }
+    func testExcessiveNestingIsRejectedBeforeWriting() async throws {
+        let (root, store) = try fixture(); defer { try? FileManager.default.removeItem(at: root) }
+        let id = UUID().uuidString
+        let nested = String(repeating: "[", count: 40) + "0" + String(repeating: "]", count: 40)
+        let raw = "{\"id\":\"\(id)\",\"revision\":1,\"history\":\(nested)}"
+        XCTAssertThrowsError(try store.save(raw, id: id))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: root.appendingPathComponent(id + ".json").path))
+    }
+    func testUniqueLegacyAndCurrentStateKeepExactBytes() async throws {
+        let (root, store) = try fixture(); defer { try? FileManager.default.removeItem(at: root) }
+        let id = UUID().uuidString.lowercased()
+        let legacy = #"{"version":1,"id":"\#(id)","goal":"read locally","status":"ready","revision":0,"steps":0,"history":[],"pending":null,"answer":null,"error":null}"#
+        let current = #"{"version":1,"id":"\#(id)","goal":"literal \"revision\":1,\"revision\":2 café","status":"ready","revision":1,"steps":0,"history":[],"pending":null,"answer":null,"error":null,"internalReads":0,"resultView":null,"exposedThrough":[]}"#
+        try store.save(legacy, id: id)
+        XCTAssertEqual(Array(try store.load(id: id).utf8), Array(legacy.utf8))
+        try store.save(current, id: id)
+        XCTAssertEqual(Array(try store.load(id: id).utf8), Array(current.utf8))
+        try store.archive(id: id)
+        try store.restore(id: id)
+        XCTAssertEqual(Array(try store.load(id: id).utf8), Array(current.utf8))
+    }
     func testInvalidInitialRevisionCannotPoisonFutureTaskUpdates() async throws {
         let (root, store) = try fixture(); defer { try? FileManager.default.removeItem(at: root) }
         for field in ["", ",\"revision\":null", ",\"revision\":\"1\"", ",\"revision\":-1", ",\"revision\":true", ",\"revision\":1.5"] {
