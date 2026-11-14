@@ -59,7 +59,7 @@ enum MemoryContextBuilder {
         for candidate in candidates.prefix(noteLimit) {
             let remaining = budget - used - separator.utf8.count
             guard remaining > 0 else { break }
-            let excerpt = prefix(candidate.text, bytes: remaining)
+            let excerpt = passage(candidate.text, queryWords: queryWords, bytes: remaining)
             guard !excerpt.text.isEmpty else { break }
             if output.isEmpty { output = disclaimer }
             output += separator + excerpt.text
@@ -70,6 +70,43 @@ enum MemoryContextBuilder {
         return Selection(text: output, includedCount: included, scannedCount: scanned, totalCount: notes.count,
                          truncated: included < notes.count || shortenedScan || shortenedOutput,
                          scanLimited: notes.count > scanned, queryTruncated: queryPrefix.shortened)
+    }
+
+    /// Keep the first whole matching word in a long selected note visible. Work
+    /// only within the already bounded scan; emitted evidence is never rewritten.
+    private static func passage(_ text: String, queryWords: Set<String>, bytes limit: Int) -> (text: String, shortened: Bool) {
+        let beginning = prefix(text, bytes: limit)
+        guard beginning.shortened, !queryWords.isEmpty else { return beginning }
+        let scalars = text.unicodeScalars
+        var cursor = scalars.startIndex
+        while cursor < scalars.endIndex {
+            let wordStart = cursor
+            while cursor < scalars.endIndex,
+                  CharacterSet.alphanumerics.contains(scalars[cursor]) || CharacterSet.nonBaseCharacters.contains(scalars[cursor]) {
+                scalars.formIndex(after: &cursor)
+            }
+            if cursor > wordStart {
+                let word = String(scalars[wordStart..<cursor])
+                if !words(word).isDisjoint(with: queryWords) {
+                    let matchBytes = word.utf8.count
+                    var start = wordStart
+                    var before = 0
+                    let contextBudget = max(0, limit - matchBytes) / 2
+                    while start > scalars.startIndex {
+                        let previous = scalars.index(before: start)
+                        let size = String(scalars[previous]).utf8.count
+                        guard size <= contextBudget - before else { break }
+                        before += size
+                        start = previous
+                    }
+                    let excerpt = prefix(String(scalars[start...]), bytes: limit)
+                    return (excerpt.text, start > scalars.startIndex || excerpt.shortened)
+                }
+            } else {
+                scalars.formIndex(after: &cursor)
+            }
+        }
+        return beginning
     }
 
     /// Scalar-safe UTF-8 prefix. Does not traverse the rest of an arbitrarily large input.

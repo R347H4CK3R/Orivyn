@@ -59,6 +59,24 @@ final class MemoryContextBuilderTests: XCTestCase {
         XCTAssertTrue(result.truncated)
         XCTAssertFalse(result.text.contains("unscannedneedle"))
     }
+    func testRelevantPassageNearEndSurvivesExcerptBudget() {
+        let text = String(repeating: "unrelated context ", count: 140) + "My passport appointment is Tuesday at noon."
+        let result = MemoryContextBuilder.build(notes: [MemoryNote(content: text)], query: "passport", maximumBytes: 512)
+        XCTAssertTrue(result.text.contains("passport appointment is Tuesday at noon."))
+        XCTAssertLessThanOrEqual(result.text.utf8.count, 512)
+        XCTAssertEqual(result.includedCount, 1)
+        XCTAssertTrue(result.truncated)
+    }
+    func testUnicodeMatchingPassagePreservesOriginalScalarsAndWholeWordRelevance() {
+        let text = "cafeteria " + String(repeating: "日本語🦉 ", count: 150) + "Cafe\u{301} preference: oat milk."
+        let result = MemoryContextBuilder.build(notes: [MemoryNote(content: text)], query: "CAFE", maximumBytes: 300)
+        XCTAssertTrue(result.text.contains("Cafe\u{301} preference: oat milk."))
+        XCTAssertFalse(result.text.contains("cafeteria"))
+        XCTAssertLessThanOrEqual(result.text.utf8.count, 300)
+        let excerpt = result.text.components(separatedBy: "\n- ").last!
+        XCTAssertNotNil(Data(text.utf8).range(of: Data(excerpt.utf8)), "The excerpt must be byte-exact contiguous source text")
+        XCTAssertTrue(result.truncated)
+    }
     func testEmptyInputProducesNoDisclaimer() {
         let result = MemoryContextBuilder.build(notes: [], query: "hello")
         XCTAssertEqual(result.text, "")
