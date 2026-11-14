@@ -1,0 +1,23 @@
+[
+  {
+    "case": "h06",
+    "exit": 0,
+    "elapsedSeconds": 35.14507589000277,
+    "stopReason": null,
+    "proposalMatchesFrozenIntent": true,
+    "scorer": {
+      "approved": true,
+      "reason": "matches-frozen-intent",
+      "noRepair": true
+    },
+    "kindProvenance": "predeclared-user-input-not-model-classification",
+    "workflowExecuted": false,
+    "admissionBypassed": true,
+    "AppleVerified": false
+  },
+  {
+    "case": "h07",
+    "notRun": "insufficient-start-memory",
+    "availableKiB": 4047308
+  }
+]

@@ -37,9 +37,208 @@
     "sha256": "a7fdd56173e99f2ac6022053c8feae47f587636043a89a02a20c2db1ca1f7c43"
   },
   "limitations": [
-    "Partial evidence: only core job completed; inference and UI not claimed passed.",
+    "All1967jobscompleted: coreandallUIpassed, inferencejobfailed asrecorded. Overallrunisnotfullygreen.",
     "Unsigned package structure/hash verified locally; no signing/install or physical-device verification.",
     "Opt-in model gate skips are not model passes.",
     "Earlier e4 inference failures, bcf0 desktop failures and67d9 native expiry remain preserved in adjacent source-specific evidence."
-  ]
+  ],
+  "inference": {
+    "sourceJob": "https://github.com/R347H4CK3R/Orivyn/actions/runs/43643387229/job/132595644087",
+    "conclusion": "failure",
+    "artifact": {
+      "source": "https://api.github.com/repos/R347H4CK3R/Orivyn/actions/artifacts/14134657466",
+      "sourceCommit": "1967be26c7603d41df85862ed6525c1f0acda2eb",
+      "id": 14134657466,
+      "zip": {
+        "path": "14134657466.zip",
+        "bytes": 148978566,
+        "sha256": "0daa2d11795c57f07ce66029c3a3ad2f0195efb9300ea745c09f77c7aabba22a"
+      },
+      "publishedDigestMatched": true
+    },
+    "outcomes": "vision=0\nnative_tools_q8=1\nnative_tools_q4=1\nlocal_agent_q4=1\n",
+    "gates": {
+      "vision": {
+        "log": {
+          "path": "14134657466/production-inference/vision/xcodebuild.log",
+          "bytes": 332789,
+          "sha256": "8dba5d29777d5a5c76871bf0eac5b18f535a51b1d1fb217c674ef45873bc4809"
+        },
+        "summary": "Executed 1 test, with 0 failures (0 unexpected) in 100.418 (100.436) seconds",
+        "attachments": [
+          {
+            "file": {
+              "path": "14134657466/production-inference/vision/attachments/5511D7CD-2917-42C7-A2C1-C3B9FE95781F.txt",
+              "bytes": 380,
+              "sha256": "d7b09982fcb85c6f812f969d53f28196ac2a8cfa0a45bcd79146a41a396b8888"
+            },
+            "content": "scope=iOS simulator CPU production runtime smoke\nmodelRevision=1bc3c9f74ceafd4c8d4411cc9cf188bba3798f91\nmodelSHA256=0cf76814555b8665149075b74ab6b5c1d428ea1d3d01c1918c12012e8d7c9f58\nprojectorSHA256=db9a3a1648cab1ebc3af4a2b0c8145dd8faebf6f7dd7b16e7dc1842229f14ac4\nelapsedSeconds=91.12740898132324\ncloseAcknowledged=true\nactualAnswer= A red square is displayed on a white background."
+          }
+        ],
+        "metrics": []
+      },
+      "native-tools-q8": {
+        "log": {
+          "path": "14134657466/production-inference/native-tools-q8/xcodebuild.log",
+          "bytes": 58529,
+          "sha256": "173366311d7f53ac148b3f4af378b18b8ad1547f7b3e1731c53be6454edf8a29"
+        },
+        "summary": "Executed 1 test, with 1 failure (1 unexpected) in 92.126 (92.136) seconds",
+        "attachments": [
+          {
+            "file": {
+              "path": "14134657466/production-inference/native-tools-q8/attachments/FF5172AF-B52F-4915-B0A5-2E2B7D2CD318.txt",
+              "bytes": 259,
+              "sha256": "956be88fceac87a85b44e35588cc2f7c4648d592c79d4e478e5789e94115e683"
+            },
+            "content": "scope=iOS simulator CPU production native-tools failure\nmodelID=qwen3-1.7b-q8_0\nmodelSHA256=061b54daade076b5d3362dac252678d17da8c68f07560be70818cace6590cb1a\nelapsedSeconds=90.70501899719238\nerror=nativeGenerationFailed(status: 3, elapsedSeconds: 61.122914333)"
+          }
+        ],
+        "metrics": [
+          "ORIVYN_NATIVE_GENERATION_METRICS version=1 status=3 phase=generation prompt_tokens=190 prompt_decoded=190 sampled_tokens=23 generated_tokens=23 prefill_calls=2 generation_calls=23 last_decode_status=0 setup_ms=27.779 prefill_ms=40517.056 sampling_ms=9.707 generation_ms=19682.788 validation_ms=0.000 max_decode_ms=27034.669 elapsed_ms=61122.722"
+        ]
+      },
+      "native-tools-q4": {
+        "log": {
+          "path": "14134657466/production-inference/native-tools-q4/xcodebuild.log",
+          "bytes": 58742,
+          "sha256": "9099541ebcd2d7ee63fa63a3955d7936dc2ade902ac24d850d4622bdd2fcf4f2"
+        },
+        "summary": "Executed 1 test, with 1 failure (1 unexpected) in 81.134 (81.139) seconds",
+        "attachments": [
+          {
+            "file": {
+              "path": "14134657466/production-inference/native-tools-q4/attachments/3C19CB8D-0207-4EF2-BFE5-5F9F081ED6D3.txt",
+              "bytes": 261,
+              "sha256": "e7c4732ddc4c6fc54623475154fa7fb8c9758beea2deb3c1563ecd3276fbc3d9"
+            },
+            "content": "scope=iOS simulator CPU production native-tools failure\nmodelID=qwen3-1.7b-q4_k_m\nmodelSHA256=d2387ca2dbfee2ffabce7120d3770dadca0b293052bc2f0e138fdc940d9bc7b5\nelapsedSeconds=80.60036504268646\nerror=nativeGenerationFailed(status: 3, elapsedSeconds: 66.633736209)"
+          }
+        ],
+        "metrics": [
+          "ORIVYN_NATIVE_GENERATION_METRICS version=1 status=3 phase=prefill prompt_tokens=190 prompt_decoded=128 sampled_tokens=0 generated_tokens=0 prefill_calls=1 generation_calls=0 last_decode_status=0 setup_ms=27.311 prefill_ms=66251.624 sampling_ms=0.000 generation_ms=0.000 validation_ms=0.000 max_decode_ms=66251.624 elapsed_ms=66626.235"
+        ]
+      },
+      "local-agent-q4": {
+        "log": {
+          "path": "14134657466/production-inference/local-agent-q4/xcodebuild.log",
+          "bytes": 58630,
+          "sha256": "735faf584c451183dadb8b1b9380ce03f5be23eddddb1a1396a5e9d26afd3e97"
+        },
+        "summary": "Executed 1 test, with 2 failures (0 unexpected) in 442.791 (442.799) seconds",
+        "attachments": [
+          {
+            "file": {
+              "path": "14134657466/production-inference/local-agent-q4/attachments/3A9BE810-E87C-42CF-9CF5-5F42B8C6BC3A.txt",
+              "bytes": 1282,
+              "sha256": "074aa661749dea64891a2c1b21bbe4ac26b754201b3a340a551b83a903d104db"
+            },
+            "content": "scope=one real simulator LocalAgentSession search/read task\nmodelSHA256=d2387ca2dbfee2ffabce7120d3770dadca0b293052bc2f0e138fdc940d9bc7b5\nelapsedSeconds=441.77198791503906\ntimeout=false\ncleanupFinished=true\nsessionError=none\nstate={\"version\":1,\"id\":\"ff52233d-b8ce-465d-aada-f6f6ec190249\",\"goal\":\"Find the saved conversation titled Orchid ledger using search_conversations. Then use read_conversation on its returned ID, messageIndex 0, offset 0. What exact stored verification marker does that message contain? Read the message before answering; do not guess.\",\"status\":\"answered\",\"revision\":3,\"steps\":1,\"history\":[{\"operationID\":\"ff52233d-b8ce-465d-aada-f6f6ec190249:1\",\"name\":\"search_conversations\",\"arguments\":{\"query\":\"Orchid ledger\",\"limit\":1},\"outcome\":\"succeeded\",\"result\":\"{\\\"matches\\\":[{\\\"evidenceSource\\\":\\\"title\\\",\\\"excerpt\\\":\\\"Orchid ledger\\\",\\\"excerptMayBeTruncated\\\":false,\\\"id\\\":\\\"E39E38E3-E801-4897-AC45-3161B24BD27A\\\",\\\"title\\\":\\\"Orchid ledger\\\"}],\\\"resultsLimited\\\":false,\\\"searchLimited\\\":false,\\\"searchedConversations\\\":1,\\\"totalMatchesInWindow\\\":1}\"}],\"pending\":null,\"answer\":\"The exact stored verification marker in the message is \\\"E39E38E3-E801-4897-AC45-3161B24BD27A\\\".\",\"error\":null,\"internalReads\":0,\"resultView\":{\"step\":1,\"offset\":0},\"exposedThrough\":[0]}"
+          }
+        ],
+        "metrics": []
+      }
+    },
+    "interpretation": "Q8 and Q4 are distinct model gates, not retries. Q8 expired during generation after23tokens; Q4 expired during first prefill with128of190prompttokens decoded, zero sampled. GenericQ4 task answered aftersearchonly, incorrectly copying conversationUUID as hiddenmarker. Cleanupfinished, timeoutfalse. Visionred-squarepassedonly."
+  },
+  "uiJobs": [
+    {
+      "sourceJob": "https://github.com/R347H4CK3R/Orivyn/actions/runs/43643387229/job/132595644127",
+      "name": "ui-2",
+      "passed": 11,
+      "skipped": 0,
+      "failed": 0,
+      "summary": "Executed 11 tests, with 0 failures (0 unexpected) in 390.941 (390.966) seconds",
+      "log": {
+        "path": "14134268840/20261114T220237Z-2753/native-tests.log",
+        "bytes": 379286,
+        "sha256": "aab0e8c490a63c18c606236913e4196840a303b881c24c56930aa4b3d682acda"
+      },
+      "artifact": {
+        "source": "https://api.github.com/repos/R347H4CK3R/Orivyn/actions/artifacts/14134268840",
+        "sourceCommit": "1967be26c7603d41df85862ed6525c1f0acda2eb",
+        "id": 14134268840,
+        "zip": {
+          "path": "14134268840.zip",
+          "bytes": 16323704,
+          "sha256": "6f718360ee8e25f9e593bdf09303a13b159a5b87b705899710f44c28c46f47e0"
+        },
+        "publishedDigestMatched": true
+      }
+    },
+    {
+      "sourceJob": "https://github.com/R347H4CK3R/Orivyn/actions/runs/43643387229/job/132595644144",
+      "name": "ui-0",
+      "passed": 23,
+      "skipped": 0,
+      "failed": 0,
+      "summary": "Executed 23 tests, with 0 failures (0 unexpected) in 883.175 (883.213) seconds",
+      "log": {
+        "path": "14134598961/20261114T220144Z-3171/native-tests.log",
+        "bytes": 531596,
+        "sha256": "d4d3c1481477a61eba47140570a7fdf2efc653ec455f38dcaa9f7ef477e94576"
+      },
+      "desktopCases": [
+        "Test Case '-[JarvisEVOUITests.VirtualDesktopIntegrationUITests testActualGuestFileAndCheckpointThenSafeClosePreservesDraft]' passed (144.591 seconds).",
+        "Test Case '-[JarvisEVOUITests.VirtualDesktopIntegrationUITests testCheckpointSurvivesAppRelaunchAndFreshGuestRead]' passed (250.254 seconds)."
+      ],
+      "artifact": {
+        "source": "https://api.github.com/repos/R347H4CK3R/Orivyn/actions/artifacts/14134598961",
+        "id": 14134598961,
+        "name": "Orivyn-native-capability-evidence-ui-0",
+        "zip": {
+          "path": "14134598961.zip",
+          "bytes": 88445968,
+          "sha256": "c007edac880722c37cbbaa1c52a50e5d85145cc8089bf0c7e0a0003ebf3cc5e2"
+        },
+        "publishedDigestMatched": true
+      }
+    },
+    {
+      "sourceJob": "https://github.com/R347H4CK3R/Orivyn/actions/runs/43643387229/job/132595644083",
+      "name": "ui-1",
+      "passed": 17,
+      "skipped": 0,
+      "failed": 0,
+      "summary": "Executed 17 tests, with 0 failures (0 unexpected) in 938.720 (938.750) seconds",
+      "log": {
+        "path": "14133924099/20261114T220020Z-1939/native-tests.log",
+        "bytes": 495578,
+        "sha256": "060cec360fdf02da40544188f31e27bac0f1fb9e6e002f3789f43b2d1023d6b9"
+      },
+      "artifact": {
+        "source": "https://api.github.com/repos/R347H4CK3R/Orivyn/actions/artifacts/14133924099",
+        "id": 14133924099,
+        "name": "Orivyn-native-capability-evidence-ui-1",
+        "zip": {
+          "path": "14133924099.zip",
+          "bytes": 19118289,
+          "sha256": "4eae119881068e18fec9741e8efb57fc1066bad05390b0312f79bab12048fe63"
+        },
+        "publishedDigestMatched": true
+      }
+    }
+  ],
+  "supportedFocusSignal": {
+    "status": "Both actual desktop UI tests passed using public button-enabled focus signal on this simulator source.",
+    "sources": [
+      "https://github.com/R347H4CK3R/Orivyn/blob/1967be26c7603d41df85862ed6525c1f0acda2eb/UITests/VirtualDesktopIntegrationUITests.swift#L175",
+      "https://github.com/R347H4CK3R/Orivyn/blob/1967be26c7603d41df85862ed6525c1f0acda2eb/JarvisEVO/UI/VirtualDesktopView.swift#L96"
+    ],
+    "verifiedSourceBlobSHAs": [
+      "4e5918cdb6de85d0fecc657eb75d2b1141590528",
+      "7a55d3c8f68f4bdc7389564660fbfdac22767cd5"
+    ]
+  },
+  "completedSummary": {
+    "corePassed": 958,
+    "coreSkipped": 4,
+    "uiPassed": 51,
+    "uiFailed": 0,
+    "inferenceJob": "failed",
+    "visionSmoke": "passed",
+    "nativeToolsQ8": "expired",
+    "nativeToolsQ4": "expired",
+    "genericAgentQ4": "failed grounded-answer and read-history requirements"
+  }
 }

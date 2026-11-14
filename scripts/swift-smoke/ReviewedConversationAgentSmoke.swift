@@ -58,7 +58,7 @@ import llama
                 try Data(proposalText.utf8).write(to:root.appendingPathComponent("proposal-raw.json"))
             }
         } catch { await engine.unload(); throw error }
-        let plan=try LocalReadPlan.parse(proposalText)
+        let plan=try LocalReadPlan.parseProposal(proposalText)
         // Synthetic explicit-review oracle. Never repair or replace a model plan.
         guard plan.kind=="conversation_read",plan.title==title,plan.messageIndexes==[1],
               [title,title.components(separatedBy:" ")[0]].contains(plan.query) else {

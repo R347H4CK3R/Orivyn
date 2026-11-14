@@ -50,7 +50,7 @@ actor FixtureProvider: AIProvider {
         model.provider=FixtureProvider(response:#"{"schema":1,"kind":"conversation_search","query":"Notes"}"#)
         session.prepareReadPlan(goal:"Read Notes",kind:"conversation_read");try await wait { !session.isRunning }
         precondition(session.proposedReadPlan==nil && session.snapshot?.id==old)
-        let valid=#"{"schema":1,"kind":"conversation_read","query":"Notes","title":"Notes","messageIndexes":[1]}"#
+        let valid=#"{"schema":1,"kind":"conversation_read","query":"Notes","title":"Notes","messageNumbers":[2]}"#
         model.provider=FixtureProvider(response:valid);model.finishDelay=true;session.prepareReadPlan(goal:"Original goal",kind:"conversation_read")
         try await wait { session.proposedReadPlan != nil };session.stop(cancelTask:true);try await wait { !session.isRunning }
         precondition(session.proposedReadPlan==nil && session.snapshot?.id==old && session.snapshot?.status=="ready")

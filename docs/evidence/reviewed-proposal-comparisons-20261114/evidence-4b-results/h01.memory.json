@@ -1,0 +1,197 @@
+[
+  {
+    "seconds": 0.0007742289963061921,
+    "availableKiB": 4749428,
+    "childRSSKiB": 88
+  },
+  {
+    "seconds": 0.5012023939998471,
+    "availableKiB": 4659748,
+    "childRSSKiB": 1155256
+  },
+  {
+    "seconds": 1.0276516559970332,
+    "availableKiB": 4682152,
+    "childRSSKiB": 2513200
+  },
+  {
+    "seconds": 1.5929984179965686,
+    "availableKiB": 4644816,
+    "childRSSKiB": 2521032
+  },
+  {
+    "seconds": 2.0968970600006287,
+    "availableKiB": 4521320,
+    "childRSSKiB": 2561160
+  },
+  {
+    "seconds": 2.597300681998604,
+    "availableKiB": 4094220,
+    "childRSSKiB": 2939516
+  },
+  {
+    "seconds": 3.0977286769993952,
+    "availableKiB": 3782144,
+    "childRSSKiB": 3227712
+  },
+  {
+    "seconds": 3.5982207159977406,
+    "availableKiB": 3529656,
+    "childRSSKiB": 3243292
+  },
+  {
+    "seconds": 4.1256494269982795,
+    "availableKiB": 3466936,
+    "childRSSKiB": 3248232
+  },
+  {
+    "seconds": 4.627446868995321,
+    "availableKiB": 3343676,
+    "childRSSKiB": 3248248
+  },
+  {
+    "seconds": 5.128166661997966,
+    "availableKiB": 3213420,
+    "childRSSKiB": 3263804
+  },
+  {
+    "seconds": 5.628578291994927,
+    "availableKiB": 3026652,
+    "childRSSKiB": 3280676
+  },
+  {
+    "seconds": 6.149164673995983,
+    "availableKiB": 2928972,
+    "childRSSKiB": 3287416
+  },
+  {
+    "seconds": 6.650118378995103,
+    "availableKiB": 2747984,
+    "childRSSKiB": 3344724
+  },
+  {
+    "seconds": 7.150590555000235,
+    "availableKiB": 2486304,
+    "childRSSKiB": 3344308
+  },
+  {
+    "seconds": 7.651492617995245,
+    "availableKiB": 2433776,
+    "childRSSKiB": 3232128
+  },
+  {
+    "seconds": 8.174398379997001,
+    "availableKiB": 2431588,
+    "childRSSKiB": 3240748
+  },
+  {
+    "seconds": 8.676232231999165,
+    "availableKiB": 2416412,
+    "childRSSKiB": 3230948
+  },
+  {
+    "seconds": 9.176787810996757,
+    "availableKiB": 2438328,
+    "childRSSKiB": 3255040
+  },
+  {
+    "seconds": 9.677190593996784,
+    "availableKiB": 2443276,
+    "childRSSKiB": 3266044
+  },
+  {
+    "seconds": 10.177571313994122,
+    "availableKiB": 2437684,
+    "childRSSKiB": 3227208
+  },
+  {
+    "seconds": 10.691627613996388,
+    "availableKiB": 2322296,
+    "childRSSKiB": 3062772
+  },
+  {
+    "seconds": 11.192453263996867,
+    "availableKiB": 2386080,
+    "childRSSKiB": 3036444
+  },
+  {
+    "seconds": 11.69284080399666,
+    "availableKiB": 2343872,
+    "childRSSKiB": 2956692
+  },
+  {
+    "seconds": 12.193263750996266,
+    "availableKiB": 2347288,
+    "childRSSKiB": 2793872
+  },
+  {
+    "seconds": 12.69497203699575,
+    "availableKiB": 2361844,
+    "childRSSKiB": 3064196
+  },
+  {
+    "seconds": 13.195468052996148,
+    "availableKiB": 2324944,
+    "childRSSKiB": 3090232
+  },
+  {
+    "seconds": 13.696179277998453,
+    "availableKiB": 2322468,
+    "childRSSKiB": 3090928
+  },
+  {
+    "seconds": 14.198319819995959,
+    "availableKiB": 2325888,
+    "childRSSKiB": 3090928
+  },
+  {
+    "seconds": 14.699773722997634,
+    "availableKiB": 2325576,
+    "childRSSKiB": 3090928
+  },
+  {
+    "seconds": 15.200719141997979,
+    "availableKiB": 2259752,
+    "childRSSKiB": 3147360
+  },
+  {
+    "seconds": 15.701150791996042,
+    "availableKiB": 2252420,
+    "childRSSKiB": 3155152
+  },
+  {
+    "seconds": 16.202184465000755,
+    "availableKiB": 2175364,
+    "childRSSKiB": 3242860
+  },
+  {
+    "seconds": 16.70380612599547,
+    "availableKiB": 2175364,
+    "childRSSKiB": 3242864
+  },
+  {
+    "seconds": 17.20431413500046,
+    "availableKiB": 2178944,
+    "childRSSKiB": 3243144
+  },
+  {
+    "seconds": 17.704723941998964,
+    "availableKiB": 2178944,
+    "childRSSKiB": 3243148
+  },
+  {
+    "seconds": 18.205408547000843,
+    "availableKiB": 2184928,
+    "childRSSKiB": 3243544
+  },
+  {
+    "seconds": 18.71773731799476,
+    "availableKiB": 2168660,
+    "childRSSKiB": 3257656
+  },
+  {
+    "seconds": 19.218922244996065,
+    "availableKiB": 2160320,
+    "childRSSKiB": 3279648
+  }
+]

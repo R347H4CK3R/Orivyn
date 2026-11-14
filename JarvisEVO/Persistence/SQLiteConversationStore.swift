@@ -37,6 +37,26 @@ private final class DatabaseHandle: @unchecked Sendable {
                 try execute("CREATE TABLE text_receive_receipts (transfer TEXT PRIMARY KEY, peer BLOB NOT NULL, generation TEXT NOT NULL, payload BLOB NOT NULL, summary BLOB NOT NULL);")
             }
             try execute("CREATE TABLE IF NOT EXISTS text_send_outbox (transfer TEXT PRIMARY KEY, sender BLOB NOT NULL, peer BLOB NOT NULL, generation TEXT NOT NULL, receiver_epoch TEXT NOT NULL, payload BLOB NOT NULL, delivered INTEGER NOT NULL DEFAULT 0 CHECK(delivered IN (0,1)));")
+            // Both absent denotes the explicit legacy migration. Partial loss is
+            // left damaged so ordinary history remains usable but sync fails closed.
+            var revocationStatement: OpaquePointer?
+            guard sqlite3_prepare_v2(raw,"SELECT name FROM sqlite_master WHERE type='table' AND name IN ('text_peer_revocation_state','text_peer_revocations')",-1,&revocationStatement,nil)==SQLITE_OK else { throw DatabaseError.operation("Could not inspect peer revocation metadata.") }
+            var revocationTables=0
+            while true {
+                let step=sqlite3_step(revocationStatement)
+                if step==SQLITE_DONE { break }
+                guard step==SQLITE_ROW else { sqlite3_finalize(revocationStatement);throw DatabaseError.operation("Could not inspect peer revocation metadata.") }
+                revocationTables += 1
+            }
+            sqlite3_finalize(revocationStatement)
+            var versionStatement: OpaquePointer?
+            guard sqlite3_prepare_v2(raw,"PRAGMA user_version",-1,&versionStatement,nil)==SQLITE_OK else { throw DatabaseError.operation("Could not inspect local schema version.") }
+            guard sqlite3_step(versionStatement)==SQLITE_ROW else { sqlite3_finalize(versionStatement);throw DatabaseError.operation("Could not inspect local schema version.") }
+            let schemaVersion=sqlite3_column_int64(versionStatement,0)
+            sqlite3_finalize(versionStatement)
+            if revocationTables==0 && schemaVersion==0 {
+                try execute("CREATE TABLE text_peer_revocation_state (singleton INTEGER PRIMARY KEY CHECK(singleton=1), version INTEGER NOT NULL CHECK(version=1)); INSERT INTO text_peer_revocation_state VALUES (1,1); CREATE TABLE text_peer_revocations (peer BLOB NOT NULL CHECK(typeof(peer)='blob' AND length(peer)=32), generation TEXT NOT NULL CHECK(typeof(generation)='text' AND length(generation)=36), PRIMARY KEY(peer,generation)); PRAGMA user_version=1;")
+            }
             try execute("COMMIT")
         } catch { try? execute("ROLLBACK"); throw error }
         #if os(iOS)
@@ -183,19 +203,20 @@ actor SQLiteConversationStore {
         }
     }
 
+    private func tableExists(_ name: String) throws -> Bool {
+        try withStatement("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?") { statement in
+            bind(name, to: 1, in: statement)
+            let result = sqlite3_step(statement)
+            guard result == SQLITE_ROW || result == SQLITE_DONE else {
+                throw DatabaseError.operation("Could not inspect local text transfer metadata.")
+            }
+            return result == SQLITE_ROW
+        }
+    }
+
     /// Runs inside the caller's erasure transaction. Missing receive metadata must
     /// not prevent user erasure. Do not recreate it: receives still fail closed.
     private func invalidateTextReceivesForErasure() throws {
-        func tableExists(_ name: String) throws -> Bool {
-            try withStatement("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?") { statement in
-                bind(name, to: 1, in: statement)
-                let result = sqlite3_step(statement)
-                guard result == SQLITE_ROW || result == SQLITE_DONE else {
-                    throw DatabaseError.operation("Could not inspect receive metadata during erasure.")
-                }
-                return result == SQLITE_ROW
-            }
-        }
         if try tableExists("text_receive_receipts") {
             // Real failures still roll back: otherwise private receipt text could remain.
             try database.execute("DELETE FROM text_receive_receipts")
@@ -261,6 +282,71 @@ actor SQLiteConversationStore {
         } catch { try? database.execute("ROLLBACK"); throw error }
     }
 
+    /// A durable rejection list only. Absence never authenticates a peer or grants
+    /// transport/receive consent. Native session invalidation is still required.
+    func isTextPeerRevoked(peerCertificateSHA256: Data, pairingGeneration: UUID) throws -> Bool {
+        guard peerCertificateSHA256.count == 32 else { throw DatabaseError.operation("Invalid peer revocation scope.") }
+        try validateTextRevocationMetadata()
+        return try withStatement("SELECT 1 FROM text_peer_revocations WHERE peer=? AND generation=?") { statement in
+            bind(peerCertificateSHA256,to:1,in:statement);bind(pairingGeneration.uuidString,to:2,in:statement)
+            let status=sqlite3_step(statement)
+            guard status==SQLITE_ROW || status==SQLITE_DONE else { throw DatabaseError.operation("Peer revocation metadata needs recovery.") }
+            return status==SQLITE_ROW
+        }
+    }
+
+    /// Revocation and scope-specific private transfer-metadata cleanup are one
+    /// transaction. Already committed conversations are preserved, not retracted.
+    /// Tombstones survive history erasure and have no silent expiry or eviction.
+    func revokeTextPeer(peerCertificateSHA256: Data, pairingGeneration: UUID) throws {
+        try Task.checkCancellation()
+        guard peerCertificateSHA256.count == 32 else { throw DatabaseError.operation("Invalid peer revocation scope.") }
+        try database.execute("BEGIN IMMEDIATE")
+        do {
+            if try !isTextPeerRevoked(peerCertificateSHA256:peerCertificateSHA256,pairingGeneration:pairingGeneration) {
+                try withStatement("SELECT COUNT(*) FROM text_peer_revocations") { statement in
+                    guard sqlite3_step(statement)==SQLITE_ROW,sqlite3_column_int64(statement,0)<10_000 else {
+                        throw DatabaseError.operation("Peer revocation storage is full; revocation was not committed.")
+                    }
+                }
+                try withStatement("INSERT INTO text_peer_revocations (peer,generation) VALUES (?,?)") { statement in
+                    bind(peerCertificateSHA256,to:1,in:statement);bind(pairingGeneration.uuidString,to:2,in:statement);try requireDone(statement)
+                }
+            }
+            // Missing unrelated transfer tables cannot prevent revocation. If an
+            // existing table cannot be cleared, report failure and roll back both.
+            for table in ["text_send_outbox","text_receive_receipts"] where try tableExists(table) {
+                try withStatement("DELETE FROM \(table) WHERE peer=? AND generation=?") { statement in
+                    bind(peerCertificateSHA256,to:1,in:statement);bind(pairingGeneration.uuidString,to:2,in:statement);try requireDone(statement)
+                }
+            }
+            try Task.checkCancellation()
+            try database.execute("COMMIT")
+        } catch { try? database.execute("ROLLBACK");throw error }
+    }
+
+    private func validateTextRevocationMetadata() throws {
+        // Deliberately no creation/repair here: lost state must never revive a peer.
+        // The SQLite header sentinel distinguishes a real legacy DB from loss of
+        // both metadata tables. It is not authenticated rollback/tamper detection.
+        try withStatement("PRAGMA user_version") { statement in
+            guard sqlite3_step(statement)==SQLITE_ROW,sqlite3_column_int64(statement,0)==1 else { throw DatabaseError.operation("Peer revocation schema needs recovery; text sync is paused.") }
+        }
+        guard try tableExists("text_peer_revocations") else { throw DatabaseError.operation("Peer revocation metadata needs recovery; text sync is paused.") }
+        try withStatement("SELECT singleton,version FROM text_peer_revocation_state") { statement in
+            guard sqlite3_step(statement)==SQLITE_ROW,
+                  sqlite3_column_type(statement,0)==SQLITE_INTEGER,sqlite3_column_int64(statement,0)==1,
+                  sqlite3_column_type(statement,1)==SQLITE_INTEGER,sqlite3_column_int64(statement,1)==1,
+                  sqlite3_step(statement)==SQLITE_DONE else { throw DatabaseError.operation("Peer revocation metadata needs recovery; text sync is paused.") }
+        }
+    }
+
+    private func requireTextPeerNotRevoked(_ peer: Data, generation: UUID) throws {
+        guard try !isTextPeerRevoked(peerCertificateSHA256:peer,pairingGeneration:generation) else {
+            throw DatabaseError.operation("This peer pairing generation is revoked; no text transfer was accepted.")
+        }
+    }
+
     /// Locally stages precisely the reviewed snapshot and destination labels.
     /// This performs no network operation and grants no authority to send bytes.
     /// Reject a changed/deleted selection instead of rebuilding reviewed content.
@@ -271,6 +357,7 @@ actor SQLiteConversationStore {
               senderCertificateSHA256 != peerCertificateSHA256 else { throw DatabaseError.operation("Invalid text send destination.") }
         try database.execute("BEGIN IMMEDIATE")
         do {
+            try requireTextPeerNotRevoked(peerCertificateSHA256,generation:pairingGeneration)
             for selected in snapshot.conversations {
                 try Task.checkCancellation()
                 try withStatement("SELECT payload FROM conversations WHERE id=?") { statement in
@@ -311,7 +398,8 @@ actor SQLiteConversationStore {
 
     /// Metadata only. Restart discovers pending drafts; it does not resume sending.
     func pendingTextSendIDs() throws -> [UUID] {
-        try withStatement("SELECT transfer FROM text_send_outbox WHERE delivered=0 ORDER BY transfer LIMIT 10001") { statement in
+        try validateTextRevocationMetadata()
+        return try withStatement("SELECT transfer FROM text_send_outbox WHERE delivered=0 ORDER BY transfer LIMIT 10001") { statement in
             var result: [UUID] = []
             while true {
                 let status = sqlite3_step(statement)
@@ -326,7 +414,8 @@ actor SQLiteConversationStore {
     }
 
     func textSend(id: UUID) throws -> StagedTextSend? {
-        try withStatement("SELECT peer,generation,receiver_epoch,payload,delivered,sender FROM text_send_outbox WHERE transfer=?") { statement in
+        try validateTextRevocationMetadata()
+        return try withStatement("SELECT peer,generation,receiver_epoch,payload,delivered,sender FROM text_send_outbox WHERE transfer=?") { statement in
             bind(id.uuidString, to: 1, in: statement)
             let status = sqlite3_step(statement)
             if status == SQLITE_DONE { return nil }
@@ -340,6 +429,7 @@ actor SQLiteConversationStore {
                   [0, 1].contains(sqlite3_column_int(statement, 4)) else {
                 throw DatabaseError.operation("Staged text send metadata needs recovery.")
             }
+            try requireTextPeerNotRevoked(blob(statement,at:0),generation:generation)
             let payload = blob(statement, at: 3)
             let backup = try decoder.decode(ConversationBackup.self, from: payload)
             guard backup.schemaVersion == 1, backup.memories.isEmpty else { throw ConversationError.invalidBackup }
@@ -427,6 +517,7 @@ actor SQLiteConversationStore {
         try database.execute("BEGIN IMMEDIATE")
         do {
             if let receive {
+                try requireTextPeerNotRevoked(receive.peerCertificateSHA256,generation:receive.pairingGeneration)
                 guard try textReceiveEpoch() == receive.epoch else { throw DatabaseError.operation("This receive session predates local history erasure.") }
                 if let prior = try textReceiveReceipt(data, identity: receive) {
                     try database.execute("COMMIT")

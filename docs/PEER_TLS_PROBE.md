@@ -19,3 +19,21 @@ Then implement exact immutable manifest/payload consent and durable sender/recei
 API references used: [Apple Network security options](https://developer.apple.com/documentation/network/security-options), [NWConnection](https://developer.apple.com/documentation/network/nwconnection), [bounded receive](https://developer.apple.com/documentation/network/nwconnection/receive(minimumincompletelength:maximumlength:completion:)). These references establish API intent, not execution evidence.
 
 Source review corrected a final-echo race: rejecting `isComplete` on an otherwise exact read could report failure when the successful remote closes. Native read now accepts the complete frame and rejects only insufficient data/error. Review also clarified that portable trailing-byte rejection does not establish an absence of extra bytes in native socket buffers. No native runtime test is claimed for either behavior.
+
+### Standalone Apple SDK compile gate
+
+The core Mac job (and local `ci_macos.sh` default `all`) runs
+`bash scripts/typecheck_peer_tls.sh <evidence-directory>`. It invokes Swift 6
+with complete strict concurrency against the arm64 iOS 26 simulator SDK, matching
+`project.yml`. Only that compiler command defines `ORIVYN_PEER_TLS_SPIKE`;
+production app flags remain unchanged. An additional compile-only source imports
+Network, Security and CryptoKit and references the probe type, so an unavailable
+module cannot silently turn the guarded probe into an empty successful check.
+Compiler output is retained as `peer-sdk-typecheck/compiler.log`; missing SDK,
+missing compiler, or compiler errors fail the core job.
+
+This gate performs no executable launch, listener creation, connection, pairing,
+or persistence action. Passing it establishes SDK/type compatibility only.
+Certificate trust semantics, mutual TLS handshake, cancellation under callbacks,
+and physical-device behavior remain separate unverified runtime requirements.
+Portable command mocks validate orchestration, not Apple compilation.

@@ -1,0 +1,12 @@
+{
+  "persistenceTestsPassed": 99,
+  "newRevocationTests": 11,
+  "pythonGuardsPassed": 8,
+  "realModelJobs": 0,
+  "networkConnections": 0,
+  "transportEnabled": false,
+  "iosVerified": false,
+  "twoDeviceSyncVerified": false,
+  "logicalRowCleanupOnly": true,
+  "independentReview": "no blocking issue"
+}

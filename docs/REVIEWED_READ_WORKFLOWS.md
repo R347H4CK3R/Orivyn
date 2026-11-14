@@ -10,7 +10,7 @@ Search titles in ordinary results are clipped. Reviewed searches therefore add n
 
 The proposal grammar fixes only the user-selected kind. Reviewed execution grammar permits only the derived actions, or an answer after every prerequisite is complete. Request modes are mutually exclusive at the engine boundary. Reducer and native checks remain authoritative even with a malicious or nonconforming provider. Six external calls and 3500 bytes of complete simultaneous evidence are unchanged; no result is dropped to fit. Final prose remains model-generated and unverified.
 
-## Verified portable results
+## Initial implementation portable results
 
 - 134 JavaScript tests; version1 compatibility and reviewed contract, Unicode paging, immutable scope, budget, interruption and forged terminal state checks.
 - 423 Foundation XCTest checks, including strict proposal parsing, conflicting request modes, exact long-title prefix collisions, current-search corruption/mutation, native contiguous Unicode pages and changed-source rejection. The existing Linux URLProtocol redirect exclusion remains.
@@ -23,3 +23,21 @@ The proposal grammar fixes only the user-selected kind. Reviewed execution gramm
 Five sequential development runs used the pinned Qwen3 1.7B Q4 model and actual production engine/proposal grammar, 384 output tokens and temperature0. Three mixed-kind attempts proposed search-only for a requested read and were rejected. The subsequent explicit user-read mode attempts retained the unchanged Orchid notebook/Maple journal goals and exact approval/answer checks. Orchid proposed a wrong title and indexes[1,2]; Maple proposed an expanded wrong title and indexes[1,2]. Both were rejected before task approval or tools. No query/title/index was repaired or injected. **Zero of these five runs completed the reviewed workflow or demonstrated answer accuracy.** These are safe proposal rejections, not successful model refusals or autonomous completions.
 
 The existing host goals still require finding the saved title, reading its second message, and reporting the exact synthetic verification code. All attempts, source/model manifests and raw proposals are preserved under `docs/evidence/reviewed-read-workflows-20261114/`. Independent frozen holdouts and additive real iOS session acceptance are separate gates, not replaced by these unit tests. Automatic sync, broad vision quality, general autonomy, iPhone installation/performance, and 1.0.0 completion remain unfinished or unverified. No remote publication was performed by this worker.
+
+Model proposals use `messageNumbers`, an array of one to three unique one-based
+integers from 1 through 10000. `LocalReadPlan.parseProposal` strictly validates
+that representation and subtracts one from each supplied number to produce the
+existing durable schema-1 `messageIndexes`. Stored plans, explicit approval, the
+reducer, and tool scope remain zero-based and unchanged. The conversion neither
+infers intent from the goal nor adds, removes, defaults, or repairs requested
+messages. Unknown fields and proposals using the internal index field fail.
+Search-only proposals retain their existing schema. Raw model evidence remains
+in its original representation; semantic checks compare the converted scope.
+
+Portable validation of this boundary does not establish model proposal quality
+or iOS acceptance. Existing model evidence predates this representation and is
+not reclassified as a pass; new real-model evaluations remain required.
+
+The additive native reviewed-plan fixture now requests “message number 1” instead of “message index 0”, matching the user-facing proposal representation while targeting the same first stored message. Its search, read, exact random-marker answer, persistence and cleanup assertions remain unchanged. The four earlier native model gates and their goals remain unchanged. This wording change is not evidence of a native pass or a comparison against the prior prompt.
+
+Later controlled comparisons are retained in docs/evidence/reviewed-proposal-comparisons-20261114: the clarified zero-based prompt completed both search-only cases, correctly stopped a missing target, and performed one real authorized read whose extra answer wording failed exact acceptance. Five other read proposals chose incorrect indexes. The larger 4B model diagnostic remained outside product admission and stopped with three cases unrun under its memory guard. These results are not reclassified by the new number representation.

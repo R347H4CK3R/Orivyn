@@ -1,0 +1,421 @@
+Building for debugging...
+[0/13] Write sources
+[2/13] Write swift-version--553A0786DAFFE0A1.txt
+[4/18] Emitting module JarvisEVO
+[5/22] Compiling JarvisEVO Conversation.swift
+[6/22] Compiling JarvisEVO ConversationSearch.swift
+[7/22] Compiling JarvisEVO ImageOCRResult.swift
+[8/22] Compiling JarvisEVO MemoryNote.swift
+[9/22] Compiling JarvisEVO OCRLineEvidence.swift
+[10/22] Compiling JarvisEVO PeerSyncControlFrame.swift
+[11/22] Compiling JarvisEVO ReviewedTextSnapshot.swift
+[12/22] Compiling JarvisEVO SQLiteConversationStore.swift
+[13/23] Wrapping AST for JarvisEVO for debugging
+[15/29] Emitting module JarvisEVOTests
+[16/34] Compiling JarvisEVOTests PersistenceTests.swift
+/workspace/scratch/8352eb8fe69c/orivyn-revocation-red2/Tests/JarvisEVOTests/TextPeerRevocationTests.swift:16:25: error: value of type 'SQLiteConversationStore' has no member 'revokeTextPeer'
+14 |         let received=ReviewedTextReceiveIdentity(epoch:try await store.textReceiveEpoch(),transfer:UUID(),peerCertificateSHA256:peer,pairingGeneration:generation)
+15 |         _=try await store.receiveReviewedText(snapshot.data,identity:received)
+16 |         try await store.revokeTextPeer(peerCertificateSHA256:peer,pairingGeneration:generation)
+   |                         `- error: value of type 'SQLiteConversationStore' has no member 'revokeTextPeer'
+17 |         let reopened=try SQLiteConversationStore(url:url)
+18 |         let revoked=try await reopened.isTextPeerRevoked(peerCertificateSHA256:peer,pairingGeneration:generation);XCTAssertTrue(revoked)
+
+/workspace/scratch/8352eb8fe69c/orivyn-revocation-red2/Tests/JarvisEVOTests/TextPeerRevocationTests.swift:18:40: error: value of type 'SQLiteConversationStore' has no member 'isTextPeerRevoked'
+16 |         try await store.revokeTextPeer(peerCertificateSHA256:peer,pairingGeneration:generation)
+17 |         let reopened=try SQLiteConversationStore(url:url)
+18 |         let revoked=try await reopened.isTextPeerRevoked(peerCertificateSHA256:peer,pairingGeneration:generation);XCTAssertTrue(revoked)
+   |                                        `- error: value of type 'SQLiteConversationStore' has no member 'isTextPeerRevoked'
+19 |         XCTAssertEqual(try count(url,"text_send_outbox"),0);XCTAssertEqual(try count(url,"text_receive_receipts"),0)
+20 |         do {_=try await stage(reopened,snapshot,generation);XCTFail("Revoked staging")}catch{}
+
+/workspace/scratch/8352eb8fe69c/orivyn-revocation-red2/Tests/JarvisEVOTests/TextPeerRevocationTests.swift:29:25: error: value of type 'SQLiteConversationStore' has no member 'revokeTextPeer'
+27 |         try await store.save(chat);let snapshot=try await store.exportTextSnapshot(ids:[chat.id])
+28 |         _=try await stage(store,snapshot,old);let other=try await stage(store,snapshot,fresh)
+29 |         try await store.revokeTextPeer(peerCertificateSHA256:peer,pairingGeneration:old)
+   |                         `- error: value of type 'SQLiteConversationStore' has no member 'revokeTextPeer'
+30 |         try await store.revokeTextPeer(peerCertificateSHA256:peer,pairingGeneration:old)
+31 |         XCTAssertEqual(try count(url,"text_peer_revocations"),1)
+
+/workspace/scratch/8352eb8fe69c/orivyn-revocation-red2/Tests/JarvisEVOTests/TextPeerRevocationTests.swift:30:25: error: value of type 'SQLiteConversationStore' has no member 'revokeTextPeer'
+28 |         _=try await stage(store,snapshot,old);let other=try await stage(store,snapshot,fresh)
+29 |         try await store.revokeTextPeer(peerCertificateSHA256:peer,pairingGeneration:old)
+30 |         try await store.revokeTextPeer(peerCertificateSHA256:peer,pairingGeneration:old)
+   |                         `- error: value of type 'SQLiteConversationStore' has no member 'revokeTextPeer'
+31 |         XCTAssertEqual(try count(url,"text_peer_revocations"),1)
+32 |         let pending=try await store.pendingTextSendIDs();XCTAssertEqual(pending,[other.identity.transfer])
+
+/workspace/scratch/8352eb8fe69c/orivyn-revocation-red2/Tests/JarvisEVOTests/TextPeerRevocationTests.swift:33:40: error: value of type 'SQLiteConversationStore' has no member 'isTextPeerRevoked'
+31 |         XCTAssertEqual(try count(url,"text_peer_revocations"),1)
+32 |         let pending=try await store.pendingTextSendIDs();XCTAssertEqual(pending,[other.identity.transfer])
+33 |         let newRevoked=try await store.isTextPeerRevoked(peerCertificateSHA256:peer,pairingGeneration:fresh);XCTAssertFalse(newRevoked) // Not revoked is NOT authenticated/approved.
+   |                                        `- error: value of type 'SQLiteConversationStore' has no member 'isTextPeerRevoked'
+34 |         try await store.deleteAll()
+35 |         let remains=try await store.isTextPeerRevoked(peerCertificateSHA256:peer,pairingGeneration:old);XCTAssertTrue(remains)
+
+/workspace/scratch/8352eb8fe69c/orivyn-revocation-red2/Tests/JarvisEVOTests/TextPeerRevocationTests.swift:35:37: error: value of type 'SQLiteConversationStore' has no member 'isTextPeerRevoked'
+33 |         let newRevoked=try await store.isTextPeerRevoked(peerCertificateSHA256:peer,pairingGeneration:fresh);XCTAssertFalse(newRevoked) // Not revoked is NOT authenticated/approved.
+34 |         try await store.deleteAll()
+35 |         let remains=try await store.isTextPeerRevoked(peerCertificateSHA256:peer,pairingGeneration:old);XCTAssertTrue(remains)
+   |                                     `- error: value of type 'SQLiteConversationStore' has no member 'isTextPeerRevoked'
+36 |     }
+37 |     func testFailedMetadataCleanupRollsBackRevocationAndKeepsDraft() async throws {
+
+/workspace/scratch/8352eb8fe69c/orivyn-revocation-red2/Tests/JarvisEVOTests/TextPeerRevocationTests.swift:41:29: error: value of type 'SQLiteConversationStore' has no member 'revokeTextPeer'
+39 |         try await store.save(chat);let snapshot=try await store.exportTextSnapshot(ids:[chat.id]);let draft=try await stage(store,snapshot,generation)
+40 |         try sql(url,"CREATE TRIGGER prevent_revoke BEFORE DELETE ON text_send_outbox BEGIN SELECT RAISE(ABORT,'fixture'); END")
+41 |         do {try await store.revokeTextPeer(peerCertificateSHA256:peer,pairingGeneration:generation);XCTFail("Partial revoke committed")}catch{}
+   |                             `- error: value of type 'SQLiteConversationStore' has no member 'revokeTextPeer'
+42 |         let revoked=try await store.isTextPeerRevoked(peerCertificateSHA256:peer,pairingGeneration:generation);XCTAssertFalse(revoked)
+43 |         let still=try await store.textSend(id:draft.identity.transfer);XCTAssertNotNil(still)
+
+/workspace/scratch/8352eb8fe69c/orivyn-revocation-red2/Tests/JarvisEVOTests/TextPeerRevocationTests.swift:42:37: error: value of type 'SQLiteConversationStore' has no member 'isTextPeerRevoked'
+40 |         try sql(url,"CREATE TRIGGER prevent_revoke BEFORE DELETE ON text_send_outbox BEGIN SELECT RAISE(ABORT,'fixture'); END")
+41 |         do {try await store.revokeTextPeer(peerCertificateSHA256:peer,pairingGeneration:generation);XCTFail("Partial revoke committed")}catch{}
+42 |         let revoked=try await store.isTextPeerRevoked(peerCertificateSHA256:peer,pairingGeneration:generation);XCTAssertFalse(revoked)
+   |                                     `- error: value of type 'SQLiteConversationStore' has no member 'isTextPeerRevoked'
+43 |         let still=try await store.textSend(id:draft.identity.transfer);XCTAssertNotNil(still)
+44 |     }
+
+/workspace/scratch/8352eb8fe69c/orivyn-revocation-red2/Tests/JarvisEVOTests/TextPeerRevocationTests.swift:49:29: error: value of type 'SQLiteConversationStore' has no member 'revokeTextPeer'
+47 |             let url=path(),store=try SQLiteConversationStore(url:url),generation=UUID(),chat=Conversation(title:"Local")
+48 |             try await store.save(chat);let snapshot=try await store.exportTextSnapshot(ids:[chat.id])
+49 |             try await store.revokeTextPeer(peerCertificateSHA256:peer,pairingGeneration:generation)
+   |                             `- error: value of type 'SQLiteConversationStore' has no member 'revokeTextPeer'
+50 |             try sql(url,"DROP TABLE \(table)")
+51 |             let reopened=try SQLiteConversationStore(url:url)
+
+/workspace/scratch/8352eb8fe69c/orivyn-revocation-red2/Tests/JarvisEVOTests/TextPeerRevocationTests.swift:52:38: error: value of type 'SQLiteConversationStore' has no member 'isTextPeerRevoked'
+50 |             try sql(url,"DROP TABLE \(table)")
+51 |             let reopened=try SQLiteConversationStore(url:url)
+52 |             do {_=try await reopened.isTextPeerRevoked(peerCertificateSHA256:peer,pairingGeneration:generation);XCTFail("Lost metadata silently healed")}catch{}
+   |                                      `- error: value of type 'SQLiteConversationStore' has no member 'isTextPeerRevoked'
+53 |             do {_=try await stage(reopened,snapshot,UUID());XCTFail("Unknown revocation state staged")}catch{}
+54 |             try await reopened.deleteAll();let remaining=try await reopened.list();XCTAssertTrue(remaining.isEmpty)
+[17/34] Compiling JarvisEVOTests ReviewedTextSnapshotTests.swift
+/workspace/scratch/8352eb8fe69c/orivyn-revocation-red2/Tests/JarvisEVOTests/TextPeerRevocationTests.swift:16:25: error: value of type 'SQLiteConversationStore' has no member 'revokeTextPeer'
+14 |         let received=ReviewedTextReceiveIdentity(epoch:try await store.textReceiveEpoch(),transfer:UUID(),peerCertificateSHA256:peer,pairingGeneration:generation)
+15 |         _=try await store.receiveReviewedText(snapshot.data,identity:received)
+16 |         try await store.revokeTextPeer(peerCertificateSHA256:peer,pairingGeneration:generation)
+   |                         `- error: value of type 'SQLiteConversationStore' has no member 'revokeTextPeer'
+17 |         let reopened=try SQLiteConversationStore(url:url)
+18 |         let revoked=try await reopened.isTextPeerRevoked(peerCertificateSHA256:peer,pairingGeneration:generation);XCTAssertTrue(revoked)
+
+/workspace/scratch/8352eb8fe69c/orivyn-revocation-red2/Tests/JarvisEVOTests/TextPeerRevocationTests.swift:18:40: error: value of type 'SQLiteConversationStore' has no member 'isTextPeerRevoked'
+16 |         try await store.revokeTextPeer(peerCertificateSHA256:peer,pairingGeneration:generation)
+17 |         let reopened=try SQLiteConversationStore(url:url)
+18 |         let revoked=try await reopened.isTextPeerRevoked(peerCertificateSHA256:peer,pairingGeneration:generation);XCTAssertTrue(revoked)
+   |                                        `- error: value of type 'SQLiteConversationStore' has no member 'isTextPeerRevoked'
+19 |         XCTAssertEqual(try count(url,"text_send_outbox"),0);XCTAssertEqual(try count(url,"text_receive_receipts"),0)
+20 |         do {_=try await stage(reopened,snapshot,generation);XCTFail("Revoked staging")}catch{}
+
+/workspace/scratch/8352eb8fe69c/orivyn-revocation-red2/Tests/JarvisEVOTests/TextPeerRevocationTests.swift:29:25: error: value of type 'SQLiteConversationStore' has no member 'revokeTextPeer'
+27 |         try await store.save(chat);let snapshot=try await store.exportTextSnapshot(ids:[chat.id])
+28 |         _=try await stage(store,snapshot,old);let other=try await stage(store,snapshot,fresh)
+29 |         try await store.revokeTextPeer(peerCertificateSHA256:peer,pairingGeneration:old)
+   |                         `- error: value of type 'SQLiteConversationStore' has no member 'revokeTextPeer'
+30 |         try await store.revokeTextPeer(peerCertificateSHA256:peer,pairingGeneration:old)
+31 |         XCTAssertEqual(try count(url,"text_peer_revocations"),1)
+
+/workspace/scratch/8352eb8fe69c/orivyn-revocation-red2/Tests/JarvisEVOTests/TextPeerRevocationTests.swift:30:25: error: value of type 'SQLiteConversationStore' has no member 'revokeTextPeer'
+28 |         _=try await stage(store,snapshot,old);let other=try await stage(store,snapshot,fresh)
+29 |         try await store.revokeTextPeer(peerCertificateSHA256:peer,pairingGeneration:old)
+30 |         try await store.revokeTextPeer(peerCertificateSHA256:peer,pairingGeneration:old)
+   |                         `- error: value of type 'SQLiteConversationStore' has no member 'revokeTextPeer'
+31 |         XCTAssertEqual(try count(url,"text_peer_revocations"),1)
+32 |         let pending=try await store.pendingTextSendIDs();XCTAssertEqual(pending,[other.identity.transfer])
+
+/workspace/scratch/8352eb8fe69c/orivyn-revocation-red2/Tests/JarvisEVOTests/TextPeerRevocationTests.swift:33:40: error: value of type 'SQLiteConversationStore' has no member 'isTextPeerRevoked'
+31 |         XCTAssertEqual(try count(url,"text_peer_revocations"),1)
+32 |         let pending=try await store.pendingTextSendIDs();XCTAssertEqual(pending,[other.identity.transfer])
+33 |         let newRevoked=try await store.isTextPeerRevoked(peerCertificateSHA256:peer,pairingGeneration:fresh);XCTAssertFalse(newRevoked) // Not revoked is NOT authenticated/approved.
+   |                                        `- error: value of type 'SQLiteConversationStore' has no member 'isTextPeerRevoked'
+34 |         try await store.deleteAll()
+35 |         let remains=try await store.isTextPeerRevoked(peerCertificateSHA256:peer,pairingGeneration:old);XCTAssertTrue(remains)
+
+/workspace/scratch/8352eb8fe69c/orivyn-revocation-red2/Tests/JarvisEVOTests/TextPeerRevocationTests.swift:35:37: error: value of type 'SQLiteConversationStore' has no member 'isTextPeerRevoked'
+33 |         let newRevoked=try await store.isTextPeerRevoked(peerCertificateSHA256:peer,pairingGeneration:fresh);XCTAssertFalse(newRevoked) // Not revoked is NOT authenticated/approved.
+34 |         try await store.deleteAll()
+35 |         let remains=try await store.isTextPeerRevoked(peerCertificateSHA256:peer,pairingGeneration:old);XCTAssertTrue(remains)
+   |                                     `- error: value of type 'SQLiteConversationStore' has no member 'isTextPeerRevoked'
+36 |     }
+37 |     func testFailedMetadataCleanupRollsBackRevocationAndKeepsDraft() async throws {
+
+/workspace/scratch/8352eb8fe69c/orivyn-revocation-red2/Tests/JarvisEVOTests/TextPeerRevocationTests.swift:41:29: error: value of type 'SQLiteConversationStore' has no member 'revokeTextPeer'
+39 |         try await store.save(chat);let snapshot=try await store.exportTextSnapshot(ids:[chat.id]);let draft=try await stage(store,snapshot,generation)
+40 |         try sql(url,"CREATE TRIGGER prevent_revoke BEFORE DELETE ON text_send_outbox BEGIN SELECT RAISE(ABORT,'fixture'); END")
+41 |         do {try await store.revokeTextPeer(peerCertificateSHA256:peer,pairingGeneration:generation);XCTFail("Partial revoke committed")}catch{}
+   |                             `- error: value of type 'SQLiteConversationStore' has no member 'revokeTextPeer'
+42 |         let revoked=try await store.isTextPeerRevoked(peerCertificateSHA256:peer,pairingGeneration:generation);XCTAssertFalse(revoked)
+43 |         let still=try await store.textSend(id:draft.identity.transfer);XCTAssertNotNil(still)
+
+/workspace/scratch/8352eb8fe69c/orivyn-revocation-red2/Tests/JarvisEVOTests/TextPeerRevocationTests.swift:42:37: error: value of type 'SQLiteConversationStore' has no member 'isTextPeerRevoked'
+40 |         try sql(url,"CREATE TRIGGER prevent_revoke BEFORE DELETE ON text_send_outbox BEGIN SELECT RAISE(ABORT,'fixture'); END")
+41 |         do {try await store.revokeTextPeer(peerCertificateSHA256:peer,pairingGeneration:generation);XCTFail("Partial revoke committed")}catch{}
+42 |         let revoked=try await store.isTextPeerRevoked(peerCertificateSHA256:peer,pairingGeneration:generation);XCTAssertFalse(revoked)
+   |                                     `- error: value of type 'SQLiteConversationStore' has no member 'isTextPeerRevoked'
+43 |         let still=try await store.textSend(id:draft.identity.transfer);XCTAssertNotNil(still)
+44 |     }
+
+/workspace/scratch/8352eb8fe69c/orivyn-revocation-red2/Tests/JarvisEVOTests/TextPeerRevocationTests.swift:49:29: error: value of type 'SQLiteConversationStore' has no member 'revokeTextPeer'
+47 |             let url=path(),store=try SQLiteConversationStore(url:url),generation=UUID(),chat=Conversation(title:"Local")
+48 |             try await store.save(chat);let snapshot=try await store.exportTextSnapshot(ids:[chat.id])
+49 |             try await store.revokeTextPeer(peerCertificateSHA256:peer,pairingGeneration:generation)
+   |                             `- error: value of type 'SQLiteConversationStore' has no member 'revokeTextPeer'
+50 |             try sql(url,"DROP TABLE \(table)")
+51 |             let reopened=try SQLiteConversationStore(url:url)
+
+/workspace/scratch/8352eb8fe69c/orivyn-revocation-red2/Tests/JarvisEVOTests/TextPeerRevocationTests.swift:52:38: error: value of type 'SQLiteConversationStore' has no member 'isTextPeerRevoked'
+50 |             try sql(url,"DROP TABLE \(table)")
+51 |             let reopened=try SQLiteConversationStore(url:url)
+52 |             do {_=try await reopened.isTextPeerRevoked(peerCertificateSHA256:peer,pairingGeneration:generation);XCTFail("Lost metadata silently healed")}catch{}
+   |                                      `- error: value of type 'SQLiteConversationStore' has no member 'isTextPeerRevoked'
+53 |             do {_=try await stage(reopened,snapshot,UUID());XCTFail("Unknown revocation state staged")}catch{}
+54 |             try await reopened.deleteAll();let remaining=try await reopened.list();XCTAssertTrue(remaining.isEmpty)
+[18/34] Compiling JarvisEVOTests TextPeerRevocationTests.swift
+/workspace/scratch/8352eb8fe69c/orivyn-revocation-red2/Tests/JarvisEVOTests/TextPeerRevocationTests.swift:16:25: error: value of type 'SQLiteConversationStore' has no member 'revokeTextPeer'
+14 |         let received=ReviewedTextReceiveIdentity(epoch:try await store.textReceiveEpoch(),transfer:UUID(),peerCertificateSHA256:peer,pairingGeneration:generation)
+15 |         _=try await store.receiveReviewedText(snapshot.data,identity:received)
+16 |         try await store.revokeTextPeer(peerCertificateSHA256:peer,pairingGeneration:generation)
+   |                         `- error: value of type 'SQLiteConversationStore' has no member 'revokeTextPeer'
+17 |         let reopened=try SQLiteConversationStore(url:url)
+18 |         let revoked=try await reopened.isTextPeerRevoked(peerCertificateSHA256:peer,pairingGeneration:generation);XCTAssertTrue(revoked)
+
+/workspace/scratch/8352eb8fe69c/orivyn-revocation-red2/Tests/JarvisEVOTests/TextPeerRevocationTests.swift:18:40: error: value of type 'SQLiteConversationStore' has no member 'isTextPeerRevoked'
+16 |         try await store.revokeTextPeer(peerCertificateSHA256:peer,pairingGeneration:generation)
+17 |         let reopened=try SQLiteConversationStore(url:url)
+18 |         let revoked=try await reopened.isTextPeerRevoked(peerCertificateSHA256:peer,pairingGeneration:generation);XCTAssertTrue(revoked)
+   |                                        `- error: value of type 'SQLiteConversationStore' has no member 'isTextPeerRevoked'
+19 |         XCTAssertEqual(try count(url,"text_send_outbox"),0);XCTAssertEqual(try count(url,"text_receive_receipts"),0)
+20 |         do {_=try await stage(reopened,snapshot,generation);XCTFail("Revoked staging")}catch{}
+
+/workspace/scratch/8352eb8fe69c/orivyn-revocation-red2/Tests/JarvisEVOTests/TextPeerRevocationTests.swift:29:25: error: value of type 'SQLiteConversationStore' has no member 'revokeTextPeer'
+27 |         try await store.save(chat);let snapshot=try await store.exportTextSnapshot(ids:[chat.id])
+28 |         _=try await stage(store,snapshot,old);let other=try await stage(store,snapshot,fresh)
+29 |         try await store.revokeTextPeer(peerCertificateSHA256:peer,pairingGeneration:old)
+   |                         `- error: value of type 'SQLiteConversationStore' has no member 'revokeTextPeer'
+30 |         try await store.revokeTextPeer(peerCertificateSHA256:peer,pairingGeneration:old)
+31 |         XCTAssertEqual(try count(url,"text_peer_revocations"),1)
+
+/workspace/scratch/8352eb8fe69c/orivyn-revocation-red2/Tests/JarvisEVOTests/TextPeerRevocationTests.swift:30:25: error: value of type 'SQLiteConversationStore' has no member 'revokeTextPeer'
+28 |         _=try await stage(store,snapshot,old);let other=try await stage(store,snapshot,fresh)
+29 |         try await store.revokeTextPeer(peerCertificateSHA256:peer,pairingGeneration:old)
+30 |         try await store.revokeTextPeer(peerCertificateSHA256:peer,pairingGeneration:old)
+   |                         `- error: value of type 'SQLiteConversationStore' has no member 'revokeTextPeer'
+31 |         XCTAssertEqual(try count(url,"text_peer_revocations"),1)
+32 |         let pending=try await store.pendingTextSendIDs();XCTAssertEqual(pending,[other.identity.transfer])
+
+/workspace/scratch/8352eb8fe69c/orivyn-revocation-red2/Tests/JarvisEVOTests/TextPeerRevocationTests.swift:33:40: error: value of type 'SQLiteConversationStore' has no member 'isTextPeerRevoked'
+31 |         XCTAssertEqual(try count(url,"text_peer_revocations"),1)
+32 |         let pending=try await store.pendingTextSendIDs();XCTAssertEqual(pending,[other.identity.transfer])
+33 |         let newRevoked=try await store.isTextPeerRevoked(peerCertificateSHA256:peer,pairingGeneration:fresh);XCTAssertFalse(newRevoked) // Not revoked is NOT authenticated/approved.
+   |                                        `- error: value of type 'SQLiteConversationStore' has no member 'isTextPeerRevoked'
+34 |         try await store.deleteAll()
+35 |         let remains=try await store.isTextPeerRevoked(peerCertificateSHA256:peer,pairingGeneration:old);XCTAssertTrue(remains)
+
+/workspace/scratch/8352eb8fe69c/orivyn-revocation-red2/Tests/JarvisEVOTests/TextPeerRevocationTests.swift:35:37: error: value of type 'SQLiteConversationStore' has no member 'isTextPeerRevoked'
+33 |         let newRevoked=try await store.isTextPeerRevoked(peerCertificateSHA256:peer,pairingGeneration:fresh);XCTAssertFalse(newRevoked) // Not revoked is NOT authenticated/approved.
+34 |         try await store.deleteAll()
+35 |         let remains=try await store.isTextPeerRevoked(peerCertificateSHA256:peer,pairingGeneration:old);XCTAssertTrue(remains)
+   |                                     `- error: value of type 'SQLiteConversationStore' has no member 'isTextPeerRevoked'
+36 |     }
+37 |     func testFailedMetadataCleanupRollsBackRevocationAndKeepsDraft() async throws {
+
+/workspace/scratch/8352eb8fe69c/orivyn-revocation-red2/Tests/JarvisEVOTests/TextPeerRevocationTests.swift:41:29: error: value of type 'SQLiteConversationStore' has no member 'revokeTextPeer'
+39 |         try await store.save(chat);let snapshot=try await store.exportTextSnapshot(ids:[chat.id]);let draft=try await stage(store,snapshot,generation)
+40 |         try sql(url,"CREATE TRIGGER prevent_revoke BEFORE DELETE ON text_send_outbox BEGIN SELECT RAISE(ABORT,'fixture'); END")
+41 |         do {try await store.revokeTextPeer(peerCertificateSHA256:peer,pairingGeneration:generation);XCTFail("Partial revoke committed")}catch{}
+   |                             `- error: value of type 'SQLiteConversationStore' has no member 'revokeTextPeer'
+42 |         let revoked=try await store.isTextPeerRevoked(peerCertificateSHA256:peer,pairingGeneration:generation);XCTAssertFalse(revoked)
+43 |         let still=try await store.textSend(id:draft.identity.transfer);XCTAssertNotNil(still)
+
+/workspace/scratch/8352eb8fe69c/orivyn-revocation-red2/Tests/JarvisEVOTests/TextPeerRevocationTests.swift:42:37: error: value of type 'SQLiteConversationStore' has no member 'isTextPeerRevoked'
+40 |         try sql(url,"CREATE TRIGGER prevent_revoke BEFORE DELETE ON text_send_outbox BEGIN SELECT RAISE(ABORT,'fixture'); END")
+41 |         do {try await store.revokeTextPeer(peerCertificateSHA256:peer,pairingGeneration:generation);XCTFail("Partial revoke committed")}catch{}
+42 |         let revoked=try await store.isTextPeerRevoked(peerCertificateSHA256:peer,pairingGeneration:generation);XCTAssertFalse(revoked)
+   |                                     `- error: value of type 'SQLiteConversationStore' has no member 'isTextPeerRevoked'
+43 |         let still=try await store.textSend(id:draft.identity.transfer);XCTAssertNotNil(still)
+44 |     }
+
+/workspace/scratch/8352eb8fe69c/orivyn-revocation-red2/Tests/JarvisEVOTests/TextPeerRevocationTests.swift:49:29: error: value of type 'SQLiteConversationStore' has no member 'revokeTextPeer'
+47 |             let url=path(),store=try SQLiteConversationStore(url:url),generation=UUID(),chat=Conversation(title:"Local")
+48 |             try await store.save(chat);let snapshot=try await store.exportTextSnapshot(ids:[chat.id])
+49 |             try await store.revokeTextPeer(peerCertificateSHA256:peer,pairingGeneration:generation)
+   |                             `- error: value of type 'SQLiteConversationStore' has no member 'revokeTextPeer'
+50 |             try sql(url,"DROP TABLE \(table)")
+51 |             let reopened=try SQLiteConversationStore(url:url)
+
+/workspace/scratch/8352eb8fe69c/orivyn-revocation-red2/Tests/JarvisEVOTests/TextPeerRevocationTests.swift:52:38: error: value of type 'SQLiteConversationStore' has no member 'isTextPeerRevoked'
+50 |             try sql(url,"DROP TABLE \(table)")
+51 |             let reopened=try SQLiteConversationStore(url:url)
+52 |             do {_=try await reopened.isTextPeerRevoked(peerCertificateSHA256:peer,pairingGeneration:generation);XCTFail("Lost metadata silently healed")}catch{}
+   |                                      `- error: value of type 'SQLiteConversationStore' has no member 'isTextPeerRevoked'
+53 |             do {_=try await stage(reopened,snapshot,UUID());XCTFail("Unknown revocation state staged")}catch{}
+54 |             try await reopened.deleteAll();let remaining=try await reopened.list();XCTAssertTrue(remaining.isEmpty)
+[19/34] Compiling JarvisEVOTests TextReceivePersistenceTests.swift
+/workspace/scratch/8352eb8fe69c/orivyn-revocation-red2/Tests/JarvisEVOTests/TextPeerRevocationTests.swift:16:25: error: value of type 'SQLiteConversationStore' has no member 'revokeTextPeer'
+14 |         let received=ReviewedTextReceiveIdentity(epoch:try await store.textReceiveEpoch(),transfer:UUID(),peerCertificateSHA256:peer,pairingGeneration:generation)
+15 |         _=try await store.receiveReviewedText(snapshot.data,identity:received)
+16 |         try await store.revokeTextPeer(peerCertificateSHA256:peer,pairingGeneration:generation)
+   |                         `- error: value of type 'SQLiteConversationStore' has no member 'revokeTextPeer'
+17 |         let reopened=try SQLiteConversationStore(url:url)
+18 |         let revoked=try await reopened.isTextPeerRevoked(peerCertificateSHA256:peer,pairingGeneration:generation);XCTAssertTrue(revoked)
+
+/workspace/scratch/8352eb8fe69c/orivyn-revocation-red2/Tests/JarvisEVOTests/TextPeerRevocationTests.swift:18:40: error: value of type 'SQLiteConversationStore' has no member 'isTextPeerRevoked'
+16 |         try await store.revokeTextPeer(peerCertificateSHA256:peer,pairingGeneration:generation)
+17 |         let reopened=try SQLiteConversationStore(url:url)
+18 |         let revoked=try await reopened.isTextPeerRevoked(peerCertificateSHA256:peer,pairingGeneration:generation);XCTAssertTrue(revoked)
+   |                                        `- error: value of type 'SQLiteConversationStore' has no member 'isTextPeerRevoked'
+19 |         XCTAssertEqual(try count(url,"text_send_outbox"),0);XCTAssertEqual(try count(url,"text_receive_receipts"),0)
+20 |         do {_=try await stage(reopened,snapshot,generation);XCTFail("Revoked staging")}catch{}
+
+/workspace/scratch/8352eb8fe69c/orivyn-revocation-red2/Tests/JarvisEVOTests/TextPeerRevocationTests.swift:29:25: error: value of type 'SQLiteConversationStore' has no member 'revokeTextPeer'
+27 |         try await store.save(chat);let snapshot=try await store.exportTextSnapshot(ids:[chat.id])
+28 |         _=try await stage(store,snapshot,old);let other=try await stage(store,snapshot,fresh)
+29 |         try await store.revokeTextPeer(peerCertificateSHA256:peer,pairingGeneration:old)
+   |                         `- error: value of type 'SQLiteConversationStore' has no member 'revokeTextPeer'
+30 |         try await store.revokeTextPeer(peerCertificateSHA256:peer,pairingGeneration:old)
+31 |         XCTAssertEqual(try count(url,"text_peer_revocations"),1)
+
+/workspace/scratch/8352eb8fe69c/orivyn-revocation-red2/Tests/JarvisEVOTests/TextPeerRevocationTests.swift:30:25: error: value of type 'SQLiteConversationStore' has no member 'revokeTextPeer'
+28 |         _=try await stage(store,snapshot,old);let other=try await stage(store,snapshot,fresh)
+29 |         try await store.revokeTextPeer(peerCertificateSHA256:peer,pairingGeneration:old)
+30 |         try await store.revokeTextPeer(peerCertificateSHA256:peer,pairingGeneration:old)
+   |                         `- error: value of type 'SQLiteConversationStore' has no member 'revokeTextPeer'
+31 |         XCTAssertEqual(try count(url,"text_peer_revocations"),1)
+32 |         let pending=try await store.pendingTextSendIDs();XCTAssertEqual(pending,[other.identity.transfer])
+
+/workspace/scratch/8352eb8fe69c/orivyn-revocation-red2/Tests/JarvisEVOTests/TextPeerRevocationTests.swift:33:40: error: value of type 'SQLiteConversationStore' has no member 'isTextPeerRevoked'
+31 |         XCTAssertEqual(try count(url,"text_peer_revocations"),1)
+32 |         let pending=try await store.pendingTextSendIDs();XCTAssertEqual(pending,[other.identity.transfer])
+33 |         let newRevoked=try await store.isTextPeerRevoked(peerCertificateSHA256:peer,pairingGeneration:fresh);XCTAssertFalse(newRevoked) // Not revoked is NOT authenticated/approved.
+   |                                        `- error: value of type 'SQLiteConversationStore' has no member 'isTextPeerRevoked'
+34 |         try await store.deleteAll()
+35 |         let remains=try await store.isTextPeerRevoked(peerCertificateSHA256:peer,pairingGeneration:old);XCTAssertTrue(remains)
+
+/workspace/scratch/8352eb8fe69c/orivyn-revocation-red2/Tests/JarvisEVOTests/TextPeerRevocationTests.swift:35:37: error: value of type 'SQLiteConversationStore' has no member 'isTextPeerRevoked'
+33 |         let newRevoked=try await store.isTextPeerRevoked(peerCertificateSHA256:peer,pairingGeneration:fresh);XCTAssertFalse(newRevoked) // Not revoked is NOT authenticated/approved.
+34 |         try await store.deleteAll()
+35 |         let remains=try await store.isTextPeerRevoked(peerCertificateSHA256:peer,pairingGeneration:old);XCTAssertTrue(remains)
+   |                                     `- error: value of type 'SQLiteConversationStore' has no member 'isTextPeerRevoked'
+36 |     }
+37 |     func testFailedMetadataCleanupRollsBackRevocationAndKeepsDraft() async throws {
+
+/workspace/scratch/8352eb8fe69c/orivyn-revocation-red2/Tests/JarvisEVOTests/TextPeerRevocationTests.swift:41:29: error: value of type 'SQLiteConversationStore' has no member 'revokeTextPeer'
+39 |         try await store.save(chat);let snapshot=try await store.exportTextSnapshot(ids:[chat.id]);let draft=try await stage(store,snapshot,generation)
+40 |         try sql(url,"CREATE TRIGGER prevent_revoke BEFORE DELETE ON text_send_outbox BEGIN SELECT RAISE(ABORT,'fixture'); END")
+41 |         do {try await store.revokeTextPeer(peerCertificateSHA256:peer,pairingGeneration:generation);XCTFail("Partial revoke committed")}catch{}
+   |                             `- error: value of type 'SQLiteConversationStore' has no member 'revokeTextPeer'
+42 |         let revoked=try await store.isTextPeerRevoked(peerCertificateSHA256:peer,pairingGeneration:generation);XCTAssertFalse(revoked)
+43 |         let still=try await store.textSend(id:draft.identity.transfer);XCTAssertNotNil(still)
+
+/workspace/scratch/8352eb8fe69c/orivyn-revocation-red2/Tests/JarvisEVOTests/TextPeerRevocationTests.swift:42:37: error: value of type 'SQLiteConversationStore' has no member 'isTextPeerRevoked'
+40 |         try sql(url,"CREATE TRIGGER prevent_revoke BEFORE DELETE ON text_send_outbox BEGIN SELECT RAISE(ABORT,'fixture'); END")
+41 |         do {try await store.revokeTextPeer(peerCertificateSHA256:peer,pairingGeneration:generation);XCTFail("Partial revoke committed")}catch{}
+42 |         let revoked=try await store.isTextPeerRevoked(peerCertificateSHA256:peer,pairingGeneration:generation);XCTAssertFalse(revoked)
+   |                                     `- error: value of type 'SQLiteConversationStore' has no member 'isTextPeerRevoked'
+43 |         let still=try await store.textSend(id:draft.identity.transfer);XCTAssertNotNil(still)
+44 |     }
+
+/workspace/scratch/8352eb8fe69c/orivyn-revocation-red2/Tests/JarvisEVOTests/TextPeerRevocationTests.swift:49:29: error: value of type 'SQLiteConversationStore' has no member 'revokeTextPeer'
+47 |             let url=path(),store=try SQLiteConversationStore(url:url),generation=UUID(),chat=Conversation(title:"Local")
+48 |             try await store.save(chat);let snapshot=try await store.exportTextSnapshot(ids:[chat.id])
+49 |             try await store.revokeTextPeer(peerCertificateSHA256:peer,pairingGeneration:generation)
+   |                             `- error: value of type 'SQLiteConversationStore' has no member 'revokeTextPeer'
+50 |             try sql(url,"DROP TABLE \(table)")
+51 |             let reopened=try SQLiteConversationStore(url:url)
+
+/workspace/scratch/8352eb8fe69c/orivyn-revocation-red2/Tests/JarvisEVOTests/TextPeerRevocationTests.swift:52:38: error: value of type 'SQLiteConversationStore' has no member 'isTextPeerRevoked'
+50 |             try sql(url,"DROP TABLE \(table)")
+51 |             let reopened=try SQLiteConversationStore(url:url)
+52 |             do {_=try await reopened.isTextPeerRevoked(peerCertificateSHA256:peer,pairingGeneration:generation);XCTFail("Lost metadata silently healed")}catch{}
+   |                                      `- error: value of type 'SQLiteConversationStore' has no member 'isTextPeerRevoked'
+53 |             do {_=try await stage(reopened,snapshot,UUID());XCTFail("Unknown revocation state staged")}catch{}
+54 |             try await reopened.deleteAll();let remaining=try await reopened.list();XCTAssertTrue(remaining.isEmpty)
+[20/34] Compiling JarvisEVOTests TextSendOutboxTests.swift
+/workspace/scratch/8352eb8fe69c/orivyn-revocation-red2/Tests/JarvisEVOTests/TextPeerRevocationTests.swift:16:25: error: value of type 'SQLiteConversationStore' has no member 'revokeTextPeer'
+14 |         let received=ReviewedTextReceiveIdentity(epoch:try await store.textReceiveEpoch(),transfer:UUID(),peerCertificateSHA256:peer,pairingGeneration:generation)
+15 |         _=try await store.receiveReviewedText(snapshot.data,identity:received)
+16 |         try await store.revokeTextPeer(peerCertificateSHA256:peer,pairingGeneration:generation)
+   |                         `- error: value of type 'SQLiteConversationStore' has no member 'revokeTextPeer'
+17 |         let reopened=try SQLiteConversationStore(url:url)
+18 |         let revoked=try await reopened.isTextPeerRevoked(peerCertificateSHA256:peer,pairingGeneration:generation);XCTAssertTrue(revoked)
+
+/workspace/scratch/8352eb8fe69c/orivyn-revocation-red2/Tests/JarvisEVOTests/TextPeerRevocationTests.swift:18:40: error: value of type 'SQLiteConversationStore' has no member 'isTextPeerRevoked'
+16 |         try await store.revokeTextPeer(peerCertificateSHA256:peer,pairingGeneration:generation)
+17 |         let reopened=try SQLiteConversationStore(url:url)
+18 |         let revoked=try await reopened.isTextPeerRevoked(peerCertificateSHA256:peer,pairingGeneration:generation);XCTAssertTrue(revoked)
+   |                                        `- error: value of type 'SQLiteConversationStore' has no member 'isTextPeerRevoked'
+19 |         XCTAssertEqual(try count(url,"text_send_outbox"),0);XCTAssertEqual(try count(url,"text_receive_receipts"),0)
+20 |         do {_=try await stage(reopened,snapshot,generation);XCTFail("Revoked staging")}catch{}
+
+/workspace/scratch/8352eb8fe69c/orivyn-revocation-red2/Tests/JarvisEVOTests/TextPeerRevocationTests.swift:29:25: error: value of type 'SQLiteConversationStore' has no member 'revokeTextPeer'
+27 |         try await store.save(chat);let snapshot=try await store.exportTextSnapshot(ids:[chat.id])
+28 |         _=try await stage(store,snapshot,old);let other=try await stage(store,snapshot,fresh)
+29 |         try await store.revokeTextPeer(peerCertificateSHA256:peer,pairingGeneration:old)
+   |                         `- error: value of type 'SQLiteConversationStore' has no member 'revokeTextPeer'
+30 |         try await store.revokeTextPeer(peerCertificateSHA256:peer,pairingGeneration:old)
+31 |         XCTAssertEqual(try count(url,"text_peer_revocations"),1)
+
+/workspace/scratch/8352eb8fe69c/orivyn-revocation-red2/Tests/JarvisEVOTests/TextPeerRevocationTests.swift:30:25: error: value of type 'SQLiteConversationStore' has no member 'revokeTextPeer'
+28 |         _=try await stage(store,snapshot,old);let other=try await stage(store,snapshot,fresh)
+29 |         try await store.revokeTextPeer(peerCertificateSHA256:peer,pairingGeneration:old)
+30 |         try await store.revokeTextPeer(peerCertificateSHA256:peer,pairingGeneration:old)
+   |                         `- error: value of type 'SQLiteConversationStore' has no member 'revokeTextPeer'
+31 |         XCTAssertEqual(try count(url,"text_peer_revocations"),1)
+32 |         let pending=try await store.pendingTextSendIDs();XCTAssertEqual(pending,[other.identity.transfer])
+
+/workspace/scratch/8352eb8fe69c/orivyn-revocation-red2/Tests/JarvisEVOTests/TextPeerRevocationTests.swift:33:40: error: value of type 'SQLiteConversationStore' has no member 'isTextPeerRevoked'
+31 |         XCTAssertEqual(try count(url,"text_peer_revocations"),1)
+32 |         let pending=try await store.pendingTextSendIDs();XCTAssertEqual(pending,[other.identity.transfer])
+33 |         let newRevoked=try await store.isTextPeerRevoked(peerCertificateSHA256:peer,pairingGeneration:fresh);XCTAssertFalse(newRevoked) // Not revoked is NOT authenticated/approved.
+   |                                        `- error: value of type 'SQLiteConversationStore' has no member 'isTextPeerRevoked'
+34 |         try await store.deleteAll()
+35 |         let remains=try await store.isTextPeerRevoked(peerCertificateSHA256:peer,pairingGeneration:old);XCTAssertTrue(remains)
+
+/workspace/scratch/8352eb8fe69c/orivyn-revocation-red2/Tests/JarvisEVOTests/TextPeerRevocationTests.swift:35:37: error: value of type 'SQLiteConversationStore' has no member 'isTextPeerRevoked'
+33 |         let newRevoked=try await store.isTextPeerRevoked(peerCertificateSHA256:peer,pairingGeneration:fresh);XCTAssertFalse(newRevoked) // Not revoked is NOT authenticated/approved.
+34 |         try await store.deleteAll()
+35 |         let remains=try await store.isTextPeerRevoked(peerCertificateSHA256:peer,pairingGeneration:old);XCTAssertTrue(remains)
+   |                                     `- error: value of type 'SQLiteConversationStore' has no member 'isTextPeerRevoked'
+36 |     }
+37 |     func testFailedMetadataCleanupRollsBackRevocationAndKeepsDraft() async throws {
+
+/workspace/scratch/8352eb8fe69c/orivyn-revocation-red2/Tests/JarvisEVOTests/TextPeerRevocationTests.swift:41:29: error: value of type 'SQLiteConversationStore' has no member 'revokeTextPeer'
+39 |         try await store.save(chat);let snapshot=try await store.exportTextSnapshot(ids:[chat.id]);let draft=try await stage(store,snapshot,generation)
+40 |         try sql(url,"CREATE TRIGGER prevent_revoke BEFORE DELETE ON text_send_outbox BEGIN SELECT RAISE(ABORT,'fixture'); END")
+41 |         do {try await store.revokeTextPeer(peerCertificateSHA256:peer,pairingGeneration:generation);XCTFail("Partial revoke committed")}catch{}
+   |                             `- error: value of type 'SQLiteConversationStore' has no member 'revokeTextPeer'
+42 |         let revoked=try await store.isTextPeerRevoked(peerCertificateSHA256:peer,pairingGeneration:generation);XCTAssertFalse(revoked)
+43 |         let still=try await store.textSend(id:draft.identity.transfer);XCTAssertNotNil(still)
+
+/workspace/scratch/8352eb8fe69c/orivyn-revocation-red2/Tests/JarvisEVOTests/TextPeerRevocationTests.swift:42:37: error: value of type 'SQLiteConversationStore' has no member 'isTextPeerRevoked'
+40 |         try sql(url,"CREATE TRIGGER prevent_revoke BEFORE DELETE ON text_send_outbox BEGIN SELECT RAISE(ABORT,'fixture'); END")
+41 |         do {try await store.revokeTextPeer(peerCertificateSHA256:peer,pairingGeneration:generation);XCTFail("Partial revoke committed")}catch{}
+42 |         let revoked=try await store.isTextPeerRevoked(peerCertificateSHA256:peer,pairingGeneration:generation);XCTAssertFalse(revoked)
+   |                                     `- error: value of type 'SQLiteConversationStore' has no member 'isTextPeerRevoked'
+43 |         let still=try await store.textSend(id:draft.identity.transfer);XCTAssertNotNil(still)
+44 |     }
+
+/workspace/scratch/8352eb8fe69c/orivyn-revocation-red2/Tests/JarvisEVOTests/TextPeerRevocationTests.swift:49:29: error: value of type 'SQLiteConversationStore' has no member 'revokeTextPeer'
+47 |             let url=path(),store=try SQLiteConversationStore(url:url),generation=UUID(),chat=Conversation(title:"Local")
+48 |             try await store.save(chat);let snapshot=try await store.exportTextSnapshot(ids:[chat.id])
+49 |             try await store.revokeTextPeer(peerCertificateSHA256:peer,pairingGeneration:generation)
+   |                             `- error: value of type 'SQLiteConversationStore' has no member 'revokeTextPeer'
+50 |             try sql(url,"DROP TABLE \(table)")
+51 |             let reopened=try SQLiteConversationStore(url:url)
+
+/workspace/scratch/8352eb8fe69c/orivyn-revocation-red2/Tests/JarvisEVOTests/TextPeerRevocationTests.swift:52:38: error: value of type 'SQLiteConversationStore' has no member 'isTextPeerRevoked'
+50 |             try sql(url,"DROP TABLE \(table)")
+51 |             let reopened=try SQLiteConversationStore(url:url)
+52 |             do {_=try await reopened.isTextPeerRevoked(peerCertificateSHA256:peer,pairingGeneration:generation);XCTFail("Lost metadata silently healed")}catch{}
+   |                                      `- error: value of type 'SQLiteConversationStore' has no member 'isTextPeerRevoked'
+53 |             do {_=try await stage(reopened,snapshot,UUID());XCTFail("Unknown revocation state staged")}catch{}
+54 |             try await reopened.deleteAll();let remaining=try await reopened.list();XCTAssertTrue(remaining.isEmpty)
+[21/34] Compiling JarvisEVOTests ConversationSearchTests.swift
+[22/34] Compiling JarvisEVOTests ConversationTests.swift
+[23/34] Compiling JarvisEVOTests ImageIdentityPersistenceTests.swift
+[24/34] Compiling JarvisEVOTests OCRLineEvidenceTests.swift
+[25/34] Compiling JarvisEVOTests PeerSyncControlFrameTests.swift
+error: fatalError
+

@@ -59,8 +59,8 @@ extension LocalAgentGrammar {
     private static let proposalSource = #"""
 root ::= "{" ws "\"schema\"" ws ":" ws "1" ws "," ws "\"kind\"" ws ":" ws (search | read) ws "}"
 search ::= "\"conversation_search\"" ws "," ws "\"query\"" ws ":" ws string
-read ::= "\"conversation_read\"" ws "," ws "\"query\"" ws ":" ws string ws "," ws "\"title\"" ws ":" ws string ws "," ws "\"messageIndexes\"" ws ":" ws "[" ws index (ws "," ws index)? (ws "," ws index)? ws "]"
-index ::= "0" | [1-9] [0-9]? [0-9]? [0-9]?
+read ::= "\"conversation_read\"" ws "," ws "\"query\"" ws ":" ws string ws "," ws "\"title\"" ws ":" ws string ws "," ws "\"messageNumbers\"" ws ":" ws "[" ws index (ws "," ws index)? (ws "," ws index)? ws "]"
+index ::= "10000" | [1-9] [0-9]? [0-9]? [0-9]?
 ws ::= [ \t\n\r]*
 string ::= "\"" char+ "\""
 char ::= [^"\\\x00-\x1F] | "\\" (["\\/bfnrt] | "u" [0-9a-fA-F] [0-9a-fA-F] [0-9a-fA-F] [0-9a-fA-F])

@@ -1,0 +1,14 @@
+[
+  "/workspace/shared/swift-recovered/swift-6.1.3-RELEASE-ubuntu22.04/usr/bin/swift",
+  "test",
+  "--jobs",
+  "2",
+  "--package-path",
+  "/workspace/scratch/8352eb8fe69c/orivyn-revocation-final",
+  "--cache-path",
+  "/workspace/scratch/8352eb8fe69c/orivyn-revocation-final/.cache",
+  "--config-path",
+  "/workspace/scratch/8352eb8fe69c/orivyn-revocation-final/.config",
+  "--security-path",
+  "/workspace/scratch/8352eb8fe69c/orivyn-revocation-final/.security"
+]

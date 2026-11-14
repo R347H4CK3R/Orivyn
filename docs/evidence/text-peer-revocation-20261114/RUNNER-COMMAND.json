@@ -1,0 +1,12 @@
+[
+  "python",
+  "scripts/run_system_sqlite_tests.py",
+  "--swift",
+  "/workspace/shared/swift-recovered/swift-6.1.3-RELEASE-ubuntu22.04/usr/bin/swift",
+  "--sqlite-header",
+  "/workspace/scratch/8352eb8fe69c/orivyn-release-core-audit/sqlite/sqlite3.h",
+  "--sqlite-library",
+  "/usr/lib/x86_64-linux-gnu/libsqlite3.so.0",
+  "--output",
+  "<new-empty-output-directory>"
+]

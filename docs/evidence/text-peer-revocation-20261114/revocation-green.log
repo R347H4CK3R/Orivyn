@@ -1,0 +1,74 @@
+Building for debugging...
+[0/13] Write sources
+[2/13] Write swift-version--553A0786DAFFE0A1.txt
+[4/18] Emitting module JarvisEVO
+[5/22] Compiling JarvisEVO Conversation.swift
+[6/22] Compiling JarvisEVO ConversationSearch.swift
+[7/22] Compiling JarvisEVO ImageOCRResult.swift
+[8/22] Compiling JarvisEVO MemoryNote.swift
+[9/22] Compiling JarvisEVO OCRLineEvidence.swift
+/workspace/scratch/8352eb8fe69c/orivyn-revocation-green/Sources/JarvisEVO/SQLiteConversationStore.swift:312:81: error: cannot find 'tableExists' in scope
+310 |             // Missing unrelated transfer tables cannot prevent revocation. If an
+311 |             // existing table cannot be cleared, report failure and roll back both.
+312 |             for table in ["text_send_outbox","text_receive_receipts"] where try tableExists(table) {
+    |                                                                                 `- error: cannot find 'tableExists' in scope
+313 |                 try withStatement("DELETE FROM \(table) WHERE peer=? AND generation=?") { statement in
+314 |                     bind(peerCertificateSHA256,to:1,in:statement);bind(pairingGeneration.uuidString,to:2,in:statement);try requireDone(statement)
+
+/workspace/scratch/8352eb8fe69c/orivyn-revocation-green/Sources/JarvisEVO/SQLiteConversationStore.swift:324:19: error: cannot find 'tableExists' in scope
+322 |     private func validateTextRevocationMetadata() throws {
+323 |         // Deliberately no creation/repair here: lost state must never revive a peer.
+324 |         guard try tableExists("text_peer_revocations") else { throw DatabaseError.operation("Peer revocation metadata needs recovery; text sync is paused.") }
+    |                   `- error: cannot find 'tableExists' in scope
+325 |         try withStatement("SELECT singleton,version FROM text_peer_revocation_state") { statement in
+326 |             guard sqlite3_step(statement)==SQLITE_ROW,
+[10/22] Compiling JarvisEVO PeerSyncControlFrame.swift
+/workspace/scratch/8352eb8fe69c/orivyn-revocation-green/Sources/JarvisEVO/SQLiteConversationStore.swift:312:81: error: cannot find 'tableExists' in scope
+310 |             // Missing unrelated transfer tables cannot prevent revocation. If an
+311 |             // existing table cannot be cleared, report failure and roll back both.
+312 |             for table in ["text_send_outbox","text_receive_receipts"] where try tableExists(table) {
+    |                                                                                 `- error: cannot find 'tableExists' in scope
+313 |                 try withStatement("DELETE FROM \(table) WHERE peer=? AND generation=?") { statement in
+314 |                     bind(peerCertificateSHA256,to:1,in:statement);bind(pairingGeneration.uuidString,to:2,in:statement);try requireDone(statement)
+
+/workspace/scratch/8352eb8fe69c/orivyn-revocation-green/Sources/JarvisEVO/SQLiteConversationStore.swift:324:19: error: cannot find 'tableExists' in scope
+322 |     private func validateTextRevocationMetadata() throws {
+323 |         // Deliberately no creation/repair here: lost state must never revive a peer.
+324 |         guard try tableExists("text_peer_revocations") else { throw DatabaseError.operation("Peer revocation metadata needs recovery; text sync is paused.") }
+    |                   `- error: cannot find 'tableExists' in scope
+325 |         try withStatement("SELECT singleton,version FROM text_peer_revocation_state") { statement in
+326 |             guard sqlite3_step(statement)==SQLITE_ROW,
+[11/22] Compiling JarvisEVO ReviewedTextSnapshot.swift
+/workspace/scratch/8352eb8fe69c/orivyn-revocation-green/Sources/JarvisEVO/SQLiteConversationStore.swift:312:81: error: cannot find 'tableExists' in scope
+310 |             // Missing unrelated transfer tables cannot prevent revocation. If an
+311 |             // existing table cannot be cleared, report failure and roll back both.
+312 |             for table in ["text_send_outbox","text_receive_receipts"] where try tableExists(table) {
+    |                                                                                 `- error: cannot find 'tableExists' in scope
+313 |                 try withStatement("DELETE FROM \(table) WHERE peer=? AND generation=?") { statement in
+314 |                     bind(peerCertificateSHA256,to:1,in:statement);bind(pairingGeneration.uuidString,to:2,in:statement);try requireDone(statement)
+
+/workspace/scratch/8352eb8fe69c/orivyn-revocation-green/Sources/JarvisEVO/SQLiteConversationStore.swift:324:19: error: cannot find 'tableExists' in scope
+322 |     private func validateTextRevocationMetadata() throws {
+323 |         // Deliberately no creation/repair here: lost state must never revive a peer.
+324 |         guard try tableExists("text_peer_revocations") else { throw DatabaseError.operation("Peer revocation metadata needs recovery; text sync is paused.") }
+    |                   `- error: cannot find 'tableExists' in scope
+325 |         try withStatement("SELECT singleton,version FROM text_peer_revocation_state") { statement in
+326 |             guard sqlite3_step(statement)==SQLITE_ROW,
+[12/22] Compiling JarvisEVO SQLiteConversationStore.swift
+/workspace/scratch/8352eb8fe69c/orivyn-revocation-green/Sources/JarvisEVO/SQLiteConversationStore.swift:312:81: error: cannot find 'tableExists' in scope
+310 |             // Missing unrelated transfer tables cannot prevent revocation. If an
+311 |             // existing table cannot be cleared, report failure and roll back both.
+312 |             for table in ["text_send_outbox","text_receive_receipts"] where try tableExists(table) {
+    |                                                                                 `- error: cannot find 'tableExists' in scope
+313 |                 try withStatement("DELETE FROM \(table) WHERE peer=? AND generation=?") { statement in
+314 |                     bind(peerCertificateSHA256,to:1,in:statement);bind(pairingGeneration.uuidString,to:2,in:statement);try requireDone(statement)
+
+/workspace/scratch/8352eb8fe69c/orivyn-revocation-green/Sources/JarvisEVO/SQLiteConversationStore.swift:324:19: error: cannot find 'tableExists' in scope
+322 |     private func validateTextRevocationMetadata() throws {
+323 |         // Deliberately no creation/repair here: lost state must never revive a peer.
+324 |         guard try tableExists("text_peer_revocations") else { throw DatabaseError.operation("Peer revocation metadata needs recovery; text sync is paused.") }
+    |                   `- error: cannot find 'tableExists' in scope
+325 |         try withStatement("SELECT singleton,version FROM text_peer_revocation_state") { statement in
+326 |             guard sqlite3_step(statement)==SQLITE_ROW,
+error: fatalError
+

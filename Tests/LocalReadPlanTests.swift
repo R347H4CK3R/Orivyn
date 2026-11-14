@@ -91,3 +91,30 @@ final class NativeReviewedPaginationTests: XCTestCase {
         XCTAssertThrowsError(try LocalReadWorkflowPolicy.derive(plan:plan,history:history,conversations:[conversation]))
     }
 }
+
+extension LocalReadPlanTests {
+    func testProposalNumbersConvertExactlyWithoutChangingStoredSchema() throws {
+        let raw = #"{"schema":1,"kind":"conversation_read","query":"Notes","title":"Notes","messageNumbers":[1,10000,2]}"#
+        let plan = try LocalReadPlan.parseProposal(raw)
+        XCTAssertEqual(plan.messageIndexes, [0,9999,1])
+        let persisted = try plan.encoded()
+        XCTAssertFalse(persisted.contains("messageNumbers"))
+        XCTAssertEqual(try LocalReadPlan.parse(persisted), plan)
+        XCTAssertThrowsError(try LocalReadPlan.parse(raw))
+    }
+    func testProposalNumbersRejectInvalidOrAmbiguousScope() throws {
+        let raw = #"{"schema":1,"kind":"conversation_read","query":"Notes","title":"Notes","messageNumbers":[1]}"#
+        for numbers in ["[]","[0]","[10001]","[1,1]","[1,2,3,4]","[1.5]","[true]","[\"1\"]"] {
+            XCTAssertThrowsError(try LocalReadPlan.parseProposal(raw.replacingOccurrences(of:"[1]",with:numbers)))
+        }
+        for invalid in [raw.replacingOccurrences(of:"messageNumbers",with:"messageIndexes"),
+                        raw.replacingOccurrences(of:"\"schema\":1",with:"\"schema\":2"),
+                        raw.replacingOccurrences(of:"\"schema\":1",with:"\"schema\":1,\"extra\":true"),
+                        raw.replacingOccurrences(of:"\"schema\":1",with:"\"schema\":1,\"schema\":1")] {
+            XCTAssertThrowsError(try LocalReadPlan.parseProposal(invalid))
+        }
+        let search = #"{"schema":1,"kind":"conversation_search","query":"Notes"}"#
+        XCTAssertEqual(try LocalReadPlan.parseProposal(search), try LocalReadPlan.parse(search))
+        XCTAssertThrowsError(try LocalReadPlan.parseProposal(search.replacingOccurrences(of:"\"query\":",with:"\"messageNumbers\":[1],\"query\":")))
+    }
+}

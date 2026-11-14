@@ -82,7 +82,7 @@ final class LocalAgentSession {
                 }
                 try checkOwner(identity)
                 guard model.selectedLocalAgentProvider?.id == provider.id else { throw LocalAgentError.staleOwner }
-                let plan=try LocalReadPlan.parse(text)
+                let plan=try LocalReadPlan.parseProposal(text)
                 guard plan.kind==kind else { throw LocalAgentError.invalidState }
                 proposedReadPlan=LocalReadPlanProposal(goal:goal,plan:plan); proposedProviderID=provider.id
                 status="Review the proposed scope. Approval creates a task; Run remains explicit."

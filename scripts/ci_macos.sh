@@ -22,6 +22,9 @@ python3 -m unittest discover -s scripts/tests -v 2>&1 | tee "$ARTIFACTS/package-
 if ! command -v xcodebuild >/dev/null; then echo 'Xcode 26+ is required; native tests have not run.' >&2; exit 2; fi
 xcodebuild -version | tee "$ARTIFACTS/xcode-version.txt"
 xcodebuild -showsdks | tee "$ARTIFACTS/sdks.txt"
+if [[ "$NATIVE_TEST_GROUP" == core || "$NATIVE_TEST_GROUP" == all ]]; then
+  bash scripts/typecheck_peer_tls.sh "$ARTIFACTS/peer-sdk-typecheck"
+fi
 xcodebuild -showsdks | grep -Eq 'iphoneos2[6-9]' || { echo 'iOS 26+ SDK is required.' >&2; exit 2; }
 if ! command -v xcodegen >/dev/null; then brew install xcodegen; fi
 bash scripts/bootstrap_llama.sh

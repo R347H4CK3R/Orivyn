@@ -93,7 +93,7 @@ final class ProductionReviewedReadPlanTests: XCTestCase {
         let provider = try XCTUnwrap(model.selectedLocalAgentProvider)
         let taskDirectory = root.appendingPathComponent("Tasks", isDirectory: true)
         let session = try LocalAgentSession(model: model, directory: taskDirectory)
-        let goal = "Search saved conversations for Cedar journal, select the exact title Cedar journal, and read message index 0. What exact stored verification marker does that message contain? Propose these reads for my approval before running them."
+        let goal = "Search saved conversations for Cedar journal, select the exact title Cedar journal, and read message number 1. What exact stored verification marker does that message contain? Propose these reads for my approval before running them."
         XCTAssertFalse(goal.contains(marker))
         XCTAssertNil(session.snapshot)
         XCTAssertNil(session.proposedReadPlan)
