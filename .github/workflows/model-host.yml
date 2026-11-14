@@ -57,7 +57,7 @@ jobs:
           set -uo pipefail
           set +e
           aggregate=0
-          for fixture in orchid maple pagination; do
+          for fixture in orchid maple pagination quoted-title; do
             ORIVYN_CONVERSATION_FIXTURE="$fixture" python3 -B scripts/run_llama_engine_smoke.py --scenario reviewed-conversation-agent --swiftc "$(command -v swiftc)" --runtime "$RUNNER_TEMP/orivyn-host-build/bin" --headers "$RUNNER_TEMP/orivyn-host-headers" --model "$RUNNER_TEMP/orivyn-host-model/Qwen3-1.7B-Q4_K_M.gguf" --output "$RUNNER_TEMP/orivyn-host-evidence/$fixture" --run-timeout 600 > "$RUNNER_TEMP/orivyn-host-evidence/$fixture.log" 2>&1
             result=$?
             printf '%s=%s\n' "$fixture" "$result" | tee -a "$RUNNER_TEMP/orivyn-host-evidence/outcomes.txt"
