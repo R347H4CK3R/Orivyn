@@ -21,6 +21,7 @@ actor LlamaEngine: LocalResourceReleasing {
         guard (1...1024).contains(request.maxTokens), request.temperature.isFinite,
               (0...2).contains(request.temperature), request.messages.contains(where: { $0.role == .user && (!$0.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || $0.attachments.contains(where: { !($0.extractedText ?? "").isEmpty })) }),
               request.systemPrompt.utf8.count + request.messages.reduce(0, { $0 + $1.content.utf8.count }) <= 1_000_000 else { throw LocalModelError.invalidRequest }
+        try request.validateInternalModes()
         guard (request.nativeReadGoal != nil) == (nativeReadPolicy != nil) else { throw LocalModelError.invalidRequest }
         busy = true
         let pair = AsyncThrowingStream<String, Error>.makeStream()
@@ -102,6 +103,7 @@ actor LlamaEngine: LocalResourceReleasing {
     private func generate(_ request: GenerationRequest, modelURL: URL, nativeReadPolicy: NativeReadPolicy?, continuation: AsyncThrowingStream<String, Error>.Continuation) async throws {
         try Task.checkCancellation()
         let owned = try load(modelURL)
+        try request.validateInternalModes()
         if let goal = request.nativeReadGoal {
             #if ORIVYN_NATIVE_TOOLS
             guard let nativeReadPolicy else { throw LocalModelError.invalidRequest }
@@ -140,8 +142,13 @@ actor LlamaEngine: LocalResourceReleasing {
 
         guard let sampler = llama_sampler_chain_init(llama_sampler_chain_default_params()) else { throw LocalModelError.loadFailed }
         defer { llama_sampler_free(sampler) }
-        if let requireTool = request.localAgentRequiresTool {
-            let grammar = try LocalAgentGrammar.load(requireTool: requireTool, conversationIDs: request.localAgentConversationIDs)
+        try request.validateInternalModes()
+        let decisionGrammar: String?
+        if let kind=request.localReadPlanKind { decisionGrammar = try LocalAgentGrammar.readPlanProposal(kind:kind) }
+        else if let policy = request.localReadWorkflowPolicy { decisionGrammar = try LocalAgentGrammar.reviewed(policy) }
+        else if let requireTool = request.localAgentRequiresTool { decisionGrammar = try LocalAgentGrammar.load(requireTool:requireTool,conversationIDs:request.localAgentConversationIDs) }
+        else { decisionGrammar = nil }
+        if let grammar = decisionGrammar {
             let constrained = grammar.withCString { specification in
                 "root".withCString { name in llama_sampler_init_grammar(vocabulary, specification, name) }
             }

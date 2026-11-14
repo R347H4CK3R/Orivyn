@@ -1,0 +1,5 @@
+Production session typecheck exit: 0
+/usr/bin/ld: /workspace/shared/swift-recovered/swift-6.1.3-RELEASE-ubuntu22.04/usr/lib/swift_static/linux/libFoundationEssentials.a(Data+Writing.swift.o): in function `$s20FoundationEssentials19createTemporaryFile33_FC9EC52B075D2ACCFF86F1C9F84293BELL2at6inPath6prefix7options7variants5Int32V_SStSS_AA0Q5OrURLOSSAA4DataV14WritingOptionsVSSSgtKFTf4nnndn_n':
+_ThreadLocal.swift.o:(.text+0x250b): warning: the use of `mktemp' is dangerous, better use `mkstemp' or `mkdtemp'
+PASS production session draft cancellation, teardown cancellation, parse failure, stale provider, review/run separation, immutable goal and zero source reads before explicit Run (Linux Node bridge/unit provider; not iOS/model quality)
+

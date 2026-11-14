@@ -32,6 +32,7 @@ python3 "$ROOT/Diagnostics/NativeTools/simulator_gate.py" --scheme "$SCHEME" \
  --model-id "$MODEL_ID" --gate "$GATE_KIND" > "$NATIVE_TOOLS_EVIDENCE_DIR/gate-config.json"
 case "$GATE_KIND" in
  native-tools) SELECTOR='JarvisEVOTests/ProductionNativeToolsRuntimeTests/testRequiredProductionSuggestionAndReload'; DEFAULT_ALLOWANCE=300; MAX_ALLOWANCE=600 ;;
+ reviewed-plan) SELECTOR='JarvisEVOTests/ProductionReviewedReadPlanTests/testRequiredModelProposalApprovalAndGroundedRead'; DEFAULT_ALLOWANCE=1200; MAX_ALLOWANCE=1200 ;;
  local-agent) SELECTOR='JarvisEVOTests/ProductionLocalAgentSessionTests/testRequiredSearchThenReadGroundedAnswer'; DEFAULT_ALLOWANCE=840; MAX_ALLOWANCE=840 ;;
  *) echo 'Unknown required gate' >&2; exit 2 ;;
 esac

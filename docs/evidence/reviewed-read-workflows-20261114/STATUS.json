@@ -1,0 +1,15 @@
+{
+  "jsTests": 134,
+  "foundationTests": 423,
+  "pythonTests": 198,
+  "pythonSkipped": 1,
+  "nativeGrammarCases": 46,
+  "hostSessionLifecycle": "passed with real static stdlib and explicit unit scaffolds",
+  "actualModelAttempts": 5,
+  "approvedProposals": 0,
+  "workflowCompletions": 0,
+  "accurateAnswers": 0,
+  "safeProposalRejections": 5,
+  "userChoosesWorkflowKind": true,
+  "iosVerified": false
+}

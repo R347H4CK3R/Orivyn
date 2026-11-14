@@ -1,0 +1,7 @@
+{
+  "schema": 1,
+  "kind": "conversation_read",
+  "query": "Find the exact conversation \"Cobalt inventory 2026\" rather than its draft or older edition.",
+  "title": "Cobalt inventory 2026",
+  "messageIndexes": [2]
+}

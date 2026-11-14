@@ -1,0 +1,45 @@
+{
+  "sourceCommit": "1967be26c7603d41df85862ed6525c1f0acda2eb",
+  "sourceRun": "https://github.com/R347H4CK3R/Orivyn/actions/runs/43643387229",
+  "sourceJob": "https://github.com/R347H4CK3R/Orivyn/actions/runs/43643387229/job/132595643946",
+  "localPreservationRoot": "/workspace/scratch/8352eb8fe69c/orivyn-verified-ci-20261114",
+  "artifact": {
+    "source": "https://api.github.com/repos/R347H4CK3R/Orivyn/actions/artifacts/14134680240",
+    "sourceCommit": "1967be26c7603d41df85862ed6525c1f0acda2eb",
+    "id": 14134680240,
+    "zip": {
+      "path": "14134680240.zip",
+      "bytes": 40285895,
+      "sha256": "a0fd0d760a79e941507fd18232e3892263681f1458f655ef50ce2f97a0f1f0bf"
+    },
+    "publishedDigestMatched": true
+  },
+  "core": {
+    "passed": 958,
+    "skipped": 4,
+    "failed": 0,
+    "summary": "Executed 962 tests, with 4 tests skipped and 0 failures (0 unexpected) in 98.757 (99.697) seconds",
+    "log": {
+      "path": "14134680240/20261114T214900Z-2098/native-tests.log",
+      "bytes": 767106,
+      "sha256": "0169787492cba83e6635514fe461fb02bec8fd8e18d37ef4ad79f4439390acc2"
+    },
+    "skippedCases": [
+      "Test Case '-[JarvisEVOTests.GeneratedImageStagingTests testCompleteProtectionAttributeOnPhysicalDevice]' skipped (0.015 seconds).",
+      "Test Case '-[JarvisEVOTests.ProductionLocalAgentSessionTests testRequiredSearchThenReadGroundedAnswer]' skipped (0.022 seconds).",
+      "Test Case '-[JarvisEVOTests.ProductionNativeToolsRuntimeTests testRequiredProductionSuggestionAndReload]' skipped (0.001 seconds).",
+      "Test Case '-[JarvisEVOTests.ProductionVisionRuntimeTests testRequiredProductionPNGInferenceAndRelease]' skipped (0.002 seconds)."
+    ]
+  },
+  "unsignedIPA": {
+    "path": "14134680240/20261114T214900Z-2098/Orivyn-0.1.1-build7-unsigned.ipa",
+    "bytes": 36983868,
+    "sha256": "a7fdd56173e99f2ac6022053c8feae47f587636043a89a02a20c2db1ca1f7c43"
+  },
+  "limitations": [
+    "Partial evidence: only core job completed; inference and UI not claimed passed.",
+    "Unsigned package structure/hash verified locally; no signing/install or physical-device verification.",
+    "Opt-in model gate skips are not model passes.",
+    "Earlier e4 inference failures, bcf0 desktop failures and67d9 native expiry remain preserved in adjacent source-specific evidence."
+  ]
+}

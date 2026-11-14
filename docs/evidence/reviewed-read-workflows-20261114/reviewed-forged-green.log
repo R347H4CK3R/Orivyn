@@ -1,0 +1,14 @@
+✔ reviewed task preserves original goal and cannot answer or broaden approved query (4.398902ms)
+✔ approved read prerequisites require all complete pages before answer (7.849416ms)
+✔ search-only never admits reading and can answer after exact search (1.121385ms)
+✔ missing ambiguous limited or changed sources fail with preserved evidence (3.079092ms)
+✔ malformed plans rejected and uncertain pending calls never replay (0.932345ms)
+✔ forged terminal reviewed state cannot claim unmet prerequisites (1.169086ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 118.468537

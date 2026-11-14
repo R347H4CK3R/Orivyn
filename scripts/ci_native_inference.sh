@@ -36,7 +36,7 @@ export ORIVYN_VISION_MODEL_DIR="$RUNNER_TEMP/orivyn-vision-pair"
 git rev-parse HEAD > "$EVIDENCE/source-commit.txt"
 xcodebuild -version > "$EVIDENCE/xcode-version.txt"
 # Sequential model lifetimes keep these large fixtures out of the app bundle and
-# prevent both production models from occupying memory at once. Preserve both
+# prevent production models from occupying memory at once. Preserve all
 # outcomes even if one gate fails; neither can be reported green on a skip.
 set +e
 (python3 Diagnostics/VisionProof/prepare_production_pair.py "$ORIVYN_VISION_MODEL_DIR" && bash Diagnostics/VisionProof/run_production_simulator.sh) > "$EVIDENCE/vision-gate.log" 2>&1
@@ -61,7 +61,11 @@ Q4_STATUS=$?
 # ProductionLocalAgentSessionTests restores the prior installed-model manifest.
 run_native_gate qwen3-1.7b-q4_k_m "$RUNNER_TEMP/orivyn-native-q4" local-agent "$EVIDENCE/local-agent-q4" > "$EVIDENCE/local-agent-q4-gate.log" 2>&1
 AGENT_STATUS=$?
+# Additive acceptance: actual model proposal, explicit approval, then required reads.
+# The generic local-agent gate above remains independently required.
+run_native_gate qwen3-1.7b-q4_k_m "$RUNNER_TEMP/orivyn-native-q4" reviewed-plan "$EVIDENCE/reviewed-plan-q4" > "$EVIDENCE/reviewed-plan-q4-gate.log" 2>&1
+REVIEWED_STATUS=$?
 set -e
-printf 'vision=%s\nnative_tools_q8=%s\nnative_tools_q4=%s\nlocal_agent_q4=%s\n' "$VISION_STATUS" "$Q8_STATUS" "$Q4_STATUS" "$AGENT_STATUS" | tee "$EVIDENCE/outcomes.txt"
-for gate in vision native-tools-q8 native-tools-q4 local-agent-q4; do tail -n 100 "$EVIDENCE/$gate-gate.log"; done
-[[ "$VISION_STATUS" == 0 && "$Q8_STATUS" == 0 && "$Q4_STATUS" == 0 && "$AGENT_STATUS" == 0 ]]
+printf 'vision=%s\nnative_tools_q8=%s\nnative_tools_q4=%s\nlocal_agent_q4=%s\nreviewed_plan_q4=%s\n' "$VISION_STATUS" "$Q8_STATUS" "$Q4_STATUS" "$AGENT_STATUS" "$REVIEWED_STATUS" | tee "$EVIDENCE/outcomes.txt"
+for gate in vision native-tools-q8 native-tools-q4 local-agent-q4 reviewed-plan-q4; do tail -n 100 "$EVIDENCE/$gate-gate.log"; done
+[[ "$VISION_STATUS" == 0 && "$Q8_STATUS" == 0 && "$Q4_STATUS" == 0 && "$AGENT_STATUS" == 0 && "$REVIEWED_STATUS" == 0 ]]

@@ -16,7 +16,7 @@ final class LocalAgentCore {
         self.context = context; self.api = api
     }
     func call(_ name: String, _ arguments: [String]) throws -> String {
-        guard ["conversationIDs", "create", "prompt", "acceptDecision", "recordResult", "cancel", "recover", "resume", "fail"].contains(name),
+        guard ["createReviewed", "decisionPolicy", "conversationIDs", "create", "prompt", "acceptDecision", "recordResult", "cancel", "recover", "resume", "fail"].contains(name),
               arguments.count <= 2, arguments.allSatisfy({ $0.utf8.count <= 131_072 }) else { throw LocalAgentError.invalidState }
         context.exception = nil
         guard let function = api.forProperty(name), !function.isUndefined,

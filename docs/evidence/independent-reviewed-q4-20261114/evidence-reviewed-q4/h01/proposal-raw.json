@@ -1,0 +1,7 @@
+{
+  "schema": 1,
+  "kind": "conversation_read",
+  "query": "Locate the conversation named \"Copper register\".",
+  "title": "Copper register",
+  "messageIndexes": [1, 2]
+}

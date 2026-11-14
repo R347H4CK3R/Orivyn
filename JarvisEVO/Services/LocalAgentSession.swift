@@ -10,6 +10,9 @@ final class LocalAgentSession {
     private var raw: String?
     private var work: Task<Void, Never>?
     private var owner: UUID?
+    private var drafting = false
+    private var proposedProviderID: String?
+    private(set) var proposedReadPlan: LocalReadPlanProposal?
     private(set) var snapshot: LocalAgentSnapshot?
     private(set) var records: [LocalAgentSnapshot] = []
     private(set) var archivedRecords: [LocalAgentSnapshot] = []
@@ -19,6 +22,7 @@ final class LocalAgentSession {
     private(set) var error: String?
     private(set) var recoveryWarning: String?
     var isRunning: Bool { work != nil }
+    var isPreparingReadPlan: Bool { drafting && isRunning }
     var canManageSavedTasks: Bool { !isRunning && model.heavyWorkLease?.kind != .localAgent }
 
     init(model: AppModel, directory: URL) throws {
@@ -54,8 +58,59 @@ final class LocalAgentSession {
         failures += archived.unreadable + archived.values.count - archivedRecords.count
         recoveryWarning = failures == 0 ? nil : "\(failures) saved task record(s) could not be loaded. Their files were preserved; other tasks remain available."
     }
+    func discardReadPlan() {
+        guard !isRunning else { return }
+        proposedReadPlan = nil; proposedProviderID = nil
+    }
+    func prepareReadPlan(goal: String, kind: String) {
+        guard canManageSavedTasks else { return }
+        guard let provider = model.selectedLocalAgentProvider else { error = LocalAgentError.localModelRequired.localizedDescription; return }
+        let request: GenerationRequest
+        do { request = try .readPlanProposal(goal:goal,kind:kind) } catch { self.error=error.localizedDescription; return }
+        proposedReadPlan=nil; proposedProviderID=nil
+        let identity=UUID(); owner=identity; drafting=true; error=nil
+        work=Task { @MainActor [self] in
+            do {
+                try await model.beginHeavyWork(id:identity,kind:.localAgent)
+                try checkOwner(identity)
+                status="Drafting a read plan locally. No tools run before review."
+                var text=""
+                for try await part in try await provider.stream(request) {
+                    try checkOwner(identity)
+                    guard text.utf8.count + part.utf8.count <= 4096 else { throw LocalAgentError.outputBound }
+                    text += part
+                }
+                try checkOwner(identity)
+                guard model.selectedLocalAgentProvider?.id == provider.id else { throw LocalAgentError.staleOwner }
+                let plan=try LocalReadPlan.parse(text)
+                guard plan.kind==kind else { throw LocalAgentError.invalidState }
+                proposedReadPlan=LocalReadPlanProposal(goal:goal,plan:plan); proposedProviderID=provider.id
+                status="Review the proposed scope. Approval creates a task; Run remains explicit."
+            } catch {
+                proposedReadPlan=nil; proposedProviderID=nil
+                if error is CancellationError { status="Drafting stopped. Saved tasks were preserved." }
+                else { self.error=error.localizedDescription; status="Read plan could not be prepared. Saved tasks were preserved." }
+            }
+            await model.finishLocalAgentWork(id:identity)
+            if owner==identity { owner=nil; work=nil; drafting=false }
+        }
+    }
+    func approveReadPlan() {
+        guard canManageSavedTasks, let proposal=proposedReadPlan else { return }
+        do {
+            guard let selected=model.selectedLocalAgentProvider, selected.id==proposedProviderID else { throw LocalAgentError.staleOwner }
+            let planValue=try MCPJSONValue.parse(Data(proposal.plan.encoded().utf8),maximumBytes:4096)
+            let request:MCPJSONValue = .object(["goal":.string(proposal.goal),"id":.string(UUID().uuidString),"plan":planValue])
+            let state=try core.call("createReviewed",[String(decoding:request.encoded(maximumBytes:4096),as:UTF8.self)])
+            try persist(state)
+            proposedReadPlan=nil; proposedProviderID=nil; error=nil
+            status="Approved read task saved. Tap Run to begin."
+            try reloadRecords()
+        } catch { self.error=error.localizedDescription }
+    }
     func create(goal: String) {
         guard canManageSavedTasks else { return }
+        discardReadPlan()
         do {
             try persist(core.call("create", [goal, UUID().uuidString]))
             error = nil; status = "Ready. Tap Run; no work starts automatically."
@@ -64,6 +119,7 @@ final class LocalAgentSession {
     }
     func select(id: String) {
         guard canManageSavedTasks else { return }
+        discardReadPlan()
         do {
             try persist(core.call("recover", [store.load(id: id)]))
             error = nil; status = "Loaded saved local task. Resume is explicit."
@@ -95,7 +151,7 @@ final class LocalAgentSession {
         } catch { self.error = error.localizedDescription }
     }
     func run() {
-        guard canManageSavedTasks, var state = raw, let current = snapshot,
+        guard canManageSavedTasks, proposedReadPlan == nil, var state = raw, let current = snapshot,
               ["ready", "interrupted"].contains(current.status) else { return }
         guard let provider = model.selectedLocalAgentProvider else { error = LocalAgentError.localModelRequired.localizedDescription; return }
         do {
@@ -112,9 +168,14 @@ final class LocalAgentSession {
                     guard item.status == "ready" else { break }
                     status = "Thinking locally · \(item.steps)/6 read-only tool calls used"
                     let prompt = try core.call("prompt", [value])
-                    let conversationIDs = try JSONDecoder().decode([String].self, from: Data(core.call("conversationIDs", [value]).utf8))
-                    let request = GenerationRequest.localAgent(prompt: prompt,
-                        requiresTool: !item.history.contains { $0.outcome == "succeeded" }, conversationIDs: conversationIDs)
+                    let request: GenerationRequest
+                    if let plan=item.readPlan {
+                        let policy=try LocalReadWorkflowPolicy.derive(plan:plan,history:item.history,conversations:model.conversations)
+                        request = .reviewedAgent(prompt:prompt,policy:policy)
+                    } else {
+                        let conversationIDs = try JSONDecoder().decode([String].self, from: Data(core.call("conversationIDs", [value]).utf8))
+                        request = GenerationRequest.localAgent(prompt: prompt,requiresTool: !item.history.contains { $0.outcome == "succeeded" },conversationIDs:conversationIDs)
+                    }
                     let stream = try await provider.stream(request)
                     var decision = ""
                     for try await part in stream {
@@ -124,8 +185,11 @@ final class LocalAgentSession {
                     }
                     try checkOwner(identity)
                     let next = try core.call("acceptDecision", [value, decision])
-                    try persist(next) // Durable running marker BEFORE any tool reads.
                     let accepted = try core.snapshot(next)
+                    if accepted.status == "answered", let plan=item.readPlan {
+                        guard try LocalReadWorkflowPolicy.derive(plan:plan,history:item.history,conversations:model.conversations).canAnswer else { throw LocalAgentError.invalidState }
+                    }
+                    try persist(next) // Durable running marker BEFORE any tool reads.
                     if accepted.status == "ready" { continue } // Reducer-only saved-result paging, never a native tool.
                     guard accepted.status == "running", let pending = accepted.pending else { break }
                     status = pending.name == "calculate"
@@ -164,6 +228,7 @@ final class LocalAgentSession {
     func stop(cancelTask: Bool) {
         guard isRunning || cancelTask && canManageSavedTasks else { return }
         work?.cancel()
+        if drafting { proposedReadPlan=nil; proposedProviderID=nil; return }
         guard let state = raw else { return }
         do {
             try persist(core.call(cancelTask ? "cancel" : "recover", [state]))
@@ -172,7 +237,10 @@ final class LocalAgentSession {
     }
 
     private func executeLocalTool(_ pending: LocalAgentSnapshot.Intent) throws -> String {
-        try LocalReadTools.execute(name: pending.name, arguments: pending.arguments, model: model, resultByteLimit: 4096, trustedGoal: snapshot?.goal, authorizedConversationIDs: LocalConversationRead.authorizedIDs(history: snapshot?.history ?? []))
+        if let snapshot, let plan=snapshot.readPlan {
+            try LocalReadWorkflowPolicy.derive(plan:plan,history:snapshot.history,conversations:model.conversations).validate(pending)
+        }
+        return try LocalReadTools.execute(name: pending.name, arguments: pending.arguments, model: model, resultByteLimit: 4096, trustedGoal: snapshot?.goal, authorizedConversationIDs: LocalConversationRead.authorizedIDs(history: snapshot?.history ?? []), reviewedPlan:snapshot?.readPlan)
     }
 
 }

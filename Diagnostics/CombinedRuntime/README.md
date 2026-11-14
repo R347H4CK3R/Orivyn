@@ -41,3 +41,18 @@ flags omitted DEBUG and excluded its controlled-download fixture. Commit
 4ce8001df8dd3bd0671c7969fc3fa462046b9ed1 restores DEBUG only for Debug builds.
 The corrected aggregate run is pending; no passing simulator suite, device package,
 physical acceptance, or release readiness follows from the framework result.
+
+Simulator CPU configuration: each architecture is configured and linked separately
+before merging the framework and DWARF slices with `lipo`. At pinned b9049,
+`ggml/cmake/common.cmake` recognizes an exact `arm64` or `x86_64` architecture;
+a universal `arm64;x86_64` CMake value selects `UNKNOWN` and the CPU CMake target
+falls back to `GGML_CPU_GENERIC`. The separate configurations retain
+`GGML_NATIVE=OFF` and the existing device configuration. This change does not
+assert any particular host instruction features or performance improvement.
+
+Portable regression: `python -m unittest discover -s scripts/tests -p
+'test_simulator_cpu_slices.py' -v` executes the orchestration with command doubles,
+checks separate configurations and link-before-merge order, and ensures failure
+of either slice prevents packaging. Actual Apple compilation, merged dSYM UUIDs,
+ABI/platform verification, and unchanged Q8/Q4 inference gates must still pass on
+macOS before claiming this runtime is validated or faster.

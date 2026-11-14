@@ -1,0 +1,164 @@
+[
+  {
+    "case": "h01",
+    "exit": 1,
+    "timeout": false,
+    "elapsedSeconds": 7.810690961996443,
+    "approval": {
+      "approved": false,
+      "reason": "query-outside-predeclared-variants",
+      "noRepair": true
+    },
+    "contractCompletion": false,
+    "answerQuality": "not-completed",
+    "safeRefusal": "wrong-proposal-contained-not-capability-success",
+    "expectedOutcomeMet": false,
+    "kindProvenance": "predeclared-user-input-not-model-classification",
+    "userSelectedKind": "conversation_read",
+    "AppleVerified": false
+  },
+  {
+    "case": "h02",
+    "exit": 1,
+    "timeout": false,
+    "elapsedSeconds": 7.085324775995105,
+    "approval": {
+      "approved": false,
+      "reason": "query-outside-predeclared-variants",
+      "noRepair": true
+    },
+    "contractCompletion": false,
+    "answerQuality": "not-completed",
+    "safeRefusal": "wrong-proposal-contained-not-capability-success",
+    "expectedOutcomeMet": false,
+    "kindProvenance": "predeclared-user-input-not-model-classification",
+    "userSelectedKind": "conversation_read",
+    "AppleVerified": false
+  },
+  {
+    "case": "h03",
+    "exit": 1,
+    "timeout": false,
+    "elapsedSeconds": 6.824792886000068,
+    "approval": {
+      "approved": false,
+      "reason": "query-outside-predeclared-variants",
+      "noRepair": true
+    },
+    "contractCompletion": false,
+    "answerQuality": "not-completed",
+    "safeRefusal": "wrong-proposal-contained-not-capability-success",
+    "expectedOutcomeMet": false,
+    "kindProvenance": "predeclared-user-input-not-model-classification",
+    "userSelectedKind": "conversation_read",
+    "AppleVerified": false
+  },
+  {
+    "case": "h04",
+    "exit": 1,
+    "timeout": false,
+    "elapsedSeconds": 5.560412806997192,
+    "approval": {
+      "approved": false,
+      "reason": "wrong-message-indexes",
+      "noRepair": true
+    },
+    "contractCompletion": false,
+    "answerQuality": "not-completed",
+    "safeRefusal": "wrong-proposal-contained-not-capability-success",
+    "expectedOutcomeMet": false,
+    "kindProvenance": "predeclared-user-input-not-model-classification",
+    "userSelectedKind": "conversation_read",
+    "AppleVerified": false
+  },
+  {
+    "case": "h05",
+    "exit": 0,
+    "timeout": false,
+    "elapsedSeconds": 11.672231957003532,
+    "approval": {
+      "approved": true,
+      "reason": "matches-frozen-intent",
+      "noRepair": true
+    },
+    "contractCompletion": true,
+    "answerQuality": "exact-pass",
+    "safeRefusal": "not-applicable",
+    "expectedOutcomeMet": true,
+    "kindProvenance": "predeclared-user-input-not-model-classification",
+    "userSelectedKind": "conversation_search",
+    "AppleVerified": false
+  },
+  {
+    "case": "h06",
+    "exit": 0,
+    "timeout": false,
+    "elapsedSeconds": 11.66869445899647,
+    "approval": {
+      "approved": true,
+      "reason": "matches-frozen-intent",
+      "noRepair": true
+    },
+    "contractCompletion": true,
+    "answerQuality": "exact-pass",
+    "safeRefusal": "not-applicable",
+    "expectedOutcomeMet": true,
+    "kindProvenance": "predeclared-user-input-not-model-classification",
+    "userSelectedKind": "conversation_search",
+    "AppleVerified": false
+  },
+  {
+    "case": "h07",
+    "exit": 1,
+    "timeout": false,
+    "elapsedSeconds": 6.050448387002689,
+    "approval": {
+      "approved": false,
+      "reason": "query-outside-predeclared-variants",
+      "noRepair": true
+    },
+    "contractCompletion": false,
+    "answerQuality": "not-completed",
+    "safeRefusal": "wrong-proposal-contained-not-capability-success",
+    "expectedOutcomeMet": false,
+    "kindProvenance": "predeclared-user-input-not-model-classification",
+    "userSelectedKind": "conversation_read",
+    "AppleVerified": false
+  },
+  {
+    "case": "h08",
+    "exit": 1,
+    "timeout": false,
+    "elapsedSeconds": 6.031844400997215,
+    "approval": {
+      "approved": false,
+      "reason": "wrong-message-indexes",
+      "noRepair": true
+    },
+    "contractCompletion": false,
+    "answerQuality": "not-completed",
+    "safeRefusal": "wrong-proposal-contained-not-capability-success",
+    "expectedOutcomeMet": false,
+    "kindProvenance": "predeclared-user-input-not-model-classification",
+    "userSelectedKind": "conversation_read",
+    "AppleVerified": false
+  },
+  {
+    "case": "h09",
+    "exit": 1,
+    "timeout": false,
+    "elapsedSeconds": 5.4916689390011015,
+    "approval": {
+      "approved": false,
+      "reason": "query-outside-predeclared-variants",
+      "noRepair": true
+    },
+    "contractCompletion": false,
+    "answerQuality": "not-completed",
+    "safeRefusal": "wrong-proposal-contained-not-capability-success",
+    "expectedOutcomeMet": false,
+    "kindProvenance": "predeclared-user-input-not-model-classification",
+    "userSelectedKind": "conversation_read",
+    "AppleVerified": false
+  }
+]

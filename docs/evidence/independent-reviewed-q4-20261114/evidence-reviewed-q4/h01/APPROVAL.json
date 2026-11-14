@@ -1,0 +1,5 @@
+{
+  "approved": false,
+  "reason": "query-outside-predeclared-variants",
+  "noRepair": true
+}

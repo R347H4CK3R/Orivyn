@@ -4,6 +4,7 @@ struct LocalAgentView: View {
     @Bindable var model: AppModel
     @State private var session: LocalAgentSession?
     @State private var goal = ""
+    @State private var planKind = "conversation_read"
     @State private var setupError: String?
     @State private var confirmArchive = false
     @Environment(\.scenePhase) private var phase
@@ -15,27 +16,63 @@ struct LocalAgentView: View {
                 Text("For arithmetic, use Calculate followed by the expression. Numbers, signs and parentheses must match; word-problem translations are not verified.").font(.caption)
                 Text("Uses your selected installed local model. Saved task records stay in Orivyn; no external actions are available.").font(.caption)
                 TextEditor(text: $goal).frame(minHeight: 80).accessibilityIdentifier("agent.goal")
+                    .disabled(session?.isPreparingReadPlan == true || session?.proposedReadPlan != nil)
                 Text("\(goal.utf8.count)/512 bytes").font(.caption2)
-                Button("Create task") { session?.create(goal: goal) }
-                    .disabled(session == nil || session?.isRunning == true || goal.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || goal.utf8.count > 512)
+                Text("For a saved-conversation question, draft a read plan and review its search and message scope before approving it. Drafting uses only your request with the selected local model; saved messages are not supplied to it.").font(.caption)
+                Picker("Plan scope", selection: $planKind) {
+                    Text("Read messages").tag("conversation_read")
+                    Text("Search only").tag("conversation_search")
+                }.pickerStyle(.segmented).accessibilityIdentifier("agent.plan.kind")
+                    .disabled(session?.isRunning == true || session?.proposedReadPlan != nil)
+                Text("For Read messages, include the exact conversation title and the message numbers you want to read.").font(.caption)
+                Button("Draft plan") { session?.prepareReadPlan(goal: goal, kind: planKind) }
+                    .disabled(session?.canManageSavedTasks != true || session?.proposedReadPlan != nil || goal.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || goal.utf8.count > 512)
+                    .accessibilityIdentifier("agent.plan.draft")
+                Button("Create experimental task") { session?.create(goal: goal) }
+                    .disabled(session?.canManageSavedTasks != true || session?.proposedReadPlan != nil || goal.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || goal.utf8.count > 512)
                     .accessibilityIdentifier("agent.create")
             }
             if let setupError { Section { Text(setupError).foregroundStyle(.orange) } }
             if let session {
                 if let warning = session.recoveryWarning { Section { Text(warning).font(.caption).foregroundStyle(.orange) } }
                 if let error = session.error { Section { Text(error).foregroundStyle(.orange).accessibilityIdentifier("agent.error") } }
+                if session.isPreparingReadPlan {
+                    Section("Drafting local plan") {
+                        HStack { ProgressView(); Text(session.status).font(.caption) }
+                        Button("Stop drafting") { session.stop(cancelTask: false) }
+                            .accessibilityIdentifier("agent.plan.stop")
+                    }
+                }
+                if let proposal = session.proposedReadPlan {
+                    Section("Review local plan") {
+                        Text(proposal.goal).accessibilityIdentifier("agent.plan.goal")
+                        readPlanSummary(proposal.plan)
+                        Text("Check that this plan matches your question. Approval saves this scope; no search or message read starts until you tap Run. To change the scope, discard it and draft a new plan.").font(.caption)
+                        Button("Approve and create task") { session.approveReadPlan() }
+                            .disabled(!session.canManageSavedTasks).accessibilityIdentifier("agent.plan.approve")
+                        Button("Discard plan", role: .destructive) { session.discardReadPlan() }
+                            .disabled(!session.canManageSavedTasks).accessibilityIdentifier("agent.plan.discard")
+                    }.accessibilityIdentifier("agent.plan.review")
+                }
                 if let task = session.snapshot {
                     Section("Current task") {
                         Text(task.goal)
+                        if let plan = task.readPlan {
+                            readPlanSummary(plan)
+                            Text(task.status == "answered"
+                                 ? "Approved steps recorded. The model answer still needs your review."
+                                 : "The task can answer only after its approved steps are complete. Missing, ambiguous or changed evidence stops the task.")
+                                .font(.caption).foregroundStyle(.secondary)
+                        }
                         LabeledContent("State", value: task.status)
                         LabeledContent("Read-only tool steps", value: "\(task.steps)/6")
                         Text(session.status).font(.caption).accessibilityIdentifier("agent.status")
                         HStack {
                             Button(task.status == "interrupted" ? "Resume" : "Run") { session.run() }
-                                .disabled(session.isRunning || !["ready", "interrupted"].contains(task.status)).accessibilityIdentifier("agent.run")
-                            Button("Pause") { session.stop(cancelTask: false) }.disabled(!session.isRunning)
+                                .disabled(session.isRunning || session.proposedReadPlan != nil || !["ready", "interrupted"].contains(task.status)).accessibilityIdentifier("agent.run")
+                            Button("Pause") { session.stop(cancelTask: false) }.disabled(!session.isRunning || session.isPreparingReadPlan)
                             Button("Cancel task", role: .destructive) { session.stop(cancelTask: true) }
-                                .disabled(["answered", "failed", "cancelled"].contains(task.status))
+                                .disabled(session.isPreparingReadPlan || ["answered", "failed", "cancelled"].contains(task.status))
                         }
                         Button("Archive task") { confirmArchive = true }
                             .disabled(!session.canManageSavedTasks).accessibilityIdentifier("agent.archive")
@@ -97,6 +134,19 @@ struct LocalAgentView: View {
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.didReceiveMemoryWarningNotification)) { _ in session?.stop(cancelTask: false) }
         .onReceive(NotificationCenter.default.publisher(for: ProcessInfo.thermalStateDidChangeNotification)) { _ in
             if ProcessInfo.processInfo.thermalState == .serious || ProcessInfo.processInfo.thermalState == .critical { session?.stop(cancelTask: false) }
+        }
+    }
+
+    @ViewBuilder
+    private func readPlanSummary(_ plan: LocalReadPlan) -> some View {
+        LabeledContent("Search", value: plan.query)
+        Text("Search scans saved titles, messages, and extracted attachment text and may return matching excerpts.").font(.caption)
+        if plan.kind == "conversation_search" {
+            Text("Search results only. No additional message pages will be opened.").font(.caption)
+        } else {
+            LabeledContent("Conversation title", value: plan.title ?? "")
+            LabeledContent("Message numbers", value: (plan.messageIndexes ?? []).map { String($0 + 1) }.joined(separator: ", "))
+            Text("After searching, open only these message pages from one matching conversation. An ambiguous title or missing message stops the task.").font(.caption)
         }
     }
 }

@@ -1,0 +1,520 @@
+[
+  {
+    "count": 0,
+    "requireTool": false,
+    "decision": {
+      "type": "tool",
+      "name": "search_conversations",
+      "arguments": {
+        "query": "note",
+        "limit": 1
+      }
+    },
+    "accepted": true
+  },
+  {
+    "count": 0,
+    "requireTool": false,
+    "decision": {
+      "type": "answer",
+      "text": "fact"
+    },
+    "accepted": true
+  },
+  {
+    "count": 0,
+    "requireTool": false,
+    "decision": {
+      "type": "tool",
+      "name": "read_conversation",
+      "arguments": {
+        "id": "abcdefab-1234-1234-1234-123456789abc",
+        "messageIndex": 0,
+        "offset": 0
+      }
+    },
+    "accepted": false
+  },
+  {
+    "count": 0,
+    "requireTool": false,
+    "decision": {
+      "type": "tool",
+      "name": "read_conversation",
+      "arguments": {
+        "id": "12345678-1234-1234-1234-123456789abc",
+        "messageIndex": 0,
+        "offset": 0
+      }
+    },
+    "accepted": false
+  },
+  {
+    "count": 0,
+    "requireTool": false,
+    "decision": {
+      "type": "tool",
+      "name": "read_conversation",
+      "arguments": {
+        "id": "ffffffff-ffff-ffff-ffff-ffffffffffff",
+        "messageIndex": 0,
+        "offset": 0
+      }
+    },
+    "accepted": false
+  },
+  {
+    "count": 0,
+    "requireTool": false,
+    "decision": {
+      "type": "tool",
+      "name": "read_conversation",
+      "arguments": {
+        "id": "saved_conversation_id",
+        "messageIndex": 0,
+        "offset": 0
+      }
+    },
+    "accepted": false
+  },
+  {
+    "count": 0,
+    "requireTool": true,
+    "decision": {
+      "type": "tool",
+      "name": "search_conversations",
+      "arguments": {
+        "query": "note",
+        "limit": 1
+      }
+    },
+    "accepted": true
+  },
+  {
+    "count": 0,
+    "requireTool": true,
+    "decision": {
+      "type": "answer",
+      "text": "fact"
+    },
+    "accepted": false
+  },
+  {
+    "count": 0,
+    "requireTool": true,
+    "decision": {
+      "type": "tool",
+      "name": "read_conversation",
+      "arguments": {
+        "id": "abcdefab-1234-1234-1234-123456789abc",
+        "messageIndex": 0,
+        "offset": 0
+      }
+    },
+    "accepted": false
+  },
+  {
+    "count": 0,
+    "requireTool": true,
+    "decision": {
+      "type": "tool",
+      "name": "read_conversation",
+      "arguments": {
+        "id": "12345678-1234-1234-1234-123456789abc",
+        "messageIndex": 0,
+        "offset": 0
+      }
+    },
+    "accepted": false
+  },
+  {
+    "count": 0,
+    "requireTool": true,
+    "decision": {
+      "type": "tool",
+      "name": "read_conversation",
+      "arguments": {
+        "id": "ffffffff-ffff-ffff-ffff-ffffffffffff",
+        "messageIndex": 0,
+        "offset": 0
+      }
+    },
+    "accepted": false
+  },
+  {
+    "count": 0,
+    "requireTool": true,
+    "decision": {
+      "type": "tool",
+      "name": "read_conversation",
+      "arguments": {
+        "id": "saved_conversation_id",
+        "messageIndex": 0,
+        "offset": 0
+      }
+    },
+    "accepted": false
+  },
+  {
+    "count": 1,
+    "requireTool": false,
+    "decision": {
+      "type": "tool",
+      "name": "search_conversations",
+      "arguments": {
+        "query": "note",
+        "limit": 1
+      }
+    },
+    "accepted": true
+  },
+  {
+    "count": 1,
+    "requireTool": false,
+    "decision": {
+      "type": "answer",
+      "text": "fact"
+    },
+    "accepted": true
+  },
+  {
+    "count": 1,
+    "requireTool": false,
+    "decision": {
+      "type": "tool",
+      "name": "read_conversation",
+      "arguments": {
+        "id": "abcdefab-1234-1234-1234-123456789abc",
+        "messageIndex": 0,
+        "offset": 0
+      }
+    },
+    "accepted": true
+  },
+  {
+    "count": 1,
+    "requireTool": false,
+    "decision": {
+      "type": "tool",
+      "name": "read_conversation",
+      "arguments": {
+        "id": "12345678-1234-1234-1234-123456789abc",
+        "messageIndex": 0,
+        "offset": 0
+      }
+    },
+    "accepted": false
+  },
+  {
+    "count": 1,
+    "requireTool": false,
+    "decision": {
+      "type": "tool",
+      "name": "read_conversation",
+      "arguments": {
+        "id": "ffffffff-ffff-ffff-ffff-ffffffffffff",
+        "messageIndex": 0,
+        "offset": 0
+      }
+    },
+    "accepted": false
+  },
+  {
+    "count": 1,
+    "requireTool": false,
+    "decision": {
+      "type": "tool",
+      "name": "read_conversation",
+      "arguments": {
+        "id": "saved_conversation_id",
+        "messageIndex": 0,
+        "offset": 0
+      }
+    },
+    "accepted": false
+  },
+  {
+    "count": 1,
+    "requireTool": true,
+    "decision": {
+      "type": "tool",
+      "name": "search_conversations",
+      "arguments": {
+        "query": "note",
+        "limit": 1
+      }
+    },
+    "accepted": true
+  },
+  {
+    "count": 1,
+    "requireTool": true,
+    "decision": {
+      "type": "answer",
+      "text": "fact"
+    },
+    "accepted": false
+  },
+  {
+    "count": 1,
+    "requireTool": true,
+    "decision": {
+      "type": "tool",
+      "name": "read_conversation",
+      "arguments": {
+        "id": "abcdefab-1234-1234-1234-123456789abc",
+        "messageIndex": 0,
+        "offset": 0
+      }
+    },
+    "accepted": true
+  },
+  {
+    "count": 1,
+    "requireTool": true,
+    "decision": {
+      "type": "tool",
+      "name": "read_conversation",
+      "arguments": {
+        "id": "12345678-1234-1234-1234-123456789abc",
+        "messageIndex": 0,
+        "offset": 0
+      }
+    },
+    "accepted": false
+  },
+  {
+    "count": 1,
+    "requireTool": true,
+    "decision": {
+      "type": "tool",
+      "name": "read_conversation",
+      "arguments": {
+        "id": "ffffffff-ffff-ffff-ffff-ffffffffffff",
+        "messageIndex": 0,
+        "offset": 0
+      }
+    },
+    "accepted": false
+  },
+  {
+    "count": 1,
+    "requireTool": true,
+    "decision": {
+      "type": "tool",
+      "name": "read_conversation",
+      "arguments": {
+        "id": "saved_conversation_id",
+        "messageIndex": 0,
+        "offset": 0
+      }
+    },
+    "accepted": false
+  },
+  {
+    "count": 2,
+    "requireTool": false,
+    "decision": {
+      "type": "tool",
+      "name": "search_conversations",
+      "arguments": {
+        "query": "note",
+        "limit": 1
+      }
+    },
+    "accepted": true
+  },
+  {
+    "count": 2,
+    "requireTool": false,
+    "decision": {
+      "type": "answer",
+      "text": "fact"
+    },
+    "accepted": true
+  },
+  {
+    "count": 2,
+    "requireTool": false,
+    "decision": {
+      "type": "tool",
+      "name": "read_conversation",
+      "arguments": {
+        "id": "abcdefab-1234-1234-1234-123456789abc",
+        "messageIndex": 0,
+        "offset": 0
+      }
+    },
+    "accepted": true
+  },
+  {
+    "count": 2,
+    "requireTool": false,
+    "decision": {
+      "type": "tool",
+      "name": "read_conversation",
+      "arguments": {
+        "id": "12345678-1234-1234-1234-123456789abc",
+        "messageIndex": 0,
+        "offset": 0
+      }
+    },
+    "accepted": true
+  },
+  {
+    "count": 2,
+    "requireTool": false,
+    "decision": {
+      "type": "tool",
+      "name": "read_conversation",
+      "arguments": {
+        "id": "ffffffff-ffff-ffff-ffff-ffffffffffff",
+        "messageIndex": 0,
+        "offset": 0
+      }
+    },
+    "accepted": false
+  },
+  {
+    "count": 2,
+    "requireTool": false,
+    "decision": {
+      "type": "tool",
+      "name": "read_conversation",
+      "arguments": {
+        "id": "saved_conversation_id",
+        "messageIndex": 0,
+        "offset": 0
+      }
+    },
+    "accepted": false
+  },
+  {
+    "count": 2,
+    "requireTool": true,
+    "decision": {
+      "type": "tool",
+      "name": "search_conversations",
+      "arguments": {
+        "query": "note",
+        "limit": 1
+      }
+    },
+    "accepted": true
+  },
+  {
+    "count": 2,
+    "requireTool": true,
+    "decision": {
+      "type": "answer",
+      "text": "fact"
+    },
+    "accepted": false
+  },
+  {
+    "count": 2,
+    "requireTool": true,
+    "decision": {
+      "type": "tool",
+      "name": "read_conversation",
+      "arguments": {
+        "id": "abcdefab-1234-1234-1234-123456789abc",
+        "messageIndex": 0,
+        "offset": 0
+      }
+    },
+    "accepted": true
+  },
+  {
+    "count": 2,
+    "requireTool": true,
+    "decision": {
+      "type": "tool",
+      "name": "read_conversation",
+      "arguments": {
+        "id": "12345678-1234-1234-1234-123456789abc",
+        "messageIndex": 0,
+        "offset": 0
+      }
+    },
+    "accepted": true
+  },
+  {
+    "count": 2,
+    "requireTool": true,
+    "decision": {
+      "type": "tool",
+      "name": "read_conversation",
+      "arguments": {
+        "id": "ffffffff-ffff-ffff-ffff-ffffffffffff",
+        "messageIndex": 0,
+        "offset": 0
+      }
+    },
+    "accepted": false
+  },
+  {
+    "count": 2,
+    "requireTool": true,
+    "decision": {
+      "type": "tool",
+      "name": "read_conversation",
+      "arguments": {
+        "id": "saved_conversation_id",
+        "messageIndex": 0,
+        "offset": 0
+      }
+    },
+    "accepted": false
+  },
+  {
+    "grammar": "proposal-search.gbnf",
+    "decision": "{\"schema\": 1, \"kind\": \"conversation_search\", \"query\": \"note\"}",
+    "accepted": true
+  },
+  {
+    "grammar": "proposal-search.gbnf",
+    "decision": "{\"schema\": 1, \"kind\": \"conversation_read\", \"query\": \"note\", \"title\": \"note\", \"messageIndexes\": [1]}",
+    "accepted": false
+  },
+  {
+    "grammar": "reviewed.gbnf",
+    "decision": "{\"arguments\":{\"limit\":10,\"query\":\"folder/path \\\"quote\\\" \\\\ Unicode caf\u00e9 \u96ea\\nnext\"},\"name\":\"search_conversations\",\"type\":\"tool\"}",
+    "accepted": true
+  },
+  {
+    "grammar": "reviewed.gbnf",
+    "decision": "{\"type\": \"answer\", \"text\": \"premature\"}",
+    "accepted": false
+  },
+  {
+    "grammar": "reviewed.gbnf",
+    "decision": "{\"arguments\":{\"limit\":10,\"query\":\"other \\\"quote\\\" \\\\ Unicode caf\u00e9 \u96ea\\nnext\"},\"name\":\"search_conversations\",\"type\":\"tool\"}",
+    "accepted": false
+  },
+  {
+    "grammar": "completed.gbnf",
+    "decision": "{\"type\": \"answer\", \"text\": \"done\"}",
+    "accepted": true
+  },
+  {
+    "grammar": "completed.gbnf",
+    "decision": "{\"arguments\":{\"limit\":10,\"query\":\"folder/path \\\"quote\\\" \\\\ Unicode caf\u00e9 \u96ea\\nnext\"},\"name\":\"search_conversations\",\"type\":\"tool\"}",
+    "accepted": false
+  },
+  {
+    "grammar": "proposal.gbnf",
+    "decision": "{\"schema\": 1, \"kind\": \"conversation_read\", \"query\": \"note\", \"title\": \"note\", \"messageIndexes\": [1]}",
+    "accepted": true
+  },
+  {
+    "grammar": "proposal.gbnf",
+    "decision": "{\"schema\": 1, \"kind\": \"conversation_search\", \"query\": \"note\"}",
+    "accepted": false
+  },
+  {
+    "grammar": "proposal.gbnf",
+    "decision": "{\"type\": \"tool\", \"name\": \"read_conversation\", \"arguments\": {}}",
+    "accepted": false
+  }
+]

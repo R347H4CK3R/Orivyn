@@ -1,0 +1,7 @@
+{
+  "schema": 1,
+  "kind": "conversation_read",
+  "query": "Find \"Saffron transit note\"",
+  "title": "Saffron transit note",
+  "messageIndexes": [1, 2]
+}

@@ -39,7 +39,7 @@ class ExplicitModelTests(unittest.TestCase):
                     self.assertEqual(env['ORIVYN_PRODUCTION_MODEL_ID'],model_id)
                     req,directory,selector,default,maximum=simulator_gate.GATES[gate]
                     self.assertEqual(env,{req:'1',directory:str(root),'ORIVYN_PRODUCTION_MODEL_ID':model_id})
-                    self.assertEqual(result['selector'],selector);self.assertEqual(result['maximumAllowance'],840 if gate=='local-agent' else 600)
+                    self.assertEqual(result['selector'],selector);self.assertEqual(result['maximumAllowance'],1200 if gate=='reviewed-plan' else (840 if gate=='local-agent' else 600))
             for destination in ['platform=iOS Simulator,name=iPhone','platform=iOS Simulator,id=booted']:
                 with self.assertRaises(ValueError):simulator_gate.prepare(scheme,root,destination)
             with self.assertRaises(ValueError):simulator_gate.prepare(scheme,root,'platform=iOS Simulator,id=12345678-1234-1234-1234-123456789abc','unknown')
@@ -69,15 +69,20 @@ class PipelineTests(unittest.TestCase):
             put('Diagnostics/VisionProof/prepare_production_pair.py','pass\n')
             put('Diagnostics/NativeTools/download.py','pass\n')
             put('Diagnostics/VisionProof/run_production_simulator.sh','echo vision >> "$TRACE"\nexit "$VISION_EXIT"\n')
-            put('Diagnostics/NativeTools/run_production_simulator.sh','echo "$ORIVYN_PRODUCTION_MODEL_ID $NATIVE_TOOLS_GATE_KIND $ORIVYN_NATIVE_TOOLS_MODEL_DIR" >> "$TRACE"\nif [[ "$NATIVE_TOOLS_GATE_KIND" == local-agent ]]; then exit "$AGENT_EXIT"; elif [[ "$ORIVYN_PRODUCTION_MODEL_ID" == qwen3-1.7b-q8_0 ]]; then exit "$Q8_EXIT"; else exit "$Q4_EXIT"; fi\n')
-            env=dict(os.environ,PATH=str(bin)+os.pathsep+os.environ['PATH'],RUNNER_TEMP=str(root/'temp'),ORIVYN_COMBINED_RUNTIME_ARCHIVE='fixture',ORIVYN_NATIVE_FEATURES='ORIVYN_NATIVE_TOOLS ORIVYN_NATIVE_VISION',TRACE=str(root/'trace'),**dict(zip(['VISION_EXIT','Q8_EXIT','Q4_EXIT','AGENT_EXIT'],map(str,statuses))))
+            put('Diagnostics/NativeTools/run_production_simulator.sh','echo "$ORIVYN_PRODUCTION_MODEL_ID $NATIVE_TOOLS_GATE_KIND $ORIVYN_NATIVE_TOOLS_MODEL_DIR" >> "$TRACE"\nif [[ "$NATIVE_TOOLS_GATE_KIND" == reviewed-plan ]]; then exit "$REVIEWED_EXIT"; elif [[ "$NATIVE_TOOLS_GATE_KIND" == local-agent ]]; then exit "$AGENT_EXIT"; elif [[ "$ORIVYN_PRODUCTION_MODEL_ID" == qwen3-1.7b-q8_0 ]]; then exit "$Q8_EXIT"; else exit "$Q4_EXIT"; fi\n')
+            env=dict(os.environ,PATH=str(bin)+os.pathsep+os.environ['PATH'],RUNNER_TEMP=str(root/'temp'),ORIVYN_COMBINED_RUNTIME_ARCHIVE='fixture',ORIVYN_NATIVE_FEATURES='ORIVYN_NATIVE_TOOLS ORIVYN_NATIVE_VISION',TRACE=str(root/'trace'),**dict(zip(['VISION_EXIT','Q8_EXIT','Q4_EXIT','AGENT_EXIT','REVIEWED_EXIT'],map(str,statuses))))
             result=subprocess.run(['bash',str(root/'scripts/ci_native_inference.sh')],env=env,capture_output=True,text=True,timeout=15)
             self.assertEqual(result.returncode==0,not any(statuses),result.stderr)
-            self.assertEqual((root/'artifacts/production-inference/outcomes.txt').read_text(),f'vision={statuses[0]}\nnative_tools_q8={statuses[1]}\nnative_tools_q4={statuses[2]}\nlocal_agent_q4={statuses[3]}\n')
-            trace=(root/'trace').read_text().splitlines();self.assertEqual(len(trace),4)
-            self.assertEqual(trace[0],'vision');self.assertIn('qwen3-1.7b-q8_0 native-tools',trace[1]);self.assertIn('qwen3-1.7b-q4_k_m native-tools',trace[2]);self.assertIn('qwen3-1.7b-q4_k_m local-agent',trace[3]);self.assertEqual(trace[2].split()[-1],trace[3].split()[-1]);self.assertNotEqual(trace[1].split()[-1],trace[2].split()[-1])
-    def test_all_success(self):self.run_pipeline([0,0,0,0])
-    def test_independent_failures_preserved(self):self.run_pipeline([7,8,0,9])
+            self.assertEqual((root/'artifacts/production-inference/outcomes.txt').read_text(),f'vision={statuses[0]}\nnative_tools_q8={statuses[1]}\nnative_tools_q4={statuses[2]}\nlocal_agent_q4={statuses[3]}\nreviewed_plan_q4={statuses[4]}\n')
+            trace=(root/'trace').read_text().splitlines();self.assertEqual(len(trace),5)
+            self.assertEqual(trace[0],'vision');self.assertIn('qwen3-1.7b-q8_0 native-tools',trace[1]);self.assertIn('qwen3-1.7b-q4_k_m native-tools',trace[2]);self.assertIn('qwen3-1.7b-q4_k_m local-agent',trace[3]);self.assertIn('qwen3-1.7b-q4_k_m reviewed-plan',trace[4]);self.assertEqual(trace[3].split()[-1],trace[4].split()[-1]);self.assertEqual(trace[2].split()[-1],trace[3].split()[-1]);self.assertNotEqual(trace[1].split()[-1],trace[2].split()[-1])
+    def test_all_success(self):self.run_pipeline([0,0,0,0,0])
+    def test_independent_failures_preserved(self):self.run_pipeline([7,8,0,9,10])
+
+    def test_only_new_gate_failure_is_fatal(self):self.run_pipeline([0,0,0,0,11])
+    def test_each_original_gate_remains_required(self):
+        for index in range(4):
+            statuses=[0]*5;statuses[index]=19;self.run_pipeline(statuses)
 
 class SimulatorRunnerTests(unittest.TestCase):
     def run_gate(self, build_status, summary, gate='native-tools'):
@@ -114,3 +119,9 @@ class SimulatorRunnerTests(unittest.TestCase):
         summary=dict(totalTestCount=1,passedTests=1,failedTests=0,skippedTests=0)
         self.assertNotEqual(self.run_gate(33,summary,'vision'),0)
         self.assertEqual(self.run_gate(0,summary,'vision'),0)
+
+    def test_reviewed_plan_failure_and_skip_cannot_pass(self):
+        passed=dict(totalTestCount=1,passedTests=1,failedTests=0,skippedTests=0)
+        self.assertEqual(self.run_gate(0,passed,'reviewed-plan'),0)
+        self.assertNotEqual(self.run_gate(33,passed,'reviewed-plan'),0)
+        self.assertNotEqual(self.run_gate(0,dict(totalTestCount=1,passedTests=0,failedTests=0,skippedTests=1),'reviewed-plan'),0)

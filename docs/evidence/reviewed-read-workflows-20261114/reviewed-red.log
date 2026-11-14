@@ -1,0 +1,73 @@
+✖ reviewed task preserves original goal and cannot answer or broaden approved query (0.995979ms)
+✖ approved read prerequisites require all complete pages before answer (0.173247ms)
+✖ search-only never admits reading and can answer after exact search (0.297341ms)
+✖ missing ambiguous limited or changed sources fail with preserved evidence (0.238644ms)
+✖ malformed plans rejected and uncertain pending calls never replay (0.572139ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 0
+ℹ fail 5
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 145.646465
+
+✖ failing tests:
+
+test at scripts/agent-tests/reviewed-workflow.test.cjs:12:1
+✖ reviewed task preserves original goal and cannot answer or broaden approved query (0.995979ms)
+  TypeError [Error]: api.createReviewed is not a function
+      at start (/workspace/scratch/8352eb8fe69c/orivyn-reviewed-workflow/scripts/agent-tests/reviewed-workflow.test.cjs:4:27)
+      at TestContext.<anonymous> (/workspace/scratch/8352eb8fe69c/orivyn-reviewed-workflow/scripts/agent-tests/reviewed-workflow.test.cjs:12:103)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+
+test at scripts/agent-tests/reviewed-workflow.test.cjs:13:1
+✖ approved read prerequisites require all complete pages before answer (0.173247ms)
+  TypeError [Error]: api.createReviewed is not a function
+      at start (/workspace/scratch/8352eb8fe69c/orivyn-reviewed-workflow/scripts/agent-tests/reviewed-workflow.test.cjs:4:27)
+      at TestContext.<anonymous> (/workspace/scratch/8352eb8fe69c/orivyn-reviewed-workflow/scripts/agent-tests/reviewed-workflow.test.cjs:13:95)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)
+
+test at scripts/agent-tests/reviewed-workflow.test.cjs:14:1
+✖ search-only never admits reading and can answer after exact search (0.297341ms)
+  TypeError [Error]: api.createReviewed is not a function
+      at start (/workspace/scratch/8352eb8fe69c/orivyn-reviewed-workflow/scripts/agent-tests/reviewed-workflow.test.cjs:4:27)
+      at TestContext.<anonymous> (/workspace/scratch/8352eb8fe69c/orivyn-reviewed-workflow/scripts/agent-tests/reviewed-workflow.test.cjs:14:93)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at scripts/agent-tests/reviewed-workflow.test.cjs:15:1
+✖ missing ambiguous limited or changed sources fail with preserved evidence (0.238644ms)
+  TypeError [Error]: api.createReviewed is not a function
+      at start (/workspace/scratch/8352eb8fe69c/orivyn-reviewed-workflow/scripts/agent-tests/reviewed-workflow.test.cjs:4:27)
+      at TestContext.<anonymous> (/workspace/scratch/8352eb8fe69c/orivyn-reviewed-workflow/scripts/agent-tests/reviewed-workflow.test.cjs:15:248)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at scripts/agent-tests/reviewed-workflow.test.cjs:16:1
+✖ malformed plans rejected and uncertain pending calls never replay (0.572139ms)
+  TypeError [Error]: api.createReviewed is not a function
+      at start (/workspace/scratch/8352eb8fe69c/orivyn-reviewed-workflow/scripts/agent-tests/reviewed-workflow.test.cjs:4:27)
+      at TestContext.<anonymous> (/workspace/scratch/8352eb8fe69c/orivyn-reviewed-workflow/scripts/agent-tests/reviewed-workflow.test.cjs:16:251)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)

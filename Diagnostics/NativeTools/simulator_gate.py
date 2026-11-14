@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Strict fixture and TestAction configuration shared by two explicit simulator gates."""
+"""Strict fixture and TestAction configuration shared by explicit simulator gates."""
 import argparse, json, re, xml.etree.ElementTree as ET
 from pathlib import Path
 from download import DEFAULT_MODEL_ID, select
 
 GATES = {
+    'reviewed-plan': ('ORIVYN_REQUIRE_PRODUCTION_REVIEWED_PLAN', 'ORIVYN_REVIEWED_PLAN_MODEL_DIR', 'JarvisEVOTests/ProductionReviewedReadPlanTests/testRequiredModelProposalApprovalAndGroundedRead', 1200, 1200),
     'native-tools': ('ORIVYN_REQUIRE_PRODUCTION_NATIVE_TOOLS', 'ORIVYN_NATIVE_TOOLS_MODEL_DIR', 'JarvisEVOTests/ProductionNativeToolsRuntimeTests/testRequiredProductionSuggestionAndReload', 300, 600),
     'local-agent': ('ORIVYN_REQUIRE_PRODUCTION_LOCAL_AGENT', 'ORIVYN_LOCAL_AGENT_MODEL_DIR', 'JarvisEVOTests/ProductionLocalAgentSessionTests/testRequiredSearchThenReadGroundedAnswer', 840, 840),
 }

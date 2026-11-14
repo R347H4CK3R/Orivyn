@@ -1,0 +1,24 @@
+# Reviewed conversation read workflows
+
+## Intent and evidence
+The current model can legally finish after any successful tool result. Actual Q4 evaluations repeatedly searched and answered from a location-only excerpt without reading the requested message. Prompt variations and ID-constrained grammar did not solve semantic completion. Preserve those failures and the existing acceptance assertions.
+
+## Chosen approach
+Add a separate reviewed read-plan path to the existing local task UI, retaining experimental open-ended tasks. The person explicitly selects Search only or Read messages before drafting. The selected local model proposes a typed plan of that fixed kind from the original goal, without calling tools. Mixed-kind inference was evaluated and repeatedly chose search-only for requested message reads; preserve those failures. This UI choice is user input, not a model intent-classification success. The model must still propose the query, exact title and requested message indexes; neither the application nor the evaluator repairs them. The person sees the exact query, target title and one-based message numbers, then explicitly approves creation. Run remains explicit. This is an engineering choice under the requested permission-controlled workflow scope, not a claim that the person already approved a particular in-app plan.
+
+Alternatives: prompt-only completion guidance failed real evaluations; citations prove provenance but cannot establish required reads; structured tool messages may improve generation but cannot enforce prerequisites. A durable approved contract can enforce prerequisites independently of model quality. Do not force fixture-specific steps or silently convert arbitrary goals into contracts.
+
+## Contract and authority
+LocalReadPlan schema1 has kind conversation_search or conversation_read, query (1..256 UTF8 bytes), title (read only,1..256 bytes), messageIndexes (read only,1..3 unique zero-based integers0..9999). Exact fields only. A search plan permits one exact query with limit10 and no conversation reads. A read plan first permits that query with limit10; its exact target title must resolve to one result using documented canonical case folding. Zero or multiple targets fail explicitly. Native code independently enforces the same permitted call before dispatch. Existing search display titles are clipped at96UTF8bytes, so reviewed searches additionally return exact-approved-title candidate IDs computed from actual returned matches and current full titles. The reducer verifies those IDs belong to returned matches; native policy independently recomputes them. Generic search results remain unchanged. This avoids selecting sources by a clipped or fuzzy title.
+
+A read plan permits only selected ID and approved message indexes, using offset0 then returned next cursors. Every requested message must be completely read, with actual result ID/index/cursor consistent and source identity stable; partial/unavailable/changed/ambiguous evidence cannot satisfy completion. Six external calls and3500-byte simultaneous evidence remain hard limits. Insufficient capacity fails without a final answer. No new external capability, remote service or automatic run.
+
+The reducer derives pending intents and completion permission from the approved contract and successful results. The model chooses among permitted next calls, not the answer or facts. Grammar mirrors this derived policy; reducer/native checks remain authoritative. Model output cannot edit the contract. Answer acceptance requires all prerequisites; prose remains explicitly unverified. Separate counters report workflow completion, answer accuracy and safe refusal.
+
+## Persistence and compatibility
+Persist immutable plan with original goal and approval revision in a versioned task. Preserve old version1 tasks and their behavior; do not imply their answers acquired new validation. Pause/recover/resume retain completed evidence and do not replay uncertain pending calls automatically. A changed plan requires a new review/new task. Invalid/malformed plan, missing fields or changed source fail closed.
+
+## Verification and limits
+Red-green reducer/state/native-policy tests; real generated grammar tests; actual local model proposal+execution+answer on unchanged development goals; independent frozen holdouts covering second/third messages, distractors, Unicode, pagination, no hit, search-only and instruction injection. Approve only valid proposals matching fixture intent in evaluation; do not manufacture model decisions. Preserve failed proposals and runs. Existing real iOS acceptance remains and new reviewed-plan acceptance is additive, not a replacement that hides generic failure.
+
+Automatic two-device sync, physical iPhone performance/installation, broad vision quality and general open-ended autonomy remain outside this bounded fix and incomplete/unverified. No publication.

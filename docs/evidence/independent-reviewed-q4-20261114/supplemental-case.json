@@ -1,0 +1,27 @@
+{
+  "id": "h09",
+  "category": "read-target-missing",
+  "mode": "read-no-hit",
+  "goal": "Find the conversation titled \"Silver absent register\" and read its second message to retrieve its stored access label. Do not invent a label if that conversation is missing.",
+  "targetID": null,
+  "messageIndex": 1,
+  "minimumOffset": 0,
+  "marker": null,
+  "forbiddenMarkers": [],
+  "conversations": [
+    {
+      "id": "7023f036-a93c-4d04-a954-d289a0fa652a",
+      "title": "Silver unrelated register",
+      "messages": [
+        {
+          "role": "user",
+          "content": "This is a different record."
+        },
+        {
+          "role": "assistant",
+          "content": "Unrelated label not requested."
+        }
+      ]
+    }
+  ]
+}

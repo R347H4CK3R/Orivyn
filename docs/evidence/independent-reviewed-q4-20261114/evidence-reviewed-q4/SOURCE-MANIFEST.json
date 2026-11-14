@@ -1,0 +1,358 @@
+[
+  {
+    "source": "JarvisEVO/Core/NativeReadProposal.swift",
+    "sha256": "ac5e9f0456258c4d666ef7e09dc632e452bc7c188d09b06ae08364307d4d29ac"
+  },
+  {
+    "source": "JarvisEVO/Core/LocalCalculatorRequest.swift",
+    "sha256": "9133d8ba904b218106613078e244097af66063dcd647d5e62d4bb35fb95f2e44"
+  },
+  {
+    "source": "JarvisEVO/Core/LocalCalculator.swift",
+    "sha256": "3474bef00ec5ecbd10e7d08c27aaa266027edacdc12c18bfe8d9f3ce39d03290"
+  },
+  {
+    "source": "JarvisEVO/Core/LocalCalculatorTool.swift",
+    "sha256": "cbd979fc05d0f22250e53ec5d55efb36a597363e3ecc34357775e64f26c5a23e"
+  },
+  {
+    "source": "JarvisEVO/Core/MCPTypes.swift",
+    "sha256": "675f5301eafd51bc447d568e3b46c494fb4a4824d13700ed30b33c2bd3b2e0a3"
+  },
+  {
+    "source": "JarvisEVO/Core/MCPToolSchema.swift",
+    "sha256": "c533a3c9f38f850c272686fccca11801f593c8aaf6270e7866112de159b2c806"
+  },
+  {
+    "source": "JarvisEVO/Providers/Local/LlamaEngine.swift",
+    "sha256": "0f499afff3430f08385439e3bffdee653f64a968dc5d76e0cfdfcef31469abab"
+  },
+  {
+    "source": "JarvisEVO/Providers/Local/LocalPromptBuilder.swift",
+    "sha256": "484e23246f28967e453465ff044047fce26bdd92cc46ea5a73c8c2bfeaa9626c"
+  },
+  {
+    "source": "JarvisEVO/Providers/Local/UTF8TokenAccumulator.swift",
+    "sha256": "1e0ddc65e05a0e1a80ebab06c6bd05a585f93a2cc9b0ed7c8e19d2adbf6cb00c"
+  },
+  {
+    "source": "JarvisEVO/Providers/Local/LocalModelCatalog.swift",
+    "sha256": "f477721b542ace6424f896bfe5687b4681377e8091f815df8fd0fe611e9f7993"
+  },
+  {
+    "source": "JarvisEVO/Providers/Local/LocalModelCatalogData.swift",
+    "sha256": "72ff658e87ddb3d82cb7b85431ba4c7f616fd5cfb368a98c95900ce7b45540e8"
+  },
+  {
+    "source": "JarvisEVO/Core/AIProvider.swift",
+    "sha256": "3ea47439af2917dc8f11c23f66a26282c62f1f559e95fb6473f1a91f1008252d"
+  },
+  {
+    "source": "JarvisEVO/Core/MemoryContextBuilder.swift",
+    "sha256": "1aefd5f6c2db5bcaebd8804b330d4c4a9178b2c677435399533cb5a0be17f86c"
+  },
+  {
+    "source": "JarvisEVO/Core/Conversation.swift",
+    "sha256": "bc67dc97a2701c47c419c263d11373331bba3f6238c5112cd9666b5902b5d23a"
+  },
+  {
+    "source": "JarvisEVO/Core/MemoryNote.swift",
+    "sha256": "cccceaa84d497af02f1d466968300a7281f354b4b5e1a1ae913b403023f8967f"
+  },
+  {
+    "source": "JarvisEVO/Core/ImageOCRResult.swift",
+    "sha256": "382ea8ed084af0c7afb0ac03721bae8672294e3bf3d4e93917749dc1be735378"
+  },
+  {
+    "source": "JarvisEVO/Core/OCRLineEvidence.swift",
+    "sha256": "100c0bc3a78fc20139be459bc17880dc4e07dd2978c75dcc0baf83a08b7b1502"
+  },
+  {
+    "source": "JarvisEVO/Core/ProviderError.swift",
+    "sha256": "249b122f068857626c9ce9bb75adf0964f015fa1d85aff937f5f5f87351f6e88"
+  },
+  {
+    "source": "JarvisEVO/Core/LocalHeavyWork.swift",
+    "sha256": "22f57f9fa80ce2ff220528bf8d75416049bd6da2dc843a71d95b8cde93efd677"
+  },
+  {
+    "source": "JarvisEVO/Core/LocalAgentGrammar.swift",
+    "sha256": "cce9791cbdd7ff5197c3c20958d9b071833d7550bb59997fab0d215635628c97"
+  },
+  {
+    "source": "JarvisEVO/Core/LocalAgentError.swift",
+    "sha256": "778dc5b931880df35b7518ef758b60ffc1c6be6a5e57d5ddc62075b10366302e"
+  },
+  {
+    "source": "JarvisEVO/Core/LocalReviewedSearch.swift",
+    "sha256": "b045a73d3599f8da14c38be0c2b722bb750b634019f23d3c7eaabf9ce16042bf"
+  },
+  {
+    "source": "JarvisEVO/Core/LocalReadWorkflowPolicy.swift",
+    "sha256": "78c2f9e0b0cbe08346736bb12f518c8bc43359b85507e4de30eb9835c859f0bc"
+  },
+  {
+    "source": "JarvisEVO/Core/LocalReadPlan.swift",
+    "sha256": "7664e3d9ba76528d9bf9c68bd82f801be20eb014142f82025e395f0de1669538"
+  },
+  {
+    "source": "JarvisEVO/Core/VisionDownloadProgressState.swift",
+    "sha256": "c3d2fdcc3a0693e12cedcdb75e88a56c22af5c5280f474b364ff140f383eb9f5"
+  },
+  {
+    "source": "JarvisEVO/Core/SourceRepairReviewBinding.swift",
+    "sha256": "ee00621aaec629a5349f38eb01bb027c06ee94fb2dfb52730a2b3ded61008857"
+  },
+  {
+    "source": "JarvisEVO/Services/AttachmentFileCopy.swift",
+    "sha256": "1eb9b897ae811bb2419fd59b61f84c811c842efdf0d7f9fa71f9c052e99dba17"
+  },
+  {
+    "source": "JarvisEVO/Core/LocalModelInstallationPlan.swift",
+    "sha256": "e521ba116dd431c888e0482d5a0e5471691007adb64b2d51aa630195531d1290"
+  },
+  {
+    "source": "JarvisEVO/Core/LocalConversationSearch.swift",
+    "sha256": "ad260faa61de25b26d0364e48ec65118f02ab4b8f94a035a2f3f1d14f3c41224"
+  },
+  {
+    "source": "JarvisEVO/Core/LocalConversationRead.swift",
+    "sha256": "0fae84b52cab043ec8bbde5c792eebe17067b97f6dc1f867533aab09ad59fd76"
+  },
+  {
+    "source": "JarvisEVO/Core/RemoteCredentialIntent.swift",
+    "sha256": "44fd091c06c0fb14fa4698276009db4ee059f444816107cb574f558bdc46039a"
+  },
+  {
+    "source": "JarvisEVO/Core/ConversationTranscript.swift",
+    "sha256": "797b5a234a9cbbba477f99df8a91b8b7fd01b5e8e1e2576a3f501a7bca66d405"
+  },
+  {
+    "source": "JarvisEVO/Core/DeskPresentationState.swift",
+    "sha256": "7fda00757a0215d699057e22f09572b34f936e3c3129119ff4f15aaec60960b4"
+  },
+  {
+    "source": "JarvisEVO/Core/LocalModelRemovalPlan.swift",
+    "sha256": "dccd565297922fd8cd37f28ff1af9249474240d68e77a8e5464eab5d2d7bd719"
+  },
+  {
+    "source": "JarvisEVO/Core/PluginConnectionRemoval.swift",
+    "sha256": "5886c11a0bc388f902581d43e2f27b7dcbad67e5ae43f707a1fcdaad9dbfcb56"
+  },
+  {
+    "source": "JarvisEVO/Core/LocalCalculationEvidence.swift",
+    "sha256": "46baacf28f2ebab9651ace94c49285d2eaa2203987c4437f2cb37eed2c088a0f"
+  },
+  {
+    "source": "JarvisEVO/Core/LocalAgentSnapshot.swift",
+    "sha256": "0f74a525333f7537cf4c9992c11baacf31f0ab263e9c88068a154d7044a162a9"
+  },
+  {
+    "source": "JarvisEVO/Core/AppSelfKnowledge.swift",
+    "sha256": "1c29b9faa9e9bdabe67752981775d732ea93f273f9b8f9b6074294fd2e6627c6"
+  },
+  {
+    "source": "JarvisEVO/Core/LocalToolResultBudget.swift",
+    "sha256": "9b1c1acd9f9ea706b2a961768f7f359b889f8ddcd5cb570435d68b0accd1ddbf"
+  },
+  {
+    "source": "JarvisEVO/Services/LocalAgentStore.swift",
+    "sha256": "4486efa13ea4562403b625687517cc21aa1568c82d47151f6bd025708f24d4fd"
+  },
+  {
+    "source": "JarvisEVO/Providers/RemoteStreamDecoding.swift",
+    "sha256": "5dedc2c2cafeab83bdc4d87ff9cf5ba3bc8530bfa0ad183978deea5e855597e0"
+  },
+  {
+    "source": "JarvisEVO/Providers/Local/ModelInstallTransaction.swift",
+    "sha256": "1fb15564a51a4afa968805ade502f87c8275601e949a1da917d57b0765875762"
+  },
+  {
+    "source": "JarvisEVO/Core/LocalReminder.swift",
+    "sha256": "63b7c8c39405b74d96bc09c0d52a785dd478938870cf7fea597dff7df516825b"
+  },
+  {
+    "source": "JarvisEVO/Core/IncomingTextRequest.swift",
+    "sha256": "2de22c6d58a6c4ec05c8ee754db7d1f84d9244ef781444849be06f30e96740ab"
+  },
+  {
+    "source": "JarvisEVO/Core/MarkdownDocument.swift",
+    "sha256": "3c62b0520da8e956a50a437e028865f21fc9b980903811e192d543ca52f58e4b"
+  },
+  {
+    "source": "JarvisEVO/Core/PluginExecution.swift",
+    "sha256": "fdb380c06cee2cfbbfd375b115d2466453107ce817c79c6d2439eec57d33e944"
+  },
+  {
+    "source": "JarvisEVO/Core/RepositorySourceDiagnostics.swift",
+    "sha256": "c3b370abd4d833620895dc823cdc72c133de0564504c8a6953971d6b7938f12d"
+  },
+  {
+    "source": "JarvisEVO/Services/MCPHTTPClient.swift",
+    "sha256": "8047ce5ec74615542940140d96fa8c98115f12b150049da6c39b46279646818f"
+  },
+  {
+    "source": "JarvisEVO/Core/MemorySearch.swift",
+    "sha256": "4d420618f01eee110a9669689f97fe72107c46d28de8e89a03003c113cb1d5f4"
+  },
+  {
+    "source": "JarvisEVO/Core/AutomaticModelRouter.swift",
+    "sha256": "f320774115269bf0ac96b69802c9bc16b98aadde6e859d7f770e067676d8db20"
+  },
+  {
+    "source": "JarvisEVO/Core/NativeToolSuggestion.swift",
+    "sha256": "d410a373e6be31f092494817df5506bbe51280a2bba3396b0df66a3e5c7d0e19"
+  },
+  {
+    "source": "JarvisEVO/Core/NativeToolDrafts.swift",
+    "sha256": "08423ecee3657178f130cb6ce5f7752df086140d4c1cd7ccf716d7f02d068117"
+  },
+  {
+    "source": "JarvisEVO/Core/FeedbackDraft.swift",
+    "sha256": "516810d5aea2080c479f2639c5f5ae571d9000b07238df40b8647412f290774c"
+  },
+  {
+    "source": "JarvisEVO/Core/AttachmentTextSearch.swift",
+    "sha256": "d108a3754882ba7538826dee3e15375a5e3657d0d7264476b05a68cd530d0d40"
+  },
+  {
+    "source": "JarvisEVO/Core/LocalSearchExcerpt.swift",
+    "sha256": "80411efefffc420769b65b3c9b090f15d1e26d5b59774547602b1fd756d38501"
+  },
+  {
+    "source": "JarvisEVO/Services/LocalReadTools.swift",
+    "sha256": "c92969c79cd726d54f06c891e034514078587e6bd4bc000c361c86e98a092fb9"
+  },
+  {
+    "source": "JarvisEVO/Resources/LocalAgentDecision.gbnf",
+    "sha256": "4c833c12d0cacc7fc79bc04f37b18b1b9be83144c9bcc1ecbe0b3e10c33670b3"
+  },
+  {
+    "source": "JarvisEVO/Resources/LocalAgentCore.js",
+    "sha256": "de5b1acd9e69eb98ceba83a53523421ff6e389fa7127197997da465ed7902ee1"
+  },
+  {
+    "source": "scripts/swift-smoke/CalculatorAgentCore.cjs",
+    "sha256": "a846d2452402787886745624acf7bf2d9ed588d5b21d66f8752d548068732674"
+  },
+  {
+    "source": "independent-evaluator/IndependentReviewedDriver.swift",
+    "sha256": "801b35cc5b1255e6ccc726c6caec072eef222e458b41142ea0cd2a52321d3270"
+  },
+  {
+    "source": "independent-evaluator/sealed-cases.json",
+    "sha256": "e27c3262a60cd146901ff94398003c8fa3e0246afd074dbf9a03bcc00bfe3447"
+  },
+  {
+    "source": "independent-evaluator/supplemental-case.json",
+    "sha256": "4cf4e4c1660def950c32cdccabdbcc09acc96bbf26ed61326e2d5e421181d12a"
+  },
+  {
+    "source": "independent-evaluator/reviewed-intents.json",
+    "sha256": "041ab2823002a49777f578a0dfe1e76b76f053fa5d4d8a8a559e78f5939ff22a"
+  },
+  {
+    "source": "independent-evaluator/proposal_approval.py",
+    "sha256": "cebe4d5c41b406b47c0b2afc7bb2594e166a0d99b3b0057f7514aac30aa6546b"
+  },
+  {
+    "source": "independent-evaluator/approve_actual.py",
+    "sha256": "abc7cae0bf38f822f06f9ac87552a2f001792e416423fc8f245d088376154eda"
+  },
+  {
+    "source": "independent-evaluator/DESIGN-FREEZE.json",
+    "sha256": "6b2beba34f3b8b11b5bc24cbb370e9cdc7e2adbeb14ac596c2ec669032796c16"
+  },
+  {
+    "source": "runtime-header/ggml-sycl.h",
+    "sha256": "d59d5275423a7ce173c8e6f69933a501e53a635410de3f8d61bf23a59dac81fd"
+  },
+  {
+    "source": "runtime-header/ggml-backend.h",
+    "sha256": "f958619aa6b8eceeb0b888b5e5f460f3bf07be727a9b247d41f01acb8ebad109"
+  },
+  {
+    "source": "runtime-header/ggml-vulkan.h",
+    "sha256": "7eae5dad2cc7bb4d3eca828539f441816d5fd59fdc7b224d49aa229fc7b7248c"
+  },
+  {
+    "source": "runtime-header/ggml-zdnn.h",
+    "sha256": "ee1d79c95ade45ba195a6b71f59a05c18617de4a596d2b2b03ecf38975a9a448"
+  },
+  {
+    "source": "runtime-header/ggml-virtgpu.h",
+    "sha256": "ed231e7db3f0f58b84073f5ee67f9ec9d63046d1a7ed091c36a6cfe9f685a463"
+  },
+  {
+    "source": "runtime-header/ggml-zendnn.h",
+    "sha256": "2cb034b842438281616ce647232d922fb224450323f0d422d2af567c334aa8ff"
+  },
+  {
+    "source": "runtime-header/ggml.h",
+    "sha256": "e9dcbc46054d3dfcecdeb90504146c30e547d29da73ae9605ce40e907343627b"
+  },
+  {
+    "source": "runtime-header/ggml-opt.h",
+    "sha256": "3586de1bc8a934b5c72339e2b6937b0641e8f149b512231e666f67de0736eea2"
+  },
+  {
+    "source": "runtime-header/gguf.h",
+    "sha256": "657433f5d216c53c0801897ce59a1d4414af9b234fc885a7340275fac56af415"
+  },
+  {
+    "source": "runtime-header/ggml-cuda.h",
+    "sha256": "84122bf381c24709eab9e888034956eafc1dfe436f9d826c10fa0e1a695f8a5e"
+  },
+  {
+    "source": "runtime-header/ggml-rpc.h",
+    "sha256": "218705af1c85a07d0bdf42f45b080a52e640b5023db912a445f34cb8be1f0cc5"
+  },
+  {
+    "source": "runtime-header/ggml-cpp.h",
+    "sha256": "bc15ba002c68685df23faae42df0d2b3d58032011f88b649021ab92485862c72"
+  },
+  {
+    "source": "runtime-header/ggml-opencl.h",
+    "sha256": "8e443e1aa9c8bc6e0cf116c4cc3f42f4858938fa15e65b06bc07b26686e1233a"
+  },
+  {
+    "source": "runtime-header/llama.h",
+    "sha256": "05c78260dbb1359f64694e408646fe75689b1ab5764f81a9f4f4bb7028a9d60b"
+  },
+  {
+    "source": "runtime-header/llama-cpp.h",
+    "sha256": "c48fd31095d2403a3bf7cbe98333ba0e61a398ee6e83b56f9d8b7237143b9877"
+  },
+  {
+    "source": "runtime-header/ggml-cpu.h",
+    "sha256": "1aafe97e576ea38c0da57517fb2492955d0b69c1a799842481fc069d6d9d28ef"
+  },
+  {
+    "source": "runtime-header/ggml-hexagon.h",
+    "sha256": "b2c12bac390f14707b16bdd27c8c75ce4f075ed509c729ee28fd4f03b17e7375"
+  },
+  {
+    "source": "runtime-header/ggml-openvino.h",
+    "sha256": "c2e3f301e28ad815b4285888aad6130808a77e6acb4e8b558de63a648cf9743e"
+  },
+  {
+    "source": "runtime-header/ggml-webgpu.h",
+    "sha256": "a91d855313a9e85e75ba597ff869a267247dea936a2c0faef03aeb7f1ea6e79c"
+  },
+  {
+    "source": "runtime-header/ggml-cann.h",
+    "sha256": "2cdb134f27fe5c4ec19d52f1eb58f5355aa42b8f54bf385f0e487501c5df7362"
+  },
+  {
+    "source": "runtime-header/ggml-metal.h",
+    "sha256": "322f36cd30f3e9e7aad7b5b9bc63078012fd0b7706ac4e24f5721b604f3d8980"
+  },
+  {
+    "source": "runtime-header/ggml-alloc.h",
+    "sha256": "3793a2175be355619cc426982706b7fa94ad801b66d2aeef4b95e68c434ba0ef"
+  },
+  {
+    "source": "runtime-header/ggml-blas.h",
+    "sha256": "e76cb8594dc9866d99e7d63191b9fff6ab8b50244b4a28ce3af0f962964a6b5b"
+  }
+]
