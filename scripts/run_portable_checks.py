@@ -98,6 +98,10 @@ def main(argv=None):
         'stages': [],
     }
     stages = [
+        # Fresh clones contain only the checksum-pinned compressed disk.
+        # Use the same offline staging step as native CI before asset contracts.
+        ('guest', [sys.executable, '-B', 'scripts/materialize_guest.py', 'Fixtures/maintained.img.gz',
+                   'JarvisEVO/Resources/VMAssets/maintained.img']),
         ('python', [sys.executable, '-B', '-m', 'unittest', 'discover', '-s', 'scripts/tests', '-p', 'test_*.py']),
         ('catalog', [sys.executable, '-B', 'scripts/model_catalog.py', '--check']),
         ('agent', [args.node, '--test'] + [str(p.relative_to(root)) for p in sorted((root / 'scripts/agent-tests').glob('*.test.cjs'))]),

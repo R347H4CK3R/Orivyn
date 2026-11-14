@@ -7,6 +7,7 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[2]
 spec = importlib.util.spec_from_file_location('portable_checks', ROOT / 'scripts/run_portable_checks.py')
@@ -15,6 +16,27 @@ spec.loader.exec_module(checks)
 
 
 class PortableChecksTests(unittest.TestCase):
+    def test_guest_is_prepared_before_contract_checks_and_failure_is_retained(self):
+        for preparation_status in ['passed', 'failed']:
+            with self.subTest(preparation_status=preparation_status), tempfile.TemporaryDirectory() as folder:
+                out = Path(folder) / 'evidence'
+                calls = []
+
+                def stage(name, command, root, output, **kwargs):
+                    calls.append((name, command))
+                    return {'name': name, 'status': preparation_status if name == 'guest' else 'passed'}
+
+                with mock.patch.object(checks, 'run_stage', side_effect=stage), \
+                     mock.patch.object(checks, 'source_manifest', return_value=[]), \
+                     contextlib.redirect_stdout(io.StringIO()):
+                    result = checks.main(['--swift', 'unused', '--output', str(out)])
+                self.assertEqual(calls[0], ('guest', [sys.executable, '-B', 'scripts/materialize_guest.py',
+                    'Fixtures/maintained.img.gz', 'JarvisEVO/Resources/VMAssets/maintained.img']))
+                self.assertIn('python', [name for name, _ in calls])
+                summary = json.loads((out / 'SUMMARY.json').read_text())
+                self.assertEqual(next(s for s in summary['stages'] if s['name'] == 'guest')['status'], preparation_status)
+                self.assertEqual(result, 1 if preparation_status == 'failed' else 0)
+
     def test_failing_process_preserves_output_and_exit_code(self):
         with tempfile.TemporaryDirectory() as folder:
             out = Path(folder)
