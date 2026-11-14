@@ -38,15 +38,18 @@ import llama
         let root = URL(fileURLWithPath: CommandLine.arguments[0]).deletingLastPathComponent()
         let store = try LocalAgentStore(directory: root.appendingPathComponent("agent-records"))
         let model = AppModel(), fixtureID = UUID(uuidString: "abcdefab-1234-1234-1234-123456789abc")!
-        let alternate = ProcessInfo.processInfo.environment["ORIVYN_CONVERSATION_FIXTURE"] == "maple"
-        let title = alternate ? "Maple journal" : "Orchid notebook"
-        let marker = alternate ? "HARBOR-319" : "LANTERN-742"
+        let variant = ProcessInfo.processInfo.environment["ORIVYN_CONVERSATION_FIXTURE"]
+        let alternate = variant == "maple"
+        let pagination = variant == "pagination"
+        let title = pagination ? "Juniper pages" : (alternate ? "Maple journal" : "Orchid notebook")
+        let marker = pagination ? "PAGE-" + UUID().uuidString : (alternate ? "HARBOR-319" : "LANTERN-742")
+        let padding = pagination ? String(repeating:"Background notes. ", count:34) : ""
         model.conversations = [Conversation(id: fixtureID, title: title, messages: [
             ChatMessage(role: .user, content: "\(title) opening note. The exact verification code is recorded in the second message, not this note."),
-            ChatMessage(role: .assistant, content: "The synthetic verification code is \(marker). This is harmless test fixture text.")]),
+            ChatMessage(role: .assistant, content: padding + "The synthetic verification code is \(marker). This is harmless test fixture text.")]),
             Conversation(title: "Unrelated notebook", messages: [ChatMessage(role: .user, content: "No requested information here.")])]
         let id = UUID().uuidString.lowercased()
-        let goal = "Find the saved \(title) conversation, read its second message, and tell me the exact verification code. Search first, then use read_conversation. Do not guess from a search excerpt."
+        let goal = (pagination ? "Return only the exact code, with no label or explanation. " : "") + "Find the saved \(title) conversation, read its second message, and tell me the exact verification code. Search first, then use read_conversation. Do not guess from a search excerpt."
         let engine = LlamaEngine()
         let proposalRequest=try GenerationRequest.readPlanProposal(goal:goal,kind:"conversation_read")
         try Data(proposalRequest.messages[0].content.utf8).write(to:root.appendingPathComponent("proposal-prompt.txt"))
@@ -98,18 +101,26 @@ import llama
                 }
                 print("ACTUAL MODEL DECISION [\(cycle)]: \(decision)")
                 state = try core("acceptDecision", [state, decision])
-                try store.save(state, id: id) // Actual durable marker before every dispatcher read.
                 let accepted = try JSONDecoder().decode(LocalAgentSnapshot.self, from: Data(state.utf8))
                 if accepted.status == "answered" {
                     guard try LocalReadWorkflowPolicy.derive(plan:plan,history:accepted.history,conversations:model.conversations).canAnswer else { throw Failure.failed("Native answer guard") }
+                }
+                try store.save(state, id: id) // Native answer validation precedes persistence; pending calls remain durable before dispatch.
+                if accepted.status == "answered" {
                     guard accepted.history.contains(where: { $0.name == "search_conversations" && $0.outcome == "succeeded" }),
                           accepted.history.contains(where: { $0.name == "read_conversation" && $0.outcome == "succeeded" && $0.result?.contains(marker) == true }),
                           !accepted.history.contains(where: { $0.name == "search_conversations" && $0.result?.contains(marker) == true }),
                           let answer = accepted.answer, answer.contains(marker) else { throw Failure.failed("Answer lacked actual search/read evidence or exact fixture code") }
+                    if pagination {
+                        guard answer == marker,
+                              accepted.history.contains(where: { $0.name == "read_conversation" && ($0.arguments.objectValue?["offset"]?.integerValue ?? 0) > 0 }) else {
+                            throw Failure.failed("Paginated exact-answer acceptance failed; extra wording or missing page")
+                        }
+                    }
                     let reopened = try LocalAgentStore(directory: root.appendingPathComponent("agent-records"))
                     guard try reopened.load(id: id) == state else { throw Failure.failed("Final state did not reopen") }
                     try Data(state.utf8).write(to: root.appendingPathComponent("FINAL-STATE.json"))
-                    print("PASS real model search -> authorized conversation read -> exact fixture answer, persisted and reopened")
+                    print("PASS real model search -> authorized conversation read -> required fixture answer check, persisted and reopened")
                     await engine.unload(); return
                 }
                 if accepted.status == "ready" { continue } // Real reducer result paging, not a fake native call.
