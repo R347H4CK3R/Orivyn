@@ -16,8 +16,11 @@ SCHEME="$ROOT/JarvisEVO.xcodeproj/xcshareddata/xcschemes/JarvisEVO.xcscheme"
 mkdir "$VISION_EVIDENCE_DIR"
 cp "$SCHEME" "$VISION_EVIDENCE_DIR/original.xcscheme"
 cleanup() {
+ local status=$?
  vm_stat > "$VISION_EVIDENCE_DIR/host-vm-after.txt" || true
- cp "$VISION_EVIDENCE_DIR/original.xcscheme" "$SCHEME"
+ cp "$VISION_EVIDENCE_DIR/original.xcscheme" "$SCHEME" || status=1
+ trap - EXIT
+ exit "$status"
 }
 trap cleanup EXIT
 # Environment must reach the test-host process, not just the xcodebuild shell.
@@ -41,6 +44,7 @@ PY
 sysctl hw.memsize > "$VISION_EVIDENCE_DIR/host-memory.txt"
 vm_stat > "$VISION_EVIDENCE_DIR/host-vm-before.txt"
 cd "$ROOT"
+set +e
 xcodebuild test -project JarvisEVO.xcodeproj -scheme JarvisEVO \
  -destination "$VISION_DESTINATION" -destination-timeout 120 \
  -derivedDataPath "$VISION_DERIVED_DATA" \
@@ -50,10 +54,22 @@ xcodebuild test -project JarvisEVO.xcodeproj -scheme JarvisEVO \
  -maximum-test-execution-time-allowance 600 \
  -resultBundlePath "$VISION_EVIDENCE_DIR/ProductionVision.xcresult" \
  "ORIVYN_NATIVE_FEATURES=$ORIVYN_NATIVE_FEATURES" CODE_SIGNING_ALLOWED=NO 2>&1 | tee "$VISION_EVIDENCE_DIR/xcodebuild.log"
+PIPE_STATUSES=("${PIPESTATUS[@]}")
+BUILD_STATUS=${PIPE_STATUSES[0]}
+LOG_STATUS=${PIPE_STATUSES[1]}
 xcrun xcresulttool export attachments --path "$VISION_EVIDENCE_DIR/ProductionVision.xcresult" --output-path "$VISION_EVIDENCE_DIR/attachments"
+ATTACHMENT_STATUS=$?
+xcrun xcresulttool get test-results summary --path "$VISION_EVIDENCE_DIR/ProductionVision.xcresult" > "$VISION_EVIDENCE_DIR/test-summary.json"
+SUMMARY_STATUS=$?
+python3 "$ROOT/Diagnostics/NativeTools/verify_simulator_result.py" "$VISION_EVIDENCE_DIR/test-summary.json"
+VERIFY_STATUS=$?
 python3 - "$VISION_EVIDENCE_DIR/xcodebuild.log" <<'PY_CHECK'
 import sys
 from pathlib import Path
 if 'ORIVYN_PRODUCTION_VISION_REQUIRED_GATE_COMPLETED' not in Path(sys.argv[1]).read_text(errors='replace'):
     raise SystemExit('Required vision gate did not execute to completion; a skip is not acceptance')
 PY_CHECK
+MARKER_STATUS=$?
+set -e
+printf 'xcodebuild=%s\nlog=%s\nattachments=%s\nsummary=%s\nverifier=%s\nmarker=%s\n' "$BUILD_STATUS" "$LOG_STATUS" "$ATTACHMENT_STATUS" "$SUMMARY_STATUS" "$VERIFY_STATUS" "$MARKER_STATUS" > "$VISION_EVIDENCE_DIR/outcomes.txt"
+[[ "$BUILD_STATUS" == 0 && "$LOG_STATUS" == 0 && "$ATTACHMENT_STATUS" == 0 && "$SUMMARY_STATUS" == 0 && "$VERIFY_STATUS" == 0 && "$MARKER_STATUS" == 0 ]]

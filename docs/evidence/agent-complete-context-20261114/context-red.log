@@ -1,0 +1,154 @@
+✖ complete search UUID and title survive cursor change in the same current prompt (8.870952ms)
+✖ all successful results appear simultaneously without substring omission (2.770523ms)
+✖ oversized new result is retained but stops work with explicit narrower-task error (1.603ms)
+✖ old fully-exposed ledger cannot authorize an answer with absent oversized context (7.409602ms)
+✖ UTF-8 and JSON escaping are measured on the complete final prompt (3.294021ms)
+✖ legacy migration and interrupted cursor recovery preserve evidence without replay (0.855771ms)
+✖ read_result remains bounded reducer-only work and does not manufacture tool provenance (0.483227ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 0
+ℹ fail 7
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 189.358998
+
+✖ failing tests:
+
+test at orivyn-agent-conversation/scripts/agent-tests/context-completeness.test.cjs:12:1
+✖ complete search UUID and title survive cursor change in the same current prompt (8.870952ms)
+  AssertionError [ERR_ASSERTION]: missing UNTRUSTED_RESULTS_JSON
+      at field (/workspace/scratch/8352eb8fe69c/orivyn-agent-conversation/scripts/agent-tests/context-completeness.test.cjs:11:102)
+      at TestContext.<anonymous> (/workspace/scratch/8352eb8fe69c/orivyn-agent-conversation/scripts/agent-tests/context-completeness.test.cjs:17:38)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at orivyn-agent-conversation/scripts/agent-tests/context-completeness.test.cjs:23:1
+✖ all successful results appear simultaneously without substring omission (2.770523ms)
+  AssertionError [ERR_ASSERTION]: missing UNTRUSTED_RESULTS_JSON
+      at field (/workspace/scratch/8352eb8fe69c/orivyn-agent-conversation/scripts/agent-tests/context-completeness.test.cjs:11:102)
+      at TestContext.<anonymous> (/workspace/scratch/8352eb8fe69c/orivyn-agent-conversation/scripts/agent-tests/context-completeness.test.cjs:26:14)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at orivyn-agent-conversation/scripts/agent-tests/context-completeness.test.cjs:30:1
+✖ oversized new result is retained but stops work with explicit narrower-task error (1.603ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  'ready' !== 'failed'
+  
+      at TestContext.<anonymous> (/workspace/scratch/8352eb8fe69c/orivyn-agent-conversation/scripts/agent-tests/context-completeness.test.cjs:32:9)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'ready',
+    expected: 'failed',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at orivyn-agent-conversation/scripts/agent-tests/context-completeness.test.cjs:36:1
+✖ old fully-exposed ledger cannot authorize an answer with absent oversized context (7.409602ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'answered'
+  - 'failed'
+  
+      at TestContext.<anonymous> (/workspace/scratch/8352eb8fe69c/orivyn-agent-conversation/scripts/agent-tests/context-completeness.test.cjs:40:9)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'answered',
+    expected: 'failed',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at orivyn-agent-conversation/scripts/agent-tests/context-completeness.test.cjs:44:1
+✖ UTF-8 and JSON escaping are measured on the complete final prompt (3.294021ms)
+  AssertionError [ERR_ASSERTION]: missing UNTRUSTED_RESULTS_JSON
+      at field (/workspace/scratch/8352eb8fe69c/orivyn-agent-conversation/scripts/agent-tests/context-completeness.test.cjs:11:102)
+      at TestContext.<anonymous> (/workspace/scratch/8352eb8fe69c/orivyn-agent-conversation/scripts/agent-tests/context-completeness.test.cjs:49:17)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at orivyn-agent-conversation/scripts/agent-tests/context-completeness.test.cjs:53:1
+✖ legacy migration and interrupted cursor recovery preserve evidence without replay (0.855771ms)
+  AssertionError [ERR_ASSERTION]: missing UNTRUSTED_RESULTS_JSON
+      at field (/workspace/scratch/8352eb8fe69c/orivyn-agent-conversation/scripts/agent-tests/context-completeness.test.cjs:11:102)
+      at TestContext.<anonymous> (/workspace/scratch/8352eb8fe69c/orivyn-agent-conversation/scripts/agent-tests/context-completeness.test.cjs:61:19)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at orivyn-agent-conversation/scripts/agent-tests/context-completeness.test.cjs:63:1
+✖ read_result remains bounded reducer-only work and does not manufacture tool provenance (0.483227ms)
+  AssertionError [ERR_ASSERTION]: missing UNTRUSTED_RESULTS_JSON
+      at field (/workspace/scratch/8352eb8fe69c/orivyn-agent-conversation/scripts/agent-tests/context-completeness.test.cjs:11:102)
+      at TestContext.<anonymous> (/workspace/scratch/8352eb8fe69c/orivyn-agent-conversation/scripts/agent-tests/context-completeness.test.cjs:66:15)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

@@ -1,0 +1,397 @@
+[
+  {
+    "source": "JarvisEVO/Core/LocalCalculatorRequest.swift",
+    "sha256": "9133d8ba904b218106613078e244097af66063dcd647d5e62d4bb35fb95f2e44",
+    "bytes": 2491
+  },
+  {
+    "source": "JarvisEVO/Core/LocalCalculator.swift",
+    "sha256": "3474bef00ec5ecbd10e7d08c27aaa266027edacdc12c18bfe8d9f3ce39d03290",
+    "bytes": 6225
+  },
+  {
+    "source": "JarvisEVO/Core/LocalCalculatorTool.swift",
+    "sha256": "cbd979fc05d0f22250e53ec5d55efb36a597363e3ecc34357775e64f26c5a23e",
+    "bytes": 1407
+  },
+  {
+    "source": "JarvisEVO/Core/MCPTypes.swift",
+    "sha256": "675f5301eafd51bc447d568e3b46c494fb4a4824d13700ed30b33c2bd3b2e0a3",
+    "bytes": 14897
+  },
+  {
+    "source": "JarvisEVO/Core/MCPToolSchema.swift",
+    "sha256": "c533a3c9f38f850c272686fccca11801f593c8aaf6270e7866112de159b2c806",
+    "bytes": 8972
+  },
+  {
+    "source": "JarvisEVO/Providers/Local/LlamaEngine.swift",
+    "sha256": "2b29dc312c19c3ad06d032d475165047b35fc59ea7000acb21389ae5ce294c1e",
+    "bytes": 18155
+  },
+  {
+    "source": "JarvisEVO/Providers/Local/LocalPromptBuilder.swift",
+    "sha256": "484e23246f28967e453465ff044047fce26bdd92cc46ea5a73c8c2bfeaa9626c",
+    "bytes": 5826
+  },
+  {
+    "source": "JarvisEVO/Providers/Local/UTF8TokenAccumulator.swift",
+    "sha256": "1e0ddc65e05a0e1a80ebab06c6bd05a585f93a2cc9b0ed7c8e19d2adbf6cb00c",
+    "bytes": 2405
+  },
+  {
+    "source": "JarvisEVO/Providers/Local/LocalModelCatalog.swift",
+    "sha256": "f477721b542ace6424f896bfe5687b4681377e8091f815df8fd0fe611e9f7993",
+    "bytes": 5168
+  },
+  {
+    "source": "JarvisEVO/Providers/Local/LocalModelCatalogData.swift",
+    "sha256": "4ce3479843ba9f42e9dc5e905f4fed9bfe384d86974ede722327678f935e1d07",
+    "bytes": 11027
+  },
+  {
+    "source": "JarvisEVO/Core/AIProvider.swift",
+    "sha256": "7f3b2d8d5185f6297c3c823dfc6cb7092d8e4f5797b08b75ffdb674f04969593",
+    "bytes": 729
+  },
+  {
+    "source": "JarvisEVO/Core/MemoryContextBuilder.swift",
+    "sha256": "1aefd5f6c2db5bcaebd8804b330d4c4a9178b2c677435399533cb5a0be17f86c",
+    "bytes": 6658
+  },
+  {
+    "source": "JarvisEVO/Core/Conversation.swift",
+    "sha256": "bc67dc97a2701c47c419c263d11373331bba3f6238c5112cd9666b5902b5d23a",
+    "bytes": 8472
+  },
+  {
+    "source": "JarvisEVO/Core/MemoryNote.swift",
+    "sha256": "cccceaa84d497af02f1d466968300a7281f354b4b5e1a1ae913b403023f8967f",
+    "bytes": 168
+  },
+  {
+    "source": "JarvisEVO/Core/ImageOCRResult.swift",
+    "sha256": "382ea8ed084af0c7afb0ac03721bae8672294e3bf3d4e93917749dc1be735378",
+    "bytes": 2827
+  },
+  {
+    "source": "JarvisEVO/Core/OCRLineEvidence.swift",
+    "sha256": "100c0bc3a78fc20139be459bc17880dc4e07dd2978c75dcc0baf83a08b7b1502",
+    "bytes": 1014
+  },
+  {
+    "source": "JarvisEVO/Core/ProviderError.swift",
+    "sha256": "249b122f068857626c9ce9bb75adf0964f015fa1d85aff937f5f5f87351f6e88",
+    "bytes": 858
+  },
+  {
+    "source": "JarvisEVO/Core/LocalHeavyWork.swift",
+    "sha256": "22f57f9fa80ce2ff220528bf8d75416049bd6da2dc843a71d95b8cde93efd677",
+    "bytes": 1023
+  },
+  {
+    "source": "JarvisEVO/Core/LocalAgentGrammar.swift",
+    "sha256": "3a9da5cd0673dc74e5b0ae07bab58869db39a0459239a05525fa73e22f5499b1",
+    "bytes": 758
+  },
+  {
+    "source": "JarvisEVO/Core/LocalAgentError.swift",
+    "sha256": "778dc5b931880df35b7518ef758b60ffc1c6be6a5e57d5ddc62075b10366302e",
+    "bytes": 1973
+  },
+  {
+    "source": "scripts/swift-smoke/ConversationAgentSmoke.swift",
+    "sha256": "5aa6d2e1062ad292ea2eecb0b7dd18915972275de4882dd05756b946b6a9ca1e",
+    "bytes": 7158
+  },
+  {
+    "source": "JarvisEVO/Services/LocalAgentStore.swift",
+    "sha256": "4486efa13ea4562403b625687517cc21aa1568c82d47151f6bd025708f24d4fd",
+    "bytes": 6541
+  },
+  {
+    "source": "JarvisEVO/Core/LocalAgentSnapshot.swift",
+    "sha256": "82c27c37fbdbc773d868783bf3ff79452af1a66435cef6ad73e7b9a6d5ccfcce",
+    "bytes": 929
+  },
+  {
+    "source": "JarvisEVO/Core/LocalCalculationEvidence.swift",
+    "sha256": "46baacf28f2ebab9651ace94c49285d2eaa2203987c4437f2cb37eed2c088a0f",
+    "bytes": 1393
+  },
+  {
+    "source": "JarvisEVO/Core/VisionDownloadProgressState.swift",
+    "sha256": "c3d2fdcc3a0693e12cedcdb75e88a56c22af5c5280f474b364ff140f383eb9f5",
+    "bytes": 814
+  },
+  {
+    "source": "JarvisEVO/Core/SourceRepairReviewBinding.swift",
+    "sha256": "ee00621aaec629a5349f38eb01bb027c06ee94fb2dfb52730a2b3ded61008857",
+    "bytes": 699
+  },
+  {
+    "source": "JarvisEVO/Services/AttachmentFileCopy.swift",
+    "sha256": "1eb9b897ae811bb2419fd59b61f84c811c842efdf0d7f9fa71f9c052e99dba17",
+    "bytes": 3313
+  },
+  {
+    "source": "JarvisEVO/Core/LocalModelInstallationPlan.swift",
+    "sha256": "e521ba116dd431c888e0482d5a0e5471691007adb64b2d51aa630195531d1290",
+    "bytes": 1141
+  },
+  {
+    "source": "JarvisEVO/Core/LocalConversationSearch.swift",
+    "sha256": "ad260faa61de25b26d0364e48ec65118f02ab4b8f94a035a2f3f1d14f3c41224",
+    "bytes": 3171
+  },
+  {
+    "source": "JarvisEVO/Core/LocalConversationRead.swift",
+    "sha256": "0fae84b52cab043ec8bbde5c792eebe17067b97f6dc1f867533aab09ad59fd76",
+    "bytes": 3671
+  },
+  {
+    "source": "JarvisEVO/Core/RemoteCredentialIntent.swift",
+    "sha256": "44fd091c06c0fb14fa4698276009db4ee059f444816107cb574f558bdc46039a",
+    "bytes": 2492
+  },
+  {
+    "source": "JarvisEVO/Core/ConversationTranscript.swift",
+    "sha256": "797b5a234a9cbbba477f99df8a91b8b7fd01b5e8e1e2576a3f501a7bca66d405",
+    "bytes": 1910
+  },
+  {
+    "source": "JarvisEVO/Core/DeskPresentationState.swift",
+    "sha256": "7fda00757a0215d699057e22f09572b34f936e3c3129119ff4f15aaec60960b4",
+    "bytes": 1658
+  },
+  {
+    "source": "JarvisEVO/Core/LocalModelRemovalPlan.swift",
+    "sha256": "dccd565297922fd8cd37f28ff1af9249474240d68e77a8e5464eab5d2d7bd719",
+    "bytes": 1702
+  },
+  {
+    "source": "JarvisEVO/Core/PluginConnectionRemoval.swift",
+    "sha256": "5886c11a0bc388f902581d43e2f27b7dcbad67e5ae43f707a1fcdaad9dbfcb56",
+    "bytes": 1268
+  },
+  {
+    "source": "JarvisEVO/Core/AppSelfKnowledge.swift",
+    "sha256": "1c29b9faa9e9bdabe67752981775d732ea93f273f9b8f9b6074294fd2e6627c6",
+    "bytes": 2893
+  },
+  {
+    "source": "JarvisEVO/Core/LocalToolResultBudget.swift",
+    "sha256": "9b1c1acd9f9ea706b2a961768f7f359b889f8ddcd5cb570435d68b0accd1ddbf",
+    "bytes": 1340
+  },
+  {
+    "source": "JarvisEVO/Providers/RemoteStreamDecoding.swift",
+    "sha256": "5dedc2c2cafeab83bdc4d87ff9cf5ba3bc8530bfa0ad183978deea5e855597e0",
+    "bytes": 7490
+  },
+  {
+    "source": "JarvisEVO/Providers/Local/ModelInstallTransaction.swift",
+    "sha256": "1fb15564a51a4afa968805ade502f87c8275601e949a1da917d57b0765875762",
+    "bytes": 9050
+  },
+  {
+    "source": "JarvisEVO/Core/LocalReminder.swift",
+    "sha256": "63b7c8c39405b74d96bc09c0d52a785dd478938870cf7fea597dff7df516825b",
+    "bytes": 4315
+  },
+  {
+    "source": "JarvisEVO/Core/IncomingTextRequest.swift",
+    "sha256": "2de22c6d58a6c4ec05c8ee754db7d1f84d9244ef781444849be06f30e96740ab",
+    "bytes": 2731
+  },
+  {
+    "source": "JarvisEVO/Core/MarkdownDocument.swift",
+    "sha256": "3c62b0520da8e956a50a437e028865f21fc9b980903811e192d543ca52f58e4b",
+    "bytes": 27557
+  },
+  {
+    "source": "JarvisEVO/Core/PluginExecution.swift",
+    "sha256": "fdb380c06cee2cfbbfd375b115d2466453107ce817c79c6d2439eec57d33e944",
+    "bytes": 3822
+  },
+  {
+    "source": "JarvisEVO/Core/RepositorySourceDiagnostics.swift",
+    "sha256": "c3b370abd4d833620895dc823cdc72c133de0564504c8a6953971d6b7938f12d",
+    "bytes": 1502
+  },
+  {
+    "source": "JarvisEVO/Services/MCPHTTPClient.swift",
+    "sha256": "8047ce5ec74615542940140d96fa8c98115f12b150049da6c39b46279646818f",
+    "bytes": 27049
+  },
+  {
+    "source": "JarvisEVO/Core/MemorySearch.swift",
+    "sha256": "4d420618f01eee110a9669689f97fe72107c46d28de8e89a03003c113cb1d5f4",
+    "bytes": 769
+  },
+  {
+    "source": "JarvisEVO/Core/AutomaticModelRouter.swift",
+    "sha256": "f320774115269bf0ac96b69802c9bc16b98aadde6e859d7f770e067676d8db20",
+    "bytes": 8442
+  },
+  {
+    "source": "JarvisEVO/Core/NativeToolSuggestion.swift",
+    "sha256": "d410a373e6be31f092494817df5506bbe51280a2bba3396b0df66a3e5c7d0e19",
+    "bytes": 2135
+  },
+  {
+    "source": "JarvisEVO/Core/NativeToolDrafts.swift",
+    "sha256": "08423ecee3657178f130cb6ce5f7752df086140d4c1cd7ccf716d7f02d068117",
+    "bytes": 5085
+  },
+  {
+    "source": "JarvisEVO/Core/FeedbackDraft.swift",
+    "sha256": "516810d5aea2080c479f2639c5f5ae571d9000b07238df40b8647412f290774c",
+    "bytes": 2352
+  },
+  {
+    "source": "JarvisEVO/Core/AttachmentTextSearch.swift",
+    "sha256": "d108a3754882ba7538826dee3e15375a5e3657d0d7264476b05a68cd530d0d40",
+    "bytes": 3583
+  },
+  {
+    "source": "JarvisEVO/Core/LocalSearchExcerpt.swift",
+    "sha256": "80411efefffc420769b65b3c9b090f15d1e26d5b59774547602b1fd756d38501",
+    "bytes": 2153
+  },
+  {
+    "source": "JarvisEVO/Services/LocalReadTools.swift",
+    "sha256": "b39f28de1523e253b3ad1d17a56cd6342cd4a9210636e48964430ab9811d6195",
+    "bytes": 5627
+  },
+  {
+    "source": "JarvisEVO/Resources/LocalAgentDecision.gbnf",
+    "sha256": "4c833c12d0cacc7fc79bc04f37b18b1b9be83144c9bcc1ecbe0b3e10c33670b3",
+    "bytes": 1627
+  },
+  {
+    "source": "JarvisEVO/Resources/LocalAgentCore.js",
+    "sha256": "6dcc3398d56c14b6ae5524a01b30d1d5ea76c48697edd7d3fd51ecf91ed4f68d",
+    "bytes": 12822
+  },
+  {
+    "source": "scripts/swift-smoke/CalculatorAgentCore.cjs",
+    "sha256": "8a3509ab199e23d00e4dc2fd26886a0ea6e1f183a82eff25884defb5cd0ee808",
+    "bytes": 370
+  },
+  {
+    "source": "external-b9049/ggml-alloc.h",
+    "sha256": "3793a2175be355619cc426982706b7fa94ad801b66d2aeef4b95e68c434ba0ef",
+    "bytes": 3624
+  },
+  {
+    "source": "external-b9049/ggml-backend.h",
+    "sha256": "f958619aa6b8eceeb0b888b5e5f460f3bf07be727a9b247d41f01acb8ebad109",
+    "bytes": 24944
+  },
+  {
+    "source": "external-b9049/ggml-blas.h",
+    "sha256": "e76cb8594dc9866d99e7d63191b9fff6ab8b50244b4a28ce3af0f962964a6b5b",
+    "bytes": 586
+  },
+  {
+    "source": "external-b9049/ggml-cann.h",
+    "sha256": "2cdb134f27fe5c4ec19d52f1eb58f5355aa42b8f54bf385f0e487501c5df7362",
+    "bytes": 4553
+  },
+  {
+    "source": "external-b9049/ggml-cpp.h",
+    "sha256": "bc15ba002c68685df23faae42df0d2b3d58032011f88b649021ab92485862c72",
+    "bytes": 1652
+  },
+  {
+    "source": "external-b9049/ggml-cpu.h",
+    "sha256": "1aafe97e576ea38c0da57517fb2492955d0b69c1a799842481fc069d6d9d28ef",
+    "bytes": 7696
+  },
+  {
+    "source": "external-b9049/ggml-cuda.h",
+    "sha256": "84122bf381c24709eab9e888034956eafc1dfe436f9d826c10fa0e1a695f8a5e",
+    "bytes": 1768
+  },
+  {
+    "source": "external-b9049/ggml-hexagon.h",
+    "sha256": "b2c12bac390f14707b16bdd27c8c75ce4f075ed509c729ee28fd4f03b17e7375",
+    "bytes": 351
+  },
+  {
+    "source": "external-b9049/ggml-metal.h",
+    "sha256": "322f36cd30f3e9e7aad7b5b9bc63078012fd0b7706ac4e24f5721b604f3d8980",
+    "bytes": 2141
+  },
+  {
+    "source": "external-b9049/ggml-opencl.h",
+    "sha256": "8e443e1aa9c8bc6e0cf116c4cc3f42f4858938fa15e65b06bc07b26686e1233a",
+    "bytes": 581
+  },
+  {
+    "source": "external-b9049/ggml-openvino.h",
+    "sha256": "c2e3f301e28ad815b4285888aad6130808a77e6acb4e8b558de63a648cf9743e",
+    "bytes": 1034
+  },
+  {
+    "source": "external-b9049/ggml-opt.h",
+    "sha256": "3586de1bc8a934b5c72339e2b6937b0641e8f149b512231e666f67de0736eea2",
+    "bytes": 14040
+  },
+  {
+    "source": "external-b9049/ggml-rpc.h",
+    "sha256": "218705af1c85a07d0bdf42f45b080a52e640b5023db912a445f34cb8be1f0cc5",
+    "bytes": 1183
+  },
+  {
+    "source": "external-b9049/ggml-sycl.h",
+    "sha256": "d59d5275423a7ce173c8e6f69933a501e53a635410de3f8d61bf23a59dac81fd",
+    "bytes": 1763
+  },
+  {
+    "source": "external-b9049/ggml-virtgpu.h",
+    "sha256": "ed231e7db3f0f58b84073f5ee67f9ec9d63046d1a7ed091c36a6cfe9f685a463",
+    "bytes": 194
+  },
+  {
+    "source": "external-b9049/ggml-vulkan.h",
+    "sha256": "7eae5dad2cc7bb4d3eca828539f441816d5fd59fdc7b224d49aa229fc7b7248c",
+    "bytes": 952
+  },
+  {
+    "source": "external-b9049/ggml-webgpu.h",
+    "sha256": "a91d855313a9e85e75ba597ff869a267247dea936a2c0faef03aeb7f1ea6e79c",
+    "bytes": 328
+  },
+  {
+    "source": "external-b9049/ggml-zdnn.h",
+    "sha256": "ee1d79c95ade45ba195a6b71f59a05c18617de4a596d2b2b03ecf38975a9a448",
+    "bytes": 292
+  },
+  {
+    "source": "external-b9049/ggml-zendnn.h",
+    "sha256": "2cb034b842438281616ce647232d922fb224450323f0d422d2af567c334aa8ff",
+    "bytes": 498
+  },
+  {
+    "source": "external-b9049/ggml.h",
+    "sha256": "e9dcbc46054d3dfcecdeb90504146c30e547d29da73ae9605ce40e907343627b",
+    "bytes": 107658
+  },
+  {
+    "source": "external-b9049/gguf.h",
+    "sha256": "657433f5d216c53c0801897ce59a1d4414af9b234fc885a7340275fac56af415",
+    "bytes": 10433
+  },
+  {
+    "source": "external-b9049/llama-cpp.h",
+    "sha256": "c48fd31095d2403a3bf7cbe98333ba0e61a398ee6e83b56f9d8b7237143b9877",
+    "bytes": 900
+  },
+  {
+    "source": "external-b9049/llama.h",
+    "sha256": "05c78260dbb1359f64694e408646fe75689b1ab5764f81a9f4f4bb7028a9d60b",
+    "bytes": 80391
+  }
+]

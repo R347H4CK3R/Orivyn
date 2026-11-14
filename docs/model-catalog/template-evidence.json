@@ -88,5 +88,15 @@
     "templateSHA256": "57f1fd00f0013a2be96aa79b857391f27e23df5b5f847072b524c897e24d0361",
     "renderedPrompt": "<|im_start|>system\nYou are helpful.<|im_end|>\n<|im_start|>user\nSay hello.<|im_end|>\n<|im_start|>assistant\n",
     "renderedBytes": 106
+  },
+  {
+    "repository": "ggml-org/Qwen3-1.7B-GGUF",
+    "revision": "daeb8e2d528a760970442092f6bf1e55c3b659eb",
+    "file": "Qwen3-1.7B-Q4_K_M.gguf",
+    "ggufVersion": 3,
+    "architecture": "qwen3",
+    "templateSHA256": "87a2728cb8dc9fe424d624542f6060ec05a1d285ebbec578bb078900e33396b5",
+    "renderedPrompt": "<|im_start|>system\nYou are helpful.<|im_end|>\n<|im_start|>user\nSay hello.<|im_end|>\n<|im_start|>assistant\n",
+    "renderedBytes": 106
   }
 ]

@@ -13,6 +13,11 @@ enum ov3_generation_status {
  OV3_DECODE_FAILED=7, OV3_OUTPUT_LIMIT=8, OV3_TOKEN_LIMIT=9,
  OV3_COMPLETION_REJECTED=10, OV3_INTERNAL_ERROR=11, OV3_ALREADY_ATTEMPTED=12
 };
+// Model policy is selected by a trusted owner after SHA-256 file verification.
+// Exact model template must match this policy; unknown IDs never fall back.
+// Legacy ov2/ov3 creation remains policy 1 only. Policy 2 is a review candidate.
+enum ov4_model_policy { OV4_POLICY_Q8=1, OV4_POLICY_Q4_CANDIDATE=2 };
+int ov4_create_borrowed(struct llama_model*, unsigned policy, unsigned approved_mask, unsigned call_budget, unsigned ttl_ms, const char *goal, size_t goal_length, void **out);
 // Bounded caller goal, offered tools restricted to reviewed mask; no execution.
 int ov3_create_borrowed(struct llama_model*, unsigned approved_mask, unsigned call_budget, unsigned ttl_ms, const char *goal, size_t goal_length, void **out);
 // One-shot synchronous generation. Requires exclusive, initially empty context.

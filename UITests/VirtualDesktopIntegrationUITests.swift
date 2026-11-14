@@ -2,6 +2,18 @@ import XCTest
 
 @MainActor
 final class VirtualDesktopIntegrationUITests: XCTestCase {
+    override func setUp() async throws {
+        try await super.setUp()
+        XCUIDevice.shared.orientation = .portrait
+    }
+
+    override func tearDown() async throws {
+        // XCTest can abort a failed interaction without executing the test's
+        // Swift defer. Reset at both boundaries so the next test is independent.
+        XCUIDevice.shared.orientation = .portrait
+        try await super.tearDown()
+    }
+
     func testActualGuestFileAndCheckpointThenSafeClosePreservesDraft() {
         // Guest startup (150s), command (40s), and checkpoint (60s) each have
         // their own bounds; the default 120s cannot cover this complete flow.
@@ -10,6 +22,7 @@ final class VirtualDesktopIntegrationUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["--uitesting", "--reset-test-storage"]
         app.launch()
+        requirePortrait(app)
         let composer = app.textViews["composer.input"]
         XCTAssertTrue(composer.waitForExistence(timeout: 10))
         composer.tap(); composer.typeText("Keep this desktop task")
@@ -40,21 +53,22 @@ final class VirtualDesktopIntegrationUITests: XCTestCase {
         }
         XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: landscape, object: app)], timeout: 10), .completed, "Rotation must actually produce compact landscape geometry")
         revealDesktopControl(input, in: app)
-        input.tap(); input.typeText("landscape draft")
+        focusGuestInput(input, in: app); input.typeText("landscape draft")
         XCTAssertGreaterThanOrEqual(surface.frame.height, 180, "Landscape keyboard must scroll, not crush guest pixels")
         let hide = app.buttons["desktop.keyboard.hide"]
         XCTAssertTrue(hide.waitForExistence(timeout: 5))
         hide.tap()
         XCTAssertEqual(input.value as? String, "landscape draft")
         revealDesktopControl(input, in: app)
-        input.tap()
+        focusGuestInput(input, in: app)
         input.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: "landscape draft".count))
         hide.tap()
         revealDesktopControl(app.buttons["desktop.checkpoint.save"], in: app)
         XCTAssertTrue(app.buttons["desktop.checkpoint.save"].isHittable)
         XCUIDevice.shared.orientation = .portrait
+        requirePortrait(app)
         revealDesktopControl(input, in: app)
-        input.tap(); input.typeText("echo APP_GUEST_319 > /tmp/home/app.txt; cat /tmp/home/app.txt > /dev/ttyS0")
+        focusGuestInput(input, in: app); input.typeText("echo APP_GUEST_319 > /tmp/home/app.txt; cat /tmp/home/app.txt > /dev/ttyS0")
         XCTAssertGreaterThanOrEqual(surface.frame.height, 120, "Typing with diagnostics open must not collapse the guest viewport")
         app.buttons["desktop.input.send"].tap()
         let keyboardHidden = NSPredicate(format: "exists == false")
@@ -105,7 +119,7 @@ final class VirtualDesktopIntegrationUITests: XCTestCase {
             let input = app.textFields["desktop.input"]
             XCTAssertTrue(input.waitForExistence(timeout: 5))
             revealDesktopControl(input, in: app)
-        input.tap(); input.typeText(command)
+            focusGuestInput(input, in: app); input.typeText(command)
             let button = app.buttons["desktop.input.send"]
             let enabled = NSPredicate(format: "enabled == true")
             XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: enabled, object: button)], timeout: 10), .completed)
@@ -117,7 +131,7 @@ final class VirtualDesktopIntegrationUITests: XCTestCase {
         }
 
         app.launchArguments = ["--uitesting", "--reset-test-storage"]
-        app.launch(); openDesktop()
+        app.launch(); requirePortrait(app); openDesktop()
         send("printf '%s' '\(value)' > \(file); sync; printf 'WRITE_%s\\n' '\(value)' > /dev/ttyS0")
         let written = NSPredicate(format: "label CONTAINS %@", "WRITE_\(value)")
         XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: written, object: app.staticTexts["desktop.console"])], timeout: 40), .completed)
@@ -128,7 +142,7 @@ final class VirtualDesktopIntegrationUITests: XCTestCase {
 
         // Crucially do not reset storage on the second launch.
         app.launchArguments = ["--uitesting"]
-        app.launch(); openDesktop()
+        app.launch(); requirePortrait(app); openDesktop()
         XCTAssertFalse(app.staticTexts["desktop.console"].label.contains(expected))
         revealDesktopControl(app.buttons["Restore"], in: app)
         app.buttons["Restore"].tap()
@@ -149,6 +163,32 @@ final class VirtualDesktopIntegrationUITests: XCTestCase {
         app.buttons["desktop.close"].tap()
         XCTAssertTrue(app.buttons["desktop.open"].waitForExistence(timeout: 30))
     }
+    private func requirePortrait(_ app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
+        let portrait = NSPredicate { _, _ in
+            let frame = app.windows.firstMatch.frame
+            return frame.height > frame.width
+        }
+        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: portrait, object: app)], timeout: 10),
+                       .completed, "Test navigation requires actual portrait geometry", file: file, line: line)
+    }
+
+    private func focusGuestInput(_ input: XCUIElement, in app: XCUIApplication,
+                                 file: StaticString = #filePath, line: UInt = #line) {
+        // A completed tap after rotation is not proof of keyboard ownership:
+        // the failed CI snapshot still had the guest WebView focused. Wait for
+        // the specific native field, not merely a visible keyboard. One bounded
+        // retap accommodates the transition; a persistent focus defect fails.
+        let focused = NSPredicate(format: "hasKeyboardFocus == true")
+        for _ in 0..<2 {
+            revealDesktopControl(input, in: app)
+            input.tap()
+            if XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: focused, object: input)], timeout: 5) == .completed {
+                return
+            }
+        }
+        XCTFail("Native guest input did not acquire keyboard focus", file: file, line: line)
+    }
+
     private func revealDesktopControl(_ element: XCUIElement, in app: XCUIApplication) {
         let controls = app.scrollViews["desktop.controls"]
         if element.isHittable { return }

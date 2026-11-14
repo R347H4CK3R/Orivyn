@@ -14,6 +14,13 @@ class LocalAgentContract(unittest.TestCase):
   s=p.read_text();self.assertIn('selectedLocalAgentProvider',s)
   self.assertLess(s.index('try persist(next)'),s.index('try executeLocalTool('))
   self.assertIn('await model.finishLocalAgentWork(id:',s)
+ def test_internal_agent_uses_shared_json_request_without_changing_chat_preference(self):
+  session=(ROOT/'JarvisEVO/Services/LocalAgentSession.swift').read_text()
+  self.assertIn('GenerationRequest.localAgent(prompt: prompt,',session)
+  self.assertIn('requiresTool: !item.history.contains { $0.outcome == "succeeded" }',session)
+  self.assertNotIn('let request = GenerationRequest(messages:',session)
+  chat=(ROOT/'JarvisEVO/UI/AppModel.swift').read_text()
+  self.assertIn('conciseQwen3: self.conciseQwen3',chat)
  def test_grammar_is_explicit_resource_and_agent_tests_are_gated(self):
   project=(ROOT/'project.yml').read_text()
   self.assertIn('- path: JarvisEVO/Resources/LocalAgentDecision.gbnf\n        buildPhase: resources',project)

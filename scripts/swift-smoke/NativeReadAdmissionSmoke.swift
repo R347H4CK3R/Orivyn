@@ -62,5 +62,17 @@ struct VerifiedLocalPlanSnapshot { let id: String; let status: String; let compl
         catch is CancellationError { print("PASS synchronous revocation cancels during delayed verification; no inference after unload") }
         guard !session.isSuggesting, model.heavyWorkLease == nil else { fatalError("Lease not released") }
         print("PASS production session cleanup and suggestion-only execution boundary")
+        let unknownStore = LocalModelStore()
+        let unknown = LocalModelDescriptor(id: "unknown", name: "unknown", fileName: "unknown.gguf", downloadURL: nil,
+            sha256: String(repeating: "0", count: 64), byteCount: 1, license: "test", sourceURL: nil)
+        let unknownProvider = LocalAIProvider(store: unknownStore, model: unknown)
+        let rejected = Task { try await unknownProvider.suggestNativeReads(goal: "Read application identity.") {
+            fatalError("Unknown hash reached engine admission")
+        } }
+        while !(await unknownStore.verifying) { await Task.yield() }
+        await unknownStore.release()
+        do { _ = try await rejected.value; fatalError("Unknown verified descriptor admitted") }
+        catch ProviderError.rejected { print("PASS unknown hash rejected after verification, before engine admission") }
+
     }
 }

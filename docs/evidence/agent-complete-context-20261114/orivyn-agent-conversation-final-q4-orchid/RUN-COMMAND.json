@@ -1,0 +1,1 @@
+{"command": ["/workspace/scratch/8352eb8fe69c/orivyn-agent-conversation-final-q4-orchid/llama-engine-smoke", "/workspace/scratch/8352eb8fe69c/orivyn-q4-comparison/Qwen3-1.7B-Q4_K_M.gguf", "/workspace/scratch/8352eb8fe69c/orivyn-real-llama-recovery/build/bin"], "fixtureEnvironment": "orchid"}

@@ -18,46 +18,48 @@ cp "$SCHEME" "$NATIVE_TOOLS_EVIDENCE_DIR/original.xcscheme"
 cleanup() {
   local status=$?
   vm_stat > "$NATIVE_TOOLS_EVIDENCE_DIR/host-vm-after.txt" || true
-  cp "$NATIVE_TOOLS_EVIDENCE_DIR/original.xcscheme" "$SCHEME" || return 1
-  return "$status"
+  cp "$NATIVE_TOOLS_EVIDENCE_DIR/original.xcscheme" "$SCHEME" || status=1
+  trap - EXIT
+  exit "$status"
 }
 trap cleanup EXIT
 # TestAction environment is explicit; shell variables alone do not establish
 # simulator test-host propagation. Restore the generated scheme on every exit.
-python3 - "$SCHEME" "$ORIVYN_NATIVE_TOOLS_MODEL_DIR" "$NATIVE_TOOLS_DESTINATION" <<'PY'
-import re, sys, xml.etree.ElementTree as ET
-from pathlib import Path
-scheme, models, destination = sys.argv[1:]
-if not re.fullmatch(r'platform=iOS Simulator,id=[0-9A-Fa-f]{8}(?:-[0-9A-Fa-f]{4}){3}-[0-9A-Fa-f]{12}', destination):
-    raise SystemExit('Exactly one explicit simulator UUID is required')
-root = Path(models)
-model = root / 'Qwen3-1.7B-Q8_0.gguf'
-if root.is_symlink() or not root.is_dir() or model.is_symlink() or not model.is_file():
-    raise SystemExit('Required regular model fixture is missing; run the pinned downloader first')
-tree = ET.parse(scheme); action = tree.getroot().find('TestAction')
-if action is None: raise SystemExit('Main scheme has no TestAction')
-action.set('shouldUseLaunchSchemeArgsEnv', 'NO')
-variables = action.find('EnvironmentVariables')
-if variables is None: variables = ET.SubElement(action, 'EnvironmentVariables')
-for key, value in [('ORIVYN_REQUIRE_PRODUCTION_NATIVE_TOOLS', '1'), ('ORIVYN_NATIVE_TOOLS_MODEL_DIR', models)]:
-    for existing in list(variables):
-        if existing.get('key') == key: variables.remove(existing)
-    ET.SubElement(variables, 'EnvironmentVariable', key=key, value=value, isEnabled='YES')
-tree.write(scheme, encoding='UTF-8', xml_declaration=True)
-PY
+MODEL_ID="${ORIVYN_PRODUCTION_MODEL_ID:-qwen3-1.7b-q8_0}"
+GATE_KIND="${NATIVE_TOOLS_GATE_KIND:-native-tools}"
+python3 "$ROOT/Diagnostics/NativeTools/simulator_gate.py" --scheme "$SCHEME" \
+ --models "$ORIVYN_NATIVE_TOOLS_MODEL_DIR" --destination "$NATIVE_TOOLS_DESTINATION" \
+ --model-id "$MODEL_ID" --gate "$GATE_KIND" > "$NATIVE_TOOLS_EVIDENCE_DIR/gate-config.json"
+case "$GATE_KIND" in
+ native-tools) SELECTOR='JarvisEVOTests/ProductionNativeToolsRuntimeTests/testRequiredProductionSuggestionAndReload'; DEFAULT_ALLOWANCE=300; MAX_ALLOWANCE=600 ;;
+ local-agent) SELECTOR='JarvisEVOTests/ProductionLocalAgentSessionTests/testRequiredSearchThenReadGroundedAnswer'; DEFAULT_ALLOWANCE=840; MAX_ALLOWANCE=840 ;;
+ *) echo 'Unknown required gate' >&2; exit 2 ;;
+esac
+
 sysctl hw.memsize > "$NATIVE_TOOLS_EVIDENCE_DIR/host-memory.txt"
 vm_stat > "$NATIVE_TOOLS_EVIDENCE_DIR/host-vm-before.txt"
 cd "$ROOT"
+set +e
 xcodebuild test -project JarvisEVO.xcodeproj -scheme JarvisEVO \
  -destination "$NATIVE_TOOLS_DESTINATION" -destination-timeout 120 \
  -derivedDataPath "$NATIVE_TOOLS_DERIVED_DATA" \
  -parallel-testing-enabled NO -enableCodeCoverage NO \
- -only-testing:JarvisEVOTests/ProductionNativeToolsRuntimeTests/testRequiredProductionSuggestionAndReload \
- -test-timeouts-enabled YES -default-test-execution-time-allowance 300 \
- -maximum-test-execution-time-allowance 600 \
+ "-only-testing:$SELECTOR" \
+ -test-timeouts-enabled YES -default-test-execution-time-allowance "$DEFAULT_ALLOWANCE" \
+ -maximum-test-execution-time-allowance "$MAX_ALLOWANCE" \
  -resultBundlePath "$NATIVE_TOOLS_EVIDENCE_DIR/ProductionNativeTools.xcresult" \
  "ORIVYN_NATIVE_FEATURES=$ORIVYN_NATIVE_FEATURES" CODE_SIGNING_ALLOWED=NO \
  2>&1 | tee "$NATIVE_TOOLS_EVIDENCE_DIR/xcodebuild.log"
+PIPE_STATUSES=("${PIPESTATUS[@]}")
+BUILD_STATUS=${PIPE_STATUSES[0]}
+LOG_STATUS=${PIPE_STATUSES[1]}
+# Preserve failure attachments and summaries too; never let a later success hide a failed build.
 xcrun xcresulttool export attachments --path "$NATIVE_TOOLS_EVIDENCE_DIR/ProductionNativeTools.xcresult" --output-path "$NATIVE_TOOLS_EVIDENCE_DIR/attachments"
+ATTACHMENT_STATUS=$?
 xcrun xcresulttool get test-results summary --path "$NATIVE_TOOLS_EVIDENCE_DIR/ProductionNativeTools.xcresult" > "$NATIVE_TOOLS_EVIDENCE_DIR/test-summary.json"
+SUMMARY_STATUS=$?
 python3 Diagnostics/NativeTools/verify_simulator_result.py "$NATIVE_TOOLS_EVIDENCE_DIR/test-summary.json"
+VERIFY_STATUS=$?
+set -e
+printf 'xcodebuild=%s\nlog=%s\nattachments=%s\nsummary=%s\nverifier=%s\n' "$BUILD_STATUS" "$LOG_STATUS" "$ATTACHMENT_STATUS" "$SUMMARY_STATUS" "$VERIFY_STATUS" > "$NATIVE_TOOLS_EVIDENCE_DIR/outcomes.txt"
+[[ "$BUILD_STATUS" == 0 && "$LOG_STATUS" == 0 && "$ATTACHMENT_STATUS" == 0 && "$SUMMARY_STATUS" == 0 && "$VERIFY_STATUS" == 0 ]]

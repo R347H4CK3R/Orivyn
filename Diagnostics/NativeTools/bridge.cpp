@@ -4,6 +4,7 @@
 #include "sampling.h"
 #include "common.h"
 #include "pinned-template.h"
+#include "pinned-q4-candidate-template.h"
 #include <nlohmann/json.hpp>
 #include <chrono>
 #include <memory>
@@ -13,8 +14,34 @@
 #include <cstring>
 #include <cstdlib>
 #include <atomic>
+#include <cstdio>
 using J=nlohmann::ordered_json;
 namespace {
+// Counts and monotonic wall-clock durations only. No prompt, output, path or
+// model metadata enters this diagnostic. It observes, never controls admission.
+struct GenerationMetrics {
+ using Clock=std::chrono::steady_clock;
+ Clock::time_point started=Clock::now();
+ const char* phase="admission";
+ int status=OV3_INTERNAL_ERROR;
+ unsigned prompt_tokens=0,prompt_decoded=0,sampled_tokens=0,generated_tokens=0;
+ unsigned prefill_calls=0,generation_calls=0;
+ int last_decode_status=0;
+ double setup_ms=0,prefill_ms=0,sampling_ms=0,generation_ms=0,validation_ms=0,max_decode_ms=0;
+ static double elapsed(Clock::time_point start) { return std::chrono::duration<double,std::milli>(Clock::now()-start).count(); }
+ int finish(int value) { status=value;return value; }
+ ~GenerationMetrics() {
+  std::fprintf(stderr,"ORIVYN_NATIVE_GENERATION_METRICS version=1 status=%d phase=%s prompt_tokens=%u prompt_decoded=%u sampled_tokens=%u generated_tokens=%u prefill_calls=%u generation_calls=%u last_decode_status=%d setup_ms=%.3f prefill_ms=%.3f sampling_ms=%.3f generation_ms=%.3f validation_ms=%.3f max_decode_ms=%.3f elapsed_ms=%.3f\n",
+   status,phase,prompt_tokens,prompt_decoded,sampled_tokens,generated_tokens,prefill_calls,generation_calls,last_decode_status,setup_ms,prefill_ms,sampling_ms,generation_ms,validation_ms,max_decode_ms,elapsed(started));
+ }
+};
+struct PhaseTimer {
+ GenerationMetrics::Clock::time_point started=GenerationMetrics::Clock::now();
+ double* total;
+ explicit PhaseTimer(double& value):total(&value) {}
+ void stop(){if(total){*total+=GenerationMetrics::elapsed(started);total=nullptr;}}
+ ~PhaseTimer(){stop();}
+};
 struct Session {
  llama_model *model=nullptr;
  common_chat_params chat;
@@ -50,16 +77,22 @@ std::vector<std::string> checked_envelopes(const std::string&s){
  require(!names.empty());return names;
 }
 }
-static int create_session(llama_model* model,unsigned approved,unsigned budget,unsigned ttl,const std::string&goal,void**out){
+static int create_session(llama_model* model,unsigned approved,unsigned budget,unsigned ttl,const std::string&goal,void**out,unsigned policy=OV4_POLICY_Q8){
  const auto started=std::chrono::steady_clock::now();
  if(!out)return 1;*out=nullptr;
  try{
   require(model&&approved&&!(approved&~3u)&&budget>0&&budget<=2&&ttl>0&&ttl<=60000);
+  const char* pinned=nullptr;size_t pinned_length=0;
+  switch(policy){
+   case OV4_POLICY_Q8:pinned=kPinnedQwen3Template;pinned_length=sizeof(kPinnedQwen3Template)-1;break;
+   case OV4_POLICY_Q4_CANDIDATE:pinned=kPinnedQwen3Q4CandidateTemplate;pinned_length=sizeof(kPinnedQwen3Q4CandidateTemplate)-1;break;
+   default:require(false);
+  }
   const char* supplied=llama_model_chat_template(model,nullptr);require(supplied);
-  const size_t length=strnlen(supplied,8193);require(length==sizeof(kPinnedQwen3Template)-1&&length<=8192&&memcmp(supplied,kPinnedQwen3Template,length)==0);
+  const size_t length=strnlen(supplied,8193);require(length==pinned_length&&length<=8192&&memcmp(supplied,pinned,length)==0);
   char architecture[32]={0};int n=llama_model_meta_val_str(model,"general.architecture",architecture,sizeof(architecture));require(n==5&&memcmp(architecture,"qwen3",5)==0);
   auto p=std::make_unique<Session>();p->deadline=started+std::chrono::milliseconds(ttl);
-  p->templates=common_chat_templates_init(model,kPinnedQwen3Template);
+  p->templates=common_chat_templates_init(model,pinned);
   common_chat_templates_inputs in;in.enable_thinking=false;in.parallel_tool_calls=true;common_chat_msg m;m.role="user";m.content=goal;in.messages.push_back(m);
   if(approved&1)in.tools.push_back({"get_app_info","Application identity",R"({"type":"object","properties":{},"additionalProperties":false})"});
   if(approved&2)in.tools.push_back({"list_models","Installed models",R"({"type":"object","properties":{},"additionalProperties":false})"});
@@ -75,6 +108,11 @@ extern "C" int ov3_create_borrowed(llama_model*m,unsigned a,unsigned b,unsigned 
  if(!out)return 1;*out=nullptr;
  if(!goal||length==0||length>2048||memchr(goal,0,length))return 1;
  try{return create_session(m,a,b,t,std::string(goal,length),out);}catch(...){return 1;}
+}
+extern "C" int ov4_create_borrowed(llama_model*m,unsigned policy,unsigned a,unsigned b,unsigned t,const char*goal,size_t length,void**out){
+ if(!out)return 1;*out=nullptr;
+ if(!goal||length==0||length>2048||memchr(goal,0,length))return 1;
+ try{return create_session(m,a,b,t,std::string(goal,length),out,policy);}catch(...){return 1;}
 }
 extern "C" int ov2_validate(void*handle,const char*bytes,size_t length,int eog,char**out){
  if(!out){return 1;}
@@ -97,10 +135,11 @@ extern "C" void ov2_free(char*p){free(p);}
 // Only an empty context is accepted; no user conversation cache is erased.
 // Context is cleared on every exit after admission; caller must not reuse stale logits.
 extern "C" int ov3_generate(void*handle,llama_context*ctx,unsigned max_tokens,char**out){
- if(!out)return OV3_INVALID_ARGUMENT;*out=nullptr;
- if(!handle||!ctx)return OV3_INVALID_ARGUMENT;
+ GenerationMetrics metrics;
+ if(!out)return metrics.finish(OV3_INVALID_ARGUMENT);*out=nullptr;
+ if(!handle||!ctx)return metrics.finish(OV3_INVALID_ARGUMENT);
  auto&s=*(Session*)handle;
- if(s.attempted.exchange(true))return OV3_ALREADY_ATTEMPTED;
+ if(s.attempted.exchange(true))return metrics.finish(OV3_ALREADY_ATTEMPTED);
  struct Cleanup {Session&s;llama_context*ctx=nullptr;~Cleanup(){s.cancelled=true;if(ctx)llama_memory_clear(llama_get_memory(ctx),true);}} cleanup{s};
  struct Failure {int status;};
  auto guard=[](bool ok,int status){if(!ok)throw Failure{status};};
@@ -110,30 +149,47 @@ extern "C" int ov3_generate(void*handle,llama_context*ctx,unsigned max_tokens,ch
   guard(llama_get_model(ctx)==s.model,OV3_CONTEXT_REJECTED);
   auto mem=llama_get_memory(ctx);guard(mem&&llama_n_seq_max(ctx)==1&&llama_memory_seq_pos_max(mem,0)<0,OV3_CONTEXT_REJECTED);
   cleanup.ctx=ctx;
+  metrics.phase="setup";PhaseTimer setup_timer(metrics.setup_ms);
   auto tokens=common_tokenize(ctx,s.chat.prompt,true,true);
+  metrics.prompt_tokens=unsigned(tokens.size());
   guard(!tokens.empty()&&tokens.size()+max_tokens<=llama_n_ctx(ctx),OV3_PROMPT_LIMIT);
   common_params_sampling sp;sp.temp=0.0;sp.seed=42;
   sp.grammar=common_grammar(COMMON_GRAMMAR_TYPE_TOOL_CALLS,s.chat.grammar);
   sp.grammar_lazy=s.chat.grammar_lazy;sp.grammar_triggers=s.chat.grammar_triggers;
   for(const auto &word:s.chat.preserved_tokens){auto ids=common_tokenize(ctx,word,false,true);guard(ids.size()==1,OV3_SAMPLER_FAILED);sp.preserved_tokens.insert(ids[0]);}
   std::unique_ptr<common_sampler,decltype(&common_sampler_free)> sampler(common_sampler_init(s.model,sp),common_sampler_free);guard(bool(sampler),OV3_SAMPLER_FAILED);
-  for(size_t i=0;i<tokens.size();){alive();size_t n=std::min<size_t>(llama_n_batch(ctx),tokens.size()-i);guard(n>0,OV3_CONTEXT_REJECTED);auto batch=llama_batch_get_one(tokens.data()+i,n);guard(llama_decode(ctx,batch)==0,OV3_DECODE_FAILED);i+=n;alive();}
+  setup_timer.stop();
+  auto decode=[&](llama_batch batch,bool prefill){
+   metrics.phase=prefill?"prefill":"generation";
+   const auto started=GenerationMetrics::Clock::now();
+   const int result=llama_decode(ctx,batch);
+   const double elapsed=GenerationMetrics::elapsed(started);
+   if(prefill){++metrics.prefill_calls;metrics.prefill_ms+=elapsed;if(result==0)metrics.prompt_decoded+=unsigned(batch.n_tokens);}
+   else {++metrics.generation_calls;metrics.generation_ms+=elapsed;}
+   metrics.last_decode_status=result;metrics.max_decode_ms=std::max(metrics.max_decode_ms,elapsed);
+   guard(result==0,OV3_DECODE_FAILED);
+  };
+  metrics.phase="prefill";
+  for(size_t i=0;i<tokens.size();){alive();size_t n=std::min<size_t>(llama_n_batch(ctx),tokens.size()-i);guard(n>0,OV3_CONTEXT_REJECTED);auto batch=llama_batch_get_one(tokens.data()+i,n);decode(batch,true);i+=n;alive();}
   std::string raw;const auto*vocab=llama_model_get_vocab(s.model);
   auto validate=[&](){
+   metrics.phase="validation";PhaseTimer timer(metrics.validation_ms);
    alive();int result=ov2_validate(handle,raw.data(),raw.size(),1,out);
-   if(result==0)return int(OV3_SUCCESS);
+   if(result==0)return metrics.finish(OV3_SUCCESS);
    // Validation's own cancellation/TTL checks may reject during its synchronous parse.
-   alive();return int(OV3_COMPLETION_REJECTED);
+   alive();return metrics.finish(OV3_COMPLETION_REJECTED);
   };
   for(unsigned i=0;i<max_tokens;++i){
-   alive();auto t=common_sampler_sample(sampler.get(),ctx,-1);common_sampler_accept(sampler.get(),t,true);
+   metrics.phase="sampling";alive();llama_token t;
+   {PhaseTimer timer(metrics.sampling_ms);t=common_sampler_sample(sampler.get(),ctx,-1);common_sampler_accept(sampler.get(),t,true);}
+   ++metrics.sampled_tokens;
    if(llama_vocab_is_eog(vocab,t))return validate();
-   raw+=common_token_to_piece(ctx,t,true);guard(raw.size()<=65536,OV3_OUTPUT_LIMIT);
+   ++metrics.generated_tokens;raw+=common_token_to_piece(ctx,t,true);guard(raw.size()<=65536,OV3_OUTPUT_LIMIT);
    // Template-specific stops are only accepted on an exact suffix, never truncation.
    for(const auto&stop:s.chat.additional_stops)if(!stop.empty()&&raw.size()>=stop.size()&&raw.compare(raw.size()-stop.size(),stop.size(),stop)==0){raw.resize(raw.size()-stop.size());return validate();}
-   auto batch=llama_batch_get_one(&t,1);guard(llama_decode(ctx,batch)==0,OV3_DECODE_FAILED);alive();
+   auto batch=llama_batch_get_one(&t,1);decode(batch,false);alive();
   }
-  return OV3_TOKEN_LIMIT; // Incomplete output can never reserve a prefix.
- }catch(const Failure&failure){return failure.status;}
- catch(...){return OV3_INTERNAL_ERROR;}
+  return metrics.finish(OV3_TOKEN_LIMIT); // Incomplete output can never reserve a prefix.
+ }catch(const Failure&failure){return metrics.finish(failure.status);}
+ catch(...){return metrics.finish(OV3_INTERNAL_ERROR);}
 }

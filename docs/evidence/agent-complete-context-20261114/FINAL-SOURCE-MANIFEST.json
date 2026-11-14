@@ -1,0 +1,30 @@
+[
+  {
+    "path": "JarvisEVO/Core/AIProvider.swift",
+    "sha256": "e5e929ffbf242ee954e55ccbcb95ef08a5e56c28f4f75a2d142b312a0eaef274"
+  },
+  {
+    "path": "JarvisEVO/Resources/LocalAgentCore.js",
+    "sha256": "975ff4d2b0ad9d8c465c0232f930669548ccafffe049d203a12ca180e66d8039"
+  },
+  {
+    "path": "JarvisEVO/Services/LocalAgentSession.swift",
+    "sha256": "4219e9ba38950b99dcc91b3bbc0ed4a44ef9de39680fe9e3a9f468e8b866e849"
+  },
+  {
+    "path": "Tests/LocalAgentRequestTests.swift",
+    "sha256": "0b46d74118d4fa7f8833b30097e13d19606b438ef20ea4b382d38b828721ad7a"
+  },
+  {
+    "path": "Tests/LocalAgentCoreTests.swift",
+    "sha256": "85284110cb5543e099da618133f94a904e93c83d9c78d761e92d9080e0a3d91d"
+  },
+  {
+    "path": "scripts/swift-smoke/ConversationAgentSmoke.swift",
+    "sha256": "e4d2990276fe7b4c16d2b0dbc8f6790c69917711c27715db964ec892710eac48"
+  },
+  {
+    "path": "scripts/run_llama_engine_smoke.py",
+    "sha256": "e0f10cd55d9f9be7117812c2f755f34da66942d387bf3e0579dbceb498034f9b"
+  }
+]

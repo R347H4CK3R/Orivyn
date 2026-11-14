@@ -108,4 +108,44 @@ final class LocalAgentCoreTests: XCTestCase {
         XCTAssertEqual(try store.load(id: id), migrated)
     }
 
+    func testCompleteEvidenceStaysInOnePromptAfterLegacyCursorChange() throws {
+        let core = try LocalAgentCore()
+        var state = try core.call("create", ["Read bounded evidence", UUID().uuidString])
+        let expected = ["Earlier complete evidence: ALPHA-51", "Later complete evidence: OMEGA-92"]
+        for result in expected {
+            state = try core.call("acceptDecision", [state, #"{"type":"tool","name":"get_app_info","arguments":{}}"#])
+            let operation = try XCTUnwrap(core.snapshot(state).pending?.operationID)
+            let envelope = try JSONSerialization.data(withJSONObject: ["operationID": operation, "result": result])
+            state = try core.call("recordResult", [state, String(decoding: envelope, as: UTF8.self)])
+        }
+        state = try core.call("acceptDecision", [state, #"{"type":"tool","name":"read_result","arguments":{"step":1,"offset":0}}"#])
+        let prompt = try core.call("prompt", [state])
+        XCTAssertLessThanOrEqual(prompt.utf8.count, 3500)
+        let line = try XCTUnwrap(prompt.components(separatedBy: "\n").first { $0.hasPrefix("UNTRUSTED_RESULTS_JSON=") })
+        let facts = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(line.dropFirst("UNTRUSTED_RESULTS_JSON=".count).utf8)) as? [[String: Any]])
+        XCTAssertEqual(facts.compactMap { $0["result"] as? String }, expected)
+        XCTAssertEqual(try core.snapshot(state).steps, 2)
+        XCTAssertNil(try core.snapshot(state).pending)
+    }
+
+    func testOversizedEvidenceIsPreservedAndOldExposureCannotAuthorizeAnswer() throws {
+        let core = try LocalAgentCore()
+        var state = try core.call("create", ["Read complete evidence", UUID().uuidString])
+        state = try core.call("acceptDecision", [state, #"{"type":"tool","name":"get_app_info","arguments":{}}"#])
+        let operation = try XCTUnwrap(core.snapshot(state).pending?.operationID)
+        let payload = String(repeating: "x", count: 4096)
+        let envelope = try JSONSerialization.data(withJSONObject: ["operationID": operation, "result": payload])
+        state = try core.call("recordResult", [state, String(decoding: envelope, as: UTF8.self)])
+        XCTAssertEqual(try core.snapshot(state).status, "failed")
+        XCTAssertEqual(try core.snapshot(state).history.first?.result, payload)
+        XCTAssertTrue(try core.snapshot(state).error?.contains("narrower task") == true)
+        XCTAssertThrowsError(try core.call("prompt", [state]))
+        var legacy = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(state.utf8)) as? [String: Any])
+        legacy["status"] = "ready"; legacy["error"] = NSNull(); legacy["exposedThrough"] = [4096]
+        let old = String(decoding: try JSONSerialization.data(withJSONObject: legacy), as: UTF8.self)
+        let blocked = try core.call("acceptDecision", [old, #"{"type":"answer","text":"Unsupported completion"}"#])
+        XCTAssertEqual(try core.snapshot(blocked).status, "failed")
+        XCTAssertNil(try core.snapshot(blocked).answer)
+    }
+
 }

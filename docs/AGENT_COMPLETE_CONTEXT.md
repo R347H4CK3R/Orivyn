@@ -1,0 +1,38 @@
+# Complete-context agent checkpoint
+
+This checkpoint fixes a real context-loss defect and preserves failed real-model acceptance evidence. It does NOT establish reliable autonomous search → conversation read → answer, and is not a release-completion claim.
+
+## Observed failures
+
+The pinned Qwen3 1.7B Q8_0 model initially copied the prompt's literal search placeholder `1-256 UTF-8 bytes` as its query. The actual production LocalReadTools dispatcher found zero synthetic records. A later concise-mode run copied `search hit ID`; the reducer rejected it before a read. All prose argument placeholders were replaced by field constraints. Internal JSON-only agent requests now use a shared production factory with 384 output tokens, temperature zero, existing first-tool grammar and `conciseQwen3=true`. Normal chat still uses its existing user preference. The engine's non-thinking prefill guard checks Qwen3 architecture and the rendered assistant suffix; this is not an exact chat-template pin.
+
+A deeper defect was demonstrated in raw traces: after the first search prompt contained the full returned conversation UUID, the next prompt contained only a 102-byte tail beginning `ok"}]`—the end of the title `Orchid notebook`. The engine clears its KV state for every generation, so prior displayed pages were not retained context. The model answered `ok`. Both Q8 and Q4 produced this symptom in completed diagnostic runs.
+
+## Implemented behavior
+
+Every prompt now contains ALL successful tool results and their actual arguments simultaneously in `UNTRUSTED_RESULTS_JSON`. Nothing is silently summarized, sliced, dropped, or substituted to fit. Exact UTF-8 size after JSON escaping is limited to 3,500 bytes. If complete evidence does not fit, the task stops with an explicit narrower-task error while preserving the full history. The existing engine tokenizer/context bound remains independent: a byte bound does not guarantee that pathological Unicode fits its token window.
+
+`recordResult` checks capacity only after an actual result settles its pending operation. Ready-state recovery, explicit resume and decision acceptance also fail closed on oversized legacy evidence; prompt generation independently rejects it. Running recovery retains its pending marker as interrupted, without executing it. Old version-1 fields including `resultView`, `internalReads` and `exposedThrough` remain validated/migratable. The exposure ledger no longer advances or authorizes an answer. `read_result` is still a bounded reducer-only cursor; its metadata does not replace simultaneous evidence. Existing terminal answers are not regenerated or retroactively validated.
+
+The actual returned source may itself be truncated; existing search/message truncation flags remain visible and must be disclosed. Complete returned results do not mean a complete original library, or semantic verification of model answers. Search-ID provenance, native read authorization, six-tool limits, persistence-before-dispatch, grammar and absence of external action capabilities remain unchanged.
+
+## Verification and remaining failure
+
+- 119 JavaScript regression tests passed, including tests-first context-loss/overflow failures, Unicode and escaping, malformed old coverage, complete simultaneous facts, and pending-operation preservation.
+- 411 portable Foundation XCTest cases passed, including actual shared request-factory behavior. The existing Linux URLProtocol redirect fixture remains excluded; Apple verification is required.
+- Python gate: 188 tests ran, one environment-dependent skip, no failures. The isolated checkout reused the root's existing ignored VM image solely for this gate; that artifact is not committed.
+- Actual Swift storage/budget bridge: 56 checks passed, including durable overflow, archive/restore and fitting complete context.
+- Actual LocalReadTools search/read host dispatch passed provenance, byte-bound and deleted-record checks. The AppModel scaffold and Node JavaScript bridge are host substitutions, not a run of native LocalAgentSession/JavaScriptCore.
+- Two NEW full-context Q4 real-model cases both FAILED end-to-end acceptance. Orchid searched correctly then answered only that the code was in the second message. Maple searched correctly twice then gave the same location-only answer. Neither called read_conversation. The host driver verified all prior results were present in every current prompt; there was no context overflow. This isolates a remaining premature-answer/planner problem. No two-goal pass is claimed.
+
+The real-model harness uses the exact production LlamaEngine, grammar, request factory, reducer and LocalReadTools. Every accepted decision is persisted before dispatch; raw prompts, decisions, results, request flags, model/library hashes and stopped state are preserved under `evidence/agent-complete-context-20261114`. Synthetic markers are harmless fixture text. The completion assertion requires a successful authorized read containing the exact marker, no search-result marker leakage, the correct answer and durable reopen. It does not manufacture decisions or convert failed/stopped runs into passes.
+
+Earlier prompt-only/concise variants and both Q8 goals failed. One Q4 Maple comparison was interrupted for host resource pressure and is NOT a completed quality result. Logged durations are diagnostics, not comparative benchmarks or iPhone performance claims. The original 120-second limit and later 600-second limits are harness bounds, not production deadlines. Native tests were added but NOT run on Apple SDK, simulator or device. No model, network service, remote publication, or paid runner was introduced.
+
+Next work must address actual premature completion without weakening evidence/provenance assertions or claiming success from structural tests. The full-context two-goal failure traces are the starting point for that work.
+
+## Rejected completion-instruction follow-up
+
+A subsequent candidate added general completion guidance, a field/type decision schema and explicit zero-based message indexing. Both unchanged host goals fit the complete-context budget and all 120 JavaScript tests passed, but actual Q4 runs regressed: Orchid requested `read_conversation` with `saved_conversation_id` before search; Maple used `1234567890` before search. The reducer rejected both before any tool dispatch. That candidate was NOT retained in production; the reviewed checkpoint prompt was restored. Its exact source and both failed traces are preserved under `evidence/agent-completion-instructions-20261114`. There is still no grounded two-goal pass.
+
+The next proposed bounded change is state-derived tool availability: do not advertise or offer read_conversation in the grammar until a successful search has returned valid conversation IDs, and constrain later grammar IDs to those validated UUIDs. This is not implemented in this checkpoint. The reducer and native dispatcher must remain final provenance authorities. Do not repair invented arguments or force tool decisions to make acceptance pass. A bounded model-validation retry would require separate durable attempt accounting and recovery design; it is not a catch-and-ignore loop.

@@ -30,9 +30,9 @@ export NATIVE_TOOLS_DESTINATION="$VISION_DESTINATION"
 export VISION_DERIVED_DATA="$RUNNER_TEMP/orivyn-inference-derived"
 export NATIVE_TOOLS_DERIVED_DATA="$VISION_DERIVED_DATA"
 export VISION_EVIDENCE_DIR="$EVIDENCE/vision"
-export NATIVE_TOOLS_EVIDENCE_DIR="$EVIDENCE/native-tools"
+
 export ORIVYN_VISION_MODEL_DIR="$RUNNER_TEMP/orivyn-vision-pair"
-export ORIVYN_NATIVE_TOOLS_MODEL_DIR="$RUNNER_TEMP/orivyn-native-tools-model"
+
 git rev-parse HEAD > "$EVIDENCE/source-commit.txt"
 xcodebuild -version > "$EVIDENCE/xcode-version.txt"
 # Sequential model lifetimes keep these large fixtures out of the app bundle and
@@ -41,10 +41,27 @@ xcodebuild -version > "$EVIDENCE/xcode-version.txt"
 set +e
 (python3 Diagnostics/VisionProof/prepare_production_pair.py "$ORIVYN_VISION_MODEL_DIR" && bash Diagnostics/VisionProof/run_production_simulator.sh) > "$EVIDENCE/vision-gate.log" 2>&1
 VISION_STATUS=$?
-(python3 Diagnostics/NativeTools/download.py --output "$ORIVYN_NATIVE_TOOLS_MODEL_DIR/Qwen3-1.7B-Q8_0.gguf" && bash Diagnostics/NativeTools/run_production_simulator.sh) > "$EVIDENCE/native-tools-gate.log" 2>&1
-TOOLS_STATUS=$?
+run_native_gate() {
+ local id="$1" fixture="$2" kind="$3" evidence="$4"
+ local filename
+ case "$id" in
+  qwen3-1.7b-q8_0) filename='Qwen3-1.7B-Q8_0.gguf' ;;
+  qwen3-1.7b-q4_k_m) filename='Qwen3-1.7B-Q4_K_M.gguf' ;;
+  *) return 2 ;;
+ esac
+ export ORIVYN_PRODUCTION_MODEL_ID="$id" ORIVYN_NATIVE_TOOLS_MODEL_DIR="$fixture"
+ export NATIVE_TOOLS_GATE_KIND="$kind" NATIVE_TOOLS_EVIDENCE_DIR="$evidence"
+ python3 Diagnostics/NativeTools/download.py --model-id "$id" --output "$fixture/$filename" && bash Diagnostics/NativeTools/run_production_simulator.sh
+}
+run_native_gate qwen3-1.7b-q8_0 "$RUNNER_TEMP/orivyn-native-q8" native-tools "$EVIDENCE/native-tools-q8" > "$EVIDENCE/native-tools-q8-gate.log" 2>&1
+Q8_STATUS=$?
+run_native_gate qwen3-1.7b-q4_k_m "$RUNNER_TEMP/orivyn-native-q4" native-tools "$EVIDENCE/native-tools-q4" > "$EVIDENCE/native-tools-q4-gate.log" 2>&1
+Q4_STATUS=$?
+# Borrow the same dedicated Q4 directory only after native inference has joined.
+# ProductionLocalAgentSessionTests restores the prior installed-model manifest.
+run_native_gate qwen3-1.7b-q4_k_m "$RUNNER_TEMP/orivyn-native-q4" local-agent "$EVIDENCE/local-agent-q4" > "$EVIDENCE/local-agent-q4-gate.log" 2>&1
+AGENT_STATUS=$?
 set -e
-printf 'vision=%s\nnative_tools=%s\n' "$VISION_STATUS" "$TOOLS_STATUS" | tee "$EVIDENCE/outcomes.txt"
-tail -n 100 "$EVIDENCE/vision-gate.log"
-tail -n 100 "$EVIDENCE/native-tools-gate.log"
-[[ "$VISION_STATUS" == 0 && "$TOOLS_STATUS" == 0 ]]
+printf 'vision=%s\nnative_tools_q8=%s\nnative_tools_q4=%s\nlocal_agent_q4=%s\n' "$VISION_STATUS" "$Q8_STATUS" "$Q4_STATUS" "$AGENT_STATUS" | tee "$EVIDENCE/outcomes.txt"
+for gate in vision native-tools-q8 native-tools-q4 local-agent-q4; do tail -n 100 "$EVIDENCE/$gate-gate.log"; done
+[[ "$VISION_STATUS" == 0 && "$Q8_STATUS" == 0 && "$Q4_STATUS" == 0 && "$AGENT_STATUS" == 0 ]]

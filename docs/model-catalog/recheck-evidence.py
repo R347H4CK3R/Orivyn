@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Operator-run provenance refresh from repository root. Uses official HTTPS sources.
+"""Operator-run provenance refresh from repository root. Uses reviewed publisher HTTPS sources.
 
 Downloads the pinned b9049 runtime, verifies its digest before loading the C API,
 then fetches only GGUF metadata prefixes. Not a full weight or inference check.
@@ -10,7 +10,7 @@ root = pathlib.Path('.cache/catalog-reconstruction')
 dest = pathlib.Path('docs/model-catalog')
 root.mkdir(parents=True, exist_ok=True)
 dest.mkdir(parents=True, exist_ok=True)
-repos = [('Qwen/Qwen2.5-0.5B-Instruct-GGUF', '9217f5db79a29953eb74d5343926648285ec7e67', 'Qwen 2.5 · 0.5B', 'General chat', ['q4_k_m', 'q5_k_m']), ('HuggingFaceTB/SmolLM2-360M-Instruct-GGUF', '593b5a2e04c8f3e4ee880263f93e0bd2901ad47f', 'SmolLM2 · 360M', 'General chat', ['q8_0']), ('Qwen/Qwen3-0.6B-GGUF', '23749fefcc72300e3a2ad315e1317431b06b590a', 'Qwen 3 · 0.6B', 'Reasoning', ['q8_0']), ('Qwen/Qwen2.5-Coder-0.5B-Instruct-GGUF', 'ebb2015119c907b064c512bf053e945850b5875f', 'Qwen 2.5 Coder · 0.5B', 'Coding', ['q4_k_m']), ('Qwen/Qwen2.5-1.5B-Instruct-GGUF', '91cad51170dc346986eccefdc2dd33a9da36ead9', 'Qwen 2.5 · 1.5B', 'General chat', ['q4_k_m']), ('HuggingFaceTB/SmolLM2-1.7B-Instruct-GGUF', '2d4a76a30b4af41ecd395c35725ac11688d4cfe4', 'SmolLM2 · 1.7B', 'General chat', ['q4_k_m']), ('Qwen/Qwen2.5-Coder-1.5B-Instruct-GGUF', 'f86cb2c1fa58255f8052cc32aeede1b7482d4361', 'Qwen 2.5 Coder · 1.5B', 'Coding', ['q4_k_m']), ('Qwen/Qwen3-1.7B-GGUF', '90862c4b9d2787eaed51d12237eafdfe7c5f6077', 'Qwen 3 · 1.7B', 'Reasoning', ['q8_0'])]
+repos = [('ggml-org/Qwen3-1.7B-GGUF', 'daeb8e2d528a760970442092f6bf1e55c3b659eb', 'Qwen 3 · 1.7B', 'Reasoning', ['Q4_K_M']), ('Qwen/Qwen2.5-0.5B-Instruct-GGUF', '9217f5db79a29953eb74d5343926648285ec7e67', 'Qwen 2.5 · 0.5B', 'General chat', ['q4_k_m', 'q5_k_m']), ('HuggingFaceTB/SmolLM2-360M-Instruct-GGUF', '593b5a2e04c8f3e4ee880263f93e0bd2901ad47f', 'SmolLM2 · 360M', 'General chat', ['q8_0']), ('Qwen/Qwen3-0.6B-GGUF', '23749fefcc72300e3a2ad315e1317431b06b590a', 'Qwen 3 · 0.6B', 'Reasoning', ['q8_0']), ('Qwen/Qwen2.5-Coder-0.5B-Instruct-GGUF', 'ebb2015119c907b064c512bf053e945850b5875f', 'Qwen 2.5 Coder · 0.5B', 'Coding', ['q4_k_m']), ('Qwen/Qwen2.5-1.5B-Instruct-GGUF', '91cad51170dc346986eccefdc2dd33a9da36ead9', 'Qwen 2.5 · 1.5B', 'General chat', ['q4_k_m']), ('HuggingFaceTB/SmolLM2-1.7B-Instruct-GGUF', '2d4a76a30b4af41ecd395c35725ac11688d4cfe4', 'SmolLM2 · 1.7B', 'General chat', ['q4_k_m']), ('Qwen/Qwen2.5-Coder-1.5B-Instruct-GGUF', 'f86cb2c1fa58255f8052cc32aeede1b7482d4361', 'Qwen 2.5 Coder · 1.5B', 'Coding', ['q4_k_m']), ('Qwen/Qwen3-1.7B-GGUF', '90862c4b9d2787eaed51d12237eafdfe7c5f6077', 'Qwen 3 · 1.7B', 'Reasoning', ['q8_0'])]
 
 def fetch(spec):
     repo, rev, base, purpose, quants = spec
@@ -25,7 +25,7 @@ def fetch(spec):
     source = {'repository': repo, 'revision': rev, 'apiURL': url, 'publisherLicense': d['cardData']['license'], 'gated': d['gated'], 'licenseURL': lu, 'licenseSHA256': lh, 'files': [{'fileName': f['rfilename'], 'byteCount': f['size'], 'sha256': f['lfs']['sha256']} for f in d['siblings'] if f['rfilename'].endswith('.gguf')]}
     models = []
     for quant in quants:
-        f = next((f for f in source['files'] if f['fileName'].lower().endswith(quant + '.gguf')))
+        f = next((f for f in source['files'] if f['fileName'].lower().endswith(quant.lower() + '.gguf')))
         size = f['byteCount']
         assert size <= 2000000000
         notes = {'General chat': 'Short everyday conversations. Small models can make mistakes.', 'Coding': 'Code explanations and drafts. Review and test generated code; no code execution.', 'Reasoning': 'May display thinking text and spend the short reply budget on reasoning. Experimental on iPhone.'}[purpose]

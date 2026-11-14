@@ -1,9 +1,23 @@
 import Foundation
 
+enum NativeReadPolicy: UInt32, Sendable {
+    case q8 = 1
+    // Isolated candidate: catalog/release admission requires separate quality review.
+    case q4Candidate = 2
+}
+
 struct NativeReadProposal: Sendable {
     let appInfo: Bool
     let installedModels: Bool
     static let admittedModelSHA256 = "061b54daade076b5d3362dac252678d17da8c68f07560be70818cace6590cb1a"
+    static let candidateQ4SHA256 = "d2387ca2dbfee2ffabce7120d3770dadca0b293052bc2f0e138fdc940d9bc7b5"
+    static func policy(forVerifiedSHA256 hash: String) -> NativeReadPolicy? {
+        switch hash {
+        case admittedModelSHA256: return .q8
+        case candidateQ4SHA256: return .q4Candidate
+        default: return nil
+        }
+    }
     static func parse(_ text: String) throws -> Self {
         struct Envelope: Decodable {
             struct Read: Decodable { let name: String; let arguments: [String: String]; let session_sequence: Int }

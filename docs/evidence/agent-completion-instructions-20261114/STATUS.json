@@ -1,0 +1,11 @@
+{
+  "candidateRetainedInProduction": false,
+  "restoredCheckpoint": "82eca1841c4024e1b71a19b8f7606af6a68d931b",
+  "orchid": "failed: invented saved_conversation_id before search",
+  "maple": "failed: invented 1234567890 before search",
+  "toolDispatches": 0,
+  "model": "Qwen3-1.7B-Q4_K_M",
+  "modelSHA256": "d2387ca2dbfee2ffabce7120d3770dadca0b293052bc2f0e138fdc940d9bc7b5",
+  "nativeVerified": false,
+  "currentReducerSHA256": "975ff4d2b0ad9d8c465c0232f930669548ccafffe049d203a12ca180e66d8039"
+}

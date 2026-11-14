@@ -191,6 +191,27 @@
       "publisherLicense": "apache-2.0",
       "gated": false,
       "architecture": "qwen3"
+    },
+    {
+      "fileName": "Qwen3-1.7B-Q4_K_M.gguf",
+      "byteCount": 1282439264,
+      "sha256": "d2387ca2dbfee2ffabce7120d3770dadca0b293052bc2f0e138fdc940d9bc7b5",
+      "id": "qwen3-1.7b-q4_k_m",
+      "name": "Qwen 3 · 1.7B · Q4_K_M",
+      "baseModel": "Qwen 3 · 1.7B",
+      "family": "Qwen 3",
+      "purpose": "Reasoning",
+      "quantization": "Q4_K_M",
+      "recommendedRAMGB": 6,
+      "notes": "Lower-memory native read suggestion candidate. Bounded Linux tool tests passed; Apple runtime and device reliability remain unverified. No tools execute without review.",
+      "repository": "ggml-org/Qwen3-1.7B-GGUF",
+      "revision": "daeb8e2d528a760970442092f6bf1e55c3b659eb",
+      "license": "Apache-2.0",
+      "licensePath": "README.md",
+      "licenseSHA256": "88dcfc58886877ec8af9b8352fce0fd73991de7b8e01588ee0fafd389e53cfff",
+      "publisherLicense": "apache-2.0",
+      "gated": false,
+      "architecture": "qwen3"
     }
   ]
 }

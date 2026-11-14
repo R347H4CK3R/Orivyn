@@ -26,3 +26,7 @@ test('read remains explicit durable read-only work with bounded existing step ca
 });
 
 test('prompt discloses partial message pages and current-history semantics',()=>{const prompt=api.prompt(searched());assert.match(prompt,/messageTruncated or messageWindowLimited/);assert.match(prompt,/current saved message page, not an immutable snapshot/);});
+
+test('search prompt constrains goal-derived words without quoted prose argument values',()=>{const prompt=api.prompt(searched());assert.doesNotMatch(prompt,/"query"\s*:\s*"1-256 UTF-8 bytes"/);assert.match(prompt,/query uses search words from USER_GOAL_JSON/);assert.match(prompt,/search_memory: same args, saved notes only/);assert.ok(Buffer.byteLength(prompt)<=3500);});
+test('conversation-read prompt requires prior search and a returned UUID instead of a quoted placeholder',()=>{const prompt=api.prompt(searched());assert.match(prompt,/read_conversation: only after search; id is a returned UUID/);assert.doesNotMatch(prompt,/"id":"search hit ID"/);});
+test('calculator documentation uses constraints instead of a quoted non-expression',()=>{const prompt=api.prompt(searched());assert.match(prompt,/expression is the exact requested arithmetic/);assert.doesNotMatch(prompt,/"expression":"1-256 UTF-8 bytes"/);});

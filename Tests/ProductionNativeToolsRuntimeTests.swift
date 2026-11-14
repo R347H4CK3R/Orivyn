@@ -24,13 +24,7 @@ final class ProductionNativeToolsRuntimeTests: XCTestCase {
         guard attributes.isDirectory == true, attributes.isSymbolicLink != true else {
             XCTFail("The host fixture root must be a regular owned directory, not a symlink."); return
         }
-        let descriptor = try XCTUnwrap(LocalModelCatalog.recommended.first { $0.id == "qwen3-1.7b-q8_0" })
-        guard descriptor.sha256 == "061b54daade076b5d3362dac252678d17da8c68f07560be70818cace6590cb1a",
-              descriptor.sha256 == NativeReadProposal.admittedModelSHA256,
-              descriptor.byteCount == 1_834_426_016,
-              descriptor.byteCount <= LocalModelStore.maximumFileBytes else {
-            XCTFail("The production catalog/admission policy no longer matches the pinned test fixture."); return
-        }
+        let descriptor = try ProductionModelFixture.descriptor(environment: environment)
         // No test-bundle/model copy or import. The real store verifies the full
         // pinned file at this dedicated root before EACH provider invocation.
         // This exercises verified admission, not model installation/import UI.
@@ -52,6 +46,8 @@ final class ProductionNativeToolsRuntimeTests: XCTestCase {
             }
         } catch {
             await provider.unload()
+            let evidence = XCTAttachment(string: "scope=iOS simulator CPU production native-tools failure\nmodelID=\(descriptor.id)\nmodelSHA256=\(descriptor.sha256)\nelapsedSeconds=\(Date().timeIntervalSince(start))\nerror=\(error)")
+            evidence.name = "production-native-tools-failure"; evidence.lifetime = .keepAlways; add(evidence)
             throw error
         }
         print("ORIVYN_PRODUCTION_NATIVE_TOOLS_GATE_COMPLETED")

@@ -6,6 +6,10 @@ The private production integration is compiled only with ORIVYN_NATIVE_TOOLS and
 
 The caller must retain model and context for the complete synchronous call, serialize context ownership and session destruction, and provide an empty single-sequence context. Existing KV contents cause rejection and remain untouched. Admitted contexts are cleared on exit. Every generation attempt is one-shot, including failures; the session becomes cancelled at completion. `ov2_cancel` can run concurrently, but destruction must wait for generation to return. Cancellation/deadline checks surround synchronous decode and parser calls; this is cooperative, not a hard preemption guarantee. Stop/EOG detection is internal, never supplied by model prose. Truncated token-budget output cannot reserve calls. The API assumes a trusted owner has already verified the model's file hash; template/architecture checks alone do not authenticate weights.
 
+## Explicit model policies
+
+The additive `ov4_create_borrowed` API requires policy 1 (original Q8, exact 4100-byte template) or policy 2 (SHA-bound Q4 development candidate, exact 4116-byte template). Cross-policy template matches and unknown policies are rejected. Legacy ov2/ov3 creation still admits policy 1 only. Swift selects policy only after LocalModelStore verifies the descriptor's file bytes; the engine requires a policy for a native goal and rejects a policy on ordinary chat before starting a worker. No model-supplied request field chooses the policy. See [candidate policy evidence](../../docs/native-read-production/MODEL-POLICY-CANDIDATE.md). This change does not certify Apple/device performance or broad tool reliability.
+
 ## Reproduce on Linux
 
 Requires a C++17 compiler, Python, and a combined static PIC build at exact llama.cpp commit `2496f9c14965c39589f53eea31bdb6d762b1d360` (b9049). CombinedRuntime evidence describes Linux link verification; it is not an Apple packaging recipe. Do not link another llama/ggml copy into the app.

@@ -3,3 +3,5 @@
 *.so
 driver-tests
 __pycache__/
+policy-tests
+policy-goal-tests

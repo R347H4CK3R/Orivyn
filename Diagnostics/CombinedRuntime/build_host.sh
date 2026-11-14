@@ -22,7 +22,7 @@ c++ -std=c++17 -fPIC -shared -DOV_TESTING -Wl,--no-undefined \
   -Wl,--start-group "${LIBS[@]}" -Wl,--end-group -pthread -ldl \
   -o "$OUTPUT/libOrivynCombined.so"
 nm -D --defined-only "$OUTPUT/libOrivynCombined.so" > "$OUTPUT/symbols.txt"
-for name in llama_model_load_from_file llama_init_from_model llama_decode mtmd_init_from_file ov3_generate ov2_create_borrowed ov_run ov_cancel; do
+for name in llama_model_load_from_file llama_init_from_model llama_decode mtmd_init_from_file ov3_generate ov4_create_borrowed ov2_create_borrowed ov_run ov_cancel; do
   [[ "$(awk -v symbol="$name" '$3==symbol {n++} END {print n+0}' "$OUTPUT/symbols.txt")" == 1 ]] || { echo "Missing/duplicate ABI: $name" >&2; exit 1; }
 done
 ldd "$OUTPUT/libOrivynCombined.so" > "$OUTPUT/dependencies.txt"
@@ -30,6 +30,6 @@ if grep -E 'lib(llama|ggml|mtmd)' "$OUTPUT/dependencies.txt"; then
   echo 'Unexpected second dynamic model runtime.' >&2; exit 1
 fi
 sha256sum "$ROOT/NativeTools/bridge.cpp" "$ROOT/NativeTools/bridge.h" \
-  "$ROOT/NativeTools/pinned-template.h" "$ROOT/VisionProof/Bridge/vision_bridge.cpp" \
+  "$ROOT/NativeTools/pinned-template.h" "$ROOT/NativeTools/pinned-q4-candidate-template.h" "$ROOT/VisionProof/Bridge/vision_bridge.cpp" \
   "$ROOT/VisionProof/Bridge/vision_bridge.h" "${LIBS[@]}" "$OUTPUT/libOrivynCombined.so" > "$OUTPUT/SHA256SUMS"
 echo 'Combined host ABI linked with no undefined symbols or second dynamic model runtime. Apple linking, model quality and device acceptance are NOT verified.'

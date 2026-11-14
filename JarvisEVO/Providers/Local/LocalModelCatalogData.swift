@@ -174,6 +174,25 @@ extension LocalModelCatalog {
             notes: "Optional native read suggestions with the combined runtime. Linux inference tested; iPhone memory and reliability remain unverified. May display thinking text in ordinary chat.",
             licenseURL: URL(string: "https://huggingface.co/Qwen/Qwen3-1.7B-GGUF/blob/90862c4b9d2787eaed51d12237eafdfe7c5f6077/LICENSE")
         ),
+        LocalModelCatalogEntry(
+            descriptor: LocalModelDescriptor(
+                id: "qwen3-1.7b-q4_k_m",
+                name: "Qwen 3 · 1.7B · Q4_K_M",
+                fileName: "Qwen3-1.7B-Q4_K_M.gguf",
+                downloadURL: URL(string: "https://huggingface.co/ggml-org/Qwen3-1.7B-GGUF/resolve/daeb8e2d528a760970442092f6bf1e55c3b659eb/Qwen3-1.7B-Q4_K_M.gguf"),
+                sha256: "d2387ca2dbfee2ffabce7120d3770dadca0b293052bc2f0e138fdc940d9bc7b5",
+                byteCount: 1282439264,
+                license: "Apache-2.0",
+                sourceURL: URL(string: "https://huggingface.co/ggml-org/Qwen3-1.7B-GGUF/tree/daeb8e2d528a760970442092f6bf1e55c3b659eb")
+            ),
+            baseModel: "Qwen 3 · 1.7B",
+            family: "Qwen 3",
+            purpose: "Reasoning",
+            quantization: "Q4_K_M",
+            recommendedRAMGB: 6,
+            notes: "Lower-memory native read suggestion candidate. Bounded Linux tool tests passed; Apple runtime and device reliability remain unverified. No tools execute without review.",
+            licenseURL: URL(string: "https://huggingface.co/ggml-org/Qwen3-1.7B-GGUF/blob/daeb8e2d528a760970442092f6bf1e55c3b659eb/README.md")
+        ),
     ]
     static let defaultModelID = "qwen2.5-0.5b-instruct-q4_k_m"
 }

@@ -6,10 +6,11 @@ const path = require('node:path');
 const [binary, corePath, directory] = process.argv.slice(2);
 const core = require(path.resolve(corePath));
 const id = '11111111-1111-4111-8111-111111111111';
+let activeDirectory = directory;
 let checks = 0;
 function check(actual, expected) { assert.deepEqual(actual, expected); checks++; }
 function swift(command, input, fail = false) {
-  const r = spawnSync(binary, [command, directory, id], {input, encoding:'utf8', maxBuffer:262144, timeout:10000});
+  const r = spawnSync(binary, [command, activeDirectory, id], {input, encoding:'utf8', maxBuffer:262144, timeout:10000});
   if (r.error) throw r.error;
   if (fail) { assert.equal(r.status, 1); assert.match(r.stderr,/^bridge-rejected:/); checks+=2; return; }
   assert.equal(r.status, 0, r.stderr); return r.stdout;
@@ -43,26 +44,28 @@ state = persist(core.recordResult(state, JSON.stringify({operationID:JSON.parse(
 assert.throws(()=>core.recordResult(state,JSON.stringify({operationID:id+':1',result}))); checks++;
 swift('save', running, true);
 check(swift('load'), state);
-// A later successful tool result must not hide prior search data.
-state = persist(tool(state, 'get_app_info'));
-state = persist(core.recordResult(state, JSON.stringify({operationID:JSON.parse(state).pending.operationID,result:'{"application":"Orivyn"}'})));
-state = persist(tool(state,'read_result',{step:2,offset:0}));
-// Read every UTF-8 page through the production prompt and reducer, preserving exact bytes.
-let pages = '', pageCount = 0;
-for (;;) {
- assert.ok(++pageCount<=20, 'bounded paging must terminate');
- const prompt = core.prompt(state);
- const line = prompt.split('\n').find(x=>x.startsWith('UNTRUSTED_PAGE_JSON='));
- const page = JSON.parse(line.slice('UNTRUSTED_PAGE_JSON='.length));
- check(Buffer.byteLength(page.text)<=256, true);
- pages += page.text;
- if (page.endOfResult) break;
- state = persist(tool(state,'read_result',{step:2,offset:page.nextOffset}));
-}
-check(pages, result);
-check(JSON.parse(state).steps, 3);
-// Archive/restore must preserve the entire paged task record byte-for-byte.
+// Large native result remains durable, but cannot be split across fresh model
+// contexts and then mislabeled as fully remembered evidence.
+check(JSON.parse(state).status, 'failed');
+check(JSON.parse(state).history[1].result, result);
+assert.match(JSON.parse(state).error,/narrower task/); checks++;
+assert.throws(()=>core.prompt(state)); checks++;
+assert.throws(()=>tool(state,'read_result',{step:2,offset:0})); checks++;
 swift('archive'); swift('load',undefined,true); swift('restore'); check(swift('load'),state);
-state = persist(core.acceptDecision(state,JSON.stringify({type:'answer',text:'Partial local results; omitted items remain unavailable.'})));
+
+// Independent fitting task exercises real storage/cursors and simultaneous facts.
+activeDirectory = path.join(directory,'fitting-context');
+state = persist(core.create('Inspect bounded local results', id));
+for (const text of ['{"application":"Orivyn"}', 'Earlier and later facts both remain present']) {
+ state = persist(tool(state,'get_app_info'));
+ state = persist(core.recordResult(state, JSON.stringify({operationID:JSON.parse(state).pending.operationID,result:text})));
+}
+state = persist(tool(state,'read_result',{step:1,offset:0}));
+const prompt = core.prompt(state);
+check(Buffer.byteLength(prompt)<=3500,true);
+const facts=JSON.parse(prompt.split('UNTRUSTED_RESULTS_JSON=')[1].split('\n')[0]);
+check(facts.map(x=>x.result),['{"application":"Orivyn"}','Earlier and later facts both remain present']);
+check(JSON.parse(state).steps,2);
+state = persist(core.acceptDecision(state,JSON.stringify({type:'answer',text:'A model proposal from the complete fitting context.'})));
 check(JSON.parse(core.recover(swift('load'))).status,'answered');
-console.log(JSON.stringify({checks, resultBytes:Buffer.byteLength(result), retainedItems:value.matches.length, omittedItems:value.omittedItems, status:'passed', scope:'Swift storage/budget + Node reducer; no model or iOS execution'}));
+console.log(JSON.stringify({checks,resultBytes:Buffer.byteLength(result),retainedItems:value.matches.length,omittedItems:value.omittedItems,status:'passed',scope:'Swift storage/budget + Node reducer; no model or iOS execution'}));

@@ -15,17 +15,18 @@ actor LlamaEngine: LocalResourceReleasing {
     private var workerTask: Task<Void, Never>?
     private var releaseRequests = 0
 
-    func stream(_ request: GenerationRequest, modelURL: URL) throws -> AsyncThrowingStream<String, Error> {
+    func stream(_ request: GenerationRequest, modelURL: URL, nativeReadPolicy: NativeReadPolicy? = nil) throws -> AsyncThrowingStream<String, Error> {
         try Task.checkCancellation()
         guard !busy, releaseRequests == 0 else { throw LocalModelError.busy }
         guard (1...1024).contains(request.maxTokens), request.temperature.isFinite,
               (0...2).contains(request.temperature), request.messages.contains(where: { $0.role == .user && (!$0.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || $0.attachments.contains(where: { !($0.extractedText ?? "").isEmpty })) }),
               request.systemPrompt.utf8.count + request.messages.reduce(0, { $0 + $1.content.utf8.count }) <= 1_000_000 else { throw LocalModelError.invalidRequest }
+        guard (request.nativeReadGoal != nil) == (nativeReadPolicy != nil) else { throw LocalModelError.invalidRequest }
         busy = true
         let pair = AsyncThrowingStream<String, Error>.makeStream()
         let worker = Task {
             do {
-                try await generate(request, modelURL: modelURL, continuation: pair.continuation)
+                try await generate(request, modelURL: modelURL, nativeReadPolicy: nativeReadPolicy, continuation: pair.continuation)
                 pair.continuation.finish()
             } catch {
                 pair.continuation.finish(throwing: error)
@@ -98,12 +99,13 @@ actor LlamaEngine: LocalResourceReleasing {
         return loaded
     }
 
-    private func generate(_ request: GenerationRequest, modelURL: URL, continuation: AsyncThrowingStream<String, Error>.Continuation) async throws {
+    private func generate(_ request: GenerationRequest, modelURL: URL, nativeReadPolicy: NativeReadPolicy?, continuation: AsyncThrowingStream<String, Error>.Continuation) async throws {
         try Task.checkCancellation()
         let owned = try load(modelURL)
         if let goal = request.nativeReadGoal {
             #if ORIVYN_NATIVE_TOOLS
-            let gate = try NativeReadGeneration(owner: owned, goal: goal)
+            guard let nativeReadPolicy else { throw LocalModelError.invalidRequest }
+            let gate = try NativeReadGeneration(owner: owned, goal: goal, policy: nativeReadPolicy)
             let result = try await withTaskCancellationHandler {
                 try Task.checkCancellation()
                 do { return try await Task.detached { try gate.generate(maxTokens: request.maxTokens) }.value }
@@ -298,11 +300,11 @@ private final class NativeReadGeneration: @unchecked Sendable {
     private let owner: LlamaResources
     private let lock = NSLock()
     private var handle: UnsafeMutableRawPointer?
-    init(owner: LlamaResources, goal: String) throws {
+    init(owner: LlamaResources, goal: String, policy: NativeReadPolicy) throws {
         guard !goal.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
               goal.utf8.count <= 2048, !goal.contains("\0") else { throw LocalModelError.invalidRequest }
         self.owner = owner
-        let result = goal.withCString { ov3_create_borrowed(owner.model, 3, 2, 60_000, $0, goal.utf8.count, &handle) }
+        let result = goal.withCString { ov4_create_borrowed(owner.model, policy.rawValue, 3, 2, 60_000, $0, goal.utf8.count, &handle) }
         guard result == 0, handle != nil else { throw LocalModelError.unsupportedChatTemplate }
     }
     func cancel() { lock.lock(); defer { lock.unlock() }; if let handle { ov2_cancel(handle) } }

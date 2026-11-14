@@ -1,0 +1,350 @@
+{
+  "scope": "Preserved CI artifacts at two distinct commits. No new build, CI dispatch, source changes or publication.",
+  "localPreservationRoot": "/workspace/scratch/8352eb8fe69c/orivyn-verified-ci-20261114",
+  "artifacts": [
+    {
+      "path": "14130489504.zip",
+      "bytes": 19243735,
+      "sha256": "fea75b05fbde8ff01da22b4f730dce0683ff6e69128b01c1f99fdd8dc2b62200",
+      "artifactID": 14130489504,
+      "name": "Orivyn-native-capability-evidence-ui-1",
+      "sourceCommit": "67d9aa960d07ff1fe0961708d99228dc778b75d4",
+      "sourceRun": "https://github.com/R347H4CK3R/Orivyn/actions/runs/43636771104",
+      "sourceArtifact": "https://api.github.com/repos/R347H4CK3R/Orivyn/actions/artifacts/14130489504",
+      "publishedDigestMatched": true
+    },
+    {
+      "path": "14131049054.zip",
+      "bytes": 50756116,
+      "sha256": "890fdac1300eb3f6635da9176c66a13ac77b957ea45cae84382d73c521efb91d",
+      "artifactID": 14131049054,
+      "name": "Orivyn-native-model-inference-evidence",
+      "sourceCommit": "67d9aa960d07ff1fe0961708d99228dc778b75d4",
+      "sourceRun": "https://github.com/R347H4CK3R/Orivyn/actions/runs/43636771104",
+      "sourceArtifact": "https://api.github.com/repos/R347H4CK3R/Orivyn/actions/artifacts/14131049054",
+      "publishedDigestMatched": true
+    },
+    {
+      "path": "14131107571.zip",
+      "bytes": 40265491,
+      "sha256": "58377177c39d5a754eaaf39730f0e9df50131d691140f873f8fc16d6e8b15a58",
+      "artifactID": 14131107571,
+      "name": "Orivyn-native-capability-evidence-core",
+      "sourceCommit": "67d9aa960d07ff1fe0961708d99228dc778b75d4",
+      "sourceRun": "https://github.com/R347H4CK3R/Orivyn/actions/runs/43636771104",
+      "sourceArtifact": "https://api.github.com/repos/R347H4CK3R/Orivyn/actions/artifacts/14131107571",
+      "publishedDigestMatched": true
+    },
+    {
+      "path": "14131263870.zip",
+      "bytes": 16320770,
+      "sha256": "07bda2d551aef2329941e5ed427e455070393d57bb1766a18a74c8fd05913727",
+      "artifactID": 14131263870,
+      "name": "Orivyn-native-capability-evidence-ui-2",
+      "sourceCommit": "67d9aa960d07ff1fe0961708d99228dc778b75d4",
+      "sourceRun": "https://github.com/R347H4CK3R/Orivyn/actions/runs/43636771104",
+      "sourceArtifact": "https://api.github.com/repos/R347H4CK3R/Orivyn/actions/artifacts/14131263870",
+      "publishedDigestMatched": true
+    },
+    {
+      "path": "14131800136.zip",
+      "bytes": 290040,
+      "sha256": "1335a53b7cecfcb8328d5f846d8d434383a267f5e539acc033110404dd273446",
+      "artifactID": 14131800136,
+      "name": "Orivyn-native-model-inference-evidence",
+      "sourceCommit": "bcf0e0e0dffdb2178487376b8a6b434d631e226d",
+      "sourceRun": "https://github.com/R347H4CK3R/Orivyn/actions/runs/43637615360",
+      "sourceArtifact": "https://api.github.com/repos/R347H4CK3R/Orivyn/actions/artifacts/14131800136",
+      "publishedDigestMatched": true
+    },
+    {
+      "path": "14131890458.zip",
+      "bytes": 83658928,
+      "sha256": "ad81ca1115d1d7d7ec312e77dd5d33d33fa21a8647d74a0bb0bbd027ec96c6c0",
+      "artifactID": 14131890458,
+      "name": "Orivyn-native-capability-evidence-ui-0",
+      "sourceCommit": "67d9aa960d07ff1fe0961708d99228dc778b75d4",
+      "sourceRun": "https://github.com/R347H4CK3R/Orivyn/actions/runs/43636771104",
+      "sourceArtifact": "https://api.github.com/repos/R347H4CK3R/Orivyn/actions/artifacts/14131890458",
+      "publishedDigestMatched": true
+    },
+    {
+      "path": "14131239572.zip",
+      "bytes": 40175373,
+      "sha256": "aa4428e5261d37b5662048d93108aed5eff83968a820d42f9e4d8899af6e13e4",
+      "artifactID": 14131239572,
+      "name": "Orivyn-native-capability-evidence-core",
+      "sourceCommit": "bcf0e0e0dffdb2178487376b8a6b434d631e226d",
+      "sourceRun": "https://github.com/R347H4CK3R/Orivyn/actions/runs/43637615360",
+      "sourceArtifact": "https://api.github.com/repos/R347H4CK3R/Orivyn/actions/artifacts/14131239572",
+      "publishedDigestMatched": true
+    },
+    {
+      "path": "14131699044.zip",
+      "bytes": 109781677,
+      "sha256": "ab8e6dac5a2423be582419326e39f55709a9705aa9fc13da5cc3a82b64355d4e",
+      "artifactID": 14131699044,
+      "name": "Orivyn-native-capability-evidence-ui-0",
+      "sourceCommit": "bcf0e0e0dffdb2178487376b8a6b434d631e226d",
+      "sourceRun": "https://github.com/R347H4CK3R/Orivyn/actions/runs/43637615360",
+      "sourceArtifact": "https://api.github.com/repos/R347H4CK3R/Orivyn/actions/artifacts/14131699044",
+      "publishedDigestMatched": true
+    },
+    {
+      "path": "14132740740.zip",
+      "bytes": 18887798,
+      "sha256": "57d1d126ed2996474814204b9f816a6314f6036e37d0bff0c7c089bdf053628f",
+      "artifactID": 14132740740,
+      "name": "Orivyn-native-capability-evidence-ui-1",
+      "sourceCommit": "bcf0e0e0dffdb2178487376b8a6b434d631e226d",
+      "sourceRun": "https://github.com/R347H4CK3R/Orivyn/actions/runs/43637615360",
+      "sourceArtifact": "https://api.github.com/repos/R347H4CK3R/Orivyn/actions/artifacts/14132740740",
+      "publishedDigestMatched": true
+    },
+    {
+      "path": "14132012610.zip",
+      "bytes": 16262502,
+      "sha256": "56d9ad5637354949b27fd101304643e02706048af179203b1d927eeb1fbd46f5",
+      "artifactID": 14132012610,
+      "name": "Orivyn-native-capability-evidence-ui-2",
+      "sourceCommit": "bcf0e0e0dffdb2178487376b8a6b434d631e226d",
+      "sourceRun": "https://github.com/R347H4CK3R/Orivyn/actions/runs/43637615360",
+      "sourceArtifact": "https://api.github.com/repos/R347H4CK3R/Orivyn/actions/artifacts/14132012610",
+      "publishedDigestMatched": true
+    }
+  ],
+  "unsignedIPA": {
+    "path": "14131107571/20261114T202254Z-2039/Orivyn-0.1.1-build7-unsigned.ipa",
+    "bytes": 36973869,
+    "sha256": "6b9f7d2d94f00b05a963ec332b5641369891035aa65e63cb44766071cb488b07",
+    "sourceCommit": "67d9aa960d07ff1fe0961708d99228dc778b75d4",
+    "sourceJob": "https://github.com/R347H4CK3R/Orivyn/actions/runs/43636771104/job/132575186858",
+    "version": "0.1.1",
+    "build": "7",
+    "unsigned": true,
+    "distributionPublished": false,
+    "limit": "Package evidence only; not signed, installed or physically device-tested."
+  },
+  "coreAndUI": {
+    "unitPassed": 950,
+    "unitSkipped": 3,
+    "uiPassed": 51,
+    "failed": 0,
+    "jobs": [
+      {
+        "sourceJob": "https://github.com/R347H4CK3R/Orivyn/actions/runs/43636771104/job/132575186858",
+        "sourceCommit": "67d9aa960d07ff1fe0961708d99228dc778b75d4",
+        "passed": 950,
+        "skipped": 3,
+        "failed": 0,
+        "log": {
+          "path": "14131107571/20261114T202254Z-2039/native-tests.log",
+          "bytes": 764810,
+          "sha256": "5634605b4a2e0e6b813d0a499919370dab6bb0de44a2fc9b26f6e605114800b3"
+        },
+        "verbatimSummary": "Executed 953 tests, with 3 tests skipped and 0 failures (0 unexpected) in 140.820 (143.680) seconds",
+        "skips": [
+          "Test Case '-[JarvisEVOTests.GeneratedImageStagingTests testCompleteProtectionAttributeOnPhysicalDevice]' skipped (0.016 seconds).",
+          "Test Case '-[JarvisEVOTests.ProductionNativeToolsRuntimeTests testRequiredProductionSuggestionAndReload]' skipped (0.020 seconds).",
+          "Test Case '-[JarvisEVOTests.ProductionVisionRuntimeTests testRequiredProductionPNGInferenceAndRelease]' skipped (0.005 seconds)."
+        ]
+      },
+      {
+        "sourceJob": "https://github.com/R347H4CK3R/Orivyn/actions/runs/43636771104/job/132575187042",
+        "sourceCommit": "67d9aa960d07ff1fe0961708d99228dc778b75d4",
+        "passed": 23,
+        "skipped": 0,
+        "failed": 0,
+        "log": {
+          "path": "14131890458/20261114T202401Z-2969/native-tests.log",
+          "bytes": 562836,
+          "sha256": "a20f177f352d823a6f7d8326f0f988da52e23f18b313f59d4de5c40d0341a1d6"
+        },
+        "verbatimSummary": "Executed 23 tests, with 0 failures (0 unexpected) in 1194.777 (1194.818) seconds",
+        "skips": []
+      },
+      {
+        "sourceJob": "https://github.com/R347H4CK3R/Orivyn/actions/runs/43636771104/job/132575187048",
+        "sourceCommit": "67d9aa960d07ff1fe0961708d99228dc778b75d4",
+        "passed": 17,
+        "skipped": 0,
+        "failed": 0,
+        "log": {
+          "path": "14130489504/20261114T203121Z-2060/native-tests.log",
+          "bytes": 490286,
+          "sha256": "e6de7f2bd42998007b4d81925c5b497325572eea94493e4c2f32f472602ae386"
+        },
+        "verbatimSummary": "Executed 17 tests, with 0 failures (0 unexpected) in 851.718 (851.745) seconds",
+        "skips": []
+      },
+      {
+        "sourceJob": "https://github.com/R347H4CK3R/Orivyn/actions/runs/43636771104/job/132575187118",
+        "sourceCommit": "67d9aa960d07ff1fe0961708d99228dc778b75d4",
+        "passed": 11,
+        "skipped": 0,
+        "failed": 0,
+        "log": {
+          "path": "14131263870/20261114T203319Z-1320/native-tests.log",
+          "bytes": 376802,
+          "sha256": "edb92e48f20c29d0021d5745effae04466e777089ee699dd6de46bdad47c272f"
+        },
+        "verbatimSummary": "Executed 11 tests, with 0 failures (0 unexpected) in 351.869 (351.888) seconds",
+        "skips": []
+      }
+    ]
+  },
+  "laterInference": {
+    "sourceCommit": "bcf0e0e0dffdb2178487376b8a6b434d631e226d",
+    "sourceJob": "https://github.com/R347H4CK3R/Orivyn/actions/runs/43637615360/job/132577791460",
+    "nativeTools": {
+      "passedTests": 1,
+      "skippedTests": 0,
+      "failedTests": 0,
+      "cycles": 2,
+      "testDurationSeconds": 141.588,
+      "summary": {
+        "path": "14131800136/production-inference/native-tools/test-summary.json",
+        "bytes": 976,
+        "sha256": "c1d75a4bacfc024cb828b65dedd1c615e8d95a7d40aba738f2c8b764a53df109"
+      }
+    },
+    "vision": {
+      "passedTests": 1,
+      "testDurationSeconds": 102.112,
+      "scope": "one synthetic red square PNG; actual production decode/runtime and acknowledged close, not broad vision accuracy"
+    },
+    "attachments": [
+      {
+        "category": "native-tools",
+        "file": {
+          "path": "14131800136/production-inference/native-tools/attachments/1B83AB35-BD3D-461C-A014-05B16B6575E2.txt",
+          "bytes": 240,
+          "sha256": "f34bb1e7969eb63717b42f07b5d5e11519761a6cc04623680b432e6ed7297520"
+        },
+        "content": "scope=iOS simulator CPU production native-tools\npass=1\nmodelSHA256=061b54daade076b5d3362dac252678d17da8c68f07560be70818cace6590cb1a\nmodelBytes=1834426016\nappInfo=true\ninstalledModels=true\nunloadReturned=true\nelapsedSeconds=73.62997102737427"
+      },
+      {
+        "category": "native-tools",
+        "file": {
+          "path": "14131800136/production-inference/native-tools/attachments/E9A67DE7-AF4C-4F8A-9504-4BCF1B682BA5.txt",
+          "bytes": 241,
+          "sha256": "091d1cb734dad9501b075e818a168594e5104219e053e13b4b4b3ec739ef1ef5"
+        },
+        "content": "scope=iOS simulator CPU production native-tools\npass=2\nmodelSHA256=061b54daade076b5d3362dac252678d17da8c68f07560be70818cace6590cb1a\nmodelBytes=1834426016\nappInfo=true\ninstalledModels=true\nunloadReturned=true\nelapsedSeconds=141.56066799163818"
+      },
+      {
+        "category": "vision",
+        "file": {
+          "path": "14131800136/production-inference/vision/attachments/C2188F27-650E-4EF4-A326-9B46C3DF4292.txt",
+          "bytes": 380,
+          "sha256": "254318e677437da2eca1c62cefb5b6cc86b2a46e6245a8d4ead0463e9c7d0679"
+        },
+        "content": "scope=iOS simulator CPU production runtime smoke\nmodelRevision=1bc3c9f74ceafd4c8d4411cc9cf188bba3798f91\nmodelSHA256=0cf76814555b8665149075b74ab6b5c1d428ea1d3d01c1918c12012e8d7c9f58\nprojectorSHA256=db9a3a1648cab1ebc3af4a2b0c8145dd8faebf6f7dd7b16e7dc1842229f14ac4\nelapsedSeconds=94.07152307033539\ncloseAcknowledged=true\nactualAnswer= A red square is displayed on a white background."
+      }
+    ]
+  },
+  "retainedEarlierFailure": {
+    "sourceCommit": "67d9aa960d07ff1fe0961708d99228dc778b75d4",
+    "sourceJob": "https://github.com/R347H4CK3R/Orivyn/actions/runs/43636771104/job/132575187038",
+    "log": {
+      "path": "14131049054/production-inference/native-tools/xcodebuild.log",
+      "bytes": 47988,
+      "sha256": "ba0d912cd187feb5af1da5094722e502a26faf8620a52864e434da5132c88b24"
+    },
+    "verbatimFailure": "/Users/runner/work/Orivyn/Orivyn/Tests/ProductionNativeToolsRuntimeTests.swift:55: error: -[JarvisEVOTests.ProductionNativeToolsRuntimeTests testRequiredProductionSuggestionAndReload] : failed: caught error: \"nativeGenerationFailed(status: 3, elapsedSeconds: 61.538936041)\"",
+    "nativeStatus": 3,
+    "nativeStatusMeaning": "OV3_EXPIRED (Diagnostics/NativeTools/bridge.h)",
+    "visionExitCode": 0,
+    "nativeToolsExitCode": 65,
+    "note": "Later success does not erase this earlier expiration; these are different source commits."
+  },
+  "limitations": [
+    "No physical-device inference or signing/install verification.",
+    "Qwen gate requests fixed app-info and installed-model suggestions twice; not LocalAgentSession multi-step autonomy.",
+    "Core/unit skips include physical-device protection and two opt-in model tests.",
+    "Later run is not fully green: core and inference passed; UI0 failed two virtual-desktop tests. Followup test correction has not run on Apple."
+  ],
+  "laterCore": {
+    "sourceCommit": "bcf0e0e0dffdb2178487376b8a6b434d631e226d",
+    "sourceJob": "https://github.com/R347H4CK3R/Orivyn/actions/runs/43637615360/job/132577791647",
+    "passed": 950,
+    "skipped": 3,
+    "failed": 0,
+    "verbatimSummary": "Executed 953 tests, with 3 tests skipped and 0 failures (0 unexpected) in 135.695 (138.615) seconds",
+    "log": {
+      "path": "14131239572/20261114T205059Z-6682/native-tests.log",
+      "bytes": 762419,
+      "sha256": "fa3504930f2ce5c7ea516f4b91ce20518c783d9b61068620ab47a9729f66d806"
+    },
+    "skips": [
+      "Test Case '-[JarvisEVOTests.GeneratedImageStagingTests testCompleteProtectionAttributeOnPhysicalDevice]' skipped (0.020 seconds).",
+      "Test Case '-[JarvisEVOTests.ProductionNativeToolsRuntimeTests testRequiredProductionSuggestionAndReload]' skipped (0.042 seconds).",
+      "Test Case '-[JarvisEVOTests.ProductionVisionRuntimeTests testRequiredProductionPNGInferenceAndRelease]' skipped (0.001 seconds)."
+    ],
+    "unsignedIPA": {
+      "path": "14131239572/20261114T205059Z-6682/Orivyn-0.1.1-build7-unsigned.ipa",
+      "bytes": 36973869,
+      "sha256": "fbeb005030b19452a1296a3bb7e3f0b489f32b3444e70c0f4cf22de2bbf0a4c7"
+    },
+    "ipaLimit": "Unsigned package only; not signed, installed or device-tested.",
+    "uiStatusAtPreservation": "All later UI jobs now completed:49passed2failed, recorded under laterUI; prior51passes remain attributed only to67d9."
+  },
+  "laterUI": {
+    "sourceCommit": "bcf0e0e0dffdb2178487376b8a6b434d631e226d",
+    "passed": 49,
+    "failed": 2,
+    "skipped": 0,
+    "jobs": [
+      {
+        "sourceJob": "https://github.com/R347H4CK3R/Orivyn/actions/runs/43637615360/job/132577791641",
+        "passed": 21,
+        "failed": 2,
+        "skipped": 0,
+        "log": {
+          "path": "14131699044/20261114T204921Z-2459/native-tests.log",
+          "bytes": 482204,
+          "sha256": "c1bfc08450e33787b3d9f978c078bae21335f7de64740c4d1e5656b8abcdc2d5"
+        },
+        "verbatimSummary": "Executed 23 tests, with 2 failures (0 unexpected) in 762.737 (762.800) seconds",
+        "failures": [
+          "/Users/runner/work/Orivyn/Orivyn/UITests/VirtualDesktopIntegrationUITests.swift:43: error: -[JarvisEVOUITests.VirtualDesktopIntegrationUITests testActualGuestFileAndCheckpointThenSafeClosePreservesDraft] : Failed to synthesize event: Neither element nor any descendant has keyboard focus. Event dispatch snapshot: TextField, {{75.0, 304.3}, {782.0, 22.0}}, identifier: 'desktop.input', placeholderValue: 'Text to type in the guest', value: Text to type in th...",
+          "/Users/runner/work/Orivyn/Orivyn/UITests/VirtualDesktopIntegrationUITests.swift:93: error: -[JarvisEVOUITests.VirtualDesktopIntegrationUITests testCheckpointSurvivesAppRelaunchAndFreshGuestRead] : XCTAssertTrue failed - Target must exist and be visible after bounded scrolling."
+        ]
+      },
+      {
+        "sourceJob": "https://github.com/R347H4CK3R/Orivyn/actions/runs/43637615360/job/132577791639",
+        "passed": 17,
+        "failed": 0,
+        "skipped": 0,
+        "log": {
+          "path": "14132740740/20261114T204705Z-1330/native-tests.log",
+          "bytes": 491307,
+          "sha256": "1487fa263b9cf439f0ac45a0cd8e66fe3b8669c860486ad9e1f394516f2d8418"
+        },
+        "verbatimSummary": "Executed 17 tests, with 0 failures (0 unexpected) in 962.515 (962.553) seconds",
+        "failures": []
+      },
+      {
+        "sourceJob": "https://github.com/R347H4CK3R/Orivyn/actions/runs/43637615360/job/132577791646",
+        "passed": 11,
+        "failed": 0,
+        "skipped": 0,
+        "log": {
+          "path": "14132012610/20261114T205503Z-1837/native-tests.log",
+          "bytes": 374347,
+          "sha256": "1a0c4f18f11ef7298071fea6376d448c8998163b1877f566bcff3d802b5beb95"
+        },
+        "verbatimSummary": "Executed 11 tests, with 0 failures (0 unexpected) in 406.205 (406.246) seconds",
+        "failures": []
+      }
+    ],
+    "diagnosis": "The first failure occurs typing after landscape transition while AX snapshot still marks the guest WebView focused. The next test launches back into landscape and fails revealing Customize before opening desktop; it resets its own storage, so this is not evidence of checkpoint corruption.",
+    "failureHierarchy": {
+      "path": "14131699044/20261114T204921Z-2459/screenshots/04516134-1A0C-4261-AAD1-5FDF8F4EA036.txt",
+      "bytes": 14610,
+      "sha256": "b3c4d4fdf7dd1be3b2ebf3bcc832d6ab54727e3e7b72e5d028149b3888533477"
+    },
+    "followupTestOnlyCommit": "00470f28d059ab20bee1f321d50a427a655472ff",
+    "followupValidation": "Swift syntax parse and git diff --check only; Apple UI rerun is required, no fixed/passing claim."
+  }
+}

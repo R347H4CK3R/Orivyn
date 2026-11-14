@@ -7,7 +7,7 @@ import pathlib, plistlib, re, subprocess, sys
 REQUIRED = {'_llama_model_load_from_file', '_llama_init_from_model', '_llama_decode',
             '_mtmd_init_from_file', '_ov_create', '_ov_run', '_ov_cancel', '_ov_destroy',
             '_ov2_create_borrowed', '_ov2_validate', '_ov2_cancel', '_ov2_destroy', '_ov2_free',
-            '_ov3_create_borrowed', '_ov3_generate'}
+            '_ov3_create_borrowed', '_ov3_generate', '_ov4_create_borrowed'}
 
 def inspect(root):
     info = plistlib.loads((root / 'Info.plist').read_bytes())
