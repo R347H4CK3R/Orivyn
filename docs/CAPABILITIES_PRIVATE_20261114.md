@@ -1,4 +1,4 @@
-# Private capability implementation — 2026-11-14
+# Capability implementation — 2026-11-14
 
 This development branch extends the source after public 0.1.1 build 6. It is not
 a new IPA or release, and does not complete the 1.0.0 acceptance checklist. The
@@ -7,7 +7,7 @@ published preview and its SideStore entries are unchanged by this work.
 ## Vision
 
 A separate, checksum-pinned SmolVLM2 2.2B model/projector pair supplies actual
-pixel inference. It is not OCR or text-only image description. The private image
+pixel inference. It is not OCR or text-only image description. The development image
 analysis screen includes explicit model installation, a question, result and
 cancellation. The production session owns the app heavy-work lease until native
 teardown completes. Exact pair verification precedes use; installation cannot
@@ -51,11 +51,15 @@ SHA-256 and checks headers, exported APIs, Mach-O platform and deployment target
 before replacing the existing dependency. The package script records requested
 native flags. A recipe and parser tests are not an executed Apple build.
 
-No Apple build, simulator suite, physical iPhone test, or new publication was
-performed for these changes. The app minimum remains iOS 26. The owner authorized
-free Mac packaging; no paid capacity or new account was used. A completed Apple
-framework/app package and physical resource acceptance remain required before
-these private native features can be delivered as an accepted release.
+The owner made the repository public and authorized standard free GitHub Mac
+runners. Run [43624962284](https://github.com/R347H4CK3R/Orivyn/actions/runs/43624962284)
+built and admitted the combined Apple framework, then compiled and linked the
+simulator app on Xcode 26.3. The test target failed because DEBUG was omitted
+from the native-enabled Debug configuration. That configuration is corrected in
+4ce8001df8dd3bd0671c7969fc3fa462046b9ed1; rerun results remain pending.
+No complete simulator pass, device IPA, physical iPhone test or new publication
+is claimed. The app minimum remains iOS 26. No paid capacity or new account was
+used. Full native and physical resource acceptance remain required.
 
 ## Integrated verification
 
