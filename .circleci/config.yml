@@ -29,7 +29,7 @@ jobs:
             xcrun simctl list runtimes > artifacts/circleci-runtimes.txt
             df -h > artifacts/circleci-disk.txt
       - run:
-          name: Mandatory simulator inference, native tests and unsigned IPA (50 minute ceiling)
+          name: Mandatory simulator inference, native tests and unsigned IPA (35 minute ceiling)
           no_output_timeout: 15m
           command: |
             # Preserve the original gate exit status and stop its whole process group
@@ -41,7 +41,7 @@ jobs:
                     f"set -o pipefail; bash scripts/ci_macos.sh 2>&1 | tee /dev/fd/{log.fileno()}"],
                     pass_fds=(log.fileno(),), start_new_session=True)
                 try:
-                    status = p.wait(timeout=3000)
+                    status = p.wait(timeout=2100)
                 except subprocess.TimeoutExpired:
                     os.killpg(p.pid, signal.SIGTERM)
                     try:
