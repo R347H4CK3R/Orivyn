@@ -82,13 +82,29 @@ enum AutomaticModelRouter {
     private static func isCoding(_ text: String) -> Bool {
         let text = text.lowercased()
         if text.contains("```") { return true }
-        let words = Set(text.split(whereSeparator: { !$0.isLetter && !$0.isNumber && $0 != "_" }).map(String.init))
+        let tokens = text.split(whereSeparator: { !$0.isLetter && !$0.isNumber && $0 != "_" }).map(String.init)
+        let words = Set(tokens)
         let specific: Set<String> = ["debug", "debugging", "debugger", "refactor", "refactoring", "compiler", "compilation",
             "javascript", "typescript", "swiftui", "sql", "html", "css", "json", "regex", "traceback", "segfault"]
         if !words.isDisjoint(with: specific) { return true }
         let actions: Set<String> = ["write", "build", "create", "fix", "implement", "optimize", "compile", "explain", "test", "generate"]
         let codeObjects: Set<String> = ["code", "function", "script", "api", "algorithm"]
-        return !words.isDisjoint(with: actions) && !words.isDisjoint(with: codeObjects)
+        guard !words.isDisjoint(with: actions) else { return false }
+        if !words.isDisjoint(with: codeObjects) { return true }
+        // A language name alone is ambiguous (Python the animal, Swift the bird,
+        // Java the island). Require an adjacent language/artifact phrase and an action.
+        // This is bounded lexical routing advice, not semantic intent detection.
+        let languages: Set<String> = ["python", "swift", "rust", "java", "kotlin", "ruby",
+            "golang", "csharp", "cpp", "scala", "php", "dart", "lua"]
+        let programmingArtifacts: Set<String> = ["program", "programs", "class", "classes",
+            "method", "methods", "parser", "parsers", "module", "modules", "tests"]
+        for index in tokens.indices {
+            if languages.contains(tokens[index]), index + 1 < tokens.count,
+               programmingArtifacts.contains(tokens[index + 1]) { return true }
+            if programmingArtifacts.contains(tokens[index]), index + 2 < tokens.count,
+               tokens[index + 1] == "in", languages.contains(tokens[index + 2]) { return true }
+        }
+        return false
     }
 }
 
