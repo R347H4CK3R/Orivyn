@@ -13,7 +13,8 @@ struct RootView: View {
     @State private var workspaceSection: WorkspaceSection = .chat
     @State private var showModels = false
     @State private var showSettings = false
-    @State private var editingMessage: ChatMessage?
+    private struct EditingMessage: Identifiable { let id = UUID(); let message: ChatMessage; let conversationID: UUID }
+    @State private var editingMessage: EditingMessage?
     @State private var selectingText: ChatMessage?
     @State private var copied = false
     @State private var dictationPrefix = ""
@@ -111,9 +112,9 @@ struct RootView: View {
         }
         .sheet(isPresented: $showModels) { ModelManagerView(model: model) }
         .sheet(isPresented: $showSettings) { SettingsView(model: model) }
-        .sheet(item: $editingMessage) { message in
-            EditMessageView(message: message) { text in
-                Task { await model.editAndBranch(messageID: message.id, text: text) }
+        .sheet(item: $editingMessage) { editing in
+            EditMessageView(message: editing.message) { text in
+                await model.editAndBranch(messageID: editing.message.id, text: text, sourceConversationID: editing.conversationID)
             }
         }
         .sheet(item: $selectingText) { message in
@@ -339,9 +340,9 @@ struct RootView: View {
                                    onCopy: { copy(message.content) },
                                    onReadAloud: { readAloud(message.content) },
                                    onSelect: { selectingText = message },
-                                   onEdit: { stopAudio(); editingMessage = message },
-                                   onBranch: { stopAudio(); Task { await model.branch(through: message.id) } },
-                                   onRegenerate: { stopAudio(); followsTranscript = true; Task { await model.regenerate(messageID: message.id) } })
+                                   onEdit: { stopAudio(); if let id = model.selectedConversationID { editingMessage = EditingMessage(message: message, conversationID: id) } },
+                                   onBranch: { stopAudio(); let origin = model.selectedConversationID; Task { await model.branch(through: message.id, sourceConversationID: origin) } },
+                                   onRegenerate: { stopAudio(); followsTranscript = true; let origin = model.selectedConversationID; Task { await model.regenerate(messageID: message.id, sourceConversationID: origin) } })
                         .id(message.id)
                     }
                     Color.clear.frame(height: 1).id("conversation.bottom")
@@ -390,6 +391,8 @@ struct RootView: View {
         case .browser: BrowserToolView()
         case .location: LocationToolView()
         case .reminder: ScheduledRemindersView()
+        case .sourceInspection: RepositoryInspectionView()
+        case .calculator: CalculatorView(request: model.draft)
         }
     }
 
@@ -461,6 +464,9 @@ struct RootView: View {
                         }
                     }.padding(.horizontal, 24)
                 }
+                Text("Models may receive shortened text excerpts, not the whole document. Open an attachment to search its stored extracted text.")
+                    .font(.caption).foregroundStyle(.secondary).padding(.horizontal, 24)
+                    .accessibilityIdentifier("attachment.context.notice")
             }
             HStack(alignment: .bottom, spacing: 0) {
                 Menu {

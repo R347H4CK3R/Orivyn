@@ -113,6 +113,7 @@ struct AttachmentPreviewView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var warnOriginal = false
     @State private var shareOriginal = false
+    @State private var showTextSearch = false
 
     var body: some View {
         NavigationStack {
@@ -147,7 +148,18 @@ struct AttachmentPreviewView: View {
                 }
             }
             .navigationTitle(attachment.name).navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() }.accessibilityIdentifier("attachment.preview.done") } }
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    if let text = attachment.extractedText, !text.isEmpty {
+                        Button("Search extracted text", systemImage: "doc.text.magnifyingglass") { showTextSearch = true }
+                            .accessibilityIdentifier("attachment.search.open")
+                    }
+                }
+                ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() }.accessibilityIdentifier("attachment.preview.done") }
+            }
+            .sheet(isPresented: $showTextSearch) {
+                if let text = attachment.extractedText { AttachmentTextSearchView(text: text) }
+            }
             .confirmationDialog("Share original photo?", isPresented: $warnOriginal, titleVisibility: .visible) {
                 Button("Share original") { shareOriginal = true }
                 Button("Cancel", role: .cancel) { }

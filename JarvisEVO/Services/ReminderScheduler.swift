@@ -121,10 +121,10 @@ final class SystemReminderNotifications: ReminderNotifications {
     nonisolated private static func components(for date: Date) -> DateComponents {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
-        // DatePicker's default has fractional seconds. Store the original selection
-        // in the payload and fire at the next whole second, never before that date.
-        // Decoding checks this same explicit precision rule, not raw Date equality.
-        let wholeSecond = Date(timeIntervalSince1970: ceil(date.timeIntervalSince1970))
+        // Newly validated reminders store their canonical whole-second fire date.
+        // Round legacy fractional payloads upward too, never before their stored date.
+        // Decoding checks this same precision rule instead of ignoring trigger fields.
+        let wholeSecond = Date(timeIntervalSinceReferenceDate: ceil(date.timeIntervalSinceReferenceDate))
         var result = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second], from: wholeSecond)
         result.calendar = calendar
         result.timeZone = calendar.timeZone

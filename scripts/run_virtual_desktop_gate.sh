@@ -1,0 +1,110 @@
+#!/usr/bin/env bash
+# Explicit invocation only after adequate free macOS capacity is confirmed.
+# Never enables billing, starts a cloud build, publishes, or changes version.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+command -v xcodebuild >/dev/null || { echo 'Native gate not run: Xcode 26+ required.' >&2; exit 2; }
+command -v xcodegen >/dev/null || { echo 'Native gate not run: XcodeGen required.' >&2; exit 2; }
+OUT="artifacts/virtual-desktop-$(date -u +%Y%m%dT%H%M%SZ)-$$"
+mkdir -p "$OUT"
+python3 scripts/materialize_guest.py Fixtures/maintained.img.gz JarvisEVO/Resources/VMAssets/maintained.img
+node --test scripts/vm-tests/*.test.cjs
+node --test scripts/agent-tests/*.test.cjs
+python3 -m unittest discover -s scripts/tests -v 2>&1 | tee "$OUT/portable-tests.log"
+bash scripts/bootstrap_llama.sh
+python3 scripts/download_test_model.py > "$OUT/test-model-path.txt"
+xcodegen generate
+xcrun simctl list devices available -j > "$OUT/simulators.json"
+SIMULATOR_ID=$(python3 - "$OUT/simulators.json" <<'PY'
+import json,sys
+items=json.load(open(sys.argv[1]))['devices']
+choices=[d for runtime,ds in items.items() if 'iOS-26' in runtime for d in ds if d.get('isAvailable') and 'iPhone' in d['name']]
+choices.sort(key=lambda d:(d['name']!='iPhone 16 Plus',d['name']))
+if not choices: raise SystemExit('No available iOS26 iPhone simulator; tests not run.')
+print(choices[0]['udid'])
+PY
+)
+xcodebuild -project JarvisEVO.xcodeproj -scheme JarvisEVO \
+  -destination "platform=iOS Simulator,id=$SIMULATOR_ID" -parallel-testing-enabled NO \
+  -test-timeouts-enabled YES -default-test-execution-time-allowance 240 -maximum-test-execution-time-allowance 300 \
+  -resultBundlePath "$OUT/VirtualDesktop.xcresult" \
+  -only-testing:JarvisEVOTests/LocalReminderTests \
+  -only-testing:JarvisEVOTests/ReminderSchedulerTests \
+  -only-testing:JarvisEVOTests/OneShotLocationTests \
+  -only-testing:JarvisEVOTests/ExternalWorkspaceTests \
+  -only-testing:JarvisEVOTests/ConversationTranscriptTests \
+  -only-testing:JarvisEVOTests/RemoteCredentialIntentTests \
+  -only-testing:JarvisEVOTests/LocalConversationSearchTests \
+  -only-testing:JarvisEVOTests/IncomingTextRequestTests \
+  -only-testing:JarvisEVOTests/IncomingTextTests \
+  -only-testing:JarvisEVOTests/MarkdownDocumentTests \
+  -only-testing:JarvisEVOTests/RichMessageContentTests \
+  -only-testing:JarvisEVOTests/UTF8TokenAccumulatorTests \
+  -only-testing:JarvisEVOTests/AutomaticPreparationTests \
+  -only-testing:JarvisEVOTests/PluginBrokerTests \
+  -only-testing:JarvisEVOTests/LocalInferenceTests \
+  -only-testing:JarvisEVOTests/LocalPromptBuilderTests \
+  -only-testing:JarvisEVOTests/AttachmentTextSearchTests \
+  -only-testing:JarvisEVOTests/MemoryNoteTests \
+  -only-testing:JarvisEVOTests/MemoryContextBuilderTests \
+  -only-testing:JarvisEVOTests/AppModelTests/testLargeMemoryLibraryUsesBoundedRelevantContextWithoutDeletingNotes \
+  -only-testing:JarvisEVOTests/AppModelTests/testConciseQwenModeDefaultsOffPersistsAndReachesRequest \
+  -only-testing:JarvisEVOTests/LocalSearchExcerptTests \
+  -only-testing:JarvisEVOTests/LocalMemoryToolTests \
+  -only-testing:JarvisEVOTests/BackupFileReaderTests \
+  -only-testing:JarvisEVOTests/RuntimeDiagnosticsTests \
+  -only-testing:JarvisEVOTests/AppSelfKnowledgeTests \
+  -only-testing:JarvisEVOTests/SelfKnowledgePromptTests \
+  -only-testing:JarvisEVOTests/PersistenceTests \
+  -only-testing:JarvisEVOTests/ImageIdentityPersistenceTests \
+  -only-testing:JarvisEVOTests/ProviderReloadTests \
+  -only-testing:JarvisEVOTests/AttachmentPromptAvailabilityTests \
+  -only-testing:JarvisEVOTests/LocalCalculatorTests \
+  -only-testing:JarvisEVOTests/LocalCalculatorToolTests \
+  -only-testing:JarvisEVOTests/LocalCalculatorRequestTests \
+  -only-testing:JarvisEVOTests/LocalCalculationEvidenceTests \
+  -only-testing:JarvisEVOTests/LocalAgentSnapshotEvidenceTests \
+  -only-testing:JarvisEVOTests/ProviderAttachmentContextTests \
+  -only-testing:JarvisEVOTests/PluginConnectionRemovalTests \
+  -only-testing:JarvisEVOTests/LocalModelRemovalPlanTests \
+  -only-testing:JarvisEVOTests/PluginExecutionTests \
+  -only-testing:JarvisEVOTests/PluginJournalTests \
+  -only-testing:JarvisEVOTests/WorkspaceStoreTests \
+  -only-testing:JarvisEVOTests/ModelInstallTransactionTests \
+  -only-testing:JarvisEVOTests/LocalModelStoreTests \
+  -only-testing:JarvisEVOTests/MCPUnicodeSchemaTests \
+  -only-testing:JarvisEVOTests/MCPNumberIntegrityTests \
+  -only-testing:JarvisEVOTests/MCPClientTests \
+  -only-testing:JarvisEVOTests/MCPURLSessionTransportTests \
+  -only-testing:JarvisEVOTests/ProviderTests \
+  -only-testing:JarvisEVOTests/VoiceServiceTests \
+  -only-testing:JarvisEVOTests/VoiceConversationControllerTests \
+  -only-testing:JarvisEVOTests/VoiceConversationSessionTests \
+  -only-testing:JarvisEVOTests/VoiceAppModelTests \
+  -only-testing:JarvisEVOUITests/RootViewOwnershipUITests \
+  -only-testing:JarvisEVOUITests/RemoteCredentialDraftUITests \
+  -only-testing:JarvisEVOTests/SourceRepairDraftCoreTests \
+  -only-testing:JarvisEVOTests/RepositoryInspectionTests \
+  -only-testing:JarvisEVOTests/RepositorySourceDiagnosticsTests \
+  -only-testing:JarvisEVOTests/VerifiedLocalPlanCoreTests \
+  -only-testing:JarvisEVOTests/LocalToolResultBudgetTests \
+  -only-testing:JarvisEVOTests/LocalAgentStoreTests \
+  -only-testing:JarvisEVOTests/LocalAgentCoreTests \
+  -only-testing:JarvisEVOTests/AttachmentServiceTests \
+  -only-testing:JarvisEVOTests/ImageAttachmentServiceTests \
+  -only-testing:JarvisEVOTests/OCRLineEvidenceTests \
+  -only-testing:JarvisEVOTests/PDFTextExtractorTests \
+  -only-testing:JarvisEVOTests/ConversationBranchTests \
+  -only-testing:JarvisEVOTests/ConversationMetadataTests \
+  -only-testing:JarvisEVOTests/ConversationSearchTests \
+  -only-testing:JarvisEVOTests/MemorySearchTests \
+  -only-testing:JarvisEVOTests/AppModelTests/testMemorySaveReportsFailureAndStableIDRetryDoesNotDuplicate \
+  -only-testing:JarvisEVOTests/LocalHeavyWorkTests \
+  -only-testing:JarvisEVOTests/VMPolicyTests \
+  -only-testing:JarvisEVOTests/VMCheckpointStoreTests \
+  -only-testing:JarvisEVOTests/VMCheckpointBridgeTests \
+  -only-testing:JarvisEVOTests/VMTeardownCoordinatorTests \
+  -only-testing:JarvisEVOUITests/VerifiedLocalReadUITests \
+  -only-testing:JarvisEVOUITests/LocalAgentIntegrationUITests \
+  -only-testing:JarvisEVOUITests/VirtualDesktopIntegrationUITests \
+  CODE_SIGNING_ALLOWED=NO JARVIS_REQUIRE_REAL_INFERENCE=1 test 2>&1 | tee "$OUT/native-tests.log"

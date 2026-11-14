@@ -1,0 +1,55 @@
+[
+  {
+    "source": "JarvisEVO/Core/MemoryNote.swift",
+    "sha256": "cccceaa84d497af02f1d466968300a7281f354b4b5e1a1ae913b403023f8967f"
+  },
+  {
+    "source": "JarvisEVO/Core/Conversation.swift",
+    "sha256": "1ee76e17057fd6608634aac4e789d7d2426bacbe2fd691c175b076bdf880b226"
+  },
+  {
+    "source": "JarvisEVO/Core/ImageOCRResult.swift",
+    "sha256": "c8b789de0797e83ecd7903b67620fa482cb5e91fc12551069898b66a6c318c42"
+  },
+  {
+    "source": "JarvisEVO/Core/OCRLineEvidence.swift",
+    "sha256": "100c0bc3a78fc20139be459bc17880dc4e07dd2978c75dcc0baf83a08b7b1502"
+  },
+  {
+    "source": "JarvisEVO/Core/LocalConversationSearch.swift",
+    "sha256": "ad260faa61de25b26d0364e48ec65118f02ab4b8f94a035a2f3f1d14f3c41224"
+  },
+  {
+    "source": "JarvisEVO/Core/LocalSearchExcerpt.swift",
+    "sha256": "80411efefffc420769b65b3c9b090f15d1e26d5b59774547602b1fd756d38501"
+  },
+  {
+    "source": "JarvisEVO/Core/LocalAgentError.swift",
+    "sha256": "69ec40475bf37949be1e7b0f3b207df9ac0158851df7cd5edc0fad962a77c1dc"
+  },
+  {
+    "source": "JarvisEVO/Core/MCPTypes.swift",
+    "sha256": "675f5301eafd51bc447d568e3b46c494fb4a4824d13700ed30b33c2bd3b2e0a3"
+  },
+  {
+    "source": "JarvisEVO/Core/MCPToolSchema.swift",
+    "sha256": "c533a3c9f38f850c272686fccca11801f593c8aaf6270e7866112de159b2c806"
+  },
+  {
+    "source": "JarvisEVO/Services/LocalReadTools.swift",
+    "sha256": "1171984551005d9aa28c980d1018befdf607b9c29877f011ca5b44bac743d748",
+    "extractedBranchSHA256": "401055de4a1b840b57e2c9b90d19bda69a2044b26b440b13340971b62dc440ee"
+  },
+  {
+    "source": "JarvisEVO/Resources/VerifiedLocalPlan.js",
+    "sha256": "75169a81a442ad6f253f8bc8506ddd63363910ad3eda985469a71c6e8567a587"
+  },
+  {
+    "source": "JarvisEVO/Resources/LocalAgentCore.js",
+    "sha256": "1d4e5bf572f16fe215973a7e6a675a4399dfbc50046bafbf915a04f9dbbf0a55"
+  },
+  {
+    "source": "scripts/run_conversation_limit_smoke.py",
+    "sha256": "fb1f6488b8cf4773a8070334b4edbca2a56780be45d7ab03e3711b4e5d3e0d68"
+  }
+]

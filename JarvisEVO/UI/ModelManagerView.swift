@@ -32,6 +32,13 @@ struct ModelManagerView: View {
                 } header: { Text("Model routing") } footer: {
                     Text("Opt in to choose a compatible local model for each typed request. No remote endpoint is selected automatically. Turning this off restores your manual choice. Voice uses the manual model.")
                 }
+                Section("Qwen 3 response mode") {
+                    Toggle("Concise Qwen 3 answers", isOn: $model.conciseQwen3)
+                        .accessibilityIdentifier("model.qwen.concise")
+                        .disabled(model.isGenerating || model.isPreparingAutomaticModel)
+                    Text("Optional non-thinking template mode for local Qwen 3 chat. Off preserves the model's default reasoning. This does not hide generated text, guarantee short answers, or change other model families or remote providers. Device behavior still needs verification.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
                 Section {
                     ForEach(model.providers) { option in
                         Button {

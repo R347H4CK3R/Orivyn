@@ -62,7 +62,7 @@ struct MCPToolSchema: Equatable, Sendable {
                 guard let values = raw.arrayValue, values.count <= 64 else { throw MCPClientFailure(.unsupportedSchema) }
                 let names = values.compactMap(\.stringValue)
                 guard names.count == values.count, Set(names).count == names.count,
-                      names.allSatisfy({ properties[$0] != nil }) else { throw MCPClientFailure(.unsupportedSchema) }
+                      names.allSatisfy({ exactProperty($0, in: properties) != nil }) else { throw MCPClientFailure(.unsupportedSchema) }
             }
             if let raw = s["additionalProperties"], raw.boolValue == nil { throw MCPClientFailure(.unsupportedSchema) }
         case "array":
@@ -86,6 +86,13 @@ struct MCPToolSchema: Equatable, Sendable {
         }
         guard (s[minimum]?.integerValue ?? 0) <= (s[maximum]?.integerValue ?? ceiling) else { throw MCPClientFailure(.unsupportedSchema) }
     }
+    // Swift String/Dictionary equality folds canonically equivalent Unicode sequences.
+    // JSON Schema names and enum strings instead compare the actual codepoints.
+    // Valid Swift strings have a unique UTF-8 encoding for each codepoint sequence.
+    private static func exactProperty(_ name: String, in object: [String: MCPJSONValue]) -> MCPJSONValue? {
+        object.first { $0.key.utf8.elementsEqual(name.utf8) }?.value
+    }
+
     private static func matches(_ value: MCPJSONValue, type: String) -> Bool {
         switch (type, value) {
         case ("object", .object), ("array", .array), ("string", .string), ("boolean", .bool), ("null", .null): true
@@ -100,6 +107,9 @@ struct MCPToolSchema: Equatable, Sendable {
         if let values = s["enum"]?.arrayValue {
             let found = values.contains { candidate in
                 if let a = candidate.doubleValue, let b = value.doubleValue { return a == b }
+                if case .string(let a) = candidate, case .string(let b) = value {
+                    return a.utf8.elementsEqual(b.utf8)
+                }
                 return candidate == value
             }
             guard found else { throw MCPClientFailure(.invalidArguments) }
@@ -108,10 +118,10 @@ struct MCPToolSchema: Equatable, Sendable {
         case .object(let object):
             let properties = s["properties"]?.objectValue ?? [:]
             for name in s["required"]?.arrayValue?.compactMap(\.stringValue) ?? [] {
-                guard object[name] != nil else { throw MCPClientFailure(.invalidArguments) }
+                guard exactProperty(name, in: object) != nil else { throw MCPClientFailure(.invalidArguments) }
             }
             for (key, child) in object {
-                if let property = properties[key] { try evaluate(child, schema: property, depth: depth + 1) }
+                if let property = exactProperty(key, in: properties) { try evaluate(child, schema: property, depth: depth + 1) }
                 else if s["additionalProperties"]?.boolValue == false { throw MCPClientFailure(.invalidArguments) }
             }
         case .array(let array):

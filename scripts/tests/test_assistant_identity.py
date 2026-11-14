@@ -23,7 +23,7 @@ class AssistantIdentityTests(unittest.TestCase):
     def test_actionable_help_does_not_pretend_tools_ran(self):
         source = (ROOT / 'JarvisEVO/UI/AppModel.swift').read_text()
         self.assertTrue('Do the useful parts of the request first' in source)
-        self.assertTrue('review in the real Email, Calendar, Browser, Location or Reminder screen' in source)
+        self.assertTrue('review in the real Email, Calendar, Calculator, Browser, Location or Reminder screen' in source)
         self.assertTrue('Opening a review does not send, save or execute it' in source)
         self.assertTrue('Do not claim to browse, run code' in source)
 

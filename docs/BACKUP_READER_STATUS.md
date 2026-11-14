@@ -1,0 +1,10 @@
+# Bounded external backup reading
+
+Import no longer loads a selected file with unbounded Data(contentsOf:) after trusting prior size metadata on MainActor. A detached utility task owns security-scoped access and NSFileCoordinator, reads the coordinated URL in chunks up to64KiB, and enforces the50MB total while reading (one sentinel byte detects oversize). Empty inputs fail without modifying history. The opened descriptor uses no-follow/nonblocking flags and fstat regular-file validation, avoiding a pathname-check race or FIFO block before reads.
+
+Cancellation is propagated to the detached task and checked per chunk, after coordination and immediately before store import. Cancellation is cooperative: a blocked external provider/coordinator call need not return immediately. No cancellation error is synthesized after a database commit. The UI remains free to render while provider/file I/O runs.
+
+Four native regression methods cover exact/over-limit, empty/directory, symlink, coordinated byte preservation and pre-cancelled work. Tests remain uncompiled/unrun; actual iCloud/File Provider access and native concurrency need validation. Two portable source guards observed missing protections fail then pass. Full suites:117Python,60agentJS,39VMJS pass. No paid CI, cloud upload, build/release claim or catalog change.
+
+## Cancellation at persistence boundary
+The SQLite import actor now checks cancellation on entry, after validation before beginning the transaction, during each record write, and immediately before commit. Cancellation inside the transaction follows the existing rollback path. It deliberately does not throw cancellation after commit, preserving accurate outcomes. This closes the race where a task cancelled while waiting for the actor could still overwrite records. A native pre-cancelled replacement regression is authored but unrun; a portable source-contract check fails without the guards and passes with them. Full portable results: 118 Python, 60 agent JavaScript, 39 VM JavaScript.

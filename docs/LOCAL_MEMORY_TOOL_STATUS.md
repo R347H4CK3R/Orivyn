@@ -1,0 +1,11 @@
+# Offline saved-memory tool
+
+Verified local reads now supports an actual fourth native tool, search_memory. The user can select a literal query directly or request a finite English proposal such as `Search saved memories for "cafe"`, review the plan, then explicitly run it. This retrieves actual saved memory notes on this iPhone without a language model, network or computer. It is deterministic tool execution, not general autonomous reasoning.
+
+Native selection searches at most500 notes, returns at most10 entries with stable IDs and UTF-8-bounded160-byte excerpts, and discloses truncation/search limits. Matching is literal, case/diacritic-insensitive. Excerpts may omit a distant matching portion. Saved notes are user evidence, not independently verified facts; instruction-like text stays data. Selected excerpts persist only in the protected on-device plan report and are not transmitted.
+
+The production JS planner validates exact memory result shape and bounds, now permits four successful operations/eight dispatch attempts, preserves operation/revision ownership and interrupted recovery. Existing three-key saved requests retain their bytes/revision, implicitly selecting no memory search; new requests normalize the optional fourth field. The finite router rejects unsupported appended actions, unquoted/ambiguous/oversized/conflicting queries, and never partially executes.
+
+Actual portable tests:30 reducer/router cases including new memory retrieval, schema rejection and legacy recovery;67 total agent JS,119 Python and39 VM JS all pass. Two native regression methods cover actual store→tool evidence and JSCore/UI-bound proposal/plan; these remain uncompiled/unrun. Native gate selects LocalMemoryToolTests. No model-semantic success, native/device acceptance, paid CI or1.0 release is claimed.
+
+Independent review follow-up: memory excerpts preserve valid stored control characters verbatim as JSON-escaped data rather than silently sanitizing them. Only memory excerpt validation permits these controls; queries and other command fields stay strict. The native memory-result cap is16KiB, matching the reducer, so ten heavily escaped legal excerpts fit. Two actual JS regressions cover control/quote-heavy results above4KiB with exact record/report/recovery. Native integration edge test remains unrun.

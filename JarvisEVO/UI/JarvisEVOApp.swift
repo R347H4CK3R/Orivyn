@@ -68,6 +68,7 @@ struct JarvisEVOApp: App {
             model.configureGeneratedImages(directory: root.appendingPathComponent("GeneratedImagesStaging", isDirectory: true))
             await model.bootstrap()
             model.configurePlugins(directory: root.appendingPathComponent("Plugins", isDirectory: true))
+            model.configureLocalWork(directory: root)
             ExternalWorkspaceController.shared.configure(model: model)
             self.model = model
             OrivynShortcuts.updateAppShortcutParameters()

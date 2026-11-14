@@ -1,0 +1,9 @@
+# Real Observable-store execution with static Swift
+
+The official6.1.3Linux dynamic Observation library still cannot link the original XCTest suite because of its missing runtime symbol. A small capability probe established that the same vendor's static libraries work using supported swiftc -static-stdlib, without source/runtime patching. Attempting static SwiftPM XCTest then failed because this distribution has no static XCTest module (proof-35-static-observation).
+
+Instead, scripts/run_observation_smoke.py copies exact production WorkspaceStore, PluginPersistence/PluginJournal, PluginExecution, MCPTypes and MCPToolSchema plus a separate smoke entrypoint, records SHA256 manifests/compiler command, compiles with official static libraries and runs inside isolated HOME/XDG_CONFIG_HOME/TMPDIR. No mocked framework, fake XCTest, runtime stub or production conditional code was added. System libraries remain dynamically linked; Swift/Observation are static.
+
+24 explicit assertions pass in proof-37-observation-recovery, covering project memberships/pins/favorites, deletion isolation, behavior persistence/rejection, corrupt state retained and writes blocked, plugin write-ahead records, reopened running outcomes becoming unknown, no invented success, bounded completed history retaining unknown outcomes, corrupt journal preservation, outcome-write failure blocking new dispatch, retry after filesystem restoration, and capacity refusal preserving100unresolved records. Reopening means new store objects over the same backing storage, not a launched iOS app or physical reboot.
+
+These24 smoke assertions are separate from the241previously passing XCTest cases, not added to that test count.134Python tests pass. No app production behavior changed in this pass. Original Apple XCTest classes and iOS UI/file-protection behavior still require native validation. The static harness proves more actual storage behavior but does not clear the release gate.

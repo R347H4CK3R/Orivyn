@@ -1,0 +1,2 @@
+PASS: independent Python algorithm model, seed=4, streams=20000, pending<=3
+NOT production Swift execution; does not prove native runtime behavior.

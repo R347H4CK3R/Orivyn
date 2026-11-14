@@ -1,4 +1,5 @@
 import XCTest
+import SQLite3
 @testable import JarvisEVO
 
 @MainActor
@@ -17,6 +18,32 @@ final class AppModelTests: XCTestCase {
     override func tearDown() async throws {
         defaults.removePersistentDomain(forName: suite)
         try? FileManager.default.removeItem(at: root)
+    }
+
+    func testMemorySaveReportsFailureAndStableIDRetryDoesNotDuplicate() async throws {
+        let (model, store, _) = try await fixture()
+        let id = UUID()
+        var connection: OpaquePointer?
+        XCTAssertEqual(sqlite3_open(root.appendingPathComponent("test.sqlite").path, &connection), SQLITE_OK)
+        defer { sqlite3_close(connection) }
+        XCTAssertEqual(sqlite3_exec(connection, "CREATE TRIGGER fail_memory BEFORE INSERT ON memory BEGIN SELECT RAISE(ABORT, 'injected failure'); END;", nil, nil, nil), SQLITE_OK)
+        let failed = await model.saveMemory(id: id, content: "Retain my edited text")
+        XCTAssertFalse(failed)
+        XCTAssertTrue(model.memories.isEmpty)
+        XCTAssertEqual(sqlite3_exec(connection, "DROP TRIGGER fail_memory", nil, nil, nil), SQLITE_OK)
+        let saved = await model.saveMemory(id: id, content: "Retain my edited text")
+        XCTAssertTrue(saved)
+        let retried = await model.saveMemory(id: id, content: "Updated safely")
+        XCTAssertTrue(retried)
+        let notes = try await store.memories()
+        XCTAssertEqual(notes.count, 1)
+        XCTAssertEqual(notes.first?.id, id)
+        XCTAssertEqual(notes.first?.content, "Updated safely")
+        let invalid = await model.saveMemory(content: String(repeating: "x", count: 4001))
+        XCTAssertFalse(invalid)
+        let oversizedCluster = "a" + String(repeating: "\u{0301}", count: 20_000)
+        let byteInvalid = await model.saveMemory(content: oversizedCluster)
+        XCTAssertFalse(byteInvalid)
     }
 
     // Removing the cancellation state transition would falsely mark partial output complete.
@@ -135,6 +162,29 @@ final class AppModelTests: XCTestCase {
         XCTAssertTrue(notes.isEmpty)
     }
 
+    func testLargeMemoryLibraryUsesBoundedRelevantContextWithoutDeletingNotes() async throws {
+        let (model, store, source) = try await fixture()
+        let important = await model.saveMemory(content: "My espresso preference is decaf oat milk.")
+        XCTAssertTrue(important)
+        for index in 0..<25 {
+            let saved = await model.saveMemory(content: "Unrelated note \(index): " + String(repeating: "x", count: 3000))
+            XCTAssertTrue(saved)
+        }
+        model.draft = "What is my espresso preference?"
+        model.send()
+        try await waitFor { await source.hasSubscriber }
+        let captured = await source.lastRequest
+        let request = try XCTUnwrap(captured)
+        XCTAssertTrue(request.systemPrompt.contains("decaf oat milk"))
+        XCTAssertLessThan(request.systemPrompt.utf8.count, 8_000)
+        XCTAssertFalse(request.systemPrompt.contains(String(repeating: "x", count: 1000)))
+        XCTAssertNotNil(model.lastMemoryContextSummary)
+        let retained = try await store.memories()
+        XCTAssertEqual(retained.count, 26)
+        model.stop()
+        try await waitFor { !model.isGenerating }
+    }
+
     func testSavedBehaviorReachesActualGenerationRequest() async throws {
         let (model, _, source) = try await fixture()
         var behavior = ResponseBehavior(); behavior.instructions = "Use concise explanations."; behavior.style = "Efficient"
@@ -207,6 +257,20 @@ final class AppModelTests: XCTestCase {
         XCTAssertThrowsError(try model.acceptIncomingText("Incoming"))
         XCTAssertEqual(model.draft, String(repeating: "x", count: 32_768))
         XCTAssertFalse(model.isGenerating)
+    }
+
+    func testConciseQwenModeDefaultsOffPersistsAndReachesRequest() async throws {
+        let (model, _, source) = try await fixture()
+        XCTAssertFalse(model.conciseQwen3)
+        model.conciseQwen3 = true
+        XCTAssertTrue(defaults.bool(forKey: "orivyn.conciseQwen3"))
+        model.draft = "Test response mode"; model.send()
+        try await waitFor { await source.hasSubscriber }
+        let request = await source.lastRequest
+        XCTAssertEqual(request?.conciseQwen3, true)
+        model.stop(); try await waitFor { !model.isGenerating }
+        let (reopened, _, _) = try await fixture()
+        XCTAssertTrue(reopened.conciseQwen3)
     }
 
     private func fixture() async throws -> (AppModel, SQLiteConversationStore, ControlledTokenSource) {

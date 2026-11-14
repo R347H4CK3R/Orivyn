@@ -367,6 +367,34 @@ final class VoiceServiceTests: XCTestCase {
         try await explicitRetry.value
     }
 
+    func testIdleInterruptionAndHeadphoneRemovalDoNotReportFailedDictation() async {
+        let session = TrackedVoiceSession()
+        let voice = VoiceService(audioSession: session.boundary)
+        var interruptions = 0
+        voice.onInterruption = { interruptions += 1 }
+        NotificationCenter.default.post(name: AVAudioSession.interruptionNotification, object: nil,
+            userInfo: [AVAudioSessionInterruptionTypeKey: AVAudioSession.InterruptionType.began.rawValue])
+        NotificationCenter.default.post(name: AVAudioSession.routeChangeNotification, object: nil,
+            userInfo: [AVAudioSessionRouteChangeReasonKey: AVAudioSession.RouteChangeReason.oldDeviceUnavailable.rawValue])
+        await drainVoiceCallbacks()
+        XCTAssertEqual(interruptions, 0)
+        XCTAssertFalse(voice.isRecording)
+        XCTAssertFalse(voice.isSpeaking)
+    }
+
+    func testIdleMediaResetStillRecreatesResourcesWithoutFalseInterruption() async throws {
+        let resources = TrackedResetResources()
+        let session = TrackedVoiceSession()
+        let voice = VoiceService(audioSession: session.boundary, resources: resources.boundary)
+        var interruptions = 0
+        voice.onInterruption = { interruptions += 1 }
+        NotificationCenter.default.post(name: AVAudioSession.mediaServicesWereResetNotification, object: nil)
+        try await waitFor { resources.engineCreations == 2 }
+        XCTAssertEqual(interruptions, 0)
+        XCTAssertEqual(resources.playbacks.count, 2)
+        XCTAssertEqual(session.activations, 0)
+    }
+
     private func waitingVoice(_ pending: PendingSpeechPermission) -> VoiceService {
         VoiceService(permissions: VoicePermissions(requestSpeech: { await pending.request() }, requestMicrophone: { false }))
     }

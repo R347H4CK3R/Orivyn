@@ -4,11 +4,11 @@ import XCTest
 @MainActor
 final class PluginBrokerTests: XCTestCase {
     private var root: URL!
-    override func setUpWithError() throws {
+    override func setUp() async throws {
         root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
     }
-    override func tearDownWithError() throws { try? FileManager.default.removeItem(at: root) }
+    override func tearDown() async throws { try? FileManager.default.removeItem(at: root) }
 
     func testConnectDiscoversButDoesNotInstallOrRunAnything() async throws {
         let client = ControlledPluginClient()

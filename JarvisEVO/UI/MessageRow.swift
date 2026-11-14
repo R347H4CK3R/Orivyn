@@ -87,23 +87,36 @@ struct MessageRow: View {
 
 struct EditMessageView: View {
     let message: ChatMessage
-    let onSave: (String) -> Void
+    let onSave: (String) async -> Bool
     @State private var text = ""
+    @State private var saving = false
+    @State private var saveError: String?
+    @State private var initialized = false
     @Environment(\.dismiss) private var dismiss
     var body: some View {
         NavigationStack {
             VStack(alignment: .leading, spacing: 16) {
                 Text("Your original conversation stays intact. The edited message starts a new branch.").font(.subheadline).foregroundStyle(.secondary)
-                TextEditor(text: $text).padding(8).background(Color.evoSurface, in: RoundedRectangle(cornerRadius: 14)).scrollContentBackground(.hidden)
+                TextEditor(text: $text).disabled(saving).padding(8).background(Color.evoSurface, in: RoundedRectangle(cornerRadius: 14)).scrollContentBackground(.hidden)
                     .accessibilityIdentifier("message.edit.input")
+                if let saveError { Text(saveError).foregroundStyle(.orange) }
             }.padding().navigationTitle("Edit message").navigationBarTitleDisplayMode(.inline)
                 .toolbar {
-                    ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                    ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.disabled(saving) }
                     ToolbarItem(placement: .confirmationAction) {
-                        Button("Save & send") { onSave(text); dismiss() }.disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        Button(saving ? "Saving…" : "Save & send") {
+                            guard !saving else { return }
+                            saving = true; saveError = nil
+                            Task { @MainActor in
+                                let saved = await onSave(text); saving = false
+                                if saved { dismiss() }
+                                else { saveError = "The edit was not saved. Your text is kept here; check the model, conversation or storage error and try again." }
+                            }
+                        }.disabled(saving || text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || text.utf8.count > 1_000_000)
                     }
                 }
-                .onAppear { text = message.content }
+                .interactiveDismissDisabled(saving)
+                .onAppear { if !initialized { text = message.content; initialized = true } }
         }
     }
 }

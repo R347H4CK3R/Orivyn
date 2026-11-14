@@ -6,12 +6,12 @@ final class AutomaticPreparationTests: XCTestCase {
     private var root: URL!
     private var defaults: UserDefaults!
     private var suite: String!
-    override func setUpWithError() throws {
+    override func setUp() async throws {
         root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         suite = "OrivynAutoTests.\(UUID().uuidString)"; defaults = UserDefaults(suiteName: suite)
     }
-    override func tearDownWithError() throws {
+    override func tearDown() async throws {
         defaults.removePersistentDomain(forName: suite)
         try? FileManager.default.removeItem(at: root)
     }

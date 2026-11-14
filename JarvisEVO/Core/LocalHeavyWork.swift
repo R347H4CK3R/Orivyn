@@ -5,7 +5,7 @@ protocol LocalResourceReleasing: Sendable {
     func unload() async
 }
 
-enum LocalHeavyWorkKind: Equatable, Sendable { case imageCreation, vision, virtualDesktop }
+enum LocalHeavyWorkKind: Equatable, Sendable { case imageCreation, vision, virtualDesktop, localAgent }
 
 struct LocalHeavyWorkLease: Equatable, Sendable {
     enum Phase: Equatable, Sendable { case preparing, ready, revoked }
