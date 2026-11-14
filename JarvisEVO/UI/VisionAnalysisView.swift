@@ -8,6 +8,7 @@ struct VisionAnalysisView: View {
     let originalURL: URL?
     @Environment(\.scenePhase) private var scenePhase
     @State private var question = "Describe the visible image in one sentence."
+    @State private var submittedQuestion: String?
     @State private var session: VisionSession?
     @State private var work: Task<Void, Never>?
     @State private var working = false
@@ -35,6 +36,7 @@ struct VisionAnalysisView: View {
                 }
                 Section("Ask about this image") {
                     TextField("Question", text: $question, axis: .vertical).lineLimit(2...5)
+                        .disabled(working || stopping)
                     Button("Analyze image", systemImage: "eye") { analyze() }
                         .disabled(working || stopping || !VisionServices.nativeAvailable || !model.canBeginHeavyWork || originalURL == nil)
                     if working { ProgressView(session == nil ? "Preparing…" : "Analyzing locally…") }
@@ -43,8 +45,12 @@ struct VisionAnalysisView: View {
                             .disabled(stopping)
                     }
                 }
-                if let answer = session?.output {
-                    Section("Image analysis") { Text(answer).textSelection(.enabled) }
+                if let answer = session?.output, let submittedQuestion {
+                    Section("Image analysis") {
+                        Text("Question: \(submittedQuestion)").font(.subheadline)
+                            .accessibilityIdentifier("vision.result.question")
+                        Text(answer).textSelection(.enabled)
+                    }
                 }
                 if let message = error ?? session?.error { Section { Text(message).foregroundStyle(.secondary) } }
             }
@@ -72,6 +78,7 @@ struct VisionAnalysisView: View {
         guard !working, !stopping, let originalURL else { return }
         working = true; error = nil; session = nil
         let prompt = question
+        submittedQuestion = prompt
         work = Task { @MainActor in
             defer { working = false }
             do {

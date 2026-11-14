@@ -1,4 +1,20 @@
-# Development vision path — Linux verification, Apple gate outstanding
+# Development vision path — historical Linux evidence and simulator smoke
+
+**Apple checkpoint:** [recorded CI evidence](../../../docs/evidence/apple-ci-20261114/RESULT.json)
+for source `ed914a5a81da73b5fbd63293458b4efabfb56320` reports that
+`ProductionVisionRuntimeTests.testRequiredProductionPNGInferenceAndRelease`
+passed on iPhone 16 Plus / iOS 26.0.1 arm64 **simulator**, Xcode 26.3, in
+**123.483 seconds** in [run 43628873176](https://github.com/R347H4CK3R/Orivyn/actions/runs/43628873176).
+That one test exercised a generated red-square PNG, production ImageIO/RGB,
+full pinned hashes, NativeVisionRuntime/worker/combined C inference, an answer
+containing red and square, and acknowledged close/pair reacquisition. It did
+**not** exercise VisionSession/UI, establish broad accuracy, or measure a physical
+iPhone's memory/thermal behavior. The question-label UI fix described below is
+later than that checkpoint and is not covered by its pass.
+
+The nine-case results and logger regression below are **historical Linux CPU
+checks**, separate from that one Apple simulator test. Their scope must not be
+upgraded to nine simulator passes or general vision acceptance.
 
 The development source now includes actual pixel inference in the image library:
 visible eye action or Analyze image menu → explicit verified model setup →
@@ -23,8 +39,8 @@ and decodes an orientation-aware thumbnail (maximum dimension 512); CoreGraphics
 normalizes sRGB and composites transparency onto white, then packs RGB pixels.
 Only those pixels and the user's question enter model inference. The image's
 filename, OCR extraction, and metadata descriptions do not enter the prompt.
-This Apple decoding path has **not** been compiled or exercised here. Linux's
-nine-case gate instead uses Pillow-generated RGB for the synthetic fixtures and
+The Apple decoding path was subsequently compiled and exercised for the one
+simulator smoke described above. The historical Linux nine-case gate instead uses Pillow-generated RGB for the synthetic fixtures and
 Pillow-decoded RGB for the existing natural photograph. The separate production
 Swift adapter check also substitutes generated RGB for unavailable ImageIO.
 
@@ -45,7 +61,10 @@ is then read from the app's private attachment storage. The Analyze button is
 app-level consent, not a claim that iOS displays an additional permission dialog.
 
 The current screen holds the question in SwiftUI state and the answer in the
-in-memory `VisionSession`. It does **not** automatically append either to chat,
+in-memory `VisionSession`. Analyze captures an immutable submitted question,
+which is shown beside the answer; the editable draft is disabled during work
+and cleanup and becomes editable afterward. Editing a later draft does not
+relabel an existing answer. It does **not** automatically append either to chat,
 write an analysis history/backup, or save a new image. Existing imported image
 storage is unchanged. Cancel/dismiss/background cleanup cancels work and clears
 the session answer while resources finish releasing; this is not a secure-memory
@@ -153,7 +172,8 @@ on this shared Linux CPU, not phone latency claims. Blank abstention ~0.001s.
 - `VisionImageFile`: O_NOFOLLOW/nonblocking regular-file reads; owned bytes,
   enforced 10MiB bound during read, cancellation, no mapped mutable user file.
 - ImageBoundary: ImageIO metadata bounds, oriented <=512 thumbnail, sRGB white
-  compositing, packed RGB and no-detail boundary. Apple decode remains unrun.
+  compositing, packed RGB and no-detail boundary. The subsequent Apple smoke
+  exercised this path for the generated red-square PNG.
 - `NativeVisionRuntime`: same VisionWorker/C bridge, pair lease survives until
   native close. `VisionSession` waits for text release, keeps heavy-work lease
   through teardown, and only then publishes an uncanceled complete answer.
@@ -174,7 +194,7 @@ handles. `run_production_runtime.sh` reproduces the exact runtime compilation.
 
 ## Verification scope and remaining work
 
-The reported inference runs used **Linux CPU execution**: two threads,
+The historical nine-case and logger-regression runs used **Linux CPU execution**: two threads,
 `n_gpu_layers=0`, mtmd `use_gpu=false`, a 2048-position context, and at most 128
 output tokens. They do not demonstrate Apple Metal execution, an iOS simulator,
 a signed iPhone build, camera use, or general agent autonomy. Passing eight
@@ -182,10 +202,13 @@ inference fixtures plus one blank guard is not broad real-world accuracy,
 robustness, accessibility, safety-critical interpretation, or release acceptance.
 
 
-Apple SwiftUI/ImageIO/CryptoKit compilation, combined framework device/simulator
-symbols and runtime uniqueness, actual download/cancellation on iOS, image
-orientation/HEIC fixtures, physical offline operation, memory/jetsam and thermal
-budgets, background transitions, latency and wider natural/spatial quality.
+Beyond the recorded one-case simulator pass, remaining vision acceptance includes
+the actual VisionSession/UI workflow (including the later submitted-question
+label), actual download/cancellation on iOS, required orientation/HEIC evidence,
+loaded-runtime uniqueness, physical offline operation, memory/jetsam and thermal
+budgets, background transitions, device latency and wider natural/spatial quality.
+The evidence checkpoint also does not establish full-suite completion or release
+acceptance; consult that run's separate results rather than infer them here.
 The projector-loading API has no progress cancellation callback; release can
 wait for that stage. No parallel runtime, resource-cap increase, or native
 verification is inferred from these Linux results.
@@ -226,7 +249,8 @@ Reproduce with separately built old and fixed shared libraries:
 python3 Diagnostics/VisionProof/Linux/log_privacy_check.py OLD_SO FIXED_SO VERIFIED_MODEL_DIR OUTPUT_DIR
 ```
 
-These are real **Linux CPU** regression results. The next combined Apple
-framework must be rebuilt from this bridge before iOS receives the fix; an Apple
-run already building the old bridge does not validate it. Other diagnostics,
-crash reporting, and unrelated providers are outside this focused regression.
+These are real **Linux CPU** logger-regression results. The subsequent combined
+Apple simulator smoke above does not itself repeat the old/new stderr privacy
+regression, so that privacy assertion remains backed by its separate Linux
+evidence. Other diagnostics, crash reporting, and unrelated providers are outside
+this focused regression.

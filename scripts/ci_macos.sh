@@ -29,7 +29,7 @@ print(choices[0]['udid'])
 PY
 )
 echo "$SIMULATOR_ID" > "$ARTIFACTS/simulator-id.txt"
-xcrun simctl bootstatus "$SIMULATOR_ID" -b
+python3 scripts/boot_ci_simulator.py --simulator "$SIMULATOR_ID" --evidence "$ARTIFACTS/simulator-boot.json"
 # Deterministic real Core Location simulator input, not physical GPS evidence.
 xcrun simctl location "$SIMULATOR_ID" set 37.3349,-122.0090
 bash scripts/run_native_tests.sh "$ARTIFACTS" xcodebuild -project JarvisEVO.xcodeproj -scheme JarvisEVO -destination "platform=iOS Simulator,id=$SIMULATOR_ID" -destination-timeout 120 -parallel-testing-enabled NO -test-timeouts-enabled YES -default-test-execution-time-allowance 120 -maximum-test-execution-time-allowance 720 -resultBundlePath "$ARTIFACTS/Tests.xcresult" CODE_SIGNING_ALLOWED=NO "ORIVYN_NATIVE_FEATURES=${ORIVYN_NATIVE_FEATURES:-}" JARVIS_REQUIRE_REAL_INFERENCE=1 test

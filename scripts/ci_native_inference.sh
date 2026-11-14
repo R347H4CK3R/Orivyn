@@ -24,7 +24,7 @@ choices.sort(key=lambda d:(d['name']!='iPhone 16 Plus',d['name']))
 print(choices[0]['udid'])
 PY
 )
-xcrun simctl bootstatus "$SIMULATOR_ID" -b
+python3 scripts/boot_ci_simulator.py --simulator "$SIMULATOR_ID" --evidence "$EVIDENCE/simulator-boot.json"
 export VISION_DESTINATION="platform=iOS Simulator,id=$SIMULATOR_ID"
 export NATIVE_TOOLS_DESTINATION="$VISION_DESTINATION"
 export VISION_DERIVED_DATA="$RUNNER_TEMP/orivyn-inference-derived"
