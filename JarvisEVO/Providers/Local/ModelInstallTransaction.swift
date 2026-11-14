@@ -27,7 +27,9 @@ enum ModelInstallTransaction {
     }
     private static let folder = ".model-install-transaction"
     private static let manifestName = "installed-models.json"
-    private static let fm = FileManager.default
+    // No shared FileManager storage: Darwin Foundation does not mark it Sendable.
+    // This transaction remains synchronous and single-owner; do not suppress Swift 6 checks.
+    private static var fm: FileManager { FileManager() }
 
     static func commit(root: URL, targetName: String, source: URL, manifest: Data,
                        prepareFile: (URL) throws -> Void = { _ in },
