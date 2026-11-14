@@ -1,5 +1,55 @@
 # License and provenance audit: internal prototype, NOT release approval
 
+## Current maintained-guest candidate, verified 2026-11-14
+
+This dated section supersedes the historical firmware/guest identity statements
+below. The historical audit is retained unchanged for provenance, not as a
+current asset inventory. This is **not license approval** and **not physical-device verification**.
+
+The current local candidate assets were independently hashed against the retained
+source-reconstruction and deterministic firmware-build records:
+
+| Candidate asset | Bytes | SHA-256 |
+| --- | ---: | --- |
+| maintained.img | 135266304 | `78418639ecd90573da211b62a502334f569f029b913525f50601b09d928b244d` |
+| seabios.bin | 131072 | `6b9910698c428a4e3af852a112e773556693ad0cd5699eb32458dfe6033bafde` |
+| vgabios.bin | 36352 | `84f1f09a4e7ce66bb203f7f569af6f1068bfb1c6fe1ff4ea35713a3cd241f4df` |
+
+The maintained guest uses the retained Buildroot 2025.02.19 construction, including
+its board overlay, patches, configurations and source archives. Its reconstruction
+was interrupted and resumed with recorded staging repairs; this is not a claim
+of an uninterrupted recipe run or bit-identical reproducibility across hosts.
+Current firmware corresponds to the retained SeaBIOS rel-1.16.2 source/configuration
+and distributor version `rel-1.16.2-orivyn-1`, not the historical npm firmware bytes.
+The retained records document identical firmware outputs from independent local
+builds using Debian GCC 14.2.0-19 and binutils 2.44, plus a packaged offline rebuild.
+No rebuild was rerun for this dated hash check.
+
+Fresh manifest verification covered:
+
+- 726 guest-source entries, 793328531 bytes; `SHA256SUMS` digest
+  `cc2029a368cf1ce737e7a854230b94c0f2feb9cd262f4e994296db37748bfbbb`.
+- 4 firmware-source entries, 640283 bytes; `SHA256SUMS` digest
+  `19f668141baf35fe6a1d102a6c266e30d36c072608af9c97c121c621c4516951`.
+
+[Machine-readable evidence](../../docs/verification/desktop-source-correspondence.json)
+records the fresh results. Verification covers manifest-listed files only, not
+unrelated build outputs. Pins derive from retained records; the check does not
+independently authenticate upstream provenance or prove license sufficiency.
+The source archives are retained separately and are not embedded in this JSON.
+
+Before distribution: provide accessible exact corresponding source, configuration,
+patches and applicable notices alongside the binary; review final license and
+vulnerability requirements; verify assets in the actual packaged IPA. Native and
+physical-device/HDMI acceptance remain separate. This section does not mark any
+of those gates passed. The historical TinyCore ISO below remains excluded.
+
+## Historical prototype audit
+
+Everything below records the earlier prototype investigation. In particular,
+its not-yet-rebuilt firmware statement and TinyCore findings do not describe the
+current maintained-guest candidate identified above.
+
 ## Pinned engine and firmware
 
 - Official `v86@0.5.473`, package version `0.5.473+g315b2b0`, source commit `315b2b0b758703ef0e6cc7b4088d6068f83f3c20`. Package SHA-512 integrity and decoded npm provenance agree with the official GitHub repository/commit. This is **not** a claim of independent Sigstore cryptographic verification. `npm pack --ignore-scripts` downloaded it; no package install scripts ran.

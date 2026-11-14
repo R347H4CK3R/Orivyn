@@ -1,0 +1,31 @@
+{
+  "checkedUTC": "2026-11-14T06:10:31.228298+00:00",
+  "scope": "Retained source manifest integrity and recorded rebuilt desktop binary identities. Not legal approval, new rebuild, native/device verification, or publication evidence.",
+  "guestSources": {
+    "manifestSHA256": "cc2029a368cf1ce737e7a854230b94c0f2feb9cd262f4e994296db37748bfbbb",
+    "verifiedFiles": 726,
+    "verifiedBytes": 793328531,
+    "scope": "Manifest-listed files only; unrelated build outputs are not covered."
+  },
+  "firmwareSources": {
+    "manifestSHA256": "19f668141baf35fe6a1d102a6c266e30d36c072608af9c97c121c621c4516951",
+    "verifiedFiles": 4,
+    "verifiedBytes": 640283,
+    "scope": "Manifest-listed files only; unrelated build outputs are not covered."
+  },
+  "assets": {
+    "maintained.img": {
+      "sha256": "78418639ecd90573da211b62a502334f569f029b913525f50601b09d928b244d",
+      "bytes": 135266304
+    },
+    "seabios.bin": {
+      "sha256": "6b9910698c428a4e3af852a112e773556693ad0cd5699eb32458dfe6033bafde",
+      "bytes": 131072
+    },
+    "vgabios.bin": {
+      "sha256": "84f1f09a4e7ce66bb203f7f569af6f1068bfb1c6fe1ff4ea35713a3cd241f4df",
+      "bytes": 36352
+    }
+  },
+  "passed": true
+}
