@@ -47,3 +47,29 @@ test('conversation results disclose omitted matches and reject inconsistent tota
  const done=record(s,value);assert.deepEqual(obj(A().report(done)).evidence[0].result,value);assert.equal(A().recover(done),done);
  for(const invalid of [{...value,totalMatchesInWindow:6},{...value,totalMatchesInWindow:0},{...value,resultsLimited:false},{...value,totalMatchesInWindow:1},{...value,resultsLimited:undefined}])assert.throws(()=>record(s,invalid));
 });
+test('report provenance resolves every local evidence citation without changing saved state',()=>{
+ let s=create();for(let i=0;i<3;i++)s=record(A().next(s));
+ const before=s,r=obj(A().report(s));
+ assert.deepEqual(r.provenance,{planID:id,revision:obj(s).revision,scope:'local_saved_snapshot'});
+ assert.equal(r.citations.length,r.evidence.length);
+ r.citations.forEach((c,i)=>{
+  assert.deepEqual(c,{reference:id+'@'+obj(s).revision+'#/evidence/'+i+'/result',tool:r.evidence[i].name,pointer:'/evidence/'+i+'/result'});
+  const resolved=c.pointer.slice(1).split('/').reduce((v,k)=>v[k],r);
+  assert.deepEqual(resolved,r.evidence[i].result);
+ });
+ assert.equal(s,before);assert.equal(A().recover(s),before);
+});
+test('partial failed and interrupted reports cite completed evidence only, never pending work',()=>{
+ let ready=create();let partial=record(A().next(ready));
+ for(const s of [ready,A().next(ready),A().recover(A().next(ready)),A().fail(ready,'x'),partial,A().recover(A().next(partial)),A().fail(partial,'x')]){
+  const state=obj(s),r=obj(A().report(s));assert.equal(r.complete,false);assert.equal(r.citations.length,state.completed);
+  assert.equal(r.provenance.planID,state.id);assert.equal(r.provenance.revision,state.revision);
+  for(const c of r.citations)assert.ok(!c.pointer.includes('pending'));
+ }
+});
+test('legacy plans gain report references without mutation or authenticity claims',()=>{
+ const state=obj(record(A().next(create())));delete state.request.memoryQuery;const raw=JSON.stringify(state);
+ const report=obj(A().report(raw));assert.equal(report.provenance.planID,id);assert.equal(report.citations.length,1);
+ assert.equal(A().recover(raw),raw);assert.match(report.limitations.join(' '),/not authenticity/);
+ assert.match(report.limitations.join(' '),/not external citations/);
+});
