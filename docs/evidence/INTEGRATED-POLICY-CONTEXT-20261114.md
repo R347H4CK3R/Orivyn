@@ -15,3 +15,9 @@ Integrated verification at local source d08a119:
 CI now runs real vision, original Q8 native suggestions, candidate Q4 native suggestions, and an actual LocalAgentSession search/read task sequentially with separate results and failure attachments. New Apple compilation/execution is pending. The new agent acceptance gate may fail on the known planner problem; it is intentionally not replaced by injected decisions.
 
 Automatic two-device sync, reliable general autonomy, broad vision quality, physical iPhone performance and SideStore installation remain unverified or incomplete. No release, source-feed update or 1.0 completion is authorized by these test results.
+
+## Final capability restriction follow-up
+
+At local source c34ba82, the production prompt and grammar expose conversation reads only after validated search results, with ID literals constrained to that exact returned set. Reducer and native provenance checks remain independent. Native parsing/acceptance passed 36 cases for zero, one and multiple IDs; 124 agent JavaScript checks passed. All four real-model baseline/guidance comparisons still failed semantic completion. Regressive guidance was removed; raw failures are retained.
+
+Combined final Python, catalog, agent, guest and VM stages passed at `orivyn-integrated-capability-checks`. Its process was interrupted during Foundation compilation; the incomplete SUMMARY.json is not a completed suite claim. The isolated Foundation retry at `orivyn-integrated-capability-foundation-retry` completed with exit zero and 415 tests passed. Existing platform/dependency exclusions remain, and persistence was not rerun in this integration pass. The supported UI focus signal correction still requires Apple execution.

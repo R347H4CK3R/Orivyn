@@ -141,7 +141,7 @@ actor LlamaEngine: LocalResourceReleasing {
         guard let sampler = llama_sampler_chain_init(llama_sampler_chain_default_params()) else { throw LocalModelError.loadFailed }
         defer { llama_sampler_free(sampler) }
         if let requireTool = request.localAgentRequiresTool {
-            let grammar = try LocalAgentGrammar.load(requireTool: requireTool)
+            let grammar = try LocalAgentGrammar.load(requireTool: requireTool, conversationIDs: request.localAgentConversationIDs)
             let constrained = grammar.withCString { specification in
                 "root".withCString { name in llama_sampler_init_grammar(vocabulary, specification, name) }
             }

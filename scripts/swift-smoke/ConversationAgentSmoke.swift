@@ -66,11 +66,12 @@ import llama
                       zip(evidence, successful).allSatisfy({ $0.0.objectValue?["result"]?.stringValue == $0.1.result }) else {
                     throw Failure.failed("A prior result was omitted from the current inference context")
                 }
+                let conversationIDs = try JSONDecoder().decode([String].self, from: Data(core("conversationIDs", [state]).utf8))
                 let request = GenerationRequest.localAgent(prompt: prompt,
-                    requiresTool: !item.history.contains { $0.outcome == "succeeded" })
+                    requiresTool: !item.history.contains { $0.outcome == "succeeded" }, conversationIDs: conversationIDs)
                 let requestEvidence: [String: Any] = ["maxTokens": request.maxTokens, "temperature": request.temperature,
                     "localAgentRequiresTool": request.localAgentRequiresTool!, "conciseQwen3": request.conciseQwen3,
-                    "factory": "GenerationRequest.localAgent", "grammar": "bundled production LocalAgentDecision.gbnf"]
+                    "conversationIDs": request.localAgentConversationIDs, "factory": "GenerationRequest.localAgent", "grammar": "bundled production LocalAgentDecision.gbnf"]
                 try JSONSerialization.data(withJSONObject: requestEvidence, options: [.sortedKeys]).write(to: root.appendingPathComponent("request-\(cycle).json"))
                 var decision = ""
                 for try await part in try await engine.stream(request, modelURL: modelURL) {

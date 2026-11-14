@@ -345,6 +345,19 @@
       "sha256": "b3c4d4fdf7dd1be3b2ebf3bcc832d6ab54727e3e7b72e5d028149b3888533477"
     },
     "followupTestOnlyCommit": "00470f28d059ab20bee1f321d50a427a655472ff",
-    "followupValidation": "Swift syntax parse and git diff --check only; Apple UI rerun is required, no fixed/passing claim."
+    "followupValidation": "Swift syntax parse and git diff --check only; Apple UI rerun is required, no fixed/passing claim.",
+    "supportedFocusSignalFollowup": {
+      "commit": "1598d088f2787a385ee7b801a556d3afa81d0b5f",
+      "reason": "The prior hasKeyboardFocus predicate used an undocumented iOS XCUIElement KVC key. XCTest internal focus log text does not prove a supported public getter; it is removed before acceptance.",
+      "signal": "The existing Hide keyboard button is disabled when native inputFocused is false. The test observes public exists and isEnabled; guest WebView focus or any visible keyboard alone cannot satisfy it.",
+      "sourceReview": "Only desktop.input binds inputFocused; all explicit assignments set it false. SwiftUI focused binding sets true/false as that field gains/loses focus. No test-only focus value or input content override.",
+      "sources": [
+        "https://developer.apple.com/documentation/swiftui/focusstate/",
+        "https://developer.apple.com/documentation/swiftui/view/disabled(_:)",
+        "https://developer.apple.com/documentation/xcuiautomation/xcuielementattributes/isenabled",
+        "https://developer.apple.com/documentation/xcuiautomation/xcuielement/attributename/hasfocus"
+      ],
+      "validation": "Linux Swift frontend parse of both changed files and git diff --check passed. SwiftUI/XCTest iOS execution remains unrun; no native pass claim."
+    }
   }
 }

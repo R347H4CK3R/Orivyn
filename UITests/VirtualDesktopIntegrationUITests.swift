@@ -176,13 +176,16 @@ final class VirtualDesktopIntegrationUITests: XCTestCase {
                                  file: StaticString = #filePath, line: UInt = #line) {
         // A completed tap after rotation is not proof of keyboard ownership:
         // the failed CI snapshot still had the guest WebView focused. Wait for
-        // the specific native field, not merely a visible keyboard. One bounded
-        // retap accommodates the transition; a persistent focus defect fails.
-        let focused = NSPredicate(format: "hasKeyboardFocus == true")
+        // the native field's FocusState through its Hide keyboard action, which
+        // is enabled only while that field owns focus. This uses public XCTest
+        // attributes; a private hasKeyboardFocus KVC key is not an iOS contract.
+        // One bounded retap accommodates transitions; persistent defects fail.
+        let hide = app.buttons["desktop.keyboard.hide"]
+        let focused = NSPredicate { _, _ in hide.exists && hide.isEnabled }
         for _ in 0..<2 {
             revealDesktopControl(input, in: app)
             input.tap()
-            if XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: focused, object: input)], timeout: 5) == .completed {
+            if XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: focused, object: hide)], timeout: 5) == .completed {
                 return
             }
         }
