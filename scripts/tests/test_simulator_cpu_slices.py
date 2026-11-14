@@ -2,6 +2,9 @@
 import os
 from pathlib import Path
 import subprocess
+import shutil
+import sys
+import tempfile
 import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -54,6 +57,32 @@ class SimulatorSlicesTests(unittest.TestCase):
                 result = self.run_recipe(arch)
                 self.assertEqual(result.returncode, 17)
                 self.assertNotIn('lipo -create', result.stdout)
+
+    def test_generator_preserves_split_recipe_and_cache_keys(self):
+        # Execute the production entry point in a temporary source tree; do not
+        # rely on a hand-edited generated artifact surviving CI regeneration.
+        with tempfile.TemporaryDirectory() as directory:
+            checkout = Path(directory)
+            for relative in ('Diagnostics/CombinedRuntime/prepare_build.py',
+                             'Diagnostics/CombinedRuntime/simulator-slices.sh',
+                             'Diagnostics/VisionRuntime/prepare_build.py',
+                             'Diagnostics/VisionRuntime/source/build-xcframework.sh'):
+                target = checkout / relative
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(ROOT / relative, target)
+            subprocess.run([sys.executable, str(checkout / 'Diagnostics/CombinedRuntime/prepare_build.py')], check=True)
+            generated = (checkout / 'Diagnostics/CombinedRuntime/build-ios-combined.sh').read_text()
+            self.assertEqual(generated, SOURCE)
+            self.assertNotIn('CMAKE_OSX_ARCHITECTURES="arm64;x86_64"', generated)
+            subprocess.run(['bash', '-n'], input=generated, text=True, check=True)
+        keys = []
+        for filename in ('verify.yml', 'verify-intel.yml'):
+            keys.extend(line for line in (ROOT / '.github/workflows' / filename).read_text().splitlines()
+                        if 'hashFiles(' in line and 'CombinedRuntime' in line)
+        self.assertEqual(len(keys), 3)
+        for key in keys:
+            for source in ('prepare_build.py', 'simulator-slices.sh', 'build-ios-combined.sh'):
+                self.assertIn('Diagnostics/CombinedRuntime/' + source, key)
 
     def test_device_and_link_contract(self):
         device = SOURCE[END:]

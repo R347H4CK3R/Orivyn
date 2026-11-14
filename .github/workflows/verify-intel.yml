@@ -35,7 +35,7 @@ jobs:
           path: .cache/orivyn-combined
           # This exact-source/compiler cache contains both arm64 and x86_64 simulator slices.
           # Verify SHA, Mach-O architectures, platforms, headers and symbols before use.
-          key: combined-v1-macOS-ARM64-${{ steps.xcode.outputs.identity }}-${{ hashFiles('Diagnostics/CombinedRuntime/prepare_build.py', 'Diagnostics/CombinedRuntime/native-bridges.cmake', 'Diagnostics/VisionRuntime/prepare_build.py', 'Diagnostics/VisionRuntime/source/build-xcframework.sh', 'Diagnostics/NativeTools/*.cpp', 'Diagnostics/NativeTools/*.h', 'Diagnostics/VisionProof/Bridge/*.cpp', 'Diagnostics/VisionProof/Bridge/*.h', 'scripts/verify_combined_runtime.py', 'scripts/ci_combined_runtime.sh') }}
+          key: combined-v1-macOS-ARM64-${{ steps.xcode.outputs.identity }}-${{ hashFiles('Diagnostics/CombinedRuntime/prepare_build.py', 'Diagnostics/CombinedRuntime/simulator-slices.sh', 'Diagnostics/CombinedRuntime/build-ios-combined.sh', 'Diagnostics/CombinedRuntime/native-bridges.cmake', 'Diagnostics/VisionRuntime/prepare_build.py', 'Diagnostics/VisionRuntime/source/build-xcframework.sh', 'Diagnostics/NativeTools/*.cpp', 'Diagnostics/NativeTools/*.h', 'Diagnostics/VisionProof/Bridge/*.cpp', 'Diagnostics/VisionProof/Bridge/*.h', 'scripts/verify_combined_runtime.py', 'scripts/ci_combined_runtime.sh') }}
       - name: Build and verify combined native runtime
         run: bash scripts/ci_combined_runtime.sh
       - name: Test real production vision and tool inference

@@ -29,6 +29,18 @@ def transform(source):
         "${base_dir}/${build_dir}/common/${release_dir}/libllama-common.a"
         "${base_dir}/${build_dir}/common/${release_dir}/libllama-common-base.a"
         "${base_dir}/${build_dir}/vendor/cpp-httplib/${release_dir}/libcpp-httplib.a"''', 1)
+    # Keep the architecture fix in the generator, not just its generated output.
+    result = result.replace('rm -rf build-ios-sim\n',
+                            'rm -rf build-ios-sim build-ios-sim-arm64 build-ios-sim-x86_64\n', 1)
+    result = result.replace('local is_simulator="$4"',
+                            'local is_simulator="$4"\n    local simulator_arch="${5:-}"', 1)
+    result = result.replace('archs="arm64 x86_64"\n                min_version_flag="-mios-simulator',
+                            'archs="${simulator_arch:?Simulator linking requires one explicit architecture}"\n                min_version_flag="-mios-simulator', 1)
+    start = result.index('echo "Building for iOS simulator..."')
+    end = result.index('\necho "Building for iOS devices..."', start)
+    result = result[:start] + (ROOT / 'CombinedRuntime/simulator-slices.sh').read_text() + result[end:]
+    result = result.replace('setup_framework_structure "build-ios-sim" ${IOS_MIN_OS_VERSION} "ios"\n', '', 1)
+    result = result.replace('combine_static_libraries "build-ios-sim" "Release-iphonesimulator" "ios" "true"\n', '', 1)
     return result
 
 if __name__ == '__main__':
