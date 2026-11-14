@@ -1,6 +1,43 @@
 # Orivyn 1.0.0 release plan and acceptance ledger
 
-## Current recovery and acceptance status (supersedes historical checkpoints below)
+## Current acceptance audit
+
+Source inspected: `ad0a63d94c609c9639baa8210945e95060d566a8`, PR #4. Target **1.0.0** is **not release-ready**. `project.yml` still correctly identifies development **0.1.1 build 5**. The documented public preview remains 0.1.0 build 4; this audit does not activate or revalidate the public catalog.
+
+### Exact native checkpoint and limits
+
+CircleCI pipeline 18 built `cf3bac525aa24113302b2747ca33bb6ab33aa59e`. The preserved console excerpt records **816 unit tests, 1 skipped, zero failures; 50 UI tests, zero failures**, followed by TEST SUCCEEDED and BUILD SUCCEEDED. Its provenance records successful guest file/checkpoint and relaunch tests and inspected desktop screenshots. Evidence retained is a rendered console excerpt plus package/provenance, **not the complete xcresult** and not a new rerun.
+
+The private unsigned IPA was independently re-read during this audit: **35,003,105 bytes**, SHA-256 `f7dc67ede430df17099a4a63e660f71d95532d1bcaac2a1cf1bb9aac9f58dd5d`; its Info.plist identifies `app.jarvisevo.ios`, **0.1.1 build 5**, minimum iOS **26.0**. It is not a 1.0.0 artifact. Later source, including the audited head, has **not been native-tested** together. Earlier test counts do not cover later changes.
+
+### Implementation versus acceptance
+
+| Area | Implemented boundary | Remaining gate |
+|---|---|---|
+| Chat, history, models and memory | Native chat/persistence, local inference, bounded automatic model routing and model downloads; subsequent context/cancellation fixes exist | Full final-source native regression and physical resource/thermal/battery testing |
+| Attachments and images | Document text and OCR extraction; Apple Image Playground UI and persistence integration | AppModel explicitly sends text only, never image pixels. Broad visual understanding is absent; actual physical image generation is unverified |
+| Tools and agent | Native review screens, permissioned MCP, deterministic reviewed local read plans and experimental model decisions | General dependable autonomous decisions and actual authorized external-service results are not established; protocol/parser tests are not service execution |
+| Phone-contained desktop | Real emulator guest, integrated native UI, Simulator file/checkpoint/relaunch evidence | Physical iPhone performance, memory pressure, keyboard/pointer/HDMI/reconnect; final distribution provenance review |
+| Source knowledge and repair | Bundled product metadata plus explicit read-only GitHub snapshot/file inspection, including ref selection and pinned blob identity | Chat does not receive repository source. No self-applied source repair, build or publication is implemented |
+| Synchronization | Local persistence and explicit transfer/backup mechanisms | Automatic cross-device synchronization and conflict/privacy/device acceptance remain unfinished |
+| Voice and configured online providers | Native audio/speech and provider protocol implementation | Physical microphone/interruption/audio-routing tests and authorized real-provider acceptance |
+| Release | Original branding; valid prior development IPA | Current screenshots/documentation, final exact-source native checks, physical install/refresh and catalog-first 1.0.0 publication |
+
+### Next executable gates
+
+1. Preserve the known-good private candidate and keep subsequent fixes isolated from release claims. Review current full source, not just historical selected-source backups.
+2. Obtain sufficient authorized macOS CI capacity, then run the final exact-source aggregate unit/UI/build/package checks. Do not enable billing or launch a knowingly underfunded run. Historical quota numbers below are not current availability.
+3. Complete the missing supported product capabilities rather than hiding them behind controls or metadata. In particular, read-only source inspection is not autonomous self-repair, OCR is not vision, and reviewed deterministic plans are not unrestricted task execution.
+4. Perform the physical iPhone 16 Plus/SideStore, voice, offline/resource and external-display acceptance separately. Simulator success cannot establish these results.
+5. Only when the defined acceptance gates pass, set 1.0.0, rebuild the exact artifact, verify its contents/hash, and stage/validate Strata before activating distribution. Retain the working preview for rollback.
+
+## Historical checkpoints (not current status)
+
+The following earlier ledger is retained for provenance. Its “current”, “latest”, quota, missing-checkout and next-objective statements describe their original checkpoints, not the audited head above. They must not override the current acceptance audit.
+
+### Superseded recovery and acceptance status
+
+#### Prior recovery checklist (historical; superseded by the audit above)
 
 Latest change: local agent search includes stored attachment names/text with bounded labeled evidence. Two exact production-branch tests and unchanged Swift output through the verified-plan reducer pass. It does not read original files or verify OCR facts.
 
@@ -137,3 +174,4 @@ The corrected protection cast still returned raw nil in Simulator. Apple DTS ind
 
 ### Resource ownership native GREEN
 Exact source `730ec2f2e9ced5b8983245956464545eb18cfe76` (local tree `dc94a509ddb8a9d16189be66abce4d67b5088a1c`) passed `6af6257710a05158d81222a1` at 20:50 UTC: 90 selected unit tests passed, one explicitly physical-only Complete-protection test skipped, and all three image/resource UI tests passed. The real model active-stream unload → release → reload/inference regression passed in 14.105 seconds. All 11 ownership, 32 voice bridge, 15 automatic preparation, 12 AppModel and nine accepted-image tests passed, plus ten simulator-supported staging tests. UI cancel and background dismissal preserve the composer and do not reopen the form. Actual nested Image Playground generation on hardware, physical lock protection and OS memory/thermal reclaim remain unverified; no new IPA is implied.
+
