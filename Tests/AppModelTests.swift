@@ -273,6 +273,41 @@ final class AppModelTests: XCTestCase {
         XCTAssertTrue(reopened.conciseQwen3)
     }
 
+    func testOwnedPendingRemovalBeforeBootstrapPreservesUnknownPersistedFiles() async throws {
+        let (model, store, _) = try await fixture()
+        let source = root.appendingPathComponent("saved-before-bootstrap.txt")
+        try Data("Saved file must survive".utf8).write(to: source)
+        let savedAttachment = try model.attachmentService.importFile(at: source)
+        try await store.save(Conversation(messages: [ChatMessage(role: .user, content: "Saved", attachments: [savedAttachment])]))
+        XCTAssertTrue(model.conversations.isEmpty, "The app has not loaded persisted references")
+        await model.addAttachments(from: [source])
+        let fresh = try XCTUnwrap(model.pendingAttachments.first)
+        XCTAssertNotEqual(fresh.relativePath, savedAttachment.relativePath)
+        model.removePendingAttachment(fresh)
+        XCTAssertNil(model.attachmentService.url(for: fresh), "Fresh owned rollback is synchronous")
+        XCTAssertNotNil(model.attachmentService.url(for: savedAttachment), "Unknown persisted bytes are not swept")
+        XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: model.attachmentService.directory.path).count, 1)
+    }
+
+    func testOwnedImportsAfterFailedBootstrapCanBeRemovedWithoutSweepingSavedFiles() async throws {
+        let (model, store, _) = try await fixture()
+        let source = root.appendingPathComponent("saved-before-failure.txt")
+        try Data("Keep despite unreadable history".utf8).write(to: source)
+        let savedAttachment = try model.attachmentService.importFile(at: source)
+        try await store.save(Conversation(messages: [ChatMessage(role: .user, content: "Saved", attachments: [savedAttachment])]))
+        var connection: OpaquePointer?
+        XCTAssertEqual(sqlite3_open(root.appendingPathComponent("test.sqlite").path, &connection), SQLITE_OK)
+        defer { sqlite3_close(connection) }
+        XCTAssertEqual(sqlite3_exec(connection, "UPDATE conversations SET payload = x'00'", nil, nil, nil), SQLITE_OK)
+        await model.bootstrap()
+        XCTAssertNotNil(model.errorMessage)
+        await model.addAttachments(from: [source])
+        let fresh = try XCTUnwrap(model.pendingAttachments.first)
+        model.clearPendingAttachments()
+        XCTAssertNil(model.attachmentService.url(for: fresh))
+        XCTAssertNotNil(model.attachmentService.url(for: savedAttachment))
+    }
+
     func testAttachmentCleanupRetainsFilesUntilHistoryHasLoaded() async throws {
         let (model, store, _) = try await fixture()
         let source = root.appendingPathComponent("original.txt")

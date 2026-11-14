@@ -75,7 +75,14 @@ actor LlamaEngine: LocalResourceReleasing {
         contextParameters.n_seq_max = 1
         contextParameters.n_batch = UInt32(batchSize)
         contextParameters.n_ubatch = UInt32(batchSize)
+        #if targetEnvironment(simulator)
+        // A three-core hosted simulator otherwise reserves two cores and decodes
+        // with only one. Keep this CPU-only simulator policy capped at two;
+        // physical-device resource guidance and inference limits are unchanged.
+        contextParameters.n_threads = Int32(max(1, min(2, ProcessInfo.processInfo.activeProcessorCount)))
+        #else
         contextParameters.n_threads = Int32(max(1, min(4, ProcessInfo.processInfo.activeProcessorCount - 2)))
+        #endif
         contextParameters.n_threads_batch = contextParameters.n_threads
         #if targetEnvironment(simulator)
         contextParameters.offload_kqv = false

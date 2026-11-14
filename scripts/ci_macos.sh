@@ -1,10 +1,19 @@
 #!/bin/bash
 set -euo pipefail
 cd "$(dirname "$0")/.."
+# Validate before downloads, simulator boot or artifact creation.
+NATIVE_TEST_GROUP="${ORIVYN_NATIVE_TEST_GROUP:-all}"
+TEST_SELECTION="$(python3 scripts/native_test_groups.py "$NATIVE_TEST_GROUP")"
+TEST_ARGUMENTS=()
+if [[ -n "$TEST_SELECTION" ]]; then
+  while IFS= read -r argument; do TEST_ARGUMENTS+=("$argument"); done <<< "$TEST_SELECTION"
+fi
 RUN_ID="$(date -u +%Y%m%dT%H%M%SZ)-$$"
 ARTIFACTS="artifacts/$RUN_ID"
 PACKAGE="build/package-$RUN_ID"
 mkdir -p "$ARTIFACTS"
+printf '%s\n' "$NATIVE_TEST_GROUP" > "$ARTIFACTS/test-group.txt"
+printf '%s\n' "$TEST_SELECTION" > "$ARTIFACTS/test-selection.txt"
 export ARTIFACTS
 python3 scripts/materialize_guest.py Fixtures/maintained.img.gz JarvisEVO/Resources/VMAssets/maintained.img
 node --test scripts/vm-tests/*.test.cjs
@@ -32,7 +41,11 @@ echo "$SIMULATOR_ID" > "$ARTIFACTS/simulator-id.txt"
 python3 scripts/boot_ci_simulator.py --simulator "$SIMULATOR_ID" --evidence "$ARTIFACTS/simulator-boot.json"
 # Deterministic real Core Location simulator input, not physical GPS evidence.
 xcrun simctl location "$SIMULATOR_ID" set 37.3349,-122.0090
-bash scripts/run_native_tests.sh "$ARTIFACTS" xcodebuild -project JarvisEVO.xcodeproj -scheme JarvisEVO -destination "platform=iOS Simulator,id=$SIMULATOR_ID" -destination-timeout 120 -parallel-testing-enabled NO -test-timeouts-enabled YES -default-test-execution-time-allowance 120 -maximum-test-execution-time-allowance 720 -resultBundlePath "$ARTIFACTS/Tests.xcresult" CODE_SIGNING_ALLOWED=NO "ORIVYN_NATIVE_FEATURES=${ORIVYN_NATIVE_FEATURES:-}" JARVIS_REQUIRE_REAL_INFERENCE=1 test
+bash scripts/run_native_tests.sh "$ARTIFACTS" xcodebuild -project JarvisEVO.xcodeproj -scheme JarvisEVO -destination "platform=iOS Simulator,id=$SIMULATOR_ID" -destination-timeout 120 -parallel-testing-enabled NO -test-timeouts-enabled YES -default-test-execution-time-allowance 120 -maximum-test-execution-time-allowance 720 -resultBundlePath "$ARTIFACTS/Tests.xcresult" CODE_SIGNING_ALLOWED=NO "ORIVYN_NATIVE_FEATURES=${ORIVYN_NATIVE_FEATURES:-}" JARVIS_REQUIRE_REAL_INFERENCE=1 ${TEST_ARGUMENTS[@]+"${TEST_ARGUMENTS[@]}"} test
+if [[ "$NATIVE_TEST_GROUP" == ui-* ]]; then
+  echo "UI group $NATIVE_TEST_GROUP completed; device packaging belongs to core."
+  exit 0
+fi
 xcodebuild -project JarvisEVO.xcodeproj -scheme JarvisEVO -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO "ORIVYN_NATIVE_FEATURES=${ORIVYN_NATIVE_FEATURES:-}" build 2>&1 | tee "$ARTIFACTS/device-build.log"
 APP=build/Build/Products/Release-iphoneos/JarvisEVO.app
 test -x "$APP/JarvisEVO"

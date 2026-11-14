@@ -118,6 +118,9 @@ final class AppModel {
     private var attachmentImportJobs: [UUID: AttachmentImportJob] = [:]
     private var attachmentImportEpoch = UUID()
     private var attachmentCleanupNeeded = false
+    // Only importer-returned fresh files are ours to roll back without a complete
+    // history snapshot. Existing/saved files still require the reference-aware sweep.
+    private var ownedAttachmentImports: [UUID: ChatAttachment] = [:]
     private var isChangingHistory = false
     private var isSavingSubmittedTurn = false
     private(set) var generatedImageStager: GeneratedImageStaging?
@@ -296,6 +299,7 @@ final class AppModel {
             do {
                 try Task.checkCancellation()
                 let image = try await importer.importAttachment(.file(owned))
+                self.ownedAttachmentImports[image.id] = image
                 // Importers retain ownership until they return, even after cancellation.
                 try Task.checkCancellation()
                 guard self.generatedImageOperation == operation, !self.isChangingHistory,
@@ -308,7 +312,7 @@ final class AppModel {
                 // History mutations wait for this brief atomic save. They may cancel an
                 // earlier import, but cannot race a committed result into deleted history.
                 self.isSavingGeneratedImageRecord = true
-                try await self.store.save(conversation)
+                try await self.saveConversation(conversation)
                 self.upsert(conversation)
             } catch {
                 if !(error is CancellationError) { self.report(error) }
@@ -349,6 +353,7 @@ final class AppModel {
         // A suspended read must not race another load or a history transaction.
         guard !isLoading, !isChangingHistory else { return }
         attachmentHistoryIsLoaded = false
+        ownedAttachmentImports.removeAll()
         isLoading = true
         defer { isLoading = false }
         do {
@@ -414,7 +419,7 @@ final class AppModel {
         cancelAttachmentImports()
         do {
             let conversation = Conversation(id: UUID(), title: "New conversation", createdAt: Date(), updatedAt: Date(), isArchived: false, messages: [])
-            try await store.save(conversation)
+            try await saveConversation(conversation)
             conversations.insert(conversation, at: 0)
             selectConversation(conversation.id)
             showArchived = false
@@ -689,7 +694,7 @@ final class AppModel {
                 guard let conversation = self.conversations.first(where: { $0.id == conversationID }) else {
                     throw ConversationError.messageNotFound
                 }
-                try await self.store.save(conversation)
+                try await self.saveConversation(conversation)
                 didPersist = true
                 self.isSavingSubmittedTurn = false
                 try self.validateGeneration(voiceTicket)
@@ -768,7 +773,7 @@ final class AppModel {
         proposed.title = String(title.prefix(200))
         proposed.updatedAt = Date()
         do {
-            try await store.save(proposed)
+            try await saveConversation(proposed)
             if let index = conversations.firstIndex(where: { $0.id == id }) {
                 // Do not replace live message state with an earlier metadata-edit snapshot.
                 conversations[index].title = proposed.title
@@ -790,7 +795,7 @@ final class AppModel {
         proposed.isArchived = archived
         proposed.updatedAt = Date()
         do {
-            try await store.save(proposed)
+            try await saveConversation(proposed)
             if let index = conversations.firstIndex(where: { $0.id == id }) {
                 conversations[index].isArchived = proposed.isArchived
                 conversations[index].updatedAt = proposed.updatedAt
@@ -844,7 +849,7 @@ final class AppModel {
         cancelAttachmentImports()
         do {
             let branched = try activeConversation.branching(through: messageID)
-            try await store.save(branched)
+            try await saveConversation(branched)
             upsert(branched)
             if selectedConversationID == activeConversation.id { selectedConversationID = branched.id }
             else { statusMessage = "The branch was saved without changing your current conversation." }
@@ -871,7 +876,7 @@ final class AppModel {
             var branched = try original.branching(through: messageID)
             guard let last = branched.messages.last, last.role == .user else { return false }
             try branched.editUserMessage(id: last.id, content: text)
-            try await store.save(branched)
+            try await saveConversation(branched)
             upsert(branched)
             guard selectedConversationID == original.id, providerRevision == providerIdentity else {
                 statusMessage = "Your edited branch was saved. No response started because the conversation or model changed."
@@ -898,7 +903,7 @@ final class AppModel {
         cancelAttachmentImports()
         do {
             let branched = try original.branching(through: user.id)
-            try await store.save(branched)
+            try await saveConversation(branched)
             upsert(branched)
             guard selectedConversationID == original.id, providerRevision == providerIdentity else {
                 statusMessage = "The new branch was saved. No response started because the conversation or model changed."
@@ -972,6 +977,7 @@ final class AppModel {
             task.cancel()
         }
         attachmentImportJobs.removeValue(forKey: jobID)
+        for attachment in result.attachments { ownedAttachmentImports[attachment.id] = attachment }
         if epoch == attachmentImportEpoch, conversationID == selectedConversationID,
            !Task.isCancelled, !task.isCancelled, !result.wasCancelled {
             pendingAttachments.append(contentsOf: result.attachments)
@@ -1048,6 +1054,7 @@ final class AppModel {
             // A committed import can precede a failing reload. Keep its files until
             // a complete history snapshot has been read successfully.
             attachmentHistoryIsLoaded = false
+            ownedAttachmentImports.removeAll()
             let summary = try await store.importData(data, policy: policy)
             conversations = try await store.list(includeArchived: true)
             attachmentHistoryIsLoaded = true
@@ -1205,9 +1212,18 @@ final class AppModel {
     private var attachmentHistoryIsLoaded = false
 
     private func performAttachmentCleanupIfReady() {
-        guard attachmentHistoryIsLoaded, attachmentCleanupNeeded, attachmentImportJobs.isEmpty, generatedImageTask == nil, !isChangingHistory else { return }
+        guard attachmentCleanupNeeded, attachmentImportJobs.isEmpty, generatedImageTask == nil,
+              !isChangingHistory else { return }
         let attachments = conversations.flatMap(\.messages).flatMap(\.attachments) + pendingAttachments
         let retained = attachments.reduce(into: Set<String>()) { $0.formUnion($1.localRelativePaths) }
+        // Roll back only fresh imports whose ownership has not been transferred
+        // to a successful save. Never enumerate/delete unknown persisted files here.
+        let abandoned = ownedAttachmentImports.values.filter { $0.localRelativePaths.isDisjoint(with: retained) }
+        for attachment in abandoned {
+            attachmentService.remove(attachment)
+            ownedAttachmentImports.removeValue(forKey: attachment.id)
+        }
+        guard attachmentHistoryIsLoaded else { return }
         do {
             try attachmentService.removeUnreferenced(keeping: retained)
             attachmentCleanupNeeded = false
@@ -1226,9 +1242,20 @@ final class AppModel {
         conversations[c].updatedAt = Date()
     }
 
+    private func saveConversation(_ conversation: Conversation) async throws {
+        try await store.save(conversation)
+        let savedNames = conversation.messages.flatMap(\.attachments)
+            .reduce(into: Set<String>()) { $0.formUnion($1.localRelativePaths) }
+        // A saved branch may refer to either name of an owned image. Once durable,
+        // deletion belongs to a complete persisted-history snapshot, not rollback.
+        ownedAttachmentImports = ownedAttachmentImports.filter {
+            $0.value.localRelativePaths.isDisjoint(with: savedNames)
+        }
+    }
+
     private func persist(_ id: UUID) async throws {
         guard let conversation = conversations.first(where: { $0.id == id }) else { return }
-        try await store.save(conversation)
+        try await saveConversation(conversation)
     }
 }
 

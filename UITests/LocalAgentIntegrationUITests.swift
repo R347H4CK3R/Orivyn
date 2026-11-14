@@ -23,6 +23,8 @@ final class LocalAgentIntegrationUITests: XCTestCase {
         let saved = app.buttons.containing(.staticText, identifier: goal).firstMatch
         reveal(saved, in: app.collectionViews.firstMatch)
         saved.tap()
+        // Selection inserts Current task rows; the lazy form may reset to its top.
+        reveal(app.buttons["agent.run"], in: app.collectionViews.firstMatch)
         XCTAssertTrue(app.buttons["agent.run"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.staticTexts["agent.answer"].exists)
         XCTAssertTrue(app.staticTexts["agent.status"].label.contains("Resume is explicit"))
