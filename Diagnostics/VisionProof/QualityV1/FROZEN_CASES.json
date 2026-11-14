@@ -1,0 +1,252 @@
+{
+  "version": 1,
+  "status": "frozen before any model evaluation",
+  "width": 384,
+  "height": 384,
+  "rgbFormat": "top-to-bottom row-major packed RGB8, sRGB values, opaque white background",
+  "modelInput": "Only pixels plus the case question; never IDs, expected values, geometry or metadata.",
+  "cases": [
+    {
+      "id": "case01",
+      "category": "spatial",
+      "question": "Where is the blue circle relative to the orange square? Answer with one word: left, right, above, or below.",
+      "acceptedNormalizedAnswers": [
+        "left"
+      ],
+      "referenceDrawing": [
+        [
+          "circle",
+          96,
+          192
+        ],
+        [
+          "square",
+          288,
+          192
+        ]
+      ],
+      "pngSHA256": "f8f60a8bf701fbb1fab887285fdfb22b0807c9d7b09686b73b17d514f9cfbe98",
+      "rgbSHA256": "a7747e45a7ec97a95cfb02bcad4ddfd7277c8d22b2c45396f52c2443ed60089e"
+    },
+    {
+      "id": "case02",
+      "category": "spatial",
+      "question": "Where is the blue circle relative to the orange square? Answer with one word: left, right, above, or below.",
+      "acceptedNormalizedAnswers": [
+        "right"
+      ],
+      "referenceDrawing": [
+        [
+          "circle",
+          288,
+          192
+        ],
+        [
+          "square",
+          96,
+          192
+        ]
+      ],
+      "pngSHA256": "ee5d80aa0f20553c8126d532250f513fdd00fa67095e887b44a91dec711163fd",
+      "rgbSHA256": "41b273ed0e2df5d34bf7c5aecb1b04f4e1b82f84ef01a7167b507cc6e416fd94"
+    },
+    {
+      "id": "case03",
+      "category": "spatial",
+      "question": "Where is the blue circle relative to the orange square? Answer with one word: left, right, above, or below.",
+      "acceptedNormalizedAnswers": [
+        "above"
+      ],
+      "referenceDrawing": [
+        [
+          "circle",
+          192,
+          96
+        ],
+        [
+          "square",
+          192,
+          288
+        ]
+      ],
+      "pngSHA256": "3e3641ba0d315c8986635fb4a7a2e8fa476d31c5298584f2d1fe55992a64a636",
+      "rgbSHA256": "a610b3f017ecdce7bb6afdc81ae5062e1a4ac481ea41f55443c127d45c35b217"
+    },
+    {
+      "id": "case04",
+      "category": "spatial",
+      "question": "Where is the blue circle relative to the orange square? Answer with one word: left, right, above, or below.",
+      "acceptedNormalizedAnswers": [
+        "below"
+      ],
+      "referenceDrawing": [
+        [
+          "circle",
+          192,
+          288
+        ],
+        [
+          "square",
+          192,
+          96
+        ]
+      ],
+      "pngSHA256": "7e5cd2ff4cb1c9d7b62245d34a6587757686e7ed61c33acf0a725a03118930dd",
+      "rgbSHA256": "095e6fc19b8a28536216def1f623d5c3f4a7b738fae822a8768ce3b52cbbdbef"
+    },
+    {
+      "id": "case05",
+      "category": "count",
+      "question": "How many circles are visible? Return only the number.",
+      "acceptedNormalizedAnswers": [
+        "0",
+        "zero",
+        "none",
+        "no circles",
+        "0 circles",
+        "zero circles"
+      ],
+      "referenceDrawing": [
+        [
+          "square",
+          96,
+          96
+        ],
+        [
+          "square",
+          288,
+          96
+        ],
+        [
+          "square",
+          192,
+          288
+        ]
+      ],
+      "pngSHA256": "8a0b0317820a600691ae6d7c578d7e37057a5b404a09ece8a1a6b2b742913e44",
+      "rgbSHA256": "65e1fe416a16e7555d901aaddc14a981a6dabb73703dae18b10c84a7b3ab626a"
+    },
+    {
+      "id": "case06",
+      "category": "count",
+      "question": "How many circles are visible? Return only the number.",
+      "acceptedNormalizedAnswers": [
+        "1",
+        "one",
+        "1 circle",
+        "one circle"
+      ],
+      "referenceDrawing": [
+        [
+          "circle",
+          192,
+          96
+        ],
+        [
+          "square",
+          96,
+          288
+        ],
+        [
+          "square",
+          288,
+          288
+        ]
+      ],
+      "pngSHA256": "99a1682b68e20356a74d2d9a0ab9efdd51ff39e887d62fc4dade3385f77173cb",
+      "rgbSHA256": "4a01f0c17f90746a56ee97372c228b6ae76d1fe61007addbfaa1073848809427"
+    },
+    {
+      "id": "case07",
+      "category": "count",
+      "question": "How many circles are visible? Return only the number.",
+      "acceptedNormalizedAnswers": [
+        "2",
+        "two",
+        "2 circles",
+        "two circles"
+      ],
+      "referenceDrawing": [
+        [
+          "circle",
+          96,
+          96
+        ],
+        [
+          "circle",
+          288,
+          96
+        ],
+        [
+          "square",
+          192,
+          288
+        ]
+      ],
+      "pngSHA256": "19a5b5081ba24144574e88afcd64018a28d0eccc17a9885d3bf43bd9f86481e1",
+      "rgbSHA256": "23364317a6674cc30802b9d5d535cc473adf8b5847f153890a66c45f94a706b6"
+    },
+    {
+      "id": "case08",
+      "category": "count",
+      "question": "How many circles are visible? Return only the number.",
+      "acceptedNormalizedAnswers": [
+        "4",
+        "four",
+        "4 circles",
+        "four circles"
+      ],
+      "referenceDrawing": [
+        [
+          "circle",
+          96,
+          96
+        ],
+        [
+          "circle",
+          288,
+          96
+        ],
+        [
+          "circle",
+          96,
+          288
+        ],
+        [
+          "circle",
+          288,
+          288
+        ],
+        [
+          "square",
+          192,
+          192
+        ]
+      ],
+      "pngSHA256": "a063d21ea52109e05e9eee2e6df71d580ce245b26d3ef154a4217aa1cd1d480a",
+      "rgbSHA256": "9722e72cbcc84c577facf360cbaa3047c28140c00d4a675409da140854d55744"
+    },
+    {
+      "id": "case09",
+      "category": "text",
+      "question": "Transcribe all text in the image. Return only the text.",
+      "acceptedNormalizedAnswers": [
+        "maple 47"
+      ],
+      "referenceDrawing": "MAPLE 47",
+      "pngSHA256": "f0fdf041a417fd278b8dc71211388f6e0345111633973e8b94c3c35f05e76794",
+      "rgbSHA256": "655132665db9e033f0efa6941b4e00ae8592cc7eb9c78bc3a32a3f86492d7979"
+    },
+    {
+      "id": "case10",
+      "category": "text",
+      "question": "Transcribe all text in the image. Return only the text.",
+      "acceptedNormalizedAnswers": [
+        "cedar 82"
+      ],
+      "referenceDrawing": "CEDAR 82",
+      "pngSHA256": "0e5c0952a8d100392ec49f2e8ae060e40d32f06a6e550ad0358c6535ab12faae",
+      "rgbSHA256": "b0fb97b76cca7282c2916858e27b68f522d39e2cf9d7fc6f4d616bfa794807b0"
+    }
+  ]
+}
