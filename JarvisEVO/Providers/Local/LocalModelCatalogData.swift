@@ -171,7 +171,7 @@ extension LocalModelCatalog {
             purpose: "Reasoning",
             quantization: "Q8_0",
             recommendedRAMGB: 8,
-            notes: "May display thinking text and spend the short reply budget on reasoning. Experimental on iPhone.",
+            notes: "Optional native read suggestions with the combined runtime. Linux inference tested; iPhone memory and reliability remain unverified. May display thinking text in ordinary chat.",
             licenseURL: URL(string: "https://huggingface.co/Qwen/Qwen3-1.7B-GGUF/blob/90862c4b9d2787eaed51d12237eafdfe7c5f6077/LICENSE")
         ),
     ]

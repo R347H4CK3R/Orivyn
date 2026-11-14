@@ -1,0 +1,1917 @@
+[
+  {
+    "path": "Fixtures/maintained.img.gz",
+    "bytes": 28016087,
+    "sha256": "143c4dbd1d97e897724ab9f2afb6e6f81ab58a4264dca29e6073be65fdc3120f"
+  },
+  {
+    "path": "JarvisEVO/Assets.xcassets/AppIcon.appiconset/AppIcon.png",
+    "bytes": 552314,
+    "sha256": "5d7bb862db12575a7c103936716585cc16369c0488f58febe8881f7dac4b3538"
+  },
+  {
+    "path": "JarvisEVO/Assets.xcassets/AppIcon.appiconset/Contents.json",
+    "bytes": 203,
+    "sha256": "852920cb36e95beb53771138a4b8195a16fcce1cc31250632f246081cc638f9a"
+  },
+  {
+    "path": "JarvisEVO/Assets.xcassets/Contents.json",
+    "bytes": 60,
+    "sha256": "f5fb0e1f3a8142892ed092efb5955c1c2cc537003a89ad7bbdb9dade7fe8985f"
+  },
+  {
+    "path": "JarvisEVO/Core/AIProvider.swift",
+    "bytes": 729,
+    "sha256": "7f3b2d8d5185f6297c3c823dfc6cb7092d8e4f5797b08b75ffdb674f04969593"
+  },
+  {
+    "path": "JarvisEVO/Core/AppSelfKnowledge.swift",
+    "bytes": 2893,
+    "sha256": "1c29b9faa9e9bdabe67752981775d732ea93f273f9b8f9b6074294fd2e6627c6"
+  },
+  {
+    "path": "JarvisEVO/Core/AttachmentTextSearch.swift",
+    "bytes": 3583,
+    "sha256": "d108a3754882ba7538826dee3e15375a5e3657d0d7264476b05a68cd530d0d40"
+  },
+  {
+    "path": "JarvisEVO/Core/AutomaticModelRouter.swift",
+    "bytes": 8442,
+    "sha256": "f320774115269bf0ac96b69802c9bc16b98aadde6e859d7f770e067676d8db20"
+  },
+  {
+    "path": "JarvisEVO/Core/Conversation.swift",
+    "bytes": 8472,
+    "sha256": "bc67dc97a2701c47c419c263d11373331bba3f6238c5112cd9666b5902b5d23a"
+  },
+  {
+    "path": "JarvisEVO/Core/ConversationSearch.swift",
+    "bytes": 991,
+    "sha256": "777ad27a00fd365acd64a3bfb9bf1181a06a1375ee0b7542eb633738a55ecb84"
+  },
+  {
+    "path": "JarvisEVO/Core/ConversationTranscript.swift",
+    "bytes": 1910,
+    "sha256": "797b5a234a9cbbba477f99df8a91b8b7fd01b5e8e1e2576a3f501a7bca66d405"
+  },
+  {
+    "path": "JarvisEVO/Core/DeskPresentationState.swift",
+    "bytes": 1658,
+    "sha256": "7fda00757a0215d699057e22f09572b34f936e3c3129119ff4f15aaec60960b4"
+  },
+  {
+    "path": "JarvisEVO/Core/FeedbackDraft.swift",
+    "bytes": 2352,
+    "sha256": "516810d5aea2080c479f2639c5f5ae571d9000b07238df40b8647412f290774c"
+  },
+  {
+    "path": "JarvisEVO/Core/ImageOCRResult.swift",
+    "bytes": 2827,
+    "sha256": "382ea8ed084af0c7afb0ac03721bae8672294e3bf3d4e93917749dc1be735378"
+  },
+  {
+    "path": "JarvisEVO/Core/IncomingText.swift",
+    "bytes": 952,
+    "sha256": "2c049c329a99ba0bf3332ed338b57873a3ee5008c859c1b5aac4d5a3f4889a01"
+  },
+  {
+    "path": "JarvisEVO/Core/IncomingTextRequest.swift",
+    "bytes": 2731,
+    "sha256": "2de22c6d58a6c4ec05c8ee754db7d1f84d9244ef781444849be06f30e96740ab"
+  },
+  {
+    "path": "JarvisEVO/Core/LocalAgentError.swift",
+    "bytes": 876,
+    "sha256": "e22f6fa006befe2563b4f1b86a9664d2d9ccc8bdb48b1886e8e69a0108babb6c"
+  },
+  {
+    "path": "JarvisEVO/Core/LocalAgentGrammar.swift",
+    "bytes": 758,
+    "sha256": "3a9da5cd0673dc74e5b0ae07bab58869db39a0459239a05525fa73e22f5499b1"
+  },
+  {
+    "path": "JarvisEVO/Core/LocalAgentSnapshot.swift",
+    "bytes": 929,
+    "sha256": "82c27c37fbdbc773d868783bf3ff79452af1a66435cef6ad73e7b9a6d5ccfcce"
+  },
+  {
+    "path": "JarvisEVO/Core/LocalCalculationEvidence.swift",
+    "bytes": 1393,
+    "sha256": "46baacf28f2ebab9651ace94c49285d2eaa2203987c4437f2cb37eed2c088a0f"
+  },
+  {
+    "path": "JarvisEVO/Core/LocalCalculator.swift",
+    "bytes": 6225,
+    "sha256": "3474bef00ec5ecbd10e7d08c27aaa266027edacdc12c18bfe8d9f3ce39d03290"
+  },
+  {
+    "path": "JarvisEVO/Core/LocalCalculatorRequest.swift",
+    "bytes": 2491,
+    "sha256": "9133d8ba904b218106613078e244097af66063dcd647d5e62d4bb35fb95f2e44"
+  },
+  {
+    "path": "JarvisEVO/Core/LocalCalculatorTool.swift",
+    "bytes": 1407,
+    "sha256": "cbd979fc05d0f22250e53ec5d55efb36a597363e3ecc34357775e64f26c5a23e"
+  },
+  {
+    "path": "JarvisEVO/Core/LocalConversationSearch.swift",
+    "bytes": 3171,
+    "sha256": "ad260faa61de25b26d0364e48ec65118f02ab4b8f94a035a2f3f1d14f3c41224"
+  },
+  {
+    "path": "JarvisEVO/Core/LocalHeavyWork.swift",
+    "bytes": 1023,
+    "sha256": "22f57f9fa80ce2ff220528bf8d75416049bd6da2dc843a71d95b8cde93efd677"
+  },
+  {
+    "path": "JarvisEVO/Core/LocalModelInstallationPlan.swift",
+    "bytes": 1141,
+    "sha256": "e521ba116dd431c888e0482d5a0e5471691007adb64b2d51aa630195531d1290"
+  },
+  {
+    "path": "JarvisEVO/Core/LocalModelRemovalPlan.swift",
+    "bytes": 1702,
+    "sha256": "dccd565297922fd8cd37f28ff1af9249474240d68e77a8e5464eab5d2d7bd719"
+  },
+  {
+    "path": "JarvisEVO/Core/LocalReminder.swift",
+    "bytes": 4315,
+    "sha256": "63b7c8c39405b74d96bc09c0d52a785dd478938870cf7fea597dff7df516825b"
+  },
+  {
+    "path": "JarvisEVO/Core/LocalSearchExcerpt.swift",
+    "bytes": 2153,
+    "sha256": "80411efefffc420769b65b3c9b090f15d1e26d5b59774547602b1fd756d38501"
+  },
+  {
+    "path": "JarvisEVO/Core/LocalToolResultBudget.swift",
+    "bytes": 1340,
+    "sha256": "9b1c1acd9f9ea706b2a961768f7f359b889f8ddcd5cb570435d68b0accd1ddbf"
+  },
+  {
+    "path": "JarvisEVO/Core/LocationSnapshot.swift",
+    "bytes": 1224,
+    "sha256": "527452f20e1d9e23f0771efcf94d107602d970165b7d5b7717efe8f3befbea37"
+  },
+  {
+    "path": "JarvisEVO/Core/MCPToolSchema.swift",
+    "bytes": 8972,
+    "sha256": "c533a3c9f38f850c272686fccca11801f593c8aaf6270e7866112de159b2c806"
+  },
+  {
+    "path": "JarvisEVO/Core/MCPTypes.swift",
+    "bytes": 14897,
+    "sha256": "675f5301eafd51bc447d568e3b46c494fb4a4824d13700ed30b33c2bd3b2e0a3"
+  },
+  {
+    "path": "JarvisEVO/Core/MarkdownDocument.swift",
+    "bytes": 27557,
+    "sha256": "3c62b0520da8e956a50a437e028865f21fc9b980903811e192d543ca52f58e4b"
+  },
+  {
+    "path": "JarvisEVO/Core/MemoryContextBuilder.swift",
+    "bytes": 6658,
+    "sha256": "1aefd5f6c2db5bcaebd8804b330d4c4a9178b2c677435399533cb5a0be17f86c"
+  },
+  {
+    "path": "JarvisEVO/Core/MemoryNote.swift",
+    "bytes": 168,
+    "sha256": "cccceaa84d497af02f1d466968300a7281f354b4b5e1a1ae913b403023f8967f"
+  },
+  {
+    "path": "JarvisEVO/Core/MemorySearch.swift",
+    "bytes": 769,
+    "sha256": "4d420618f01eee110a9669689f97fe72107c46d28de8e89a03003c113cb1d5f4"
+  },
+  {
+    "path": "JarvisEVO/Core/NativeReadProposal.swift",
+    "bytes": 2011,
+    "sha256": "4dcf2c6d7b536f6ec86b50b247d735cf9ceb965013a6fcc2b7fff65dcf2ea72d"
+  },
+  {
+    "path": "JarvisEVO/Core/NativeToolDrafts.swift",
+    "bytes": 5085,
+    "sha256": "08423ecee3657178f130cb6ce5f7752df086140d4c1cd7ccf716d7f02d068117"
+  },
+  {
+    "path": "JarvisEVO/Core/NativeToolSuggestion.swift",
+    "bytes": 2135,
+    "sha256": "d410a373e6be31f092494817df5506bbe51280a2bba3396b0df66a3e5c7d0e19"
+  },
+  {
+    "path": "JarvisEVO/Core/OCRLineEvidence.swift",
+    "bytes": 1014,
+    "sha256": "100c0bc3a78fc20139be459bc17880dc4e07dd2978c75dcc0baf83a08b7b1502"
+  },
+  {
+    "path": "JarvisEVO/Core/PeerSyncControlFrame.swift",
+    "bytes": 3975,
+    "sha256": "b8359301a74373afe662a8d45b720010a1478c1228fca45739dde3b00e553190"
+  },
+  {
+    "path": "JarvisEVO/Core/PluginConnectionRemoval.swift",
+    "bytes": 1268,
+    "sha256": "5886c11a0bc388f902581d43e2f27b7dcbad67e5ae43f707a1fcdaad9dbfcb56"
+  },
+  {
+    "path": "JarvisEVO/Core/PluginExecution.swift",
+    "bytes": 3822,
+    "sha256": "fdb380c06cee2cfbbfd375b115d2466453107ce817c79c6d2439eec57d33e944"
+  },
+  {
+    "path": "JarvisEVO/Core/ProviderError.swift",
+    "bytes": 858,
+    "sha256": "249b122f068857626c9ce9bb75adf0964f015fa1d85aff937f5f5f87351f6e88"
+  },
+  {
+    "path": "JarvisEVO/Core/RemoteCredentialIntent.swift",
+    "bytes": 2492,
+    "sha256": "44fd091c06c0fb14fa4698276009db4ee059f444816107cb574f558bdc46039a"
+  },
+  {
+    "path": "JarvisEVO/Core/RepositoryInspection.swift",
+    "bytes": 13897,
+    "sha256": "ee030504a41485b6c2a26540c252ec809003d403e72b34b94dfb5c9d1facfd13"
+  },
+  {
+    "path": "JarvisEVO/Core/RepositorySourceDiagnostics.swift",
+    "bytes": 1502,
+    "sha256": "c3b370abd4d833620895dc823cdc72c133de0564504c8a6953971d6b7938f12d"
+  },
+  {
+    "path": "JarvisEVO/Core/RuntimeDiagnostics.swift",
+    "bytes": 1119,
+    "sha256": "9b9e5286740109c63a0ecdfc5d1631312bab01e0f40f9b56d685c2600ef287bd"
+  },
+  {
+    "path": "JarvisEVO/Core/SourceRepairReviewBinding.swift",
+    "bytes": 699,
+    "sha256": "ee00621aaec629a5349f38eb01bb027c06ee94fb2dfb52730a2b3ded61008857"
+  },
+  {
+    "path": "JarvisEVO/Core/VirtualDesktopSession.swift",
+    "bytes": 2746,
+    "sha256": "2b59455407055cd99091522b64886425948b1707988bd9b0993ba7e981151368"
+  },
+  {
+    "path": "JarvisEVO/Core/VisionImageFile.swift",
+    "bytes": 1487,
+    "sha256": "c01e5fbc1adf1940caeb11e64c77a94b167e4174b5543ec2a70683570ba95393"
+  },
+  {
+    "path": "JarvisEVO/Core/VisionModelPair.swift",
+    "bytes": 3249,
+    "sha256": "aa66cec5ea3fc90557dec6cdbc89855181d688fd285f12d447ee4f2df6083db6"
+  },
+  {
+    "path": "JarvisEVO/Core/VisionPixelBoundary.swift",
+    "bytes": 1274,
+    "sha256": "264c9e5e37310085e4f957c3ce47ef87164f3cf49b562b03bebac5c0d0aa7bf9"
+  },
+  {
+    "path": "JarvisEVO/Core/VisionSession.swift",
+    "bytes": 4985,
+    "sha256": "c15f206e2c9e60ae3ec5401d76a3de06845179797442e61c36ab1770fff4eb88"
+  },
+  {
+    "path": "JarvisEVO/Core/VoiceError.swift",
+    "bytes": 941,
+    "sha256": "9609c6c84a8722094a9ff6d2d7a75cd030c71bd15b082b95c0f42ddbe7788177"
+  },
+  {
+    "path": "JarvisEVO/Core/WorkspaceStore.swift",
+    "bytes": 6972,
+    "sha256": "55ccc3b6cbeb77435e7be9f74026f924139c7bbce996a35f52ee7de380f715f5"
+  },
+  {
+    "path": "JarvisEVO/Info.plist",
+    "bytes": 2317,
+    "sha256": "3a0dc41bfeb688306b59c86d8b95119b26c8e35ff38f9acac1fe8e5212ad2d0e"
+  },
+  {
+    "path": "JarvisEVO/Persistence/SQLiteConversationStore.swift",
+    "bytes": 26178,
+    "sha256": "2209834fcef3f9cdb206f4266afcf654cfa7f580f4e9a4d47b7e71644bfbdeb6"
+  },
+  {
+    "path": "JarvisEVO/Providers/Local/LlamaEngine.swift",
+    "bytes": 17415,
+    "sha256": "43b14fd8646505a6cc6e980a6e6d2dbc3c4bf8ca7c026db756c7272b1bdfb30b"
+  },
+  {
+    "path": "JarvisEVO/Providers/Local/LocalAIProvider.swift",
+    "bytes": 2308,
+    "sha256": "e344db7a4da44eca03d645fb01f8efc264d64bb0a2e5bf41120748c6ac6fc8bc"
+  },
+  {
+    "path": "JarvisEVO/Providers/Local/LocalModelCatalog.swift",
+    "bytes": 5168,
+    "sha256": "f477721b542ace6424f896bfe5687b4681377e8091f815df8fd0fe611e9f7993"
+  },
+  {
+    "path": "JarvisEVO/Providers/Local/LocalModelCatalogData.swift",
+    "bytes": 11027,
+    "sha256": "4ce3479843ba9f42e9dc5e905f4fed9bfe384d86974ede722327678f935e1d07"
+  },
+  {
+    "path": "JarvisEVO/Providers/Local/LocalModelStore.swift",
+    "bytes": 11236,
+    "sha256": "410d70c5083d4d9299c2f2b402d46f365619f4f21a691b7196db399d365bbf0c"
+  },
+  {
+    "path": "JarvisEVO/Providers/Local/LocalPromptBuilder.swift",
+    "bytes": 5826,
+    "sha256": "484e23246f28967e453465ff044047fce26bdd92cc46ea5a73c8c2bfeaa9626c"
+  },
+  {
+    "path": "JarvisEVO/Providers/Local/ModelInstallTransaction.swift",
+    "bytes": 9050,
+    "sha256": "1fb15564a51a4afa968805ade502f87c8275601e949a1da917d57b0765875762"
+  },
+  {
+    "path": "JarvisEVO/Providers/Local/UTF8TokenAccumulator.swift",
+    "bytes": 2405,
+    "sha256": "1e0ddc65e05a0e1a80ebab06c6bd05a585f93a2cc9b0ed7c8e19d2adbf6cb00c"
+  },
+  {
+    "path": "JarvisEVO/Providers/OpenAICompatibleProvider.swift",
+    "bytes": 4337,
+    "sha256": "ab80a2928fcad713167ad1df9634a21d44ac6f4208d1473910f9c25890f2ce03"
+  },
+  {
+    "path": "JarvisEVO/Providers/RemoteStreamDecoding.swift",
+    "bytes": 7490,
+    "sha256": "5dedc2c2cafeab83bdc4d87ff9cf5ba3bc8530bfa0ad183978deea5e855597e0"
+  },
+  {
+    "path": "JarvisEVO/Providers/SystemModelProvider.swift",
+    "bytes": 2838,
+    "sha256": "34066409d4fcbf96d730d1c599afe174936ede966da68cfad8fddb7b87423353"
+  },
+  {
+    "path": "JarvisEVO/Resources/KaTeX-0.19.1-LICENSE.txt",
+    "bytes": 1107,
+    "sha256": "766ccc1f306c885aa45542a9846bbd0a505b27a0374f146778171c2254ce18e3"
+  },
+  {
+    "path": "JarvisEVO/Resources/LocalAgentCore.js",
+    "bytes": 11794,
+    "sha256": "40fd2f8da96dcd1370f3b6116f28160ec459336b7035ee92d6550129cb67260a"
+  },
+  {
+    "path": "JarvisEVO/Resources/LocalAgentDecision.gbnf",
+    "bytes": 1255,
+    "sha256": "0709195882097c6c1e9585a61008d0f2305032029ee979aa56caf569df3371c3"
+  },
+  {
+    "path": "JarvisEVO/Resources/LocalReadRequestRouter.js",
+    "bytes": 4615,
+    "sha256": "ccdc99bd2d54d627ef0e87784686c36ec9579f9db86226a4d0967830b655a783"
+  },
+  {
+    "path": "JarvisEVO/Resources/OrivynCapabilities.json",
+    "bytes": 3807,
+    "sha256": "38a09c660f81c9f2ca743ed3c2e6701a8629178b0854439571c4946ed26870c3"
+  },
+  {
+    "path": "JarvisEVO/Resources/SourceRepairDraft.js",
+    "bytes": 5505,
+    "sha256": "6435463fae20ee209e00eb58c7c006dcaee947c8603237af975838b92d38013a"
+  },
+  {
+    "path": "JarvisEVO/Resources/VMAssets/boot.js",
+    "bytes": 2294,
+    "sha256": "ef06dac611f5b26ec55b2f9158ac5b933299dfab3bf012f2530704565fa2163c"
+  },
+  {
+    "path": "JarvisEVO/Resources/VMAssets/checkpoint.js",
+    "bytes": 3298,
+    "sha256": "ce8dc3c1b8db165ebbdeb720f88da400e1b8ad719c88269ed24deee16a1fc0c7"
+  },
+  {
+    "path": "JarvisEVO/Resources/VMAssets/controller.js",
+    "bytes": 4376,
+    "sha256": "00435cff0ba38d865a7fe6e05d4495d2734d5e9c6757b5232b486e4cb064a540"
+  },
+  {
+    "path": "JarvisEVO/Resources/VMAssets/guest-console.js",
+    "bytes": 432,
+    "sha256": "88e3757c3c259a18f16862393bf41a33d2e0bd79c9ce9fe226fdaa36270d80f0"
+  },
+  {
+    "path": "JarvisEVO/Resources/VMAssets/guest-profile.js",
+    "bytes": 448,
+    "sha256": "c07eaf7565b9ec61b2e109133ae8be311ba677d41953e055526c7d9e5705ecc5"
+  },
+  {
+    "path": "JarvisEVO/Resources/VMAssets/index.html",
+    "bytes": 974,
+    "sha256": "ad139fe4513dc788958d0c7b5262778b9cba0775e6d00fb32add9eb474a5b3ad"
+  },
+  {
+    "path": "JarvisEVO/Resources/VMAssets/libv86.js",
+    "bytes": 359857,
+    "sha256": "e257912c4a1129e36a86c1e2df69904ab969d87bffd24aa6676e84d6ddffc1c6"
+  },
+  {
+    "path": "JarvisEVO/Resources/VMAssets/maintained.img",
+    "bytes": 135266304,
+    "sha256": "78418639ecd90573da211b62a502334f569f029b913525f50601b09d928b244d"
+  },
+  {
+    "path": "JarvisEVO/Resources/VMAssets/scheduler-policy.js",
+    "bytes": 265,
+    "sha256": "c67d77a5bf691de5323f7174a92ff4cc89fee944c39fe998060f931c6a33fdd7"
+  },
+  {
+    "path": "JarvisEVO/Resources/VMAssets/seabios.bin",
+    "bytes": 131072,
+    "sha256": "6b9910698c428a4e3af852a112e773556693ad0cd5699eb32458dfe6033bafde"
+  },
+  {
+    "path": "JarvisEVO/Resources/VMAssets/style.css",
+    "bytes": 216,
+    "sha256": "91879ad79b2a55b713ed9c576326a6fba2ca20448cfbf67069ee62e548491912"
+  },
+  {
+    "path": "JarvisEVO/Resources/VMAssets/v86-fallback.wasm",
+    "bytes": 2040034,
+    "sha256": "4eb64c9b7908d5931c1868eea4824b3a0a628eb86e6eac09d133776b50922d81"
+  },
+  {
+    "path": "JarvisEVO/Resources/VMAssets/v86.wasm",
+    "bytes": 2007347,
+    "sha256": "2f0c4150f266415b754a84a32e6f8e4c975a1d3abb94c78b047fa30027db1ef1"
+  },
+  {
+    "path": "JarvisEVO/Resources/VMAssets/vgabios.bin",
+    "bytes": 36352,
+    "sha256": "84f1f09a4e7ce66bb203f7f569af6f1068bfb1c6fe1ff4ea35713a3cd241f4df"
+  },
+  {
+    "path": "JarvisEVO/Resources/VMAssets/wasm-loader.js",
+    "bytes": 672,
+    "sha256": "94eea76c2b4c8bbd4d2d905b6d418f38632fa0f32d0a4d764f34f80ddf34dc75"
+  },
+  {
+    "path": "JarvisEVO/Resources/VerifiedLocalPlan.js",
+    "bytes": 11866,
+    "sha256": "f69812672780fb9e4e76c8eec57e94a41f3cc53dc608e376af7fdf10c5b348c7"
+  },
+  {
+    "path": "JarvisEVO/Resources/VisionModel-LICENSE.txt",
+    "bytes": 11358,
+    "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+  },
+  {
+    "path": "JarvisEVO/Resources/katex-0.19.1.min.js",
+    "bytes": 273081,
+    "sha256": "fa140498b8cfc8302cbe5e7cb1bdbc1f952bc38b3fa258ede09e73edbf9a74bc"
+  },
+  {
+    "path": "JarvisEVO/Resources/llama.cpp-LICENSE.txt",
+    "bytes": 1078,
+    "sha256": "94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d"
+  },
+  {
+    "path": "JarvisEVO/Services/AttachmentFileCopy.swift",
+    "bytes": 3313,
+    "sha256": "1eb9b897ae811bb2419fd59b61f84c811c842efdf0d7f9fa71f9c052e99dba17"
+  },
+  {
+    "path": "JarvisEVO/Services/AttachmentService.swift",
+    "bytes": 7464,
+    "sha256": "b66cd91de90f0bf99ed98c4a27d2e925793de90ed181dd8b44977887f00c1bae"
+  },
+  {
+    "path": "JarvisEVO/Services/AutomaticModelPreparation.swift",
+    "bytes": 2911,
+    "sha256": "7fe7f3265a862dd2fd0852ed95a5139fc45ebc367beac07e06fc37fbc94bb191"
+  },
+  {
+    "path": "JarvisEVO/Services/BackupFileReader.swift",
+    "bytes": 3520,
+    "sha256": "b8c5030d473731ae2d503831eaa0258e4274541456c3dd7c0b8cf0d8044e1f60"
+  },
+  {
+    "path": "JarvisEVO/Services/ExternalWorkspaceController.swift",
+    "bytes": 2141,
+    "sha256": "1d642166b1082d555df4c393bf7eee99e45342b8c8d7de8ac50cc40ee232763d"
+  },
+  {
+    "path": "JarvisEVO/Services/GeneratedImageStaging.swift",
+    "bytes": 6267,
+    "sha256": "6b8954dfd35aa2e7b68ac40658b240589bdc76a5288fd2942edfc8c46626d384"
+  },
+  {
+    "path": "JarvisEVO/Services/ImageAttachmentService.swift",
+    "bytes": 24384,
+    "sha256": "5bdd4a11582f223c37476ac12ceb82b73dbc79e8f9d1413bdf22841ca22a9507"
+  },
+  {
+    "path": "JarvisEVO/Services/KeychainService.swift",
+    "bytes": 2426,
+    "sha256": "173ee86bbcd4ed35cc20bc385b57665012313112b5f445aed7a53c32f546f98e"
+  },
+  {
+    "path": "JarvisEVO/Services/LocalAgentCore.swift",
+    "bytes": 1911,
+    "sha256": "32c67351964278d7ea21b12cbadbc546c1a8ba1810eec223e2185bb013abcb66"
+  },
+  {
+    "path": "JarvisEVO/Services/LocalAgentSession.swift",
+    "bytes": 9721,
+    "sha256": "e0f6a1d482c60400bfabd9516446c7f77e62856117a120853ae1cc3318c8672a"
+  },
+  {
+    "path": "JarvisEVO/Services/LocalAgentStore.swift",
+    "bytes": 6541,
+    "sha256": "4486efa13ea4562403b625687517cc21aa1568c82d47151f6bd025708f24d4fd"
+  },
+  {
+    "path": "JarvisEVO/Services/LocalReadTools.swift",
+    "bytes": 5167,
+    "sha256": "1171984551005d9aa28c980d1018befdf607b9c29877f011ca5b44bac743d748"
+  },
+  {
+    "path": "JarvisEVO/Services/MCPHTTPClient.swift",
+    "bytes": 27049,
+    "sha256": "8047ce5ec74615542940140d96fa8c98115f12b150049da6c39b46279646818f"
+  },
+  {
+    "path": "JarvisEVO/Services/NetworkStatus.swift",
+    "bytes": 1463,
+    "sha256": "1017e18137bffce3aaf3372dc5c8c2efa53e3633d7c89f09ebd0dae51fcc8ab8"
+  },
+  {
+    "path": "JarvisEVO/Services/OneShotLocationService.swift",
+    "bytes": 4878,
+    "sha256": "2797ffbc73a19646a0d728360ad34f6faaf437038365ded869cf2ccd02c6f462"
+  },
+  {
+    "path": "JarvisEVO/Services/OrivynIntents.swift",
+    "bytes": 1354,
+    "sha256": "10a374092f79b692b0fdab4140d595834ae6f7629fb2877b6404ceefba3637a0"
+  },
+  {
+    "path": "JarvisEVO/Services/PDFTextExtractor.swift",
+    "bytes": 6134,
+    "sha256": "80a6a87235a211e7ae71ff6dbb0d2f09b58aa10bb825637d269cf732019385f3"
+  },
+  {
+    "path": "JarvisEVO/Services/PeerTLSProbe.swift",
+    "bytes": 12428,
+    "sha256": "9a0b808b84255a30aa434b4bdbb60b2a6fcd261ee3721a813f6fbd6f67b858c6"
+  },
+  {
+    "path": "JarvisEVO/Services/PluginBroker.swift",
+    "bytes": 11066,
+    "sha256": "7a5e387d8161dc19d293ddfadc421627f0dc59c16d8bf3174fc7302592ac9a17"
+  },
+  {
+    "path": "JarvisEVO/Services/PluginCredentialStore.swift",
+    "bytes": 1961,
+    "sha256": "e9504ee5ef42f5dc0056b12dd217ddd6aa4c518e08156edf60491e2c9599c948"
+  },
+  {
+    "path": "JarvisEVO/Services/PluginPersistence.swift",
+    "bytes": 3823,
+    "sha256": "df6ad482f4dd6d37344839bcbf97780f54b46831143aa9bc89d423ebf2899719"
+  },
+  {
+    "path": "JarvisEVO/Services/ReminderScheduler.swift",
+    "bytes": 11006,
+    "sha256": "f66e20d06868dfd3350bc22f60fac2815d38952b66bc77d1ef663e07475a76b5"
+  },
+  {
+    "path": "JarvisEVO/Services/SourceRepairDraftCore.swift",
+    "bytes": 2808,
+    "sha256": "93551e06fa4a210c0bd5906274d88172fc0cc918b33d1460b75027ddf74162b4"
+  },
+  {
+    "path": "JarvisEVO/Services/VerifiedLocalPlanCore.swift",
+    "bytes": 3349,
+    "sha256": "5e0f138aef94683f311ef9125d65e98c83165492e846fbc4b49d0462ef49c73b"
+  },
+  {
+    "path": "JarvisEVO/Services/VerifiedLocalReadSession.swift",
+    "bytes": 8315,
+    "sha256": "fa40260e90a217b7adbf5bb27e3713a4cfb94f2a2fcbb051d5372e654763bd6f"
+  },
+  {
+    "path": "JarvisEVO/Services/VirtualDesktop/AssetCatalog.swift",
+    "bytes": 2453,
+    "sha256": "6aebb33af1e26a4af90971994bd2150ca231dd8deb3adb95b6df6656d8900d04"
+  },
+  {
+    "path": "JarvisEVO/Services/VirtualDesktop/AssetPolicy.swift",
+    "bytes": 5451,
+    "sha256": "28589156d2343cb4a264ad700585d886678649eff8601d2c6e448303b0db9616"
+  },
+  {
+    "path": "JarvisEVO/Services/VirtualDesktop/VMCheckpointBridge.swift",
+    "bytes": 9520,
+    "sha256": "6449aa363f5ca58ca684a579c195ab739975187aea3d315052421917dd3394be"
+  },
+  {
+    "path": "JarvisEVO/Services/VirtualDesktop/VMCheckpointStore.swift",
+    "bytes": 18178,
+    "sha256": "7b74e81a246c55921a21281f207e4ca1a0f3faaf37a8811cdad2fc08f4492516"
+  },
+  {
+    "path": "JarvisEVO/Services/VirtualDesktop/VMHarness.swift",
+    "bytes": 18082,
+    "sha256": "dd1d77cc91ceb43aa376de2ada8d4b88aecfaa343ec2ca2c688c5ed88be70a52"
+  },
+  {
+    "path": "JarvisEVO/Services/VirtualDesktop/VMTeardownCoordinator.swift",
+    "bytes": 979,
+    "sha256": "bd5170df7886e8f34a13ddfb5b7ab6a9e738390e33503a7abd61f79af0cfb604"
+  },
+  {
+    "path": "JarvisEVO/Services/Vision/ImageBoundary.swift",
+    "bytes": 3111,
+    "sha256": "0e707e0d8c16b7f7ea85b2e495097291eb910b85bd582dc28c87381f4c993700"
+  },
+  {
+    "path": "JarvisEVO/Services/Vision/NativeVisionRuntime.swift",
+    "bytes": 2213,
+    "sha256": "67ea7a856d83928fa61d3ae718ec22257317fe15572e6baf7cb941c3da4407f2"
+  },
+  {
+    "path": "JarvisEVO/Services/Vision/VisionModelStorage.swift",
+    "bytes": 1795,
+    "sha256": "e4c39d0c4f616667a43ec6e14a0b8a5e483a676cc85d8470958249e29ac11478"
+  },
+  {
+    "path": "JarvisEVO/Services/Vision/VisionWorker.swift",
+    "bytes": 4894,
+    "sha256": "7b68da735a51f3b2a9c599ebe17917deba1b99fd672c2d094a82a02131acdf64"
+  },
+  {
+    "path": "JarvisEVO/Services/VisionLeaseOwner.swift",
+    "bytes": 200,
+    "sha256": "7152658010c52daf4fb2498c3b81d6a8511a91e165fd0d7e8f5e0838dd9d3ebc"
+  },
+  {
+    "path": "JarvisEVO/Services/VoiceConversationController.swift",
+    "bytes": 11211,
+    "sha256": "ba494d198933ccdaefdc756a1cc5ee094e29c15f0196ffd5daff31d6c0808821"
+  },
+  {
+    "path": "JarvisEVO/Services/VoiceService.swift",
+    "bytes": 17551,
+    "sha256": "47f4562cc1dbd3c4f85efdc57186eeaa38c15433a9a3b2722034d7475953fce0"
+  },
+  {
+    "path": "JarvisEVO/UI/AppModel.swift",
+    "bytes": 68553,
+    "sha256": "639cb9d9fb27d54f955f10abe6e69f0a028b1e5550168651cac9b23db72e8acd"
+  },
+  {
+    "path": "JarvisEVO/UI/AttachmentTextSearchView.swift",
+    "bytes": 3069,
+    "sha256": "162b8ac91a950a38ce71cd0ed5a1be722e1e6c5b972f8a34a09c3a5406b7d65e"
+  },
+  {
+    "path": "JarvisEVO/UI/AttachmentViews.swift",
+    "bytes": 13090,
+    "sha256": "6b76011477428bdd2ed576e752236264d6d88c5ada51e5b611028e0e8ee3e0f1"
+  },
+  {
+    "path": "JarvisEVO/UI/BrowserToolView.swift",
+    "bytes": 4269,
+    "sha256": "344ab2984526d8c141694d423c6a89ab550c3838dbed95bb64f22e0104ace680"
+  },
+  {
+    "path": "JarvisEVO/UI/CalculatorView.swift",
+    "bytes": 2559,
+    "sha256": "4813d34605a41408990bfcaed08e73da50dc8141e56714db9ba2f7eb3779e277"
+  },
+  {
+    "path": "JarvisEVO/UI/CalendarDraftView.swift",
+    "bytes": 5800,
+    "sha256": "ff214bb3e968d746083b82e82bd091264af8777b2502edc8f1a41afc66899fcd"
+  },
+  {
+    "path": "JarvisEVO/UI/DeskWorkspaceView.swift",
+    "bytes": 8490,
+    "sha256": "e60b997779e1f1d96a113191c3ac4c73f261d80f74592969aa52de05cc3dd683"
+  },
+  {
+    "path": "JarvisEVO/UI/HistoryView.swift",
+    "bytes": 12157,
+    "sha256": "7e53d6afde279133bb9449f4b94ddc79c083ee1022e975f1a4da3bb2c81f48f7"
+  },
+  {
+    "path": "JarvisEVO/UI/ImageCreationView.swift",
+    "bytes": 6153,
+    "sha256": "b63e83f0cb006f776d8d21b3665a0acdfcd165d012751f510cf9fbc4f637b88b"
+  },
+  {
+    "path": "JarvisEVO/UI/IncomingTextView.swift",
+    "bytes": 4540,
+    "sha256": "062447a3fd3b6259f2e8c4ef64af6f418a051218dc3018cc811dcd094367f563"
+  },
+  {
+    "path": "JarvisEVO/UI/JarvisEVOApp.swift",
+    "bytes": 5102,
+    "sha256": "966af151bdcfb434ebfa87b97346d7400a841e8bb6b1f7a1f1e5e7d70ee5c2b1"
+  },
+  {
+    "path": "JarvisEVO/UI/LocalAgentView.swift",
+    "bytes": 7491,
+    "sha256": "a3d05bd841ea17013d63ed8dd7cfed3e37b77dec75970ae364b4cb1b385043ad"
+  },
+  {
+    "path": "JarvisEVO/UI/LocationToolView.swift",
+    "bytes": 3061,
+    "sha256": "68f395bc5496c7a640c92111c83d3154a9434755ae1585907f1f479cd0fa38d3"
+  },
+  {
+    "path": "JarvisEVO/UI/MailDraftView.swift",
+    "bytes": 6373,
+    "sha256": "3b56cfa823c537e5e03eba93477f2d44131967510d0784ad4e2b8cc851646684"
+  },
+  {
+    "path": "JarvisEVO/UI/MessageRow.swift",
+    "bytes": 7021,
+    "sha256": "a94aa0a70ec14d7c1e49ab55c8d4f0f89d439aedeb91812b516688cee205a5cf"
+  },
+  {
+    "path": "JarvisEVO/UI/ModelManagerView.swift",
+    "bytes": 12845,
+    "sha256": "86bc1591410b2a30dc0e196da54b26e1e861ec063e88195efa0c2a5654947736"
+  },
+  {
+    "path": "JarvisEVO/UI/PluginConnectionsView.swift",
+    "bytes": 13610,
+    "sha256": "8a241cc439d27280aa802f7f553e3a1fdfcf51e00f6554489fd036286e96efb9"
+  },
+  {
+    "path": "JarvisEVO/UI/RepositoryInspectionView.swift",
+    "bytes": 6911,
+    "sha256": "90e63f9120115e5eb5d9b51650882c88256be8b58906d21aa65fa03c02901d99"
+  },
+  {
+    "path": "JarvisEVO/UI/RichMessageContent.swift",
+    "bytes": 24827,
+    "sha256": "63dc7e13711b72a9aa8a0b4d34ae7b815f68ec21cdbd30bbd7195a67f3ddbdab"
+  },
+  {
+    "path": "JarvisEVO/UI/RootView.swift",
+    "bytes": 39894,
+    "sha256": "b686b755c4bec39e1a945b791e852ea16299792fd41c42a7e1e51f28a297128e"
+  },
+  {
+    "path": "JarvisEVO/UI/RootViewRegressionFixtures.swift",
+    "bytes": 11910,
+    "sha256": "875e13737910fff7473d40db28eaa42418fecc39c323aa1def00dfea65dc7039"
+  },
+  {
+    "path": "JarvisEVO/UI/RuntimeDiagnosticsView.swift",
+    "bytes": 3214,
+    "sha256": "af3f172879a235566ced5649f7e0b86a93be3915789f1a6e583eb9c6724e336a"
+  },
+  {
+    "path": "JarvisEVO/UI/ScheduledRemindersView.swift",
+    "bytes": 6985,
+    "sha256": "5d3c072747aa7e0fe59dcb2eb88437b9300961856c9a0777c4a7e8bf610e2ac3"
+  },
+  {
+    "path": "JarvisEVO/UI/SettingsView.swift",
+    "bytes": 18089,
+    "sha256": "0491e93804e3602a46e0b1a91c4a8fa55ce962ae057acf062a2697cd14312f74"
+  },
+  {
+    "path": "JarvisEVO/UI/SourceRepairDraftView.swift",
+    "bytes": 5748,
+    "sha256": "f99f751e6c367cb25a5cb48bfaf03bb2b1fe8ce4e8890f2afacca99bbf5674fa"
+  },
+  {
+    "path": "JarvisEVO/UI/SuggestionView.swift",
+    "bytes": 2853,
+    "sha256": "a5746cd863ed22c0b7e3edd28388adb694d1c368f8698bd83cc00ecfc9f83aa8"
+  },
+  {
+    "path": "JarvisEVO/UI/VerifiedLocalReadView.swift",
+    "bytes": 9197,
+    "sha256": "27455311042651fff722e925e7b97207180b74e52cdeba67828629eb4fccca5c"
+  },
+  {
+    "path": "JarvisEVO/UI/VirtualDesktopView.swift",
+    "bytes": 7283,
+    "sha256": "76bdccec253d18c3385c236cf34544fc08852f4392f93a398da5ea51ed31aa74"
+  },
+  {
+    "path": "JarvisEVO/UI/VisionAnalysisView.swift",
+    "bytes": 5093,
+    "sha256": "465a99c7a7d8b0c5eb9259639462ec1ca76c1641f97ed37903229d8384e2b35c"
+  },
+  {
+    "path": "JarvisEVO/UI/VoiceConversationSession.swift",
+    "bytes": 2203,
+    "sha256": "635b581144246a16609cf477d132c389f598cc2d3152798dd6fc5318add808b7"
+  },
+  {
+    "path": "JarvisEVO/UI/WorkspaceViews.swift",
+    "bytes": 32194,
+    "sha256": "ecaafcec488ead3286013b6e898b09da6330b1454d61a577d45d3008c54d5845"
+  },
+  {
+    "path": "Packages/LlamaRuntime/Package.swift",
+    "bytes": 462,
+    "sha256": "b1c8ea2e2ef57acea8029ac0707141596e55da171b9911f6d92d997c892e6c56"
+  },
+  {
+    "path": "Tests/AppModelTests.swift",
+    "bytes": 20012,
+    "sha256": "968a7937ad41caad630f5ea0f01fcbce56afaed65829083e663b52a0ed0cd269"
+  },
+  {
+    "path": "Tests/AppSelfKnowledgeTests.swift",
+    "bytes": 2250,
+    "sha256": "52b6efb285cff2e860607455715cf5a986e72013fad05f6645963ba2d6757f15"
+  },
+  {
+    "path": "Tests/AttachmentFileCopyTests.swift",
+    "bytes": 7859,
+    "sha256": "f1db2d6756459a9d6125863bbb1b7bfa036745aa535dc64dad488dfcd24deb17"
+  },
+  {
+    "path": "Tests/AttachmentPickerOwnershipTests.swift",
+    "bytes": 1944,
+    "sha256": "5f7ba6b6908232bfcc94779c5e95446e8f13e2ef75fcd3d5c7ba973466d36a7a"
+  },
+  {
+    "path": "Tests/AttachmentPromptAvailabilityTests.swift",
+    "bytes": 1843,
+    "sha256": "a7c698dd3a144ff22ac0b01a5cbba5022ee7f480a2fecfe3171f37e680f7acbe"
+  },
+  {
+    "path": "Tests/AttachmentServiceTests.swift",
+    "bytes": 19039,
+    "sha256": "9b0b4929771b475b86912b8f5c76eabaadc60f91940685a8d5204222da7755ec"
+  },
+  {
+    "path": "Tests/AttachmentTextSearchTests.swift",
+    "bytes": 5263,
+    "sha256": "f1cdb5eed0179e6fa49ae2d56e4e55f145a54aab04bbb5cfd80cc4f4abfbf0a9"
+  },
+  {
+    "path": "Tests/AutomaticModelRouterTests.swift",
+    "bytes": 16174,
+    "sha256": "ac924b6d1d96c0e01d8a6708bdc678be2403cee0b08a6d47fcad78cc0b4dcb64"
+  },
+  {
+    "path": "Tests/AutomaticPreparationTests.swift",
+    "bytes": 12949,
+    "sha256": "4b721d49bd6ecb442aaeb3adc51f6487b07fbaaeb4f2861a63f191a4af6521ab"
+  },
+  {
+    "path": "Tests/BackupFileReaderTests.swift",
+    "bytes": 2017,
+    "sha256": "ad85fe816ce2fd3e5ebc61f5e773a9557a523ae1d6ce36548003f6801cdd1934"
+  },
+  {
+    "path": "Tests/BackupKeepBothTests.swift",
+    "bytes": 5724,
+    "sha256": "09e1aa4e2a590601d191b7b1fa2722fb88510b951aacb44ab43224eda2167443"
+  },
+  {
+    "path": "Tests/ConversationBranchTests.swift",
+    "bytes": 6319,
+    "sha256": "cfa1fef098b8a431fd9eebeef24b70204baf178385eaeba27046508beb0f46d7"
+  },
+  {
+    "path": "Tests/ConversationMetadataTests.swift",
+    "bytes": 8460,
+    "sha256": "6e4bbf7ddc2e48d0a508eb9a3f89c407c957d0d01df313ac17c03b6cc245278d"
+  },
+  {
+    "path": "Tests/ConversationSearchTests.swift",
+    "bytes": 994,
+    "sha256": "151cbbc644cf81078c3b18b95d8e46e0fc10184ac99884b01a3ad1105fe00cae"
+  },
+  {
+    "path": "Tests/ConversationTests.swift",
+    "bytes": 7365,
+    "sha256": "53f35e0e218373bdf1b25050a2142755e7f5cae1f378f693f4d2aab581b77b22"
+  },
+  {
+    "path": "Tests/ConversationTranscriptTests.swift",
+    "bytes": 2980,
+    "sha256": "ae917a7ac33862e11234c5a5e200defc45dd25a2c6a487558bbdaebb5329c87c"
+  },
+  {
+    "path": "Tests/ExternalWorkspaceTests.swift",
+    "bytes": 4962,
+    "sha256": "94a5caba0862a8397530962dadc220efee39a03216c4325e3c1992cacb3ae627"
+  },
+  {
+    "path": "Tests/FeedbackDraftTests.swift",
+    "bytes": 1828,
+    "sha256": "3511cc7b87b0e20f3b137cff44b87a6dd07634265745d7b0acfb5e395747d593"
+  },
+  {
+    "path": "Tests/GeneratedImageAppModelTests.swift",
+    "bytes": 12066,
+    "sha256": "f1180c1b84ca877e20abd2a071acdbbe7eab34434cfe2ed8db02c6ac0e762843"
+  },
+  {
+    "path": "Tests/GeneratedImageStagingTests.swift",
+    "bytes": 7229,
+    "sha256": "46ea8466cada87d300e2e6d06c6cef57cb34fce29fe473eaaca49e1331c5df60"
+  },
+  {
+    "path": "Tests/ImageAttachmentIntegrationTests.swift",
+    "bytes": 23537,
+    "sha256": "1082f9a012654676c1bc14343858766cf15fffa51d4d5aeb94018a20939f51a6"
+  },
+  {
+    "path": "Tests/ImageAttachmentServiceTests.swift",
+    "bytes": 20727,
+    "sha256": "eb4bea7762f7d20bc914453ef30076683f77675a297e58e67245ba2af326cf4b"
+  },
+  {
+    "path": "Tests/ImageIdentityPersistenceTests.swift",
+    "bytes": 5536,
+    "sha256": "246bc9589a5235af1323687f292b040fe036d0f223815a9edfb918aac1ebd32f"
+  },
+  {
+    "path": "Tests/ImagePreviewTrustTests.swift",
+    "bytes": 26215,
+    "sha256": "4adab3e1061939fd24a19de2694e9db7bde0525ce75d5b846f43e5d04b378a56"
+  },
+  {
+    "path": "Tests/IncomingTextRequestTests.swift",
+    "bytes": 2349,
+    "sha256": "86d5072c8a7898d126c7105bdd79ab894884261e5f69765a341a7efe3226a3e7"
+  },
+  {
+    "path": "Tests/IncomingTextTests.swift",
+    "bytes": 1829,
+    "sha256": "ba3fd28c1bbd849545a3f20b5fd939bf0fdcd845ad39e90d03adb5e2325586d9"
+  },
+  {
+    "path": "Tests/IntegratedInterfaceTests.swift",
+    "bytes": 26628,
+    "sha256": "ba88d56dfbc5f29370d725339d53143216dfb3553bde1c97da00cb8233bccde8"
+  },
+  {
+    "path": "Tests/LocalAgentCoreTests.swift",
+    "bytes": 7136,
+    "sha256": "4aec3e697d93d202d177b4f95ee3dfa493e4621e9cbbd7dceec9098b70b9108c"
+  },
+  {
+    "path": "Tests/LocalAgentSnapshotEvidenceTests.swift",
+    "bytes": 1559,
+    "sha256": "17479de0966e667281eef6e93d5502127ca82612fbc7d55d479efec27cd4693f"
+  },
+  {
+    "path": "Tests/LocalAgentStoreTests.swift",
+    "bytes": 9208,
+    "sha256": "3417628e7662ed332b93aa375b615b2eefb5d847b6f285b93305234aacad6b26"
+  },
+  {
+    "path": "Tests/LocalCalculationEvidenceTests.swift",
+    "bytes": 3074,
+    "sha256": "535b506c626671bffdb035f0a0abd7cd04e29a52b72188b4f731b64f17f0cc09"
+  },
+  {
+    "path": "Tests/LocalCalculatorRequestTests.swift",
+    "bytes": 3754,
+    "sha256": "abb491084d2805ba1eb813d9e75a8c9948149bcb59aecb11353711fee6c457b3"
+  },
+  {
+    "path": "Tests/LocalCalculatorTests.swift",
+    "bytes": 3695,
+    "sha256": "c3a4b4519736c71f5f0811f903feb906518b9c16bca4cfd5ed204a4f863ad2e0"
+  },
+  {
+    "path": "Tests/LocalCalculatorToolTests.swift",
+    "bytes": 2337,
+    "sha256": "4d3b5746fd961b9937f46ca0882cee3678b814c43b39015f2c48dda9da61794e"
+  },
+  {
+    "path": "Tests/LocalConversationSearchTests.swift",
+    "bytes": 3923,
+    "sha256": "512314cd3db28fc3d1781ef2539c5f82ffc894ea0c8a96a4b3146afef23ff396"
+  },
+  {
+    "path": "Tests/LocalHeavyWorkTests.swift",
+    "bytes": 23212,
+    "sha256": "efc0c3c6f8886e58b476687008cee04a28ba1c196a0be4467c31385013118ed4"
+  },
+  {
+    "path": "Tests/LocalInferenceTests.swift",
+    "bytes": 13534,
+    "sha256": "82b32b6d18d7f13525249788bb6b6d25030fedcfe746159193519f076baa88af"
+  },
+  {
+    "path": "Tests/LocalMemoryToolTests.swift",
+    "bytes": 4501,
+    "sha256": "e89792b33eab14120a517d318519e3bf2da253adabdab7667bbbe9b00dfa4e2b"
+  },
+  {
+    "path": "Tests/LocalModelCatalogTests.swift",
+    "bytes": 2118,
+    "sha256": "9935062016e9e40b4e0f26c156adfb7c613bb8c3a5a923a5136901b12b9a30da"
+  },
+  {
+    "path": "Tests/LocalModelInstallationPlanTests.swift",
+    "bytes": 4240,
+    "sha256": "8f3ee06df17fa7110ca968140c41105c765048810db089a3314d5bef81c4723b"
+  },
+  {
+    "path": "Tests/LocalModelRemovalPlanTests.swift",
+    "bytes": 3501,
+    "sha256": "6010e5fed0d53ca46aa867f85f7d54e2ca8ca3d047a391c3db9ae0aac63d5339"
+  },
+  {
+    "path": "Tests/LocalModelStoreTests.swift",
+    "bytes": 6449,
+    "sha256": "046a0ca31388bb73a00a32ca348666294b107debf9e3487ae4cee85b9910ee5c"
+  },
+  {
+    "path": "Tests/LocalPromptHistoryTests.swift",
+    "bytes": 4633,
+    "sha256": "fe44c7a19c8e0bed93b37db657c0e6851e2d03c6e5062824ab4b066f371beab2"
+  },
+  {
+    "path": "Tests/LocalReminderTests.swift",
+    "bytes": 3753,
+    "sha256": "906ff1f3887e02f3c6638b520e6e776f4c31c89d4c539b0fdfa3af49ce4f1d20"
+  },
+  {
+    "path": "Tests/LocalResourceReleaseTests.swift",
+    "bytes": 1771,
+    "sha256": "f2b7af4bf1b1aa49e802dd5f618b4d208ca4fe7bd887280f9c610d5347d782d1"
+  },
+  {
+    "path": "Tests/LocalSearchExcerptTests.swift",
+    "bytes": 2694,
+    "sha256": "5de94645a1a564deb06dbde8560647bfa284ccceeb060d6fe09dd23f791c0b55"
+  },
+  {
+    "path": "Tests/LocalToolResultBudgetTests.swift",
+    "bytes": 2710,
+    "sha256": "4515bb38a28c7d7748d2c7f91986326fe9cfff4e5c296d5f6bcb4d3e82304f06"
+  },
+  {
+    "path": "Tests/MCPClientTests.swift",
+    "bytes": 38902,
+    "sha256": "7da9f6cc50942d85bebe841a73e58d9f5a38385a9e026b66ccd4cc28f755bd50"
+  },
+  {
+    "path": "Tests/MCPNumberIntegrityTests.swift",
+    "bytes": 1791,
+    "sha256": "f64c15df1f1cd1c9bb765a656e75167464dd68950f437b98584228d8a4b5cde3"
+  },
+  {
+    "path": "Tests/MCPUnicodeSchemaTests.swift",
+    "bytes": 2565,
+    "sha256": "8513b56eb4101b557a4da3ab636e004608d672f83aac07b756779076f54c68bc"
+  },
+  {
+    "path": "Tests/MarkdownDocumentTests.swift",
+    "bytes": 13820,
+    "sha256": "b81eb8d309c7feeed7005e8bb5cdf261fd469dbf454b0828141010bedcc83eae"
+  },
+  {
+    "path": "Tests/MemoryContextBuilderTests.swift",
+    "bytes": 5774,
+    "sha256": "bd63defa66915afd0976cd088868d230a3fab382032240e5b27cd1066ab35f78"
+  },
+  {
+    "path": "Tests/MemoryNoteTests.swift",
+    "bytes": 1102,
+    "sha256": "c9ce988e2899412b9701db20bcebd9d109cb2c81380a5ffe1cba2e637d06904d"
+  },
+  {
+    "path": "Tests/MemorySearchTests.swift",
+    "bytes": 839,
+    "sha256": "ce36e312564464ce50d64d9b600c13339adadfe5fe97de426ceeefbb296a680c"
+  },
+  {
+    "path": "Tests/ModelDownloadPolicyTests.swift",
+    "bytes": 1255,
+    "sha256": "6a94a0f98f018598693b05610dcde10e872cb4396ed760f81652fca40cb959c8"
+  },
+  {
+    "path": "Tests/ModelInstallTransactionTests.swift",
+    "bytes": 13594,
+    "sha256": "6a6d55529049426beec83bffee7eb1c9ebb8e220dab82c1bf49c7ad76ccc7fc4"
+  },
+  {
+    "path": "Tests/NativeToolDraftsTests.swift",
+    "bytes": 9129,
+    "sha256": "8a634bc84906afe5b77af6d4dd5c6a733568cf3764704684aecaba6f514ba684"
+  },
+  {
+    "path": "Tests/NativeToolSuggestionTests.swift",
+    "bytes": 4977,
+    "sha256": "bac58d444e41f7262e73af29864a264d73468b8c471968dd31149069d31a68b9"
+  },
+  {
+    "path": "Tests/OCRLineEvidenceTests.swift",
+    "bytes": 1413,
+    "sha256": "6f55435f0c6612e087c092cd2de77b3edc8769f5042470c66aefd418c5acb026"
+  },
+  {
+    "path": "Tests/OneShotLocationTests.swift",
+    "bytes": 6269,
+    "sha256": "06448082ee8689afae4e7ea64397ff38e847419c671d0ce94eed1647bad7964f"
+  },
+  {
+    "path": "Tests/PDFTextExtractorTests.swift",
+    "bytes": 9070,
+    "sha256": "6d335e92fd08ea355c10bdb59ba77e2a6a8dfa23c418947eb38382c07484e402"
+  },
+  {
+    "path": "Tests/PeerSyncControlFrameTests.swift",
+    "bytes": 3893,
+    "sha256": "e1903c706123eda867de56a6e6119376cdef772affbcfa6a67aa26b9cb3de10e"
+  },
+  {
+    "path": "Tests/PersistenceTests.swift",
+    "bytes": 20708,
+    "sha256": "90ad3605d9a4b28068c9816d1caf46f8495088d1483d09fa60d3fcea51accc75"
+  },
+  {
+    "path": "Tests/PluginBrokerTests.swift",
+    "bytes": 14546,
+    "sha256": "44b2a19d962c7ef5f1393b4a3479bfb7f0b23bdf6b6e12a0a08a05fb847089ad"
+  },
+  {
+    "path": "Tests/PluginConnectionRemovalTests.swift",
+    "bytes": 2887,
+    "sha256": "cf2dff8325962669b542a633905937d74af0b46dca2ba7d50eaf138f3d9c01c9"
+  },
+  {
+    "path": "Tests/PluginExecutionTests.swift",
+    "bytes": 4276,
+    "sha256": "d8678b9a3bb7d65b750604185034feac676a8fccc54987fe09c017f1c56899ca"
+  },
+  {
+    "path": "Tests/PluginJournalTests.swift",
+    "bytes": 3703,
+    "sha256": "09b4e5a4bc7d459203918e889ddf72a6c355b9f1338c74309e4ac12b528626fb"
+  },
+  {
+    "path": "Tests/ProviderAttachmentContextTests.swift",
+    "bytes": 2818,
+    "sha256": "cdcff4fbf6b71f8c514ca61d47b84bc932e59b158b23257ae95270947043ec6b"
+  },
+  {
+    "path": "Tests/ProviderReloadTests.swift",
+    "bytes": 2654,
+    "sha256": "9e5f563d44a3d12345b4c5189b7a2a296ffa43a16c61375a21cba05a5b139094"
+  },
+  {
+    "path": "Tests/ProviderTests.swift",
+    "bytes": 10780,
+    "sha256": "4b3efd7dc1e7f52ade090da2c69a470bac63225632a5b8e075f1f114e14dbe1b"
+  },
+  {
+    "path": "Tests/ReminderSchedulerTests.swift",
+    "bytes": 19268,
+    "sha256": "dc38da56010572256ece893b2fc352efcac4e3d22191001d66250b824a215d30"
+  },
+  {
+    "path": "Tests/RemoteCredentialIntentTests.swift",
+    "bytes": 3439,
+    "sha256": "0669063f2f1d102396052c0f39d1042d0c13a7dd89c893c72f9df001f03350aa"
+  },
+  {
+    "path": "Tests/RepositoryInspectionTests.swift",
+    "bytes": 12665,
+    "sha256": "5e5a70ff7c986ced6e3bc3539fc028fa1486397c602775001669bea19db17d78"
+  },
+  {
+    "path": "Tests/RepositorySourceDiagnosticsTests.swift",
+    "bytes": 840,
+    "sha256": "bd9377c79899fed167439a39891dc36fc3e01f9d019fc6ea6c104f0ef81631cc"
+  },
+  {
+    "path": "Tests/RichMessageContentTests.swift",
+    "bytes": 3921,
+    "sha256": "dab51550fc2ec1f0d4e981eafd682a2642d88367ccb2b02afbc13fde42b1da1a"
+  },
+  {
+    "path": "Tests/RootFixtureAvailabilityTests.swift",
+    "bytes": 987,
+    "sha256": "7488bd8f47eef72077098aa185bac0c21f7ea9644499434c762be9fc3bcb3a79"
+  },
+  {
+    "path": "Tests/RuntimeDiagnosticsTests.swift",
+    "bytes": 846,
+    "sha256": "ea261d37df09ac076d60d1a9ee52ef7d5d1104ea3d053bd175452716948fe916"
+  },
+  {
+    "path": "Tests/SelfKnowledgePromptTests.swift",
+    "bytes": 1468,
+    "sha256": "57d76342a0aa1bd938ba7fba5af017c0ab21860e5e94cf2e91443b4d2d09ab34"
+  },
+  {
+    "path": "Tests/SourceRepairDraftCoreTests.swift",
+    "bytes": 1604,
+    "sha256": "dd59a174f78eb2aaeba6359e4952de8e21bd669cecc1f090e3cc3dcb0486f628"
+  },
+  {
+    "path": "Tests/SourceRepairReviewBindingTests.swift",
+    "bytes": 1549,
+    "sha256": "158e15fc3aab0e31e176bf87be4b17d9fa3d2c5930299da6a7fba1a22b7688d3"
+  },
+  {
+    "path": "Tests/TextReceivePersistenceTests.swift",
+    "bytes": 13615,
+    "sha256": "7a3ff8d04bb09655f4a8f70a1262a8c47a3d9c932f51f6fc5002579ddf747536"
+  },
+  {
+    "path": "Tests/UTF8TokenAccumulatorTests.swift",
+    "bytes": 3471,
+    "sha256": "6fb8651b490ecf0c6a3305b96a40fd25a49cd52c4bdcfd45fbd7f4b50c991ad7"
+  },
+  {
+    "path": "Tests/VMCheckpointBridgeTests.swift",
+    "bytes": 8465,
+    "sha256": "02fea866a55670714350b1cf5a040e2968d8e306ad343333356d40742863e7d4"
+  },
+  {
+    "path": "Tests/VMCheckpointStoreTests.swift",
+    "bytes": 9604,
+    "sha256": "3c3c9a9312c2e3caca34ff2dfab115a712eba3b7da4e7dfe6947a12780106619"
+  },
+  {
+    "path": "Tests/VMPolicyTests.swift",
+    "bytes": 6492,
+    "sha256": "26583a0f6c9448857529dbe0491eeda24261061f8c3a36507f7c8efa9342e6a3"
+  },
+  {
+    "path": "Tests/VMTeardownCoordinatorTests.swift",
+    "bytes": 1978,
+    "sha256": "2fab6ac2d9a73f0f6149270bd1e6025b877db567bf14e628b059aa04429c9fb6"
+  },
+  {
+    "path": "Tests/VerifiedLocalPlanCoreTests.swift",
+    "bytes": 4373,
+    "sha256": "c13e344a1498097431a0792cf008add411045c75839c9fa12025843362458baa"
+  },
+  {
+    "path": "Tests/VoiceAppModelTests.swift",
+    "bytes": 33222,
+    "sha256": "a4c37d821fc229b3dd3e80f87872b0d5a8b79fcca59a49ce81e3a021f788a7b2"
+  },
+  {
+    "path": "Tests/VoiceConversationControllerTests.swift",
+    "bytes": 24113,
+    "sha256": "beca7680d487867436b307ff47ce692210fb0d18b1b55fe8835234adbe9e549b"
+  },
+  {
+    "path": "Tests/VoiceConversationSessionTests.swift",
+    "bytes": 9698,
+    "sha256": "2c340bb9864559ca1931bace08a162f8e83107a88d83a8f8bfded575abedd393"
+  },
+  {
+    "path": "Tests/VoiceServiceTests.swift",
+    "bytes": 24813,
+    "sha256": "f720fd9675c64799114f0f6ed8598e997c73c2b2211724406d51503a4a907848"
+  },
+  {
+    "path": "Tests/WorkspaceStoreTests.swift",
+    "bytes": 5134,
+    "sha256": "a7b6e7dda8d4d92999157fd5134a122659e52f23137c4a73ba5ab10149d02101"
+  },
+  {
+    "path": "scripts/agent-tests/API.md",
+    "bytes": 5328,
+    "sha256": "bad3fb6a69035533d8e4675b2213f25a5d2db6176dfa4a90ba3524cd3a4db35b"
+  },
+  {
+    "path": "scripts/agent-tests/LOCAL-READ-ROUTER-API.md",
+    "bytes": 2659,
+    "sha256": "97ba84a2385bbec76d84eb6cd0e5b12f547bdc2f53c90cd4c7ab30fe79d880c9"
+  },
+  {
+    "path": "scripts/agent-tests/MEMORY-READ-EXTENSION.md",
+    "bytes": 3086,
+    "sha256": "1ed25d8c347600b3a7880e3c21d2169bd1798af9346ee91114ef8b67107744cc"
+  },
+  {
+    "path": "scripts/agent-tests/VERIFIED-PLAN-API.md",
+    "bytes": 5716,
+    "sha256": "371b815720c33174eb53f83f924ab23d2360755a3756585832bfd2f09bf0b16e"
+  },
+  {
+    "path": "scripts/agent-tests/bridge-smoke.cjs",
+    "bytes": 4075,
+    "sha256": "62cee52e498faeb68d2093d253c46edfd0c3f47378cbcf040d23d2fe5932580d"
+  },
+  {
+    "path": "scripts/agent-tests/core.test.cjs",
+    "bytes": 17092,
+    "sha256": "e064cd1bcf11f230a3cbd934fa93cdce00d76b9db82cc6ddd3c3d4581a4342ec"
+  },
+  {
+    "path": "scripts/agent-tests/local-read-router.test.cjs",
+    "bytes": 5573,
+    "sha256": "eb4fcc9494dad98f61ff8376013ff0b72c2a47d875359f93132529ae916e96a1"
+  },
+  {
+    "path": "scripts/agent-tests/paging-completion.test.cjs",
+    "bytes": 3497,
+    "sha256": "2d65370bb4492ecdf9436da3af7493b088f3caab2405f7438bfe7dedffb6ad86"
+  },
+  {
+    "path": "scripts/agent-tests/read-plan-sequences.test.cjs",
+    "bytes": 2935,
+    "sha256": "4ce7fa8224a1ef8d072ff2c7d37df362a487559ec5a5003ddb4a6d6ab4fceb4a"
+  },
+  {
+    "path": "scripts/agent-tests/source-repair.test.cjs",
+    "bytes": 8663,
+    "sha256": "091f175ed53edfc676f3ea6556ef746d197a718757d96e6dd938a8a8e11d826c"
+  },
+  {
+    "path": "scripts/agent-tests/verified-plan.test.cjs",
+    "bytes": 18367,
+    "sha256": "481244f1c96f4479014623440a9c40bf89816eee1744a93578a5aa0bb3063c53"
+  },
+  {
+    "path": "scripts/bootstrap_llama.sh",
+    "bytes": 2393,
+    "sha256": "8e42a78a53128309aa18aa9c63503d229ddc7bd70e0147d65171562d4353120b"
+  },
+  {
+    "path": "scripts/ci_focused_native.sh",
+    "bytes": 2494,
+    "sha256": "5188d42180e91687a77b761a41074e71e2aaaf4c4b6d6c76a91f54d83c65e8f1"
+  },
+  {
+    "path": "scripts/ci_macos.sh",
+    "bytes": 2969,
+    "sha256": "4b3c3b9df5dade9a0c1becbdb4a5fc087b7704ad4ec87ad435eff1b03e6e0b62"
+  },
+  {
+    "path": "scripts/ci_package_only.sh",
+    "bytes": 2784,
+    "sha256": "4d78bbe8b6d88d898a3c3226a1d84a10c19b58939f5e0e335758427e5798dfa8"
+  },
+  {
+    "path": "scripts/download_test_model.py",
+    "bytes": 2257,
+    "sha256": "d379c3a66d8876b8a260254864a270e8da4e14fa3b5d5c3c3a79d51b3611c86e"
+  },
+  {
+    "path": "scripts/focused_watchdog.py",
+    "bytes": 1332,
+    "sha256": "f2075d1e3db5ab1e5c02678f6d333f0570f704cdbdb628ae1d617a6dde8f7e5b"
+  },
+  {
+    "path": "scripts/ipa_filename.py",
+    "bytes": 1174,
+    "sha256": "520d40a9d4f1fe2873c0c1d5520d4c3d48f9206f213e5e831ab98a68be11d8da"
+  },
+  {
+    "path": "scripts/materialize_guest.py",
+    "bytes": 2420,
+    "sha256": "4650446b9eb325669139ff1ea8c89ccf85a6769b5c3663389c0a297cc755bcef"
+  },
+  {
+    "path": "scripts/model_catalog.py",
+    "bytes": 6799,
+    "sha256": "e93317fbb74087c77cae3532f1b2bdbcfbc65ebb809e38fbe27ffaf157567009"
+  },
+  {
+    "path": "scripts/run_agent_bridge_smoke.py",
+    "bytes": 1823,
+    "sha256": "5253cff6029283c30563f2f6d834bf2fbd81443059f983a66be4c13abe20abf1"
+  },
+  {
+    "path": "scripts/run_catalog_inference_smoke.py",
+    "bytes": 976,
+    "sha256": "f0ea10830b59fba97a9ab7240ed3456844d1f5b7ccdaef4a36fce27395e0312e"
+  },
+  {
+    "path": "scripts/run_conversation_limit_smoke.py",
+    "bytes": 5003,
+    "sha256": "fb1f6488b8cf4773a8070334b4edbca2a56780be45d7ab03e3711b4e5d3e0d68"
+  },
+  {
+    "path": "scripts/run_conversation_search_smoke.py",
+    "bytes": 4565,
+    "sha256": "37391365efea6017087c523223524519c2e3c186db2bf97fb33e49443e4ae2e2"
+  },
+  {
+    "path": "scripts/run_focused_diagnostics.sh",
+    "bytes": 912,
+    "sha256": "7c0adb8250bd0012ef2f0aacd1837777f5af91c6d74a7d7f9006e9c47db54837"
+  },
+  {
+    "path": "scripts/run_foundation_tests.py",
+    "bytes": 6268,
+    "sha256": "e58999e1c59ccc2e455ca233e6c8a5447876c277f8c22269e92cd43be4083538"
+  },
+  {
+    "path": "scripts/run_generation_context_smoke.py",
+    "bytes": 1878,
+    "sha256": "a01f7ad30bdebfe22550a003131629ae2d0c65badd4fea9f069890b2f5205193"
+  },
+  {
+    "path": "scripts/run_llama_engine_smoke.py",
+    "bytes": 5720,
+    "sha256": "4e47d8eb55c7a489bdcf70b87b94f8b7a3702c16acb02b3ee62d4146069e6e7d"
+  },
+  {
+    "path": "scripts/run_location_smoke.py",
+    "bytes": 3139,
+    "sha256": "f277c1d42ea94e1ecec1970379fe2578e2c6367b5405bc4aff5d0820ffeb6f61"
+  },
+  {
+    "path": "scripts/run_memory_search_smoke.py",
+    "bytes": 6836,
+    "sha256": "02a20482c137d6821d183686e8cc2221b4eb23110c77287048eeed5a655e71b5"
+  },
+  {
+    "path": "scripts/run_model_download_smoke.py",
+    "bytes": 3160,
+    "sha256": "92dca3aa908e8de88d80fa2462df1768359dc8cb51e851bb422763979c3383a0"
+  },
+  {
+    "path": "scripts/run_model_removal_smoke.py",
+    "bytes": 2418,
+    "sha256": "1b90d30acf3c8c850e69cee9a0871c817c50581f9701626ca952d3a340804bc6"
+  },
+  {
+    "path": "scripts/run_native_capabilities.sh",
+    "bytes": 2207,
+    "sha256": "83d66fb9db8a0105dee10c6e54018df155de3d5b5de2a4340d25826a2e4a00b8"
+  },
+  {
+    "path": "scripts/run_native_read_smoke.py",
+    "bytes": 2378,
+    "sha256": "c67b491a5bf7da380dec55612cc1ddae4d2b1c41e6619ffb18daf8342fd17914"
+  },
+  {
+    "path": "scripts/run_native_tests.sh",
+    "bytes": 4879,
+    "sha256": "dae1b36c3aae227a61e861110487a6fce00578f2a236b29d68c013251f192104"
+  },
+  {
+    "path": "scripts/run_observation_smoke.py",
+    "bytes": 1865,
+    "sha256": "cc08f6c9c30594e3fd6058f4483ca578eb6efb6a02d8b98d980df3edbb512b77"
+  },
+  {
+    "path": "scripts/run_offline_chat_smoke.py",
+    "bytes": 7637,
+    "sha256": "94c71cf10bed996eca290ae6dd5dbe2786512d16651f09f0c299a9c5d8d00de2"
+  },
+  {
+    "path": "scripts/run_persistence_tests.py",
+    "bytes": 2930,
+    "sha256": "48a4c265f4c463fe41a26cb52bddfcc4e85745db7a03d0f37dc849467daba8fa"
+  },
+  {
+    "path": "scripts/run_plugin_removal_smoke.py",
+    "bytes": 1934,
+    "sha256": "77b1b588509be920ae4185400f3945e0854dc211094729886c02b32772a00c31"
+  },
+  {
+    "path": "scripts/run_portable_checks.py",
+    "bytes": 5938,
+    "sha256": "772782cae68cb0609a5058bab13e4113cb89048d961ebd63514ed066398ea0aa"
+  },
+  {
+    "path": "scripts/run_provider_reload_smoke.py",
+    "bytes": 3522,
+    "sha256": "5d9fbdd7e3b6c76e29bc1d2afa155f7c6f9693f87ca5d9cf334008c2073a8e72"
+  },
+  {
+    "path": "scripts/run_reminder_smoke.py",
+    "bytes": 4146,
+    "sha256": "71c0fca4d4317f5f69c29265a66f311d27faa083790367675cb97ceca990c345"
+  },
+  {
+    "path": "scripts/run_remote_save_smoke.py",
+    "bytes": 3081,
+    "sha256": "92792796f45d9b4b82898ebec38a29cc7c1f2209d373efcb7d45b348ee290d37"
+  },
+  {
+    "path": "scripts/run_self_knowledge_gate.sh",
+    "bytes": 898,
+    "sha256": "fdb8de21d0d08d33341340fd241c07d9d609fde54c44cddcc2301b1b5b8843c5"
+  },
+  {
+    "path": "scripts/run_system_snapshot_smoke.py",
+    "bytes": 4571,
+    "sha256": "16aa93f45055ab0e345b38c2062185544fb177c86e32a014a544896da6ac9ae3"
+  },
+  {
+    "path": "scripts/run_virtual_desktop_gate.sh",
+    "bytes": 6478,
+    "sha256": "2038a062cd47e418a5b1d60930ab417ddd0e3e222f7baff4586d82efc0ccd80d"
+  },
+  {
+    "path": "scripts/run_voice_smoke.py",
+    "bytes": 3272,
+    "sha256": "110e4598a4895ece5e6891e916106eeb16b5e8aec6d072c9676046d81f62442f"
+  },
+  {
+    "path": "scripts/swift-smoke/AgentBridge.swift",
+    "bytes": 1706,
+    "sha256": "f62b664216f042b4e29fe75c8d8feac82a58441b84c462af4bc4a04fa19e6ef5"
+  },
+  {
+    "path": "scripts/swift-smoke/CalculatorAgentCore.cjs",
+    "bytes": 370,
+    "sha256": "8a3509ab199e23d00e4dc2fd26886a0ea6e1f183a82eff25884defb5cd0ee808"
+  },
+  {
+    "path": "scripts/swift-smoke/CalculatorAgentSmoke.swift",
+    "bytes": 5883,
+    "sha256": "d3bc501e85200de70d09aaa9505b5dc02712137c9fbc3f0607fbdd0eb0336e06"
+  },
+  {
+    "path": "scripts/swift-smoke/CatalogInferenceSmoke.swift",
+    "bytes": 2192,
+    "sha256": "693ff3d9f666d8a79873333217498d68f3d2f94c31e909b49d85038c4742b6f8"
+  },
+  {
+    "path": "scripts/swift-smoke/GenerationContextSmoke.swift",
+    "bytes": 4237,
+    "sha256": "d99b64924bf6cf37695c89ed4cd1199c862a318f0bec5903f889d51d1bc13017"
+  },
+  {
+    "path": "scripts/swift-smoke/LOCATION-EVIDENCE.md",
+    "bytes": 1805,
+    "sha256": "5d9389f5279f727ab22d826015417054ec80ea25b35daf07faad5a487971bf80"
+  },
+  {
+    "path": "scripts/swift-smoke/LlamaEngineSmoke.swift",
+    "bytes": 9626,
+    "sha256": "0769cdaf9d793630879b5591fafe17321ec18524abb3ef72fabfc233ec339890"
+  },
+  {
+    "path": "scripts/swift-smoke/LocationSmoke.swift",
+    "bytes": 6471,
+    "sha256": "13c8ba8cb024e7ed67bf858c9968bc3b9d8048c793665b302533eca214561634"
+  },
+  {
+    "path": "scripts/swift-smoke/ModelDownloadSmoke.swift",
+    "bytes": 5164,
+    "sha256": "b13eb9de0b71223e9bd6797e667b358062cb99ec2109b5942350a3f296b68f99"
+  },
+  {
+    "path": "scripts/swift-smoke/ModelRemovalSmoke.swift",
+    "bytes": 3029,
+    "sha256": "d92d5149448738601b1f3e14d09ca7002418e5018bced584e77dfef84ee3fd2d"
+  },
+  {
+    "path": "scripts/swift-smoke/NativeReadAdmissionSmoke.swift",
+    "bytes": 3911,
+    "sha256": "4d7b0db01bc9045eeae39b7b5f1a1cab72c166343f1eb47b6efe25d5bc539aa5"
+  },
+  {
+    "path": "scripts/swift-smoke/NativeReadSmoke.swift",
+    "bytes": 2250,
+    "sha256": "15ba2ccb9fbf6f00dfebf18b8647ba821c6676ea75b2e51ee85383e6542e9871"
+  },
+  {
+    "path": "scripts/swift-smoke/ObservationSmoke.swift",
+    "bytes": 6917,
+    "sha256": "32e8eec650c880467f4b30b67c17c9b81b85e53465414f5b7350edcd05f132aa"
+  },
+  {
+    "path": "scripts/swift-smoke/OfflineChatSmoke.swift",
+    "bytes": 9206,
+    "sha256": "7392092fee8006cc3bb11e4a84bfb2933cf9d6043fe5528c2b7c52b3cd6f6ba9"
+  },
+  {
+    "path": "scripts/swift-smoke/PluginRemovalSmoke.swift",
+    "bytes": 3144,
+    "sha256": "0747639805bc579e2a45629ab0a3cafdec4ee459f1601c3b3c2376bd5faaae34"
+  },
+  {
+    "path": "scripts/swift-smoke/ProviderReloadSmoke.swift",
+    "bytes": 4157,
+    "sha256": "df00888a41e563bfbdd0cc00b605cb05502d43c7c6135d0cef5f29cce72a8396"
+  },
+  {
+    "path": "scripts/swift-smoke/QwenModeSmoke.swift",
+    "bytes": 2548,
+    "sha256": "05eb33a54b262f2b604f988e309ec932c456c3b682bdd1bb4d26b3a02ca6fcfd"
+  },
+  {
+    "path": "scripts/swift-smoke/ReminderSmoke.swift",
+    "bytes": 7551,
+    "sha256": "bcf9c06a7b3f272b1c239e22762100a23c814f2dbced03df00293dced9fbdf8a"
+  },
+  {
+    "path": "scripts/swift-smoke/RemoteSaveSmoke.swift",
+    "bytes": 5236,
+    "sha256": "a8e1309a3ae55461879dd3894319a34ec6c78c3efc961920b23e4d3a60ac8090"
+  },
+  {
+    "path": "scripts/swift-smoke/VoiceSmoke.swift",
+    "bytes": 8159,
+    "sha256": "c16d2b890e44b2f9d6fa732689d2094bfbe1295c7d605bab73f8a1c5e33e4f16"
+  },
+  {
+    "path": "scripts/test_desktop_correspondence_docs.py",
+    "bytes": 1832,
+    "sha256": "ff04d0da117eb66de146649458dd4474431fd5f8214492e41ed157acd31519bc"
+  },
+  {
+    "path": "scripts/tests/test_assistant_identity.py",
+    "bytes": 2357,
+    "sha256": "1048a89d48a19107ee2e5b3093363421e7ed5d4dc5ce9e3577554565a2e3a1ad"
+  },
+  {
+    "path": "scripts/tests/test_attachment_fitting_contract.py",
+    "bytes": 787,
+    "sha256": "4abd229eadd65f66a20f382325c46c948508a460116b23e99d702a2826c0bb9c"
+  },
+  {
+    "path": "scripts/tests/test_attachment_search_contract.py",
+    "bytes": 972,
+    "sha256": "1a4b835b9b2b57832c1398e6c3967969581bf93bc5c4da5f5d54c3d1097b9c6b"
+  },
+  {
+    "path": "scripts/tests/test_attachment_search_gate_contract.py",
+    "bytes": 329,
+    "sha256": "021eaf976e84d86ee70439e10ab1af96ec99437e25ab70b5170e5625a8673fcb"
+  },
+  {
+    "path": "scripts/tests/test_backup_import_policy.py",
+    "bytes": 3173,
+    "sha256": "2e04b2919ac0c08e9798b98a6a9aef4a86e3621e387d3c1786b102269b6276a9"
+  },
+  {
+    "path": "scripts/tests/test_backup_reader_contract.py",
+    "bytes": 1058,
+    "sha256": "a486e5b557514b23a91d00d1d736732710d272acb8aedecbee8b1851cc4410bf"
+  },
+  {
+    "path": "scripts/tests/test_checkpoint_status_copy.py",
+    "bytes": 1714,
+    "sha256": "11d6b0e66c3e25376fd549cbb784ca28d60ee562d9509c75b305c780bf56b172"
+  },
+  {
+    "path": "scripts/tests/test_combined_runtime.py",
+    "bytes": 3943,
+    "sha256": "fdcc710ba5d2b11513a52e56eb4026b38733dc767697f8eef8b73b4ac8c0c2e8"
+  },
+  {
+    "path": "scripts/tests/test_conversation_management_contract.py",
+    "bytes": 1986,
+    "sha256": "92c32f04f84653ff22e5d0993e598c7861c5f68295bd1fea3f9383dd64ea4c2c"
+  },
+  {
+    "path": "scripts/tests/test_credential_gate_contract.py",
+    "bytes": 1118,
+    "sha256": "9f0bfb27d64ae2bcd8f826fff256d27e6b2b5c036dae99bf08d52bfd07184f94"
+  },
+  {
+    "path": "scripts/tests/test_desktop_gate_contract.py",
+    "bytes": 522,
+    "sha256": "d25dcc533084f8b6d1a3d5f8f071549feb7bc3d0326706564f39a8df970fe46d"
+  },
+  {
+    "path": "scripts/tests/test_desktop_viewport_contract.py",
+    "bytes": 1041,
+    "sha256": "3875866c6abaab0afc9746bd8124cf19613cc4738dc1966d2c431250ffd84720"
+  },
+  {
+    "path": "scripts/tests/test_document_ocr_contract.py",
+    "bytes": 1317,
+    "sha256": "6e21aa117caa1dc4ff7a0ca7d5ef06cfd313e0b1e6886eaf1b8b699ea8ae602f"
+  },
+  {
+    "path": "scripts/tests/test_download_test_model.py",
+    "bytes": 1299,
+    "sha256": "7014a3cca539d7c455ccdc43db7f6ac68d59f93662193f414ac00c333af2c94b"
+  },
+  {
+    "path": "scripts/tests/test_extended_native_gate.py",
+    "bytes": 1046,
+    "sha256": "1633a93024a79ea13354068d5dbdd1e0d4e684b88e44d62657fc0cd7dd0f1c59"
+  },
+  {
+    "path": "scripts/tests/test_focused_diagnostics_gate.py",
+    "bytes": 1190,
+    "sha256": "9663863d561e1db45332a696c605882bc3e3ad9857e59aa129ee556e8f92cb13"
+  },
+  {
+    "path": "scripts/tests/test_foundation_harness.py",
+    "bytes": 1370,
+    "sha256": "577935bb3c294276868b385b52cb98e4c4650b684aec5950d8d336126f67bef0"
+  },
+  {
+    "path": "scripts/tests/test_guest_materializer.py",
+    "bytes": 947,
+    "sha256": "0ac02b36fbc14bb8a527b8028db463dd22f8f21d8ba34a473bdb7841d6a222da"
+  },
+  {
+    "path": "scripts/tests/test_ipa_filename.py",
+    "bytes": 2850,
+    "sha256": "462bc634cfd9a7a91e974c728fb3bd266f3f9e9849642727aa348dbda5d4a96a"
+  },
+  {
+    "path": "scripts/tests/test_local_agent_integration_contract.py",
+    "bytes": 3105,
+    "sha256": "8eed86873949acdb2506286f90e2be7fba7c951792427df93b41ead188b6d6fe"
+  },
+  {
+    "path": "scripts/tests/test_local_completion_contract.py",
+    "bytes": 873,
+    "sha256": "acac74de58baac12b10b92ce74fa4bd1ddf59c3c4954eeb565024d4ec89f023f"
+  },
+  {
+    "path": "scripts/tests/test_location_gate_contract.py",
+    "bytes": 520,
+    "sha256": "4d723aaa959471bd46bace8d09fb47c099efb05fd6288be18329aef9189b8eb5"
+  },
+  {
+    "path": "scripts/tests/test_memory_context_contract.py",
+    "bytes": 1020,
+    "sha256": "65aaed9a439395b14412217588884afb03ddf1c5b972e397b22f431b6a62c6dd"
+  },
+  {
+    "path": "scripts/tests/test_memory_editor_contract.py",
+    "bytes": 1099,
+    "sha256": "f5698c695b4f4dfe49f999182d64a91648779a068dbdf8288fc583f7b10a746f"
+  },
+  {
+    "path": "scripts/tests/test_memory_tool_contract.py",
+    "bytes": 875,
+    "sha256": "28d302842ae23342c3a1313a18846de00f9fe1a0e06ea7b583e03d10c4fc82a9"
+  },
+  {
+    "path": "scripts/tests/test_model_catalog.py",
+    "bytes": 5385,
+    "sha256": "448944cf5c7e4f7d0300bc30fd6ae8a0caff78114512db0eabc6824ee8f283bd"
+  },
+  {
+    "path": "scripts/tests/test_model_transaction_concurrency.py",
+    "bytes": 737,
+    "sha256": "401d033afffce56a6fb5302d4ed65b0d173b48dc1d105eeead754ea11b19e4ce"
+  },
+  {
+    "path": "scripts/tests/test_native_capability_gate.py",
+    "bytes": 1288,
+    "sha256": "ab081ecf37cfe07a60fa5dfb69de5b3b7ec332278486903e73f793309b326e52"
+  },
+  {
+    "path": "scripts/tests/test_native_inference_requirement.py",
+    "bytes": 1089,
+    "sha256": "8ebf86ebc1dd219106d7336942731d96c9ccd8406c86dde266eb9c14f722a6d4"
+  },
+  {
+    "path": "scripts/tests/test_native_unit_fixture_contract.py",
+    "bytes": 1387,
+    "sha256": "c801a807af87a47092c16cdc63216c812b2870aa21709ad37dba55f5dc0e1b0c"
+  },
+  {
+    "path": "scripts/tests/test_persistence_integrity.py",
+    "bytes": 2427,
+    "sha256": "496ee375446a6576c1a4b428dcf9718b1a56896551795edb9c83a768195078df"
+  },
+  {
+    "path": "scripts/tests/test_portable_checks.py",
+    "bytes": 2289,
+    "sha256": "a14adb9370c18b5cb03d13462ab9aa06602acbe153eb6de8f95be6bce27193b0"
+  },
+  {
+    "path": "scripts/tests/test_remote_provider_contract.py",
+    "bytes": 1436,
+    "sha256": "71a38e867f1b843023e1d0fc24483144f7e8662cdd1303b308001f7e6e3ca98a"
+  },
+  {
+    "path": "scripts/tests/test_repository_inspection_contract.py",
+    "bytes": 2112,
+    "sha256": "9be57234a9b61fc591de4909c317e59a7afaf849a8621bd93580f9c93de73692"
+  },
+  {
+    "path": "scripts/tests/test_run_native_tests.py",
+    "bytes": 12337,
+    "sha256": "4c65d30248da34a859b3192769744366a4cd6e8c99e944c908b7994b38103e7d"
+  },
+  {
+    "path": "scripts/tests/test_runtime_diagnostics_contract.py",
+    "bytes": 1036,
+    "sha256": "d1e2fd531c355a4a5ca044b9bda256e4c72f9f9e3b53332bc83233f7d306d226"
+  },
+  {
+    "path": "scripts/tests/test_search_evidence_contract.py",
+    "bytes": 791,
+    "sha256": "0ac26355a36a4c66b4c1b18617e81ac7ca723f6029404c77d924d32c0c1b4b41"
+  },
+  {
+    "path": "scripts/tests/test_self_knowledge.py",
+    "bytes": 1346,
+    "sha256": "9464f7e07c01f4282acf0bd08ce821e484c92539fc1d44c20be6f92f8838e77f"
+  },
+  {
+    "path": "scripts/tests/test_self_knowledge_budget.py",
+    "bytes": 3004,
+    "sha256": "22605b72f45a8e45aec59905c0ed9d11f1e0375886ba1f8bfb95bd8e913c78cc"
+  },
+  {
+    "path": "scripts/tests/test_stream_decoder_contract.py",
+    "bytes": 712,
+    "sha256": "007376d7d5174b6f76100c17f95041acadaba680f2a023be1a58aecf6a7ba02f"
+  },
+  {
+    "path": "scripts/tests/test_transcript_gate_contract.py",
+    "bytes": 333,
+    "sha256": "053a86ea9b0b0ab67530b4e11804df4a0b7e4a8c202188d9d0347b625724979f"
+  },
+  {
+    "path": "scripts/tests/test_ui_failure_fixtures.py",
+    "bytes": 1558,
+    "sha256": "35711dd6f96c7369d8e5a3156c0efd33fdb2e6d6077e764eb3d8fbaef8a54950"
+  },
+  {
+    "path": "scripts/tests/test_verify_ipa.py",
+    "bytes": 12402,
+    "sha256": "87015c1d9c89eeb0c10490a082d7036197c43c7ce982ed99e6ef9125ddf8f7ca"
+  },
+  {
+    "path": "scripts/tests/test_vm_integration_contract.py",
+    "bytes": 2289,
+    "sha256": "d612bb345b4d1639beb3ed57c95465d8f9ba153984830114d7981e283eb68581"
+  },
+  {
+    "path": "scripts/tests/test_voice_gate_contract.py",
+    "bytes": 1431,
+    "sha256": "e7c4bc2471da891482971bdb52a7380245b9be95ff5a0cb1600d4b99b88a2b0c"
+  },
+  {
+    "path": "scripts/verify_combined_runtime.py",
+    "bytes": 4331,
+    "sha256": "65215679217f752db4311144a9d89c4e3f873a99079fbe0ce6d3847480e23ae8"
+  },
+  {
+    "path": "scripts/verify_focused_summary.py",
+    "bytes": 570,
+    "sha256": "501bcb701a263a3ba89f2c9da484e89888a88f41a4b727874df640f8a77232f1"
+  },
+  {
+    "path": "scripts/verify_ipa.py",
+    "bytes": 10698,
+    "sha256": "cfeeb01d896c1c4c203057ec92f7220ceb2bccbb01233cd8dd6232c8237fc5fe"
+  },
+  {
+    "path": "scripts/vm-tests/bios.test.cjs",
+    "bytes": 1992,
+    "sha256": "589780023064ca7aeec0d542128541a79282208c835b1536be650ae803c18465"
+  },
+  {
+    "path": "scripts/vm-tests/boot-cancel.test.cjs",
+    "bytes": 587,
+    "sha256": "31a554aa40ad520e10311c936fd22915090deb88febb087e57995b4b4e53f6b7"
+  },
+  {
+    "path": "scripts/vm-tests/checkpoint-bios.test.cjs",
+    "bytes": 2811,
+    "sha256": "2133468f6f2e26bbfba0b3b243f1c91226deda96a4c211d3f9b0977b92134ef9"
+  },
+  {
+    "path": "scripts/vm-tests/checkpoint.test.cjs",
+    "bytes": 4451,
+    "sha256": "6c27c851e858a39a26c04b6cac143e22585f684b46e93f8a18251e19f8553b2a"
+  },
+  {
+    "path": "scripts/vm-tests/controller.test.cjs",
+    "bytes": 10242,
+    "sha256": "8ea61e2406e1078b4b9fd27514df9b483f87b2753b4e8684bcf531a6cb84bf0d"
+  },
+  {
+    "path": "scripts/vm-tests/diagnostics.test.cjs",
+    "bytes": 951,
+    "sha256": "a93b0fb33b2c6b1984121c02af57d020d08e54d1d785b96fadac232aa2049102"
+  },
+  {
+    "path": "scripts/vm-tests/guest-console.test.cjs",
+    "bytes": 628,
+    "sha256": "dafc52b83226d08bb85bf0d5e96f2db7738ad143ff18619076b0637152e060a6"
+  },
+  {
+    "path": "scripts/vm-tests/guest-profile.test.cjs",
+    "bytes": 693,
+    "sha256": "6f11781f5c7574a1fb11fabc47ff4710cf9df1dea28574c00598f51fba64175c"
+  },
+  {
+    "path": "scripts/vm-tests/timer-scheduler.test.cjs",
+    "bytes": 2232,
+    "sha256": "10fd3e1168e1b82a74cac14f71512649184a418d7903331bbb1ed81af1257ad2"
+  },
+  {
+    "path": "scripts/vm-tests/wasm-loader.test.cjs",
+    "bytes": 1065,
+    "sha256": "2c07b439bfb4b7aed1cf533512f35d82dbbe08b953b9755543b4427e1936e26d"
+  }
+]

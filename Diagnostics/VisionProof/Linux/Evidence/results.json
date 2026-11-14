@@ -1,0 +1,149 @@
+{
+  "scope": "Linux CPU real pinned mtmd; not iOS/device or broad vision acceptance",
+  "cases": [
+    {
+      "fixture": "red_circle",
+      "cancel_phase": null,
+      "status": 0,
+      "output": " In this image, there is a red color circle on a white background.",
+      "report": {
+        "status": 0,
+        "phase": 5,
+        "tokens": 15,
+        "positions": 83,
+        "image_chunks": 1,
+        "callback_count": 10585,
+        "live_resources": 0
+      },
+      "seconds": 3.389,
+      "rgb_sha256": "9d8dcd4fcc57a30ca2058a110312f3e7f2cbc3cad1fd819377e2bf005bb4a388",
+      "passed": true
+    },
+    {
+      "fixture": "red_circle",
+      "cancel_phase": 1,
+      "status": 2,
+      "output": "",
+      "report": {
+        "status": 2,
+        "phase": 1,
+        "tokens": 0,
+        "positions": 0,
+        "image_chunks": 0,
+        "callback_count": 1,
+        "live_resources": 0
+      },
+      "seconds": 0.07,
+      "rgb_sha256": "9d8dcd4fcc57a30ca2058a110312f3e7f2cbc3cad1fd819377e2bf005bb4a388",
+      "passed": true
+    },
+    {
+      "fixture": "red_circle",
+      "cancel_phase": 3,
+      "status": 2,
+      "output": "",
+      "report": {
+        "status": 2,
+        "phase": 3,
+        "tokens": 0,
+        "positions": 83,
+        "image_chunks": 1,
+        "callback_count": 844,
+        "live_resources": 0
+      },
+      "seconds": 0.272,
+      "rgb_sha256": "9d8dcd4fcc57a30ca2058a110312f3e7f2cbc3cad1fd819377e2bf005bb4a388",
+      "passed": true
+    },
+    {
+      "fixture": "red_circle",
+      "cancel_phase": 5,
+      "status": 2,
+      "output": "",
+      "report": {
+        "status": 2,
+        "phase": 5,
+        "tokens": 1,
+        "positions": 83,
+        "image_chunks": 1,
+        "callback_count": 2336,
+        "live_resources": 0
+      },
+      "seconds": 2.809,
+      "rgb_sha256": "9d8dcd4fcc57a30ca2058a110312f3e7f2cbc3cad1fd819377e2bf005bb4a388",
+      "passed": true
+    },
+    {
+      "fixture": "blue_circle",
+      "cancel_phase": null,
+      "status": 0,
+      "output": " The image is a simple, flat, and colorful representation of a blue circle. The circle is the main focus of the image and is positioned in the center of the frame. The circle is a solid blue color, and it is not filled with any other colors or gradients. The circle is perfectly centered within the image, and it is not rotated or tilted.\n\nThe background of the image is white, which makes the blue circle stand out clearly. The white background ensures that the circle is the only object in the image, and it does not distract from the circle. The white background also helps to make the circle the focal point of",
+      "report": {
+        "status": 0,
+        "phase": 5,
+        "tokens": 128,
+        "positions": 83,
+        "image_chunks": 1,
+        "callback_count": 72185,
+        "live_resources": 0
+      },
+      "seconds": 5.406,
+      "rgb_sha256": "fb87103dc8866bc2b9aa698e3ba69b19f82849323cf1b0d6ad7cb59e50a2eca4",
+      "passed": true
+    },
+    {
+      "fixture": "red_square",
+      "cancel_phase": null,
+      "status": 0,
+      "output": " The image is a simple, flat, and rectangular shape. It is a solid color, and it is not filled with any other colors or patterns. The color is bright and vivid, and it stands out clearly against the background. The image is likely a graphic or a digital design, as it is a simple and straightforward representation of a rectangle.\n\nThe rectangle is not filled with any other colors or patterns, and it is not shaded or shaded in any way. The edges of the rectangle are sharp and clear, and there are no visible imperfections or blemishes. The color is uniform and consistent throughout the entire shape.\n\nThe",
+      "report": {
+        "status": 0,
+        "phase": 5,
+        "tokens": 128,
+        "positions": 83,
+        "image_chunks": 1,
+        "callback_count": 72185,
+        "live_resources": 0
+      },
+      "seconds": 5.225,
+      "rgb_sha256": "1963b35af19841148aca7535137eca16aa31e2225e7c9ceea7f3487853702318",
+      "passed": false
+    },
+    {
+      "fixture": "blue_square",
+      "cancel_phase": null,
+      "status": 0,
+      "output": " The image is a simple, flat, and rectangular shape. It is a solid blue color, and it is not filled with any other colors or patterns. The edges of the shape are straight and symmetrical, and the color is uniform throughout. The shape is not rotated, and it is not shaded or shaded in any way. The image is a simple, clean, and unadorned shape.",
+      "report": {
+        "status": 0,
+        "phase": 5,
+        "tokens": 80,
+        "positions": 83,
+        "image_chunks": 1,
+        "callback_count": 46335,
+        "live_resources": 0
+      },
+      "seconds": 4.37,
+      "rgb_sha256": "ab0cb2e0d29a56cc08d16fea87ffd13fd7a25b052ad64dfdcddada3d2fc1c9af",
+      "passed": false
+    },
+    {
+      "fixture": "blank",
+      "cancel_phase": null,
+      "status": 0,
+      "output": " The image is a photograph of a book cover. The cover is predominantly white with a black border around the edges. The title of the book is written in a large, bold font at the top of the cover. The title is written in a sans-serif font, which makes it easy to read. Below the title, there is a smaller, italicized font that provides additional information about the book. The author's name is written in a smaller font below the title, and it is also in a sans-serif font. The cover design is simple and clean, with a minimalist aesthetic.\n\nThe background of",
+      "report": {
+        "status": 0,
+        "phase": 5,
+        "tokens": 128,
+        "positions": 83,
+        "image_chunks": 1,
+        "callback_count": 72185,
+        "live_resources": 0
+      },
+      "seconds": 5.493,
+      "rgb_sha256": "05cee4e08b431e15405ede17f74f3b6da563778652fcb974d4d987238e6e7a78",
+      "passed": false
+    }
+  ]
+}

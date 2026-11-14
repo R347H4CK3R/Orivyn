@@ -1,0 +1,6 @@
+{
+  "exit": 0,
+  "productionSwiftSources": true,
+  "mode": "actual-native-inference",
+  "AppleVerified": false
+}

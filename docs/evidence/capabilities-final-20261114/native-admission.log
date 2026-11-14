@@ -1,0 +1,2 @@
+PASS synchronous revocation cancels during delayed verification; no inference after unload
+PASS production session cleanup and suggestion-only execution boundary

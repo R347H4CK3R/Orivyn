@@ -16,6 +16,7 @@ actor LlamaEngine: LocalResourceReleasing {
     private var releaseRequests = 0
 
     func stream(_ request: GenerationRequest, modelURL: URL) throws -> AsyncThrowingStream<String, Error> {
+        try Task.checkCancellation()
         guard !busy, releaseRequests == 0 else { throw LocalModelError.busy }
         guard (1...1024).contains(request.maxTokens), request.temperature.isFinite,
               (0...2).contains(request.temperature), request.messages.contains(where: { $0.role == .user && (!$0.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || $0.attachments.contains(where: { !($0.extractedText ?? "").isEmpty })) }),
@@ -71,6 +72,7 @@ actor LlamaEngine: LocalResourceReleasing {
         guard let model = url.path.withCString({ llama_model_load_from_file($0, modelParameters) }) else { throw LocalModelError.loadFailed }
         var contextParameters = llama_context_default_params()
         contextParameters.n_ctx = contextSize
+        contextParameters.n_seq_max = 1
         contextParameters.n_batch = UInt32(batchSize)
         contextParameters.n_ubatch = UInt32(batchSize)
         contextParameters.n_threads = Int32(max(1, min(4, ProcessInfo.processInfo.activeProcessorCount - 2)))
@@ -92,6 +94,21 @@ actor LlamaEngine: LocalResourceReleasing {
     private func generate(_ request: GenerationRequest, modelURL: URL, continuation: AsyncThrowingStream<String, Error>.Continuation) async throws {
         try Task.checkCancellation()
         let owned = try load(modelURL)
+        if let goal = request.nativeReadGoal {
+            #if ORIVYN_NATIVE_TOOLS
+            let gate = try NativeReadGeneration(owner: owned, goal: goal)
+            let result = try await withTaskCancellationHandler {
+                try Task.checkCancellation()
+                do { return try await Task.detached { try gate.generate(maxTokens: request.maxTokens) }.value }
+                catch { try Task.checkCancellation(); throw error }
+            } onCancel: { gate.cancel() }
+            try Task.checkCancellation()
+            if case .terminated = continuation.yield(result) { throw CancellationError() }
+            return
+            #else
+            throw LocalModelError.unsupportedChatTemplate
+            #endif
+        }
         let model = owned.model
         let context = owned.context
         guard let vocabulary = llama_model_get_vocab(model) else { throw LocalModelError.loadFailed }
@@ -265,3 +282,34 @@ private struct ModelFileIdentity: Equatable {
                     size: size.uint64Value, modified: modified)
     }
 }
+
+#if ORIVYN_NATIVE_TOOLS
+/// Only this file can bind native pointers to their actual resource owner. The
+/// engine remains busy and retains its worker until detached C decoding returns.
+/// The mutex serializes cancel vs destruction; only cancellation overlaps decode.
+private final class NativeReadGeneration: @unchecked Sendable {
+    private let owner: LlamaResources
+    private let lock = NSLock()
+    private var handle: UnsafeMutableRawPointer?
+    init(owner: LlamaResources, goal: String) throws {
+        guard !goal.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              goal.utf8.count <= 2048, !goal.contains("\0") else { throw LocalModelError.invalidRequest }
+        self.owner = owner
+        let result = goal.withCString { ov3_create_borrowed(owner.model, 3, 2, 60_000, $0, goal.utf8.count, &handle) }
+        guard result == 0, handle != nil else { throw LocalModelError.unsupportedChatTemplate }
+    }
+    func cancel() { lock.lock(); defer { lock.unlock() }; if let handle { ov2_cancel(handle) } }
+    func generate(maxTokens: Int) throws -> String {
+        guard (1...512).contains(maxTokens), let handle else { throw LocalModelError.invalidRequest }
+        var output: UnsafeMutablePointer<CChar>?
+        defer { ov2_free(output); close() }
+        guard ov3_generate(handle, owner.context, UInt32(maxTokens), &output) == 0, let output else { throw LocalAgentError.invalidState }
+        return String(cString: output)
+    }
+    private func close() {
+        lock.lock(); defer { lock.unlock() }
+        if let handle { ov2_destroy(handle); self.handle = nil }
+    }
+    deinit { close() }
+}
+#endif

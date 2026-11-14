@@ -1,0 +1,3 @@
+/workspace/shared/swift-recovered/swift-6.1.3-RELEASE-ubuntu22.04/usr/bin/swift test --jobs 2 --package-path /workspace/scratch/8352eb8fe69c/orivyn-sync-next-proof --scratch-path /workspace/scratch/8352eb8fe69c/orivyn-sync-next-proof/.build-new -Xswiftc -I -Xswiftc /workspace/scratch/8352eb8fe69c/orivyn-release-core-audit/sqlite
+
+Exact production sources copied into the local harness. Package links host /usr/lib/x86_64-linux-gnu/libsqlite3.so.0. No Apple SDK/device tests. Harness initial attempt failed due missing test target SQLite include path; corrected command above passed.

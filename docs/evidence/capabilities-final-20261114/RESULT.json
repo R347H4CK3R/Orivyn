@@ -1,0 +1,28 @@
+{
+  "portable": {
+    "python_passed": 170,
+    "python_skipped": 1,
+    "foundation_passed": 400,
+    "agent_passed": 104,
+    "vm_passed": 39,
+    "persistence_and_framing_passed": 64
+  },
+  "combined_runtime": {
+    "linkage": "passed",
+    "vision_cases_passed": 9,
+    "vision_production_path": "passed with documented Linux input/file-store substitutions",
+    "vision_token_limit": "passed",
+    "native_actor_checks": 5,
+    "native_revocation_checks": 2
+  },
+  "exclusions": [
+    "Apple SDK compilation/linking",
+    "SwiftUI/ImageIO runtime",
+    "native TLS and physical pairing",
+    "iPhone memory/thermal/battery",
+    "wider vision reliability",
+    "general autonomy",
+    "automatic sync",
+    "new package or publication"
+  ]
+}

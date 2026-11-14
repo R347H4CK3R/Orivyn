@@ -283,7 +283,8 @@
           "byteCount": 1834426016,
           "sha256": "061b54daade076b5d3362dac252678d17da8c68f07560be70818cace6590cb1a"
         }
-      ]
+      ],
+      "reverifiedAt": "2026-11-14"
     }
   ]
 }

@@ -1,0 +1,2 @@
+PASS exact production Session → pair owner → NativeVisionRuntime → VisionWorker → actual C inference and cleanup
+ACTUAL OUTPUT:  A red square is displayed on a white background.

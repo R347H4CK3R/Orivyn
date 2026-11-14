@@ -15,7 +15,9 @@ final class VerifiedLocalReadSession {
     private(set) var archivedTotal = 0
     private(set) var report = ""
     private(set) var error: String?
-    var isRunning: Bool { work != nil }
+    private var suggestionTask: Task<NativeReadProposal, Error>?
+    private(set) var isSuggesting = false
+    var isRunning: Bool { work != nil || isSuggesting }
     var canManage: Bool { !isRunning && model.verifiedReadOwner == nil }
     init(model: AppModel, directory: URL) throws {
         self.model = model; core = try VerifiedLocalPlanCore(); store = try LocalAgentStore(directory: directory)
@@ -54,6 +56,42 @@ final class VerifiedLocalReadSession {
         guard canManage else { throw LocalAgentError.staleOwner }
         return try core.route(text)
     }
+    #if ORIVYN_NATIVE_TOOLS
+    func proposeNative(_ text: String) async throws -> NativeReadProposal {
+        guard canManage, let provider = model.selectedLocalAgentProvider else { throw LocalAgentError.localModelRequired }
+        isSuggesting = true
+        let identity = UUID()
+        let relay = NativeReadCancellationRelay()
+        defer { relay.finish() }
+        let task = Task { @MainActor in
+            try await model.beginHeavyWork(id: identity, kind: .localAgent)
+            withObservationTracking { _ = model.heavyWorkLease } onChange: { relay.cancel() }
+            let proposal = try await provider.suggestNativeReads(goal: text) { [model] in
+                try Task.checkCancellation()
+                guard model.heavyWorkLease?.id == identity, model.heavyWorkLease?.phase == .ready else { throw LocalAgentError.staleOwner }
+            }
+            try Task.checkCancellation()
+            guard model.heavyWorkLease?.id == identity, model.heavyWorkLease?.phase == .ready else { throw LocalAgentError.staleOwner }
+            return proposal
+        }
+        relay.install { task.cancel() }
+        suggestionTask = task
+        do {
+            let proposal = try await withTaskCancellationHandler { try await task.value } onCancel: { task.cancel() }
+            relay.finish()
+            await model.finishLocalAgentWork(id: identity)
+            suggestionTask = nil; isSuggesting = false
+            guard !task.isCancelled else { throw CancellationError() }
+            try Task.checkCancellation()
+            return proposal
+        } catch {
+            relay.finish()
+            await model.finishLocalAgentWork(id: identity)
+            suggestionTask = nil; isSuggesting = false
+            throw error
+        }
+    }
+    #endif
     func create(appInfo: Bool, installedModels: Bool, searchQuery: String?, memoryQuery: String? = nil) {
         guard canManage else { return }
         do {
@@ -101,7 +139,7 @@ final class VerifiedLocalReadSession {
             }
         }
     }
-    func stop() { work?.cancel() }
+    func stop() { work?.cancel(); suggestionTask?.cancel() }
     func changeArchivePage(_ direction: Int) {
         guard canManage else { return }
         let next = archivePage + direction

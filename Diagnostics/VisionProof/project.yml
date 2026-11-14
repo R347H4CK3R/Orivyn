@@ -15,7 +15,7 @@ targets:
   VisionProof:
     type: application
     platform: iOS
-    sources: [Sources, Bridge]
+    sources: [Sources, Bridge, ../../JarvisEVO/Core/LocalHeavyWork.swift, ../../JarvisEVO/Core/VisionSession.swift]
     dependencies:
       - framework: Frameworks/llama.xcframework
         embed: true

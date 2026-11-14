@@ -3,6 +3,7 @@
 #include "mtmd.h"
 #include "mtmd-helper.h"
 #include <atomic>
+#include <algorithm>
 #include <mutex>
 #include <memory>
 #include <string>
@@ -32,6 +33,7 @@ static bool canceled(ov_session*s){
 #endif
  return s->cancel.load();
 }
+static bool load_progress(float,void*p){auto*s=static_cast<ov_session*>(p);++s->callbacks;return !canceled(s);}
 static bool abort_decode(void*p){auto*s=static_cast<ov_session*>(p);++s->callbacks;return canceled(s);}
 static bool eval_callback(ggml_tensor*,bool ask,void*p){
  // ask=true requests node observation; false here would NOT request abort.
@@ -54,12 +56,19 @@ static void validate(const ov_request&r,size_t cap){
  std::string q(r.question,r.question_bytes);
  if(!utf8(q)||q.find(mtmd_default_marker())!=std::string::npos||q.find("<|im_")!=std::string::npos)throw 1;
  bool visible=false;for(unsigned char c:q)if(!std::isspace(c))visible=true;if(!visible)throw 1;
+ // Pixel-only abstention: flat color and <=2/255 codec noise contain no
+ // discernible detail. Never synthesize model descriptions for these inputs.
+ uint8_t lo[3]={255,255,255},hi[3]={0,0,0};bool detail=false;
+ for(size_t i=0;i<r.rgb_bytes;++i){auto c=i%3;lo[c]=std::min(lo[c],r.rgb[i]);hi[c]=std::max(hi[c],r.rgb[i]);
+  if(int(hi[c])-int(lo[c])>2){detail=true;break;}}
+ if(!detail)throw 10;
 }
 static void generate(ov_session*s,const ov_request&r,std::string&out,ov_report&report,size_t cap){
  check(s);s->phase=1;
  std::call_once(backend_once,[]{llama_backend_init();});
  auto mp=llama_model_default_params();mp.n_gpu_layers=0;mp.use_mmap=true;
- Owner<llama_model,llama_model_free> model(llama_model_load_from_file(r.model,mp));if(!model.p)throw 3;check(s);
+ mp.progress_callback=load_progress;mp.progress_callback_user_data=s;
+ Owner<llama_model,llama_model_free> model(llama_model_load_from_file(r.model,mp));check(s);if(!model.p)throw 3;
  auto cp=llama_context_default_params();cp.n_ctx=2048;cp.n_batch=128;cp.n_ubatch=128;cp.n_threads=2;cp.n_threads_batch=2;
  cp.offload_kqv=false;cp.abort_callback=abort_decode;cp.abort_callback_data=s;
  Owner<llama_context,llama_free> ctx(llama_init_from_model(model.p,cp));if(!ctx.p)throw 3;check(s);
@@ -105,7 +114,8 @@ static void generate(ov_session*s,const ov_request&r,std::string&out,ov_report&r
   char piece[256];int count=llama_token_to_piece(vocab,token,piece,sizeof(piece),0,false);
   if(count<0||out.size()+size_t(count)>=cap)throw 8;
   out.append(piece,count);++report.tokens;
-  if(i+1==r.output_tokens)break;
+  // No EOG was observed: never report a token-truncated answer as complete.
+  if(i+1==r.output_tokens)throw 8;
   auto batch=llama_batch_get_one(&token,1);int rc=llama_decode(ctx.p,batch);check(s);if(rc)throw 6;
  }
  check(s);

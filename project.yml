@@ -12,6 +12,7 @@ settings:
     MARKETING_VERSION: 0.1.1
     CURRENT_PROJECT_VERSION: 6
     SWIFT_STRICT_CONCURRENCY: complete
+    SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) $(ORIVYN_NATIVE_FEATURES)"
 packages:
   LlamaRuntime:
     path: Packages/LlamaRuntime

@@ -5,6 +5,13 @@ import SQLite3
 private final class DatabaseHandle: @unchecked Sendable {
     var raw: OpaquePointer?
     init(url: URL) throws {
+        var initialized = false
+        defer {
+            if !initialized, let raw {
+                sqlite3_close(raw)
+                self.raw = nil
+            }
+        }
         try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
         guard sqlite3_open_v2(url.path, &raw, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_FULLMUTEX, nil) == SQLITE_OK else {
             let error = DatabaseError.operation("Could not open local history.")
@@ -14,14 +21,40 @@ private final class DatabaseHandle: @unchecked Sendable {
         }
         sqlite3_busy_timeout(raw, 5_000)
         try execute("PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA secure_delete=ON; CREATE TABLE IF NOT EXISTS conversations (id TEXT PRIMARY KEY, title TEXT NOT NULL, updated REAL NOT NULL, archived INTEGER NOT NULL, search TEXT NOT NULL, payload BLOB NOT NULL); CREATE TABLE IF NOT EXISTS memory (id TEXT PRIMARY KEY, content TEXT NOT NULL, created REAL NOT NULL, payload BLOB NOT NULL);")
+        // A database-local receive epoch prevents old transfers resurrecting erased history.
+        // Seed only a newly created schema; an existing but damaged epoch fails closed.
+        try execute("BEGIN IMMEDIATE")
+        do {
+            var statement: OpaquePointer?
+            guard sqlite3_prepare_v2(raw, "SELECT name FROM sqlite_master WHERE type='table' AND name='text_receive_epoch'", -1, &statement, nil) == SQLITE_OK else {
+                throw DatabaseError.operation("Could not inspect receive metadata.")
+            }
+            let status = sqlite3_step(statement)
+            sqlite3_finalize(statement)
+            guard status == SQLITE_ROW || status == SQLITE_DONE else { throw DatabaseError.operation("Could not inspect receive metadata.") }
+            if status == SQLITE_DONE {
+                try execute("CREATE TABLE text_receive_epoch (singleton INTEGER PRIMARY KEY CHECK(singleton=1), epoch TEXT NOT NULL); INSERT INTO text_receive_epoch VALUES (1, '\(UUID().uuidString)');")
+                try execute("CREATE TABLE text_receive_receipts (transfer TEXT PRIMARY KEY, peer BLOB NOT NULL, generation TEXT NOT NULL, payload BLOB NOT NULL, summary BLOB NOT NULL);")
+            }
+            try execute("COMMIT")
+        } catch { try? execute("ROLLBACK"); throw error }
         #if os(iOS)
         try FileManager.default.setAttributes([.protectionKey: FileProtectionType.completeUntilFirstUserAuthentication], ofItemAtPath: url.path)
         #endif
+        initialized = true
     }
     deinit { if let raw { sqlite3_close(raw) } }
     func execute(_ sql: String) throws {
         guard sqlite3_exec(raw, sql, nil, nil, nil) == SQLITE_OK else { throw DatabaseError.operation("The local database operation failed.") }
     }
+}
+
+/// Local commit identity only: these fields do not authenticate a transport or grant consent.
+struct ReviewedTextReceiveIdentity: Sendable {
+    let epoch: UUID
+    let transfer: UUID
+    let peerCertificateSHA256: Data
+    let pairingGeneration: UUID
 }
 
 enum DatabaseError: LocalizedError {
@@ -98,9 +131,16 @@ actor SQLiteConversationStore {
     }
 
     func delete(id: UUID) throws {
-        try withStatement("DELETE FROM conversations WHERE id = ?") { statement in
-            bind(id.uuidString, to: 1, in: statement); try requireDone(statement)
-        }
+        try database.execute("BEGIN IMMEDIATE")
+        do {
+            try withStatement("DELETE FROM conversations WHERE id = ?") { statement in
+                bind(id.uuidString, to: 1, in: statement); try requireDone(statement)
+            }
+            // Receipts contain exact text bytes. Clear them on individual erasure too,
+            // and invalidate every prior receive scope rather than resurrect deleted text.
+            try invalidateTextReceivesForErasure()
+            try database.execute("COMMIT")
+        } catch { try? database.execute("ROLLBACK"); throw error }
     }
 
     /// A committed deletion must not be reported as rolled back if later disk
@@ -109,13 +149,37 @@ actor SQLiteConversationStore {
     func deleteAll() throws -> String? {
         try database.execute("BEGIN IMMEDIATE")
         do {
-            try database.execute("DELETE FROM conversations; DELETE FROM memory; COMMIT;")
+            try database.execute("DELETE FROM conversations; DELETE FROM memory;")
+            try invalidateTextReceivesForErasure()
+            try database.execute("COMMIT")
         } catch { try? database.execute("ROLLBACK"); throw error }
         do {
             try database.execute("PRAGMA wal_checkpoint(TRUNCATE); VACUUM;")
             return nil
         } catch {
             return "Your conversations and memories were deleted, but database compaction could not finish. Storage may not be reclaimed yet; this is not a verified secure erase."
+        }
+    }
+
+    /// Runs inside the caller's erasure transaction. Missing receive metadata must
+    /// not prevent user erasure. Do not recreate it: receives still fail closed.
+    private func invalidateTextReceivesForErasure() throws {
+        func tableExists(_ name: String) throws -> Bool {
+            try withStatement("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?") { statement in
+                bind(name, to: 1, in: statement)
+                let result = sqlite3_step(statement)
+                guard result == SQLITE_ROW || result == SQLITE_DONE else {
+                    throw DatabaseError.operation("Could not inspect receive metadata during erasure.")
+                }
+                return result == SQLITE_ROW
+            }
+        }
+        if try tableExists("text_receive_receipts") {
+            // Real failures still roll back: otherwise private receipt text could remain.
+            try database.execute("DELETE FROM text_receive_receipts")
+        }
+        if try tableExists("text_receive_epoch") {
+            try database.execute("UPDATE text_receive_epoch SET epoch='\(UUID().uuidString)' WHERE singleton=1")
         }
     }
 
@@ -141,6 +205,32 @@ actor SQLiteConversationStore {
     /// Merges a complete validated snapshot transactionally. Attachments remain local references.
     @discardableResult
     func importData(_ data: Data, policy: BackupImportPolicy = .replaceMatching) throws -> BackupImportSummary {
+        try importData(data, policy: policy, receive: nil)
+    }
+
+    /// The caller must complete native authentication and exact-payload review first.
+    /// No production UI/transport calls this API yet. Only text conversations are accepted;
+    /// attachments and memories require separate ownership/consent implementations.
+    /// Receipts retain exact bytes (not a homemade hash), bounded to 50 MB in total.
+    func receiveReviewedText(_ data: Data, identity: ReviewedTextReceiveIdentity) throws -> BackupImportSummary {
+        guard data.count <= 5_000_000, identity.peerCertificateSHA256.count == 32 else {
+            throw DatabaseError.operation("Invalid text receive scope or size.")
+        }
+        return try importData(data, policy: .keepBoth, receive: identity)
+    }
+
+    func textReceiveEpoch() throws -> UUID {
+        try withStatement("SELECT epoch FROM text_receive_epoch WHERE singleton=1") { statement in
+            guard sqlite3_step(statement) == SQLITE_ROW,
+                  let raw = sqlite3_column_text(statement, 0),
+                  let epoch = UUID(uuidString: String(cString: raw)) else {
+                throw DatabaseError.operation("Receive metadata needs recovery; no transfer was applied.")
+            }
+            return epoch
+        }
+    }
+
+    private func importData(_ data: Data, policy: BackupImportPolicy, receive: ReviewedTextReceiveIdentity?) throws -> BackupImportSummary {
         try Task.checkCancellation()
         guard data.count <= ConversationBackup.maximumBytes else { throw ConversationError.tooLarge }
         let backup: ConversationBackup
@@ -149,11 +239,30 @@ actor SQLiteConversationStore {
         guard backup.schemaVersion == 1, backup.conversations.count <= ConversationBackup.maximumRecordsPerCollection, backup.memories.count <= ConversationBackup.maximumRecordsPerCollection,
               Set(backup.conversations.map(\.id)).count == backup.conversations.count,
               Set(backup.memories.map(\.id)).count == backup.memories.count else { throw ConversationError.invalidBackup }
+        if receive != nil {
+            guard backup.memories.isEmpty,
+                  backup.conversations.allSatisfy({ $0.messages.allSatisfy { $0.attachments.isEmpty && $0.state != .streaming } }) else {
+                throw DatabaseError.operation("This receive operation accepts completed text conversations only.")
+            }
+        }
         try backup.conversations.forEach(validate)
         try backup.memories.forEach(validateMemory)
         try Task.checkCancellation()
         try database.execute("BEGIN IMMEDIATE")
         do {
+            if let receive {
+                guard try textReceiveEpoch() == receive.epoch else { throw DatabaseError.operation("This receive session predates local history erasure.") }
+                if let prior = try textReceiveReceipt(data, identity: receive) {
+                    try database.execute("COMMIT")
+                    return prior
+                }
+                let retained = try withStatement("SELECT COALESCE(SUM(length(payload)),0), COUNT(*) FROM text_receive_receipts") { statement in
+                    guard sqlite3_step(statement) == SQLITE_ROW else { throw DatabaseError.operation("Could not inspect receive capacity.") }
+                    guard sqlite3_column_int64(statement, 1) < 10_000 else { throw DatabaseError.operation("Receive receipt storage is full; no transfer was applied.") }
+                    return sqlite3_column_int64(statement, 0)
+                }
+                guard retained <= 50_000_000 - Int64(data.count) else { throw DatabaseError.operation("Receive receipt storage is full; no transfer was applied.") }
+            }
             // Resolve preservation against the same locked snapshot used for writes.
             // No timestamp-based winner: clocks on another device are not trusted.
             var incomingConversations = backup.conversations
@@ -203,13 +312,41 @@ actor SQLiteConversationStore {
             for conversation in incomingConversations { try Task.checkCancellation(); try writeConversation(conversation) }
             for note in incomingMemories { try Task.checkCancellation(); try saveMemory(note) }
             try Task.checkCancellation()
-            try database.execute("COMMIT")
-            return BackupImportSummary(writtenConversations: incomingConversations.count,
+            let summary = BackupImportSummary(writtenConversations: incomingConversations.count,
                                        writtenMemories: incomingMemories.count,
                                        skippedConversations: backup.conversations.count - incomingConversations.count,
                                        skippedMemories: backup.memories.count - incomingMemories.count,
                                        copiedConversations: copiedConversations, copiedMemories: copiedMemories)
+            if let receive {
+                try withStatement("INSERT INTO text_receive_receipts (transfer,peer,generation,payload,summary) VALUES (?,?,?,?,?)") { statement in
+                    bind(receive.transfer.uuidString, to: 1, in: statement)
+                    bind(receive.peerCertificateSHA256, to: 2, in: statement)
+                    bind(receive.pairingGeneration.uuidString, to: 3, in: statement)
+                    bind(data, to: 4, in: statement)
+                    bind(try encoder.encode(summary), to: 5, in: statement)
+                    try requireDone(statement)
+                }
+            }
+            try Task.checkCancellation()
+            try database.execute("COMMIT")
+            return summary
         } catch { try? database.execute("ROLLBACK"); throw error }
+    }
+
+    private func textReceiveReceipt(_ data: Data, identity: ReviewedTextReceiveIdentity) throws -> BackupImportSummary? {
+        try withStatement("SELECT peer,generation,payload,summary FROM text_receive_receipts WHERE transfer=?") { statement in
+            bind(identity.transfer.uuidString, to: 1, in: statement)
+            let status = sqlite3_step(statement)
+            if status == SQLITE_DONE { return nil }
+            guard status == SQLITE_ROW,
+                  blob(statement, at: 0) == identity.peerCertificateSHA256,
+                  let generation = sqlite3_column_text(statement, 1),
+                  String(cString: generation) == identity.pairingGeneration.uuidString,
+                  blob(statement, at: 2) == data else {
+                throw DatabaseError.operation("Transfer identity was reused with a different scope or payload.")
+            }
+            return try decoder.decode(BackupImportSummary.self, from: blob(statement, at: 3))
+        }
     }
 
     func memories(query: String = "") throws -> [MemoryNote] {

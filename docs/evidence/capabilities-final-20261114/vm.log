@@ -1,0 +1,47 @@
+✔ actual bundled BIOS executes through primary module without NIC (1204.024279ms)
+✔ actual bundled BIOS executes through fallback module without NIC (1024.930114ms)
+✔ pre-bootstrap cancellation prevents any guest setup or asset acquisition (3.060292ms)
+✔ actual BIOS checkpoint persists to disk and restores into a fresh engine (596.643437ms)
+✔ checkpoint sends bounded ordered chunks and commits only after all acknowledgements (187.310618ms)
+✔ transfer cancellation aborts transaction and never commits (67.253818ms)
+✔ restore validates identity and length before asking for payload (8.637948ms)
+✔ restore reconstructs bounded chunks and never starts VM implicitly (23.4761ms)
+✔ short restore data never reaches engine (0.927416ms)
+✔ wrong append offset acknowledgement aborts instead of publishing (0.266465ms)
+✔ oversized restore metadata rejected before pause or allocation (0.16825ms)
+✔ unsupported schema cannot restore any data (0.161189ms)
+✔ missing owner rejected before VM construction (1.620755ms)
+✔ stop while assets load prevents construction and stale ready (0.740238ms)
+✔ one owner admits only one start and bounded input (1.907091ms)
+✔ ready after stop cannot start VM (0.361326ms)
+✔ NIC invariant refuses engine before run (0.426893ms)
+✔ initialization failure is reported even when engine cleanup rejects (0.494755ms)
+✔ controller failure preserves bounded reason before teardown (0.516917ms)
+✔ checkpoint leaves VM paused and requires explicit resume (0.771155ms)
+✔ stop invalidates in-flight snapshot and prevents resume (0.523357ms)
+✔ diagnostic console emits only fixed guest key chord (43.323774ms)
+✔ repeated stop waits for the same outstanding engine destruction (2.989597ms)
+✔ checkpoint and concurrent input cannot race an outstanding key transfer (0.760628ms)
+✔ resume owns transition before asynchronous engine run (2.790552ms)
+✔ failed resume reports error and cannot admit another checkpoint (0.45854ms)
+✔ stop drains pending resume before destroying and announcing teardown (0.333104ms)
+✔ stop drains keyboard transfer before destroying and blocks new input (0.251203ms)
+✔ stop retains ownership until asset allocation finishes (0.171455ms)
+✔ stop after startup failure waits for shared failure cleanup (3.992776ms)
+✔ failed startup destruction cannot be acknowledged as successful stop (0.471911ms)
+✔ async engine rejection reaches bounded native diagnostic and unregisters on stop (14.698082ms)
+✔ guest serial display is bounded inert text and rejects noncharacters (49.179995ms)
+✔ maintained guest requires exact disk length and disables external runtime (2.826284ms)
+✔ restricted browser uses upstream timer scheduler without constructing a worker (655.51175ms)
+✔ native document installs restricted scheduler before vendor detection (0.715461ms)
+✔ valid module never reads fallback (2.501522ms)
+✔ invalid module tries one bounded fallback and reports actual exception (0.961246ms)
+✔ both invalid modules reject rather than inventing execution (2.176821ms)
+ℹ tests 39
+ℹ suites 0
+ℹ pass 39
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2416.264979

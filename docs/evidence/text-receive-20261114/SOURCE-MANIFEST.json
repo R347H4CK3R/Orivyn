@@ -1,0 +1,18 @@
+[
+  {
+    "path": "JarvisEVO/Core/Conversation.swift",
+    "sha256": "bc67dc97a2701c47c419c263d11373331bba3f6238c5112cd9666b5902b5d23a"
+  },
+  {
+    "path": "JarvisEVO/Persistence/SQLiteConversationStore.swift",
+    "sha256": "2209834fcef3f9cdb206f4266afcf654cfa7f580f4e9a4d47b7e71644bfbdeb6"
+  },
+  {
+    "path": "Tests/TextReceivePersistenceTests.swift",
+    "sha256": "7a3ff8d04bb09655f4a8f70a1262a8c47a3d9c932f51f6fc5002579ddf747536"
+  },
+  {
+    "path": "scripts/run_persistence_tests.py",
+    "sha256": "d2da02fd6eb942bff6d53205c9826045dc639d1af9fa05d4c77713cb3b9a0650"
+  }
+]

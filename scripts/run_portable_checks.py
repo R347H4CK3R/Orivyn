@@ -60,8 +60,6 @@ def main(argv=None):
     if args.sqlite_source and not all((args.sqlite_source / name).is_file() for name in ['sqlite3.c', 'sqlite3.h']):
         parser.error('--sqlite-source must contain sqlite3.c and sqlite3.h')
     output.mkdir(parents=True)
-    manifest = source_manifest(root)
-    (output / 'SOURCE-MANIFEST.json').write_text(json.dumps(manifest, indent=2) + '\n')
     summary = {
         'started_at': datetime.datetime.now(datetime.timezone.utc).isoformat(),
         'scope': 'Portable checks only; no Apple SDK build, simulator, device, real provider, or release verification.',
@@ -73,6 +71,8 @@ def main(argv=None):
         'stages': [],
     }
     stages = [
+        ('guest-fixture', [sys.executable, '-B', 'scripts/materialize_guest.py',
+                           'Fixtures/maintained.img.gz', 'JarvisEVO/Resources/VMAssets/maintained.img']),
         ('python', [sys.executable, '-B', '-m', 'unittest', 'discover', '-s', 'scripts/tests', '-p', 'test_*.py']),
         ('catalog', [sys.executable, '-B', 'scripts/model_catalog.py', '--check']),
         ('agent', [args.node, '--test'] + [str(p.relative_to(root)) for p in sorted((root / 'scripts/agent-tests').glob('*.test.cjs'))]),
@@ -93,6 +93,9 @@ def main(argv=None):
             print('Running ' + name + '...', flush=True)
             result = run_stage(name, command, root, output)
             summary['stages'].append(result)
+            if name == 'guest-fixture':
+                # Record the generated, checksum-verified guest that the tests read.
+                (output / 'SOURCE-MANIFEST.json').write_text(json.dumps(source_manifest(root), indent=2) + '\n')
             save()
             print(name + ': ' + result['status'], flush=True)
     except KeyboardInterrupt:

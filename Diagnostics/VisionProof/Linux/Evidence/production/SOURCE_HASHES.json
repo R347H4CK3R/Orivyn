@@ -1,0 +1,21 @@
+{
+  "llamaCommit": "2496f9c14965c39589f53eea31bdb6d762b1d360",
+  "files": {
+    "JarvisEVO/Services/Vision/VisionModelStorage.swift": "e4c39d0c4f616667a43ec6e14a0b8a5e483a676cc85d8470958249e29ac11478",
+    "JarvisEVO/Services/Vision/VisionWorker.swift": "7b68da735a51f3b2a9c599ebe17917deba1b99fd672c2d094a82a02131acdf64",
+    "JarvisEVO/Services/Vision/ImageBoundary.swift": "0e707e0d8c16b7f7ea85b2e495097291eb910b85bd582dc28c87381f4c993700",
+    "JarvisEVO/Services/Vision/NativeVisionRuntime.swift": "67ea7a856d83928fa61d3ae718ec22257317fe15572e6baf7cb941c3da4407f2",
+    "Diagnostics/VisionProof/Linux/Evidence/production/stronger-results.json": "8e82e9c0201ce8f57efe3ba9170d7023f09e10833df96e0302e89bb8e7f60494",
+    "Diagnostics/VisionProof/Linux/Evidence/production/baseline-results.json": "39d80f7137988988886dc84ca4554858e3e10ab59592285f4c30e83c4741085e",
+    "Diagnostics/VisionProof/Linux/Evidence/production/MODEL_PAIR.json": "6d40bc37f0e0875a1db607cb0027db1bb32290c26a848bf5e5208d93b16a08d6",
+    "Diagnostics/VisionProof/Linux/Evidence/production/checks.json": "f4ca30223f394872f604778911778969edd0d67bd100ec7165700fd973d73521",
+    "JarvisEVO/Core/VisionModelPair.swift": "aa66cec5ea3fc90557dec6cdbc89855181d688fd285f12d447ee4f2df6083db6",
+    "JarvisEVO/Core/VisionImageFile.swift": "c01e5fbc1adf1940caeb11e64c77a94b167e4174b5543ec2a70683570ba95393",
+    "JarvisEVO/Core/VisionPixelBoundary.swift": "264c9e5e37310085e4f957c3ce47ef87164f3cf49b562b03bebac5c0d0aa7bf9",
+    "JarvisEVO/Core/VisionSession.swift": "c15f206e2c9e60ae3ec5401d76a3de06845179797442e61c36ab1770fff4eb88",
+    "JarvisEVO/UI/VisionAnalysisView.swift": "465a99c7a7d8b0c5eb9259639462ec1ca76c1641f97ed37903229d8384e2b35c",
+    "JarvisEVO/UI/WorkspaceViews.swift": "ecaafcec488ead3286013b6e898b09da6330b1454d61a577d45d3008c54d5845",
+    "Diagnostics/VisionProof/Bridge/vision_bridge.cpp": "82d2f841ba9d0dfeb1b995c8c3c02675360b5fe9743dcdb5eb8aa1798968300c",
+    "Diagnostics/VisionProof/Bridge/vision_bridge.h": "805d19ded1c2757a398090cb26ff14a613442a1ffcecb2dd3051fcc53bcfd3fe"
+  }
+}

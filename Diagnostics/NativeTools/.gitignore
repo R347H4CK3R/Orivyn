@@ -1,0 +1,5 @@
+*.gguf
+*.partial
+*.so
+driver-tests
+__pycache__/

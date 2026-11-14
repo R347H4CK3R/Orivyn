@@ -9,6 +9,8 @@ struct GenerationRequest: Sendable {
     var localAgentRequiresTool: Bool? = nil
     /// Opt-in Qwen3 non-thinking template mode; ignored by other architectures.
     var conciseQwen3: Bool = false
+    /// Internal reviewed-read suggestion; never a tool execution instruction.
+    var nativeReadGoal: String? = nil
 }
 
 protocol AIProvider: Sendable {
