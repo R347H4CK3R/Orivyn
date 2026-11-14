@@ -1,0 +1,30 @@
+{
+  "sourceCommit": "4ce8001df8dd3bd0671c7969fc3fa462046b9ed1",
+  "run": 43627151441,
+  "job": 132545510565,
+  "status": "failed",
+  "unitTests": {
+    "total": 923,
+    "passed": 916,
+    "failed": 6,
+    "skipped": 1
+  },
+  "unitFailureCause": "Unloaded-history guard prevented rollback of fresh owned imports; candidate fix requires rerun.",
+  "uiFailures": [
+    "AutomaticRealInferenceUITests: coder first content did not appear within 210 seconds",
+    "LocalAgentIntegrationUITests: restored Run control offscreen",
+    "SelectedTextExportUITests: parent switch tap did not select record",
+    "VerifiedLocalReadUITests: create button offscreen"
+  ],
+  "desktopEvidence": {
+    "firstFlowSeconds": 192.476,
+    "firstFlowWatchdogMessage": true,
+    "checkpointRelaunchRerunSeconds": 325.499,
+    "checkpointRelaunchRerunPassed": true
+  },
+  "artifact": {
+    "id": 14128342912,
+    "sha256": "ec30f89134e94fe7c697198b711e7a6f3eca51e0c4530a9de1a6efc9e84ddac9"
+  },
+  "releaseAccepted": false
+}

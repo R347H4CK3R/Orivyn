@@ -1,0 +1,7 @@
+scope=iOS simulator CPU production runtime smoke
+modelRevision=1bc3c9f74ceafd4c8d4411cc9cf188bba3798f91
+modelSHA256=0cf76814555b8665149075b74ab6b5c1d428ea1d3d01c1918c12012e8d7c9f58
+projectorSHA256=db9a3a1648cab1ebc3af4a2b0c8145dd8faebf6f7dd7b16e7dc1842229f14ac4
+elapsedSeconds=115.2383679151535
+closeAcknowledged=true
+actualAnswer= A red square is displayed on a white background.
