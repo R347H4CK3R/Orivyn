@@ -30,10 +30,8 @@ struct AttachmentService: Sendable {
         let id = UUID()
         let filename = id.uuidString + (isPDF ? ".pdf" : ".txt")
         let destination = directory.appendingPathComponent(filename, isDirectory: false)
-        try FileManager.default.copyItem(at: source, to: destination)
+        let actualSize = try AttachmentFileCopy.copy(from: source, to: destination, maximumBytes: Self.maximumBytes)
         do {
-            let actualSize = try destination.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
-            guard actualSize > 0, actualSize <= Self.maximumBytes else { throw AttachmentError.invalidSize }
             var extracted: String
             if isPDF {
                 guard let document = PDFDocument(url: destination), !document.isLocked else { throw AttachmentError.unreadablePDF }
