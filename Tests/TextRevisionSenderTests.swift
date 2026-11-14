@@ -63,7 +63,7 @@ final class TextRevisionSenderTests: XCTestCase {
         let mismatched=TextRevisionReceiveSummary(records:[.init(sourceID:UUID(),localID:value.id,disposition:.inserted,preservedLocalID:nil)])
         do {try await store.recordTextRevisionDeliveryReceipt(identity:first.identity,payload:first.payload,summary:mismatched);XCTFail("Wrong source accepted")}catch{}
         try await store.recordTextRevisionDeliveryReceipt(identity:first.identity,payload:first.payload,summary:valid)
-        let changed=TextRevisionReceiveSummary(records:[.init(sourceID:value.id,localID:UUID(),disposition:.inserted,preservedLocalID:nil)])
+        let changed=TextRevisionReceiveSummary(records:[.init(sourceID:value.id,localID:UUID(),disposition:.conflict,preservedLocalID:value.id)])
         do {try await store.recordTextRevisionDeliveryReceipt(identity:first.identity,payload:first.payload,summary:changed);XCTFail("Different replay accepted")}catch{}
     }
     func testStaleReviewAndSelfDestinationRejectWithoutStaging() async throws {
@@ -153,5 +153,50 @@ final class TextRevisionSenderTests: XCTestCase {
         let advanced=try await incoming.receiveReviewedTextRevisions(second.payload,identity:second.identity.receiveIdentity)
         XCTAssertEqual(advanced.records[0].localID,conflict.records[0].localID)
         let all=try await incoming.list();XCTAssertEqual(Set(all.map(\.title)),["Original","Remote next"])
+    }
+}
+
+extension TextRevisionSenderTests {
+    private static func tryStage(_ store:SQLiteConversationStore,snapshot:ReviewedTextSnapshot,sender:Data,peer:Data,generation:UUID,epoch:UUID) async -> Bool {
+        do {_=try await store.stageTextRevisionSend(snapshot,senderCertificateSHA256:sender,peerCertificateSHA256:peer,pairingGeneration:generation,receiverEpoch:epoch);return true}catch{return false}
+    }
+    func testTwoConnectionsCannotStageOverlappingTransfers() async throws {
+        let url=path(),first=try SQLiteConversationStore(url:url),second=try SQLiteConversationStore(url:url),value=Conversation(title:"Concurrent"),epoch=UUID()
+        try await first.save(value)
+        let snapshot=try ReviewedTextSnapshot(conversations:[value])
+        async let a=Self.tryStage(first,snapshot:snapshot,sender:sender,peer:peer,generation:generation,epoch:epoch)
+        async let b=Self.tryStage(second,snapshot:snapshot,sender:sender,peer:peer,generation:generation,epoch:epoch)
+        let outcomes=await [a,b];XCTAssertEqual(outcomes.filter{$0}.count,1)
+        let pending=try await first.pendingTextRevisionSendIDs();XCTAssertEqual(pending.count,1)
+    }
+    func testLateReceiptReplayCannotRewindAcknowledgedBase() async throws {
+        let store=try SQLiteConversationStore(url:path()),value=Conversation(title:"First"),epoch=UUID()
+        try await store.save(value);let first=try await stage(store,value,epoch:epoch);try await acknowledge(store,first)
+        var next=value;next.title="Next";try await store.save(next)
+        let second=try await stage(store,next,epoch:epoch);try await acknowledge(store,second)
+        try await acknowledge(store,first)
+        var latest=next;latest.title="Latest";try await store.save(latest)
+        let third=try await stage(store,latest,epoch:epoch)
+        XCTAssertEqual(try TextRevisionEnvelope.decodeCanonical(third.payload).records[0].base,next)
+    }
+    func testMissingSerializationIndexPausesSenderWithoutBlockingHistory() async throws {
+        let url=path(),store=try SQLiteConversationStore(url:url),value=Conversation(title:"Local")
+        try await store.save(value);try sql(url,"DROP INDEX text_revision_one_pending")
+        let reopened=try SQLiteConversationStore(url:url)
+        do {_=try await stage(reopened,value,epoch:UUID());XCTFail("Missing serialization metadata was ignored")}catch{}
+        let all=try await reopened.list();XCTAssertEqual(all.map(\.title),["Local"])
+        try await reopened.deleteAll()
+    }
+    func testNoOpReceiptPreservesExactBase() async throws {
+        let outgoing=try SQLiteConversationStore(url:path()),incoming=try SQLiteConversationStore(url:path()),value=Conversation(title:"Same")
+        let epoch=try await incoming.textReceiveEpoch()
+        try await outgoing.save(value);let first=try await stage(outgoing,value,epoch:epoch)
+        let inserted=try await incoming.receiveReviewedTextRevisions(first.payload,identity:first.identity.receiveIdentity)
+        try await outgoing.recordTextRevisionDeliveryReceipt(identity:first.identity,payload:first.payload,summary:inserted)
+        let second=try await stage(outgoing,value,epoch:epoch)
+        let same=try await incoming.receiveReviewedTextRevisions(second.payload,identity:second.identity.receiveIdentity)
+        XCTAssertEqual(same.records[0].disposition,.unchanged)
+        try await outgoing.recordTextRevisionDeliveryReceipt(identity:second.identity,payload:second.payload,summary:same)
+        let delivered=try await outgoing.textRevisionSend(id:second.identity.transfer);XCTAssertEqual(delivered?.delivered,true)
     }
 }
