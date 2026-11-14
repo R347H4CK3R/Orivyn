@@ -11,6 +11,14 @@ final class JarvisEVOUITests: XCTestCase {
         app.launch()
     }
 
+    private func launchUnavailableProviderFixture() {
+        app.terminate()
+        app.launchArguments = ["--uitesting", "--root-view-fixture", "unavailable-provider"]
+        app.launch()
+        XCTAssertTrue(app.staticTexts["fixture.notice"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.textViews["composer.input"].waitForExistence(timeout: 10))
+    }
+
     func testCaptureMainScreenScreenshot() {
         XCTAssertTrue(app.textViews["composer.input"].waitForExistence(timeout: 10))
         let screenshot = XCTAttachment(screenshot: app.screenshot())
@@ -21,6 +29,7 @@ final class JarvisEVOUITests: XCTestCase {
 
     // Regression: an empty composer must not create an empty saved message.
     func testEmptyComposerCannotSend() {
+        launchUnavailableProviderFixture()
         XCTAssertTrue(app.textViews["composer.input"].waitForExistence(timeout: 10))
         XCTAssertFalse(app.buttons["composer.send"].exists)
         XCTAssertTrue(app.buttons["composer.voice"].isEnabled)
@@ -81,19 +90,16 @@ final class JarvisEVOUITests: XCTestCase {
 
     // Regression: an unavailable provider must report a real error and preserve the input.
     func testUnavailableProviderDoesNotInventResponse() throws {
+        launchUnavailableProviderFixture()
         let composer = app.textViews["composer.input"]
         composer.tap()
         composer.typeText("Explain gravity")
         app.buttons["composer.send"].tap()
         let error = app.alerts.firstMatch
-        if error.waitForExistence(timeout: 5) {
-            XCTAssertFalse(app.staticTexts["assistant.response"].exists)
-            error.buttons["OK"].tap()
-            XCTAssertEqual(composer.value as? String, "Explain gravity")
-        } else {
-            // On hardware with a configured real provider, inference is an integration test.
-            throw XCTSkip("A provider is available; unavailable-provider fixture does not apply.")
-        }
+        XCTAssertTrue(error.waitForExistence(timeout: 5), "The explicit unavailable-provider fixture must fail preflight.")
+        XCTAssertFalse(app.descendants(matching: .any).matching(identifier: "assistant.response").firstMatch.exists)
+        error.buttons["OK"].tap()
+        XCTAssertEqual(composer.value as? String, "Explain gravity")
     }
 
     // Cancelling the real Files picker repeatedly must not discard or disable the draft.
@@ -120,12 +126,27 @@ final class JarvisEVOUITests: XCTestCase {
         app.buttons["toolbar.more"].tap()
         app.buttons["settings.open"].tap()
         let importButton = app.buttons["Import conversation backup"]
-        XCTAssertTrue(importButton.waitForExistence(timeout: 5))
+        reveal(importButton, in: app.collectionViews.firstMatch)
         importButton.tap()
-        let cancel = app.buttons["Cancel"].firstMatch
-        XCTAssertTrue(cancel.waitForExistence(timeout: 10))
+        let keepLocal = app.buttons["Add missing only (keep local)"]
+        XCTAssertTrue(keepLocal.waitForExistence(timeout: 5))
+        keepLocal.tap()
+        let absent = NSPredicate(format: "exists == false")
+        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: absent, object: keepLocal)], timeout: 5), .completed,
+                       "The import policy confirmation must dismiss before interacting with Files.")
+        // A dialog's Cancel is not evidence that the document picker opened.
+        // Identify the Files navigation surface and scope cancellation to it.
+        let pickerNavigation = app.navigationBars.matching(NSPredicate(
+            format: "identifier == %@ OR identifier == %@", "Browse", "Recents")).firstMatch
+        XCTAssertTrue(pickerNavigation.waitForExistence(timeout: 10), "The real Files picker must appear.")
+        let cancel = pickerNavigation.buttons["Cancel"]
+        XCTAssertTrue(cancel.waitForExistence(timeout: 5))
+        XCTAssertTrue(cancel.isHittable)
         cancel.tap()
+        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: absent, object: pickerNavigation)], timeout: 5), .completed,
+                       "Cancelling must dismiss the Files picker.")
         XCTAssertTrue(app.buttons["settings.done"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["settings.done"].isHittable)
         XCTAssertFalse(app.alerts["Backup exported"].exists)
         app.buttons["settings.done"].tap()
         XCTAssertEqual(composer.value as? String, "Keep this draft during import")

@@ -4,11 +4,17 @@ import CryptoKit
 
 final class VMPolicyTests: XCTestCase {
     func testOnlyPinnedGuestMayExceedSmallAssetLimit() {
-        let disk = VMAsset(name: "maintained.img", bytes: 135266304, sha256: "a0a4e4906ba89ef0f10d017590172d97a248bcf6f6bdb1b3599e9a5c7bba93f6", mime: "application/octet-stream")
+        let disk = VMAsset(name: "maintained.img", bytes: 135266304, sha256: "78418639ecd90573da211b62a502334f569f029b913525f50601b09d928b244d", mime: "application/octet-stream")
         XCTAssertTrue(VMAssetStore.acceptedSize(disk))
         XCTAssertFalse(VMAssetStore.acceptedSize(VMAsset(name: "other.img", bytes: disk.bytes, sha256: disk.sha256, mime: disk.mime)))
         XCTAssertFalse(VMAssetStore.acceptedSize(VMAsset(name: disk.name, bytes: disk.bytes, sha256: String(repeating: "0", count: 64), mime: disk.mime)))
         XCTAssertFalse(VMAssetStore.acceptedSize(VMAsset(name: disk.name, bytes: disk.bytes + 1, sha256: disk.sha256, mime: disk.mime)))
+    }
+    func testObsoleteGuestPinIsRejected() {
+        let obsolete = VMAsset(name: "maintained.img", bytes: 135266304,
+                               sha256: "a0a4e4906ba89ef0f10d017590172d97a248bcf6f6bdb1b3599e9a5c7bba93f6",
+                               mime: "application/octet-stream")
+        XCTAssertFalse(VMAssetStore.acceptedSize(obsolete))
     }
     func testOnlyExactAssetRoutesAndGETAreAdmitted() {
         for file in VMAssetCatalog.files {
@@ -21,7 +27,7 @@ final class VMPolicyTests: XCTestCase {
         XCTAssertNil(VMAssetStore.allowedPath(post))
     }
     func testBundledBytesMatchPinnedManifest() throws {
-        let store = try VMAssetStore(root: Bundle.main.resourceURL!.appendingPathComponent("Assets"))
+        let store = try VMAssetStore(root: Bundle.main.resourceURL!.appendingPathComponent("VMAssets", isDirectory: true))
         for file in VMAssetCatalog.files {
             let result = try store.response(for: URLRequest(url: URL(string: "orivyn-vm://bundle/" + file.name)!))
             XCTAssertEqual(result.0.count, file.bytes); XCTAssertEqual(result.1, file.mime)
