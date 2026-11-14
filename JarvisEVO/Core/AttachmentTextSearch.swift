@@ -50,7 +50,11 @@ enum AttachmentTextSearch {
             let lowerCeiling = ceilingBoundary(range.lowerBound)
             let offset = boundaries[lowerCeiling] == range.lowerBound ? lowerCeiling : max(0, lowerCeiling - 1)
             let upper = ceilingBoundary(range.upperBound)
-            let start = max(0, offset - 80)
+            // Prefer the matching passage over leading context. A valid query
+            // can be longer than 160 Characters; reserving 80 unconditionally
+            // would cut off matches that fit within the 240-Character snippet.
+            let precedingContext = min(80, max(0, 240 - (upper - offset)))
+            let start = max(0, offset - precedingContext)
             let end = min(boundaries.count - 1, start + 240)
             matches.append(Match(offset: offset, length: upper - offset,
                                  snippet: String(source[boundaries[start]..<boundaries[end]]),

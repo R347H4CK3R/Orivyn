@@ -44,6 +44,26 @@ final class AttachmentTextSearchTests: XCTestCase {
         XCTAssertEqual(String(text[start..<end]), match.snippet)
         XCTAssertTrue(match.snippet.contains("find"))
     }
+    func testLongMatchGetsPriorityOverPrecedingSnippetContext() throws {
+        for length in [161, 200, 240] {
+            let query = String(repeating: "a", count: length)
+            let text = String(repeating: "x", count: 1000) + query + String(repeating: "y", count: 1000)
+            let match = try XCTUnwrap(AttachmentTextSearch.search(text: text, query: query).matches.first)
+            XCTAssertTrue(match.snippet.contains(query), "Entire fitting match must be visible: \(length)")
+            XCTAssertLessThanOrEqual(match.snippet.count, 240)
+            XCTAssertEqual(match.offset, 1000)
+            XCTAssertEqual(match.length, length)
+            XCTAssertEqual(String(text.dropFirst(match.snippetOffset).prefix(match.snippet.count)), match.snippet)
+        }
+    }
+    func testMatchLongerThanSnippetStartsAtMatchWithoutExceedingCap() throws {
+        let query = String(repeating: "a", count: 256)
+        let text = String(repeating: "x", count: 1000) + query
+        let match = try XCTUnwrap(AttachmentTextSearch.search(text: text, query: query).matches.first)
+        XCTAssertEqual(match.snippet, String(query.prefix(240)))
+        XCTAssertEqual(match.snippetOffset, match.offset)
+        XCTAssertEqual(match.length, 256)
+    }
     func testQueryByteLimitIsExplicitAndEmptyHasNoMatches() throws {
         XCTAssertThrowsError(try AttachmentTextSearch.search(text: "text", query: String(repeating: "x", count: 257))) { error in
             XCTAssertEqual(error as? AttachmentTextSearch.SearchError, .queryTooLarge)
