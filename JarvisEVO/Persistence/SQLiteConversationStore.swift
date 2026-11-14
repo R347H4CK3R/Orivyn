@@ -58,6 +58,7 @@ private final class DatabaseHandle: @unchecked Sendable {
                 try execute("CREATE TABLE text_peer_revocation_state (singleton INTEGER PRIMARY KEY CHECK(singleton=1), version INTEGER NOT NULL CHECK(version=1)); INSERT INTO text_peer_revocation_state VALUES (1,1); CREATE TABLE text_peer_revocations (peer BLOB NOT NULL CHECK(typeof(peer)='blob' AND length(peer)=32), generation TEXT NOT NULL CHECK(typeof(generation)='text' AND length(generation)=36), PRIMARY KEY(peer,generation)); PRAGMA user_version=1;")
             }
             try migrateTextLineageIfEligible()
+            try migrateTextSenderIfEligible()
             try execute("COMMIT")
         } catch { try? execute("ROLLBACK"); throw error }
         #if os(iOS)
@@ -83,6 +84,24 @@ private final class DatabaseHandle: @unchecked Sendable {
               scalar("SELECT COUNT(*) FROM sqlite_master WHERE name='text_revision_lineage'")==0 else { return }
         try execute("CREATE TABLE text_revision_lineage (peer BLOB NOT NULL CHECK(typeof(peer)='blob' AND length(peer)=32), generation TEXT NOT NULL, source TEXT NOT NULL, local_id TEXT NOT NULL, remote_base BLOB NOT NULL, local_base BLOB NOT NULL, PRIMARY KEY(peer,generation,source), UNIQUE(peer,generation,local_id)); PRAGMA user_version=2;")
     }
+
+    private func migrateTextSenderIfEligible() throws {
+        func scalar(_ sql:String)->Int64? {
+            var statement:OpaquePointer?
+            guard sqlite3_prepare_v2(raw,sql,-1,&statement,nil)==SQLITE_OK else { return nil }
+            defer { sqlite3_finalize(statement) }
+            guard sqlite3_step(statement)==SQLITE_ROW,sqlite3_column_type(statement,0)==SQLITE_INTEGER else { return nil }
+            let value=sqlite3_column_int64(statement,0)
+            guard sqlite3_step(statement)==SQLITE_DONE else { return nil };return value
+        }
+        guard scalar("PRAGMA user_version")==2,
+              scalar("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name IN ('text_revision_lineage','text_peer_revocation_state','text_peer_revocations')")==3,
+              scalar("SELECT COUNT(*) FROM text_peer_revocation_state")==1,
+              scalar("SELECT version FROM text_peer_revocation_state WHERE singleton=1 AND typeof(singleton)='integer' AND typeof(version)='integer'")==1,
+              scalar("SELECT COUNT(*) FROM sqlite_master WHERE name IN ('text_revision_outbox','text_revision_sent','text_revision_one_pending')")==0 else { return }
+        try execute("CREATE TABLE text_revision_outbox (transfer TEXT PRIMARY KEY, sender BLOB NOT NULL, peer BLOB NOT NULL, generation TEXT NOT NULL, receiver_epoch TEXT NOT NULL, payload BLOB NOT NULL, delivered INTEGER NOT NULL DEFAULT 0 CHECK(delivered IN (0,1)), summary BLOB); CREATE UNIQUE INDEX text_revision_one_pending ON text_revision_outbox(peer,generation,receiver_epoch) WHERE delivered=0; CREATE TABLE text_revision_sent (sender BLOB NOT NULL, peer BLOB NOT NULL, generation TEXT NOT NULL, receiver_epoch TEXT NOT NULL, source TEXT NOT NULL, payload BLOB NOT NULL, PRIMARY KEY(sender,peer,generation,receiver_epoch,source)); PRAGMA user_version=3;")
+    }
+
     deinit { if let raw { sqlite3_close(raw) } }
     func execute(_ sql: String) throws {
         guard sqlite3_exec(raw, sql, nil, nil, nil) == SQLITE_OK else { throw DatabaseError.operation("The local database operation failed.") }
@@ -244,7 +263,7 @@ actor SQLiteConversationStore {
             // Pending and delivered rows both retain exact reviewed private bytes.
             try database.execute("DELETE FROM text_send_outbox")
         }
-        if try tableExists("text_revision_lineage") { try database.execute("DELETE FROM text_revision_lineage") }
+        for table in ["text_revision_lineage","text_revision_outbox","text_revision_sent"] where try tableExists(table) { try database.execute("DELETE FROM \(table)") }
         if try tableExists("text_receive_epoch") {
             try database.execute("UPDATE text_receive_epoch SET epoch='\(UUID().uuidString)' WHERE singleton=1")
         }
@@ -335,7 +354,7 @@ actor SQLiteConversationStore {
             }
             // Missing unrelated transfer tables cannot prevent revocation. If an
             // existing table cannot be cleared, report failure and roll back both.
-            for table in ["text_send_outbox","text_receive_receipts","text_revision_lineage"] where try tableExists(table) {
+            for table in ["text_send_outbox","text_receive_receipts","text_revision_lineage","text_revision_outbox","text_revision_sent"] where try tableExists(table) {
                 try withStatement("DELETE FROM \(table) WHERE peer=? AND generation=?") { statement in
                     bind(peerCertificateSHA256,to:1,in:statement);bind(pairingGeneration.uuidString,to:2,in:statement);try requireDone(statement)
                 }
@@ -350,7 +369,7 @@ actor SQLiteConversationStore {
         // The SQLite header sentinel distinguishes a real legacy DB from loss of
         // both metadata tables. It is not authenticated rollback/tamper detection.
         try withStatement("PRAGMA user_version") { statement in
-            guard sqlite3_step(statement)==SQLITE_ROW,[1,2].contains(sqlite3_column_int64(statement,0)) else { throw DatabaseError.operation("Peer revocation schema needs recovery; text sync is paused.") }
+            guard sqlite3_step(statement)==SQLITE_ROW,[1,2,3].contains(sqlite3_column_int64(statement,0)) else { throw DatabaseError.operation("Peer revocation schema needs recovery; text sync is paused.") }
         }
         guard try tableExists("text_peer_revocations") else { throw DatabaseError.operation("Peer revocation metadata needs recovery; text sync is paused.") }
         try withStatement("SELECT singleton,version FROM text_peer_revocation_state") { statement in
@@ -365,6 +384,214 @@ actor SQLiteConversationStore {
         guard try !isTextPeerRevoked(peerCertificateSHA256:peer,pairingGeneration:generation) else {
             throw DatabaseError.operation("This peer pairing generation is revoked; no text transfer was accepted.")
         }
+    }
+
+
+    /// Dormant sender boundary. This stages exact reviewed bytes, not permission
+    /// to transmit. One pending envelope per destination serializes its revisions.
+    func stageTextRevisionSend(_ snapshot:ReviewedTextSnapshot, senderCertificateSHA256:Data,
+                               peerCertificateSHA256:Data, pairingGeneration:UUID, receiverEpoch:UUID) throws -> StagedTextSend {
+        try Task.checkCancellation()
+        guard senderCertificateSHA256.count==32,peerCertificateSHA256.count==32,
+              senderCertificateSHA256 != peerCertificateSHA256 else { throw DatabaseError.operation("Invalid revision destination.") }
+        try database.execute("BEGIN IMMEDIATE")
+        do {
+            try requireTextSenderMetadata()
+            try requireTextPeerNotRevoked(peerCertificateSHA256,generation:pairingGeneration)
+            let identity=TextSendIdentity(receiverEpoch:receiverEpoch,transfer:UUID(),senderCertificateSHA256:senderCertificateSHA256,receiverCertificateSHA256:peerCertificateSHA256,pairingGeneration:pairingGeneration)
+            var records:[TextRevisionEnvelope.Record]=[]
+            for selected in snapshot.conversations {
+                try Task.checkCancellation()
+                guard try rawRevisionConversation(id:selected.id)==selected else { throw TextSnapshotError.changed }
+                records.append(.init(base:try sentRevisionBase(source:selected.id,identity:identity),incoming:selected))
+            }
+            let payload=try TextRevisionEnvelope(records:records).data
+            try withStatement("SELECT COUNT(*),COALESCE(SUM(length(payload)+COALESCE(length(summary),0)),0) FROM text_revision_outbox") { statement in
+                guard sqlite3_step(statement)==SQLITE_ROW,sqlite3_column_int64(statement,0)<10_000,
+                      sqlite3_column_int64(statement,1)<=50_000_000-Int64(payload.count) else {
+                    throw DatabaseError.operation("Revision outbox capacity reached; no transfer staged.")
+                }
+            }
+            // The partial unique index rejects concurrent envelopes even from
+            // a second store connection. Never silently replace a pending transfer.
+            try withStatement("INSERT INTO text_revision_outbox(transfer,sender,peer,generation,receiver_epoch,payload) VALUES(?,?,?,?,?,?)") { statement in
+                bind(identity.transfer.uuidString,to:1,in:statement);bind(senderCertificateSHA256,to:2,in:statement)
+                bind(peerCertificateSHA256,to:3,in:statement);bind(pairingGeneration.uuidString,to:4,in:statement)
+                bind(receiverEpoch.uuidString,to:5,in:statement);bind(payload,to:6,in:statement);try requireDone(statement)
+            }
+            try Task.checkCancellation()
+            try database.execute("COMMIT")
+            return StagedTextSend(identity:identity,payload:payload,delivered:false)
+        } catch { try? database.execute("ROLLBACK");throw error }
+    }
+
+    func pendingTextRevisionSendIDs() throws -> [UUID] {
+        try requireTextSenderMetadata()
+        return try withStatement("SELECT transfer FROM text_revision_outbox WHERE delivered=0 ORDER BY transfer LIMIT 10001") { statement in
+            var result:[UUID]=[]
+            while true {
+                let step=sqlite3_step(statement)
+                if step==SQLITE_DONE { return result }
+                guard step==SQLITE_ROW,result.count<10_000,sqlite3_column_type(statement,0)==SQLITE_TEXT,
+                      sqlite3_column_bytes(statement,0)==36,let raw=sqlite3_column_text(statement,0),
+                      let id=UUID(uuidString:String(cString:raw)) else { throw DatabaseError.operation("Revision outbox needs recovery.") }
+                result.append(id)
+            }
+        }
+    }
+
+    /// Snapshot for a future authenticated coordinator; not a live send lease.
+    /// A coordinator must invalidate in-flight work on lock, erase or revocation.
+    func textRevisionSend(id:UUID) throws -> StagedTextSend? {
+        try requireTextSenderMetadata()
+        return try withStatement("SELECT sender,peer,generation,receiver_epoch,payload,delivered,summary FROM text_revision_outbox WHERE transfer=?") { statement in
+            bind(id.uuidString,to:1,in:statement)
+            let step=sqlite3_step(statement)
+            if step==SQLITE_DONE { return nil }
+            guard step==SQLITE_ROW,
+                  sqlite3_column_type(statement,0)==SQLITE_BLOB,sqlite3_column_bytes(statement,0)==32,
+                  sqlite3_column_type(statement,1)==SQLITE_BLOB,sqlite3_column_bytes(statement,1)==32,
+                  sqlite3_column_type(statement,2)==SQLITE_TEXT,sqlite3_column_bytes(statement,2)==36,
+                  sqlite3_column_type(statement,3)==SQLITE_TEXT,sqlite3_column_bytes(statement,3)==36,
+                  let generationText=sqlite3_column_text(statement,2),let generation=UUID(uuidString:String(cString:generationText)),
+                  let epochText=sqlite3_column_text(statement,3),let epoch=UUID(uuidString:String(cString:epochText)),
+                  sqlite3_column_type(statement,4)==SQLITE_BLOB,
+                  (1...TextRevisionEnvelope.maximumBytes).contains(Int(sqlite3_column_bytes(statement,4))),
+                  sqlite3_column_type(statement,5)==SQLITE_INTEGER,[0,1].contains(sqlite3_column_int(statement,5)) else {
+                throw DatabaseError.operation("Revision outbox needs recovery.")
+            }
+            let sender=blob(statement,at:0),peer=blob(statement,at:1)
+            guard sender != peer else { throw DatabaseError.operation("Invalid revision destination.") }
+            try requireTextPeerNotRevoked(peer,generation:generation)
+            let payload=blob(statement,at:4),envelope=try TextRevisionEnvelope.decodeCanonical(payload)
+            let delivered=sqlite3_column_int(statement,5)==1
+            if delivered {
+                guard sqlite3_column_type(statement,6)==SQLITE_BLOB,(1...50_000).contains(Int(sqlite3_column_bytes(statement,6))) else {
+                    throw DatabaseError.operation("Revision delivery metadata is incomplete.")
+                }
+                let bytes=blob(statement,at:6),summary=try decoder.decode(TextRevisionReceiveSummary.self,from:bytes)
+                guard try revisionSummaryBytes(summary,envelope:envelope)==bytes else { throw DatabaseError.operation("Revision receipt is not canonical.") }
+            } else {
+                guard sqlite3_column_type(statement,6)==SQLITE_NULL else { throw DatabaseError.operation("Pending revision has inconsistent delivery metadata.") }
+            }
+            return StagedTextSend(identity:.init(receiverEpoch:epoch,transfer:id,senderCertificateSHA256:sender,receiverCertificateSHA256:peer,pairingGeneration:generation),payload:payload,delivered:delivered)
+        }
+    }
+
+    /// Only an authenticated receipt handler may call this after binding identity,
+    /// payload and summary. Socket-send completion is never evidence of delivery.
+    /// A replay must match the original receipt exactly and never rewinds ancestry.
+    func recordTextRevisionDeliveryReceipt(identity:TextSendIdentity,payload:Data,summary:TextRevisionReceiveSummary) throws {
+        try Task.checkCancellation()
+        guard !payload.isEmpty,payload.count<=TextRevisionEnvelope.maximumBytes,summary.records.count<=100 else { throw TextSnapshotError.limit }
+        try database.execute("BEGIN IMMEDIATE")
+        do {
+            guard let staged=try textRevisionSend(id:identity.transfer),staged.identity==identity,staged.payload==payload else {
+                throw DatabaseError.operation("Revision receipt does not match the staged transfer.")
+            }
+            let envelope=try TextRevisionEnvelope.decodeCanonical(payload)
+            let receipt=try revisionSummaryBytes(summary,envelope:envelope)
+            if staged.delivered {
+                try withStatement("SELECT summary FROM text_revision_outbox WHERE transfer=?") { statement in
+                    bind(identity.transfer.uuidString,to:1,in:statement)
+                    guard sqlite3_step(statement)==SQLITE_ROW,sqlite3_column_bytes(statement,0)==receipt.count,
+                          blob(statement,at:0)==receipt else { throw DatabaseError.operation("Revision replay changed its receipt.") }
+                }
+                try database.execute("COMMIT")
+                return
+            }
+            for record in envelope.records {
+                try Task.checkCancellation()
+                guard try sentRevisionBase(source:record.incoming.id,identity:identity)==record.base else {
+                    throw DatabaseError.operation("Outgoing revision ancestry changed; receipt was not applied.")
+                }
+                let current=try TextRevisionEnvelope.canonicalConversation(record.incoming)
+                try withStatement("INSERT INTO text_revision_sent(sender,peer,generation,receiver_epoch,source,payload) VALUES(?,?,?,?,?,?) ON CONFLICT(sender,peer,generation,receiver_epoch,source) DO UPDATE SET payload=excluded.payload") { statement in
+                    bindRevisionScope(identity,in:statement);bind(record.incoming.id.uuidString,to:5,in:statement)
+                    bind(current,to:6,in:statement);try requireDone(statement)
+                }
+            }
+            try withStatement("SELECT COUNT(*),COALESCE(SUM(length(payload)),0) FROM text_revision_sent") { statement in
+                guard sqlite3_step(statement)==SQLITE_ROW,sqlite3_column_int64(statement,0)<=10_000,
+                      sqlite3_column_int64(statement,1)<=50_000_000 else { throw DatabaseError.operation("Sent revision capacity reached; receipt rolled back.") }
+            }
+            try withStatement("SELECT COALESCE(SUM(length(payload)+COALESCE(length(summary),0)),0) FROM text_revision_outbox") { statement in
+                guard sqlite3_step(statement)==SQLITE_ROW,sqlite3_column_int64(statement,0)<=50_000_000-Int64(receipt.count) else {
+                    throw DatabaseError.operation("Revision receipt capacity reached; receipt rolled back.")
+                }
+            }
+            try withStatement("UPDATE text_revision_outbox SET delivered=1,summary=? WHERE transfer=?") { statement in
+                bind(receipt,to:1,in:statement);bind(identity.transfer.uuidString,to:2,in:statement);try requireDone(statement)
+            }
+            try Task.checkCancellation()
+            try database.execute("COMMIT")
+        } catch { try? database.execute("ROLLBACK");throw error }
+    }
+
+    /// Removes only the retry record. Acknowledged ancestry remains until explicit
+    /// history erasure or pairing revocation; deleting a draft is not a remote undo.
+    func discardTextRevisionSend(id:UUID) throws {
+        try withStatement("DELETE FROM text_revision_outbox WHERE transfer=?") { statement in
+            bind(id.uuidString,to:1,in:statement);try requireDone(statement)
+        }
+    }
+
+    private func requireTextSenderMetadata() throws {
+        try validateTextRevocationMetadata()
+        try withStatement("PRAGMA user_version") { statement in
+            guard sqlite3_step(statement)==SQLITE_ROW,sqlite3_column_int64(statement,0)==3 else { throw DatabaseError.operation("Revision sender metadata needs recovery.") }
+        }
+        for name in ["text_revision_sent","text_revision_outbox"] {
+            guard try tableExists(name) else { throw DatabaseError.operation("Revision sender metadata is unavailable.") }
+        }
+        try withStatement("SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND name='text_revision_one_pending' AND tbl_name='text_revision_outbox'") { statement in
+            guard sqlite3_step(statement)==SQLITE_ROW,sqlite3_column_int64(statement,0)==1 else { throw DatabaseError.operation("Revision sender serialization needs recovery.") }
+        }
+    }
+
+    private func bindRevisionScope(_ identity:TextSendIdentity,in statement:OpaquePointer) {
+        bind(identity.senderCertificateSHA256,to:1,in:statement);bind(identity.receiverCertificateSHA256,to:2,in:statement)
+        bind(identity.pairingGeneration.uuidString,to:3,in:statement);bind(identity.receiverEpoch.uuidString,to:4,in:statement)
+    }
+
+    private func sentRevisionBase(source:UUID,identity:TextSendIdentity) throws -> Conversation? {
+        try withStatement("SELECT payload FROM text_revision_sent WHERE sender=? AND peer=? AND generation=? AND receiver_epoch=? AND source=?") { statement in
+            bindRevisionScope(identity,in:statement);bind(source.uuidString,to:5,in:statement)
+            let step=sqlite3_step(statement)
+            if step==SQLITE_DONE { return nil }
+            guard step==SQLITE_ROW,sqlite3_column_type(statement,0)==SQLITE_BLOB,
+                  (1...TextRevisionEnvelope.maximumBytes).contains(Int(sqlite3_column_bytes(statement,0))) else {
+                throw DatabaseError.operation("Acknowledged revision ancestry needs recovery.")
+            }
+            let bytes=blob(statement,at:0),value=try decoder.decode(Conversation.self,from:bytes)
+            _=try ReviewedTextSnapshot(conversations:[value])
+            guard value.id==source,try TextRevisionEnvelope.canonicalConversation(value)==bytes else {
+                throw DatabaseError.operation("Acknowledged revision ancestry is inconsistent.")
+            }
+            return value
+        }
+    }
+
+    private func revisionSummaryBytes(_ summary:TextRevisionReceiveSummary,envelope:TextRevisionEnvelope) throws -> Data {
+        guard summary.records.count==envelope.records.count,
+              summary.records.map(\.sourceID)==envelope.records.map({$0.incoming.id}),
+              Set(summary.records.map(\.localID)).count==summary.records.count else { throw DatabaseError.operation("Revision receipt has different source records.") }
+        for (result,record) in zip(summary.records,envelope.records) {
+            switch result.disposition {
+            case .inserted:
+                guard record.base==nil,result.localID==record.incoming.id,result.preservedLocalID==nil else { throw DatabaseError.operation("Invalid inserted revision receipt.") }
+            case .advanced:
+                guard let base=record.base,base != record.incoming,result.preservedLocalID==nil else { throw DatabaseError.operation("Invalid advanced revision receipt.") }
+            case .unchanged:
+                guard record.base==record.incoming,result.preservedLocalID==nil else { throw DatabaseError.operation("Invalid unchanged revision receipt.") }
+            case .conflict:
+                guard let preserved=result.preservedLocalID,preserved != result.localID else { throw DatabaseError.operation("Invalid conflict revision receipt.") }
+            }
+        }
+        let canonical=JSONEncoder();canonical.outputFormatting = .sortedKeys
+        let bytes=try canonical.encode(summary)
+        guard bytes.count<=50_000 else { throw TextSnapshotError.limit }
+        return bytes
     }
 
     /// Locally stages precisely the reviewed snapshot and destination labels.
@@ -523,7 +750,7 @@ actor SQLiteConversationStore {
             try requireTextPeerNotRevoked(identity.peerCertificateSHA256, generation: identity.pairingGeneration)
             guard try textReceiveEpoch() == identity.epoch else { throw DatabaseError.operation("This revision session predates history erasure.") }
             try withStatement("PRAGMA user_version") { statement in
-                guard sqlite3_step(statement) == SQLITE_ROW, sqlite3_column_int64(statement, 0) == 2 else {
+                guard sqlite3_step(statement) == SQLITE_ROW, [2,3].contains(sqlite3_column_int64(statement, 0)) else {
                     throw DatabaseError.operation("Revision metadata needs recovery; no revision was applied.")
                 }
             }
