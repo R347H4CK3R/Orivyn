@@ -26,7 +26,7 @@ final class AutomaticRealInferenceUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Automatic: Qwen 2.5 · 0.5B")).firstMatch.exists)
         capture("Automatic real general-model response", app: app)
 
-        app.buttons["conversation.new"].tap()
+        newConversation(app: app)
         send("Write a Python statement that prints 2 + 2. Return only the code.", app: app)
         let coder = finishedResponse(app: app, timeout: 210)
         capture("Automatic coder output before quality assertion", app: app)
@@ -45,7 +45,7 @@ final class AutomaticRealInferenceUITests: XCTestCase {
             XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "model.installed.\(id)").firstMatch.exists)
         }
         app.buttons["model.done"].tap()
-        app.buttons["conversation.new"].tap()
+        newConversation(app: app)
         send("What is the capital of France? Answer in one short sentence.", app: app)
         let switchedBack = finishedResponse(app: app, timeout: 90)
         XCTAssertTrue(switchedBack.lowercased().contains("paris"))
@@ -53,16 +53,37 @@ final class AutomaticRealInferenceUITests: XCTestCase {
         capture("Automatic installed-model switch after relaunch", app: app)
     }
 
+    private func newConversation(app: XCUIApplication) {
+        app.buttons["conversation.new"].tap()
+        let response = app.descendants(matching: .any).matching(identifier: "assistant.response").firstMatch
+        let cleared = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: response)
+        let result = XCTWaiter.wait(for: [cleared], timeout: 10)
+        captureState("New conversation transition", app: app)
+        XCTAssertEqual(result, .completed, "The previous response must disappear before typing the next turn.")
+        let input = app.textViews["composer.input"]
+        XCTAssertTrue(input.waitForExistence(timeout: 5))
+        XCTAssertEqual(input.value as? String, "")
+    }
+
     private func send(_ text: String, app: XCUIApplication) {
         let input = app.textViews["composer.input"]
         XCTAssertTrue(input.waitForExistence(timeout: 5)); input.tap(); input.typeText(text)
-        app.buttons["composer.send"].tap()
+        let send = app.buttons["composer.send"]
+        let ready = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == true AND enabled == true"), object: send)
+        let result = XCTWaiter.wait(for: [ready], timeout: 10)
+        captureState("Send admission readiness", app: app)
+        XCTAssertEqual(result, .completed, "Send must be enabled before submitting the actual prompt.")
+        send.tap()
     }
     private func finishedResponse(app: XCUIApplication, timeout: TimeInterval) -> String {
         let response = app.descendants(matching: .any).matching(identifier: "assistant.response").firstMatch
-        XCTAssertTrue(response.waitForExistence(timeout: timeout), "Actual automatic preparation and inference must finish, not show a placeholder.")
+        let appeared = response.waitForExistence(timeout: timeout)
+        captureState("Actual response arrival before assertions", app: app)
+        XCTAssertTrue(appeared, "Actual automatic preparation and inference must finish, not show a placeholder.")
         let finished = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: app.buttons["composer.stop"])
-        XCTAssertEqual(XCTWaiter.wait(for: [finished], timeout: 60), .completed)
+        let completion = XCTWaiter.wait(for: [finished], timeout: 60)
+        captureState("Actual response completion before assertions", app: app)
+        XCTAssertEqual(completion, .completed)
         XCTAssertFalse(app.alerts.firstMatch.exists)
         XCTAssertFalse(app.buttons["model.automatic.cancel"].exists)
         XCTAssertEqual(app.textViews["composer.input"].value as? String, "")
@@ -75,11 +96,15 @@ final class AutomaticRealInferenceUITests: XCTestCase {
                 + root.descendants(matching: .textView).allElementsBoundByIndex)
                 .flatMap { [$0.label, $0.value as? String ?? ""] }
         }.joined(separator: " ")
-        let hierarchy = XCTAttachment(string: app.debugDescription)
-        hierarchy.name = "Actual response accessibility tree"; hierarchy.lifetime = .keepAlways; add(hierarchy)
         XCTAssertFalse(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
         return text
     }
+    private func captureState(_ name: String, app: XCUIApplication) {
+        let hierarchy = XCTAttachment(string: app.debugDescription)
+        hierarchy.name = name + " accessibility tree"; hierarchy.lifetime = .keepAlways; add(hierarchy)
+        capture(name, app: app)
+    }
+
     private func capture(_ name: String, app: XCUIApplication) {
         let attachment = XCTAttachment(screenshot: app.screenshot())
         attachment.name = name; attachment.lifetime = .keepAlways; add(attachment)
