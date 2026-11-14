@@ -10,6 +10,8 @@ xcodebuild -version | tee "$ARTIFACTS/xcode-version.txt"
 python3 scripts/materialize_guest.py Fixtures/maintained.img.gz JarvisEVO/Resources/VMAssets/maintained.img
 if ! command -v xcodegen >/dev/null; then brew install xcodegen; fi
 bash scripts/bootstrap_llama.sh
+# XcodeGen includes this real fixture resource even for focused unit tests.
+python3 scripts/download_test_model.py > "$ARTIFACTS/test-model-path.txt"
 xcodegen generate
 xcrun simctl list devices available -j > "$ARTIFACTS/simulators.json"
 SIMULATOR_ID=$(python3 - <<'PY'
