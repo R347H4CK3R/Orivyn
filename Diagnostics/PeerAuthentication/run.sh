@@ -34,9 +34,22 @@ for name in a b c expired future wrong-usage critical bad-signature; do
 done
 cd "$root"
 shasum -a 256 JarvisEVO/Services/PeerTLSProbe.swift JarvisEVO/Core/PeerSyncControlFrame.swift Diagnostics/PeerAuthentication/NativePeerGate.swift > "$evidence/source-sha256.txt"
-xcrun swiftc -swift-version 6 -strict-concurrency=complete -DORIVYN_PEER_TLS_SPIKE \
-  -target "$(uname -m)-apple-macosx15.0" \
-  JarvisEVO/Core/PeerSyncControlFrame.swift JarvisEVO/Services/PeerTLSProbe.swift \
-  Diagnostics/PeerAuthentication/NativePeerGate.swift -o "$evidence/native-peer-gate" \
+
+build_root="$(mktemp -d "${RUNNER_TEMP:-/tmp}/orivyn-peer-build.XXXXXX")"
+trap 'rm -rf -- "$fixture_dir" "$build_root"' EXIT
+for dependency in swift-certificates:8789d7e78f996d56272836c8bf3590c5bd9c9754 swift-crypto:9f96b82711cc4ce5816343c02eccd5ad907972d3 swift-asn1:12b0abc19498e562a8d97eebb67a11e9e6a255dd; do
+  repo="${dependency%%:*}"
+  revision="${dependency#*:}"
+  git init "$build_root/$repo" >> "$evidence/dependencies.log" 2>&1
+  git -C "$build_root/$repo" remote add origin "https://github.com/apple/$repo.git"
+  git -C "$build_root/$repo" fetch --depth 1 origin "$revision" >> "$evidence/dependencies.log" 2>&1
+  git -C "$build_root/$repo" checkout --detach FETCH_HEAD >> "$evidence/dependencies.log" 2>&1
+  test "$(git -C "$build_root/$repo" rev-parse HEAD)" = "$revision"
+  printf '%s %s\n' "$repo" "$revision" >> "$evidence/dependency-revisions.txt"
+done
+mkdir -p "$build_root/gate/Sources/NativePeerGate"
+cp Diagnostics/PeerAuthentication/Package.swift "$build_root/gate/Package.swift"
+cp JarvisEVO/Core/PeerSyncControlFrame.swift JarvisEVO/Services/PeerTLSProbe.swift Diagnostics/PeerAuthentication/NativePeerGate.swift "$build_root/gate/Sources/NativePeerGate/"
+SWIFTCI_USE_LOCAL_DEPS=1 xcrun swift build --package-path "$build_root/gate" --jobs 2 \
   > "$evidence/compile.log" 2>&1
-"$evidence/native-peer-gate" "$fixture_dir" "$evidence/results.json" > "$evidence/run.log" 2>&1
+"$build_root/gate/.build/debug/NativePeerGate" "$fixture_dir" "$evidence/results.json" > "$evidence/run.log" 2>&1
