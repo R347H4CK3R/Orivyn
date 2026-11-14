@@ -73,14 +73,21 @@ enum LocalPromptBuilder {
     /// Removes only complete older messages; the newest user message always survives.
     static func trimToFit(_ messages: [LocalPromptMessage], maxTokens: Int, contextSize: Int, tokenCount: ([LocalPromptMessage]) throws -> Int) throws -> [LocalPromptMessage] {
         guard maxTokens > 0, maxTokens < contextSize, messages.contains(where: { $0.role == "user" }) else { throw LocalModelError.invalidRequest }
-        var selected = messages
+        // Restored history and filtered failed questions can already begin with
+        // answers whose user turn is absent. Normalize before the first count,
+        // and again after trimming, including system entries between turns.
+        func withoutOrphanAnswers(_ entries: [LocalPromptMessage]) -> [LocalPromptMessage] {
+            var hasUser = false
+            return entries.filter { entry in
+                if entry.role == "user" { hasUser = true }
+                return entry.role != "assistant" || hasUser
+            }
+        }
+        var selected = withoutOrphanAnswers(messages)
         while try tokenCount(selected) + maxTokens > contextSize {
             guard let latestUser = selected.lastIndex(where: { $0.role == "user" }), latestUser > 0 else { throw LocalModelError.promptTooLong }
             selected.removeFirst()
-            // Do not begin a trimmed conversation with an orphaned assistant reply.
-            while selected.first?.role == "assistant", (selected.lastIndex(where: { $0.role == "user" }) ?? 0) > 0 {
-                selected.removeFirst()
-            }
+            selected = withoutOrphanAnswers(selected)
         }
         return selected
     }
