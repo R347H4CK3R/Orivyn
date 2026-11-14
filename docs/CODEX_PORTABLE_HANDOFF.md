@@ -26,3 +26,10 @@ Apple SDK compilation/linking, simulator/UI checks, physical iPhone install, fil
 The separate borrowed-model native read-gate candidate remains dormant. Its supplied README reports a sole admitted 2,497,280,256-byte Qwen3 model versus the app's 2,000,000,000-byte model cap, absent combined Apple runtime packaging, and unfinished generation driver, lease/unload cancellation barriers and durable reviewed-plan integration. This checkpoint does not relax that cap, copy the bridge into production, or claim its isolated tests prove app integration.
 
 The release ledger's broader gaps remain: dependable general autonomous tool use, visual image understanding, automatic cross-device synchronization and self-applied repository repair. Skipping Mac verification does not implement those capabilities. Continue these as explicit engineering work, retaining current data/storage identities and existing functionality; do not mark the application complete based on this checkpoint.
+
+
+## Next implemented slice: source patch export
+
+Source-repair previews can now be exported explicitly as portable patches carrying the pinned source identity and not-applied/not-tested status. Export eligibility uses exact reviewed UTF-8 bytes. Six new real-Git export regressions and four Swift binding cases pass; the full portable result is now 400 Foundation, 104 agent and 39 VM tests, plus 159 Python tests with one skip. See `READ_ROUTING_AND_REPAIR_PREVIEW.md` for detailed evidence and limitations. Native export behavior remains unverified.
+
+The owner later set a two-hour publishing target and explicitly authorized **a free Mac runner for packaging**, superseding the prior no-Mac constraint for that purpose. Live CircleCI capacity was checked: 1,159 of 30,000 free credits remain, insufficient for a confidently budgeted full native gate. No paid plan or underfunded run was started. An Appcircle sign-in/account choice is pending. Publishing is authorized, but still requires a newly built and inspected IPA; do not substitute an old binary or label unfinished 1.0.0 capabilities complete.

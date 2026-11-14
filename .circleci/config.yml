@@ -5,6 +5,9 @@
 version: 2.1
 
 parameters:
+  run_package_only:
+    type: boolean
+    default: false
   run_focused_native:
     type: boolean
     default: false
@@ -13,6 +16,26 @@ parameters:
     default: true
 
 jobs:
+  native-ios-package-only:
+    macos:
+      xcode: "26.4.1"
+    resource_class: m4pro.medium
+    environment:
+      HOMEBREW_NO_AUTO_UPDATE: "1"
+      HOMEBREW_NO_INSTALL_CLEANUP: "1"
+      CI: "true"
+    steps:
+      - checkout
+      - run:
+          name: Device build and package only (200-second command budget)
+          no_output_timeout: 5m
+          command: |
+            mkdir -p artifacts/package-only
+            python3 scripts/focused_watchdog.py 200 artifacts/package-only bash -c 'set -o pipefail; bash scripts/ci_package_only.sh 2>&1 | tee artifacts/package-only/console.log'
+      - store_artifacts:
+          path: artifacts/package-only
+          destination: Orivyn-development-package-not-native-tested
+
   focused-native-regression:
     macos:
       xcode: "26.4.1"
@@ -90,6 +113,18 @@ jobs:
           destination: Orivyn-native-gate-evidence
 
 workflows:
+  controlled-package-only:
+    when:
+      and:
+        - << pipeline.parameters.run_package_only >>
+        - not: << pipeline.parameters.run_native >>
+        - not: << pipeline.parameters.run_focused_native >>
+    jobs:
+      - authorize-package-free-credit-run:
+          type: approval
+      - native-ios-package-only:
+          requires:
+            - authorize-package-free-credit-run
   controlled-focused-regression:
     when:
       and:

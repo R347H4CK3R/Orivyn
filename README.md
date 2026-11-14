@@ -34,7 +34,7 @@ The owner's recording confirms navigation on a physical iPhone and an installed-
 
 ## Development and provenance
 
-Current development instruction: complete all work possible without macOS and skip Mac-runner verification. Keep Apple SDK, simulator, physical-device and release acceptance explicitly unverified for new source; portable success does not satisfy those gates.
+Current development instruction: prioritize portable work; the owner subsequently authorized a free Mac runner for packaging. Do not start a run without sufficient verified free capacity or enable paid billing. Keep Apple SDK, simulator, physical-device and release acceptance explicitly unverified for new source; portable success does not satisfy those gates.
 
 Run the local aggregate with an installed Swift 6 toolchain and Node:
 
