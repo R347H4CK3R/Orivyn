@@ -34,7 +34,17 @@ The owner's recording confirms navigation on a physical iPhone and an installed-
 
 ## Development and provenance
 
-Native CI needs sufficient authorized macOS capacity; do not enable billing or assume earlier free-capacity figures are current. Local source/package checks: `python3 -m unittest discover -s scripts/tests -p 'test_*.py'`, `python3 scripts/model_catalog.py --check`. Native tests and ARM64 packaging require Xcode 26 on macOS. Full workflow: `scripts/ci_macos.sh`, wrapped by `scripts/run_native_tests.sh` to preserve failures and artifacts.
+Current development instruction: complete all work possible without macOS and skip Mac-runner verification. Keep Apple SDK, simulator, physical-device and release acceptance explicitly unverified for new source; portable success does not satisfy those gates.
+
+Run the local aggregate with an installed Swift 6 toolchain and Node:
+
+```sh
+python3 scripts/run_portable_checks.py --swift /path/to/swift --output /path/outside/checkout/new-evidence
+```
+
+This runs Python contracts, model-catalog validation, JavaScript agent/VM tests and exact Foundation production/tests. It preserves per-stage logs, a source SHA-256 manifest and `SUMMARY.json`, continues independent stages after a failure and returns a failing exit code if any stage fails. Use a new output directory each time. Add `--sqlite-source /path/to/sqlite-amalgamation` to include SQLite persistence tests; otherwise that stage is explicitly skipped. No dependency downloads, CI dispatch, model/service calls or publication occur. Existing tokenizer and Linux redirect-fixture exclusions are disclosed in the summary and logs.
+
+Native tests and ARM64 packaging require Xcode 26 on macOS and remain outside this portable command. The existing native workflow is preserved for later authorized use: `scripts/ci_macos.sh`, wrapped by `scripts/run_native_tests.sh`. Do not enable billing or infer native success from portable checks.
 
 This workspace was reconstructed from independently recovered baseline `f4ac85877bfa707061a3c6cd902412be65cff34e`; lost candidate commits were not recovered byte-for-byte. Preserve original bundle/storage/Keychain identities and historical branches. [Reconstruction](docs/ORIVYN_WORKSPACE_RECONSTRUCTION.md), [video evidence](docs/VIDEO_REFERENCE.md), [historical documentation](docs/HISTORICAL_BASELINE_README.md).
 
