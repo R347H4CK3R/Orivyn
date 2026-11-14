@@ -15,6 +15,7 @@ final class VerifiedLocalReadUITests: XCTestCase {
         let open = app.buttons["verified.open"]
         XCTAssertTrue(open.waitForExistence(timeout: 5)); open.tap()
         let create = app.buttons["verified.create"]
+        reveal(create, in: app.collectionViews.firstMatch)
         XCTAssertTrue(create.waitForExistence(timeout: 5)); create.tap()
         let run = app.buttons["verified.run"]
         reveal(run, in: app.collectionViews.firstMatch); run.tap()

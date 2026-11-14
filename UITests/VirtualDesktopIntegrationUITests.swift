@@ -3,6 +3,9 @@ import XCTest
 @MainActor
 final class VirtualDesktopIntegrationUITests: XCTestCase {
     func testActualGuestFileAndCheckpointThenSafeClosePreservesDraft() {
+        // Guest startup (150s), command (40s), and checkpoint (60s) each have
+        // their own bounds; the default 120s cannot cover this complete flow.
+        executionTimeAllowance = 600
         continueAfterFailure = false
         let app = XCUIApplication()
         app.launchArguments = ["--uitesting", "--reset-test-storage"]
