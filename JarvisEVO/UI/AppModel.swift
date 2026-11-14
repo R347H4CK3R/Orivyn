@@ -448,7 +448,7 @@ final class AppModel {
         // observers can recognize this as our own transition, not a user switch.
         activeVoiceTurn = ticket
         let task = submit(text: text, attachments: [], conversationID: ticket.conversationID,
-                          provider: provider, voiceTicket: ticket)
+                          provider: provider, providerID: ticket.providerID, voiceTicket: ticket)
         return try await withTaskCancellationHandler {
             let result = await task.value
             try Task.checkCancellation()
@@ -532,7 +532,7 @@ final class AppModel {
             errorMessage = "No model is ready yet. Open Models to download or import a local model, or configure your own remote endpoint in Settings."
             return
         }
-        submit(text: draft, attachments: pendingAttachments, conversationID: selectedConversationID ?? UUID(), provider: provider)
+        submit(text: draft, attachments: pendingAttachments, conversationID: selectedConversationID ?? UUID(), provider: provider, providerID: selectedProviderID)
     }
 
     private func prepareAutomaticSend() {
@@ -579,7 +579,7 @@ final class AppModel {
                 self.automaticDecision = decision
                 self.statusMessage = "Automatic: \(decision.model.name) · \(decision.purpose) · on this iPhone"
                 self.submit(text: self.draft, attachments: self.pendingAttachments,
-                    conversationID: self.selectedConversationID ?? UUID(), provider: provider)
+                    conversationID: self.selectedConversationID ?? UUID(), provider: provider, providerID: decision.model.id)
             } catch {
                 guard self.automaticTicket?.id == ticket.id else { return }
                 self.clearAutomaticOwnership(ticket.id)
@@ -625,7 +625,7 @@ final class AppModel {
     }
 
     @discardableResult
-    private func submit(text: String, attachments: [ChatAttachment], conversationID: UUID, provider: any AIProvider,
+    private func submit(text: String, attachments: [ChatAttachment], conversationID: UUID, provider: any AIProvider, providerID: String,
                         voiceTicket: VoiceTurnTicket? = nil) -> Task<Result<String, any Error>, Never> {
         guard !isInferenceAdmissionBlocked else { return Task { .failure(LocalHeavyWorkError.busy) } }
         let content = text.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -648,15 +648,17 @@ final class AppModel {
             cancelAttachmentImports()
         }
         voiceTicket?.acceptedComposerContext = attachmentImportEpoch
-        return startGeneration(conversationID: conversation.id, assistantID: assistant.id, provider: provider,
+        return startGeneration(conversationID: conversation.id, assistantID: assistant.id, provider: provider, providerID: providerID,
                                restoringDraftOnSaveFailure: message, voiceTicket: voiceTicket)
     }
 
     @discardableResult
-    private func startGeneration(conversationID: UUID, assistantID: UUID, provider: any AIProvider,
+    private func startGeneration(conversationID: UUID, assistantID: UUID, provider: any AIProvider, providerID: String,
                                  restoringDraftOnSaveFailure original: ChatMessage? = nil,
                                  voiceTicket: VoiceTurnTicket? = nil) -> Task<Result<String, any Error>, Never> {
         guard !isInferenceAdmissionBlocked else { return Task { .failure(LocalHeavyWorkError.busy) } }
+        // Capture the actual turn provider, not a picker preference that Automatic preserves
+        // or that can change while the initial save is suspended.
         let generation = voiceTicket?.id ?? UUID()
         generationID = generation
         isGenerating = true
@@ -688,12 +690,12 @@ final class AppModel {
                 let memoryContext = MemoryContextBuilder.build(
                     notes: self.memories,
                     query: conversation.messages.last(where: { $0.role == .user })?.content ?? "",
-                    maximumBytes: self.selectedProviderID == "remote" ? 1024 : 512)
+                    maximumBytes: providerID == "remote" ? 1024 : 512)
                 self.lastMemoryContextSummary = memoryContext.totalCount == 0 ? nil :
                     "Latest prepared context selected \(memoryContext.includedCount) of \(memoryContext.totalCount) saved notes; scanned \(memoryContext.scannedCount)."
                     + (memoryContext.truncated ? " Some context was omitted or shortened; all original notes remain saved." : "")
 
-                let system = "You are Jarvis, the assistant in Orivyn. Do the useful parts of the request first: explain, draft, analyze or provide concrete steps. When an action needs a device tool, suggest review in the real Email, Calendar, Calculator, Browser, Location or Reminder screen. Opening a review does not send, save or execute it. Be clear about uncertainty and limitations. Do not claim to browse, run code, or take actions that you cannot perform. All configured providers receive text only. Image attachments supply OCR text, never image pixels. Do not infer objects, people, colors, layout, or other visual contents from an image attachment. " + AppSelfKnowledge.prompt(providerID: self.selectedProviderID) + "\n" + self.workspace.behavior.prompt + (memoryContext.text.isEmpty ? "" : "\n" + memoryContext.text)
+                let system = "You are Jarvis, the assistant in Orivyn. Do the useful parts of the request first: explain, draft, analyze or provide concrete steps. When an action needs a device tool, suggest review in the real Email, Calendar, Calculator, Browser, Location or Reminder screen. Opening a review does not send, save or execute it. Be clear about uncertainty and limitations. Do not claim to browse, run code, or take actions that you cannot perform. All configured providers receive text only. Image attachments supply OCR text, never image pixels. Do not infer objects, people, colors, layout, or other visual contents from an image attachment. " + AppSelfKnowledge.prompt(providerID: providerID) + "\n" + self.workspace.behavior.prompt + (memoryContext.text.isEmpty ? "" : "\n" + memoryContext.text)
                 let request = GenerationRequest(messages: Array(conversation.messages.dropLast()), systemPrompt: system, maxTokens: 1024, temperature: 0.7, conciseQwen3: self.conciseQwen3)
                 let stream = try await provider.stream(request)
                 var checkpoint = Date()
@@ -854,6 +856,7 @@ final class AppModel {
         guard !text.isEmpty, text.utf8.count <= 1_000_000 else { return false }
         guard let provider = selectedProvider?.provider else { errorMessage = "Choose an available model before saving and sending the edit."; return false }
         let providerIdentity = providerRevision
+        let providerID = selectedProviderID
         guard beginHistoryChange() else { return false }
         defer { finishHistoryChange() }
         cancelAttachmentImports()
@@ -868,7 +871,7 @@ final class AppModel {
                 return true
             }
             selectedConversationID = branched.id // Preserve the unrelated composer draft and attachments.
-            regenerateLastUserTurn(in: branched.id, provider: provider)
+            regenerateLastUserTurn(in: branched.id, provider: provider, providerID: providerID)
             return true
         } catch { report(error); return false }
     }
@@ -882,6 +885,7 @@ final class AppModel {
               let user = original.messages[..<index].last(where: { $0.role == .user }) else { return false }
         guard let provider = selectedProvider?.provider else { errorMessage = "Choose an available model before regenerating."; return false }
         let providerIdentity = providerRevision
+        let providerID = selectedProviderID
         guard beginHistoryChange() else { return false }
         defer { finishHistoryChange() }
         cancelAttachmentImports()
@@ -894,12 +898,12 @@ final class AppModel {
                 return true
             }
             selectedConversationID = branched.id
-            regenerateLastUserTurn(in: branched.id, provider: provider)
+            regenerateLastUserTurn(in: branched.id, provider: provider, providerID: providerID)
             return true
         } catch { report(error); return false }
     }
 
-    private func regenerateLastUserTurn(in conversationID: UUID, provider: any AIProvider) {
+    private func regenerateLastUserTurn(in conversationID: UUID, provider: any AIProvider, providerID: String) {
         guard !isInferenceAdmissionBlocked, !isGenerating, selectedConversationID == conversationID,
               var conversation = activeConversation, conversation.messages.last?.role == .user else {
             statusMessage = "The branch is saved, but the response could not start in its original context."
@@ -908,7 +912,7 @@ final class AppModel {
         let assistant = ChatMessage(id: UUID(), role: .assistant, content: "", createdAt: Date(), state: .streaming, attachments: [])
         conversation.messages.append(assistant)
         upsert(conversation)
-        startGeneration(conversationID: conversation.id, assistantID: assistant.id, provider: provider)
+        startGeneration(conversationID: conversation.id, assistantID: assistant.id, provider: provider, providerID: providerID)
     }
 
     func addAttachments(from urls: [URL], context: UUID? = nil) async {
@@ -1265,3 +1269,4 @@ private struct AutomaticPreparationTicket {
     let draft: String
     let attachments: [UUID]
 }
+
