@@ -164,8 +164,9 @@ extension TextRevisionSenderTests {
         let url=path(),first=try SQLiteConversationStore(url:url),second=try SQLiteConversationStore(url:url),value=Conversation(title:"Concurrent"),epoch=UUID()
         try await first.save(value)
         let snapshot=try ReviewedTextSnapshot(conversations:[value])
-        async let a=Self.tryStage(first,snapshot:snapshot,sender:sender,peer:peer,generation:generation,epoch:epoch)
-        async let b=Self.tryStage(second,snapshot:snapshot,sender:sender,peer:peer,generation:generation,epoch:epoch)
+        let localSender=sender,localPeer=peer,localGeneration=generation
+        async let a=Self.tryStage(first,snapshot:snapshot,sender:localSender,peer:localPeer,generation:localGeneration,epoch:epoch)
+        async let b=Self.tryStage(second,snapshot:snapshot,sender:localSender,peer:localPeer,generation:localGeneration,epoch:epoch)
         let outcomes=await [a,b];XCTAssertEqual(outcomes.filter{$0}.count,1)
         let pending=try await first.pendingTextRevisionSendIDs();XCTAssertEqual(pending.count,1)
     }
