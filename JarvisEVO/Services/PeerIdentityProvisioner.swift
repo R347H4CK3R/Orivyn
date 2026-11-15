@@ -67,7 +67,7 @@ actor PeerIdentityProvisioner {
             extensions: Certificate.Extensions {
                 Critical(BasicConstraints.notCertificateAuthority)
                 Critical(KeyUsage(digitalSignature: true))
-                ExtendedKeyUsage([.serverAuth, .clientAuth])
+                try ExtendedKeyUsage([.serverAuth, .clientAuth])
             }, issuerPrivateKey: signingKey)
         var serializer = DER.Serializer()
         try serializer.serialize(certificate)
