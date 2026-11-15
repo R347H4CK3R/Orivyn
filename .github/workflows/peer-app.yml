@@ -1,0 +1,34 @@
+name: Compile peer exchange in iOS app
+on:
+  workflow_dispatch:
+  push:
+    branches: [codex/peer-app-integration-20261115]
+    paths: ['project.yml', 'JarvisEVO/**', 'scripts/ci_peer_app.sh', '.github/workflows/peer-app.yml']
+permissions:
+  contents: read
+concurrency:
+  group: orivyn-peer-app-${{ github.ref }}-${{ github.sha }}
+  cancel-in-progress: false
+jobs:
+  compile:
+    if: github.event.repository.private == false
+    runs-on: macos-15
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Select Xcode 26
+        run: |
+          XCODE=$(find /Applications -maxdepth 1 -name 'Xcode_26*.app' | sort -V | tail -1)
+          test -n "$XCODE"
+          sudo xcode-select -s "$XCODE/Contents/Developer"
+      - name: Compile authenticated exchange in actual iOS application
+        run: bash scripts/ci_peer_app.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: peer-app-compile-${{ github.sha }}
+          path: artifacts/peer-app
+          retention-days: 2
+          if-no-files-found: error

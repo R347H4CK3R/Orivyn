@@ -1,3 +1,5 @@
+Update: Linux real-model cancellation and quality tests, plus a production lifecycle owner, are now recorded in [Linux/README.md](Linux/README.md). Apple/native claims below remain unrun.
+
 # Orivyn isolated native vision harness
 
 **Preparation only; native compilation/tests have NOT run.** No app integration,

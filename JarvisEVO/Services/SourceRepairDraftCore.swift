@@ -12,6 +12,8 @@ final class SourceRepairDraftCore {
         let blobSHA: String
         let summary: String
         let diff: String
+        let patch: String
+        let exportFilename: String
         let checks: [String]
         let limitations: [String]
     }

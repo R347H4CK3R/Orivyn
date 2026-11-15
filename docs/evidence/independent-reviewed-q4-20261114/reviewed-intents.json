@@ -1,0 +1,164 @@
+{
+  "h01": {
+    "intent": {
+      "kind": "conversation_read",
+      "query": "Copper register",
+      "title": "Copper register",
+      "messageIndexes": [
+        1
+      ]
+    },
+    "expectedOutcome": "answered",
+    "genericCaseUnchanged": true,
+    "queryPolicy": "predeclared-canonical-variants",
+    "allowedQueries": [
+      "Copper register",
+      "Copper"
+    ],
+    "userSelectedKind": "conversation_read",
+    "kindProvenance": "predeclared-user-input-not-model-classification"
+  },
+  "h02": {
+    "intent": {
+      "kind": "conversation_read",
+      "query": "Cobalt inventory 2026",
+      "title": "Cobalt inventory 2026",
+      "messageIndexes": [
+        2
+      ]
+    },
+    "expectedOutcome": "answered",
+    "genericCaseUnchanged": true,
+    "queryPolicy": "predeclared-canonical-variants",
+    "allowedQueries": [
+      "Cobalt inventory 2026",
+      "Cobalt inventory"
+    ],
+    "userSelectedKind": "conversation_read",
+    "kindProvenance": "predeclared-user-input-not-model-classification"
+  },
+  "h03": {
+    "intent": {
+      "kind": "conversation_read",
+      "query": "Café \"北\" \\ receipts",
+      "title": "Café \"北\" \\ receipts",
+      "messageIndexes": [
+        1
+      ]
+    },
+    "expectedOutcome": "answered",
+    "genericCaseUnchanged": true,
+    "queryPolicy": "predeclared-canonical-variants",
+    "allowedQueries": [
+      "Café \"北\" \\ receipts",
+      "Café",
+      "cafe"
+    ],
+    "userSelectedKind": "conversation_read",
+    "kindProvenance": "predeclared-user-input-not-model-classification"
+  },
+  "h04": {
+    "intent": {
+      "kind": "conversation_read",
+      "query": "Aster dispatch",
+      "title": "Aster dispatch",
+      "messageIndexes": [
+        1
+      ]
+    },
+    "expectedOutcome": "answered",
+    "genericCaseUnchanged": true,
+    "queryPolicy": "predeclared-canonical-variants",
+    "allowedQueries": [
+      "Aster dispatch",
+      "Aster"
+    ],
+    "userSelectedKind": "conversation_read",
+    "kindProvenance": "predeclared-user-input-not-model-classification"
+  },
+  "h05": {
+    "intent": {
+      "kind": "conversation_search",
+      "query": "Quartz absent docket"
+    },
+    "expectedOutcome": "answered",
+    "genericCaseUnchanged": true,
+    "queryPolicy": "exact",
+    "allowedQueries": [
+      "Quartz absent docket"
+    ],
+    "userSelectedKind": "conversation_search",
+    "kindProvenance": "predeclared-user-input-not-model-classification"
+  },
+  "h06": {
+    "intent": {
+      "kind": "conversation_search",
+      "query": "Velvet shelf"
+    },
+    "expectedOutcome": "answered",
+    "genericCaseUnchanged": true,
+    "queryPolicy": "exact",
+    "allowedQueries": [
+      "Velvet shelf"
+    ],
+    "userSelectedKind": "conversation_search",
+    "kindProvenance": "predeclared-user-input-not-model-classification"
+  },
+  "h07": {
+    "intent": {
+      "kind": "conversation_read",
+      "query": "Saffron transit note",
+      "title": "Saffron transit note",
+      "messageIndexes": [
+        1
+      ]
+    },
+    "expectedOutcome": "answered",
+    "genericCaseUnchanged": true,
+    "queryPolicy": "predeclared-canonical-variants",
+    "allowedQueries": [
+      "Saffron transit note",
+      "Saffron"
+    ],
+    "userSelectedKind": "conversation_read",
+    "kindProvenance": "predeclared-user-input-not-model-classification"
+  },
+  "h08": {
+    "intent": {
+      "kind": "conversation_read",
+      "query": "Topaz reconciliation",
+      "title": "Topaz reconciliation",
+      "messageIndexes": [
+        1
+      ]
+    },
+    "expectedOutcome": "answered",
+    "genericCaseUnchanged": true,
+    "queryPolicy": "predeclared-canonical-variants",
+    "allowedQueries": [
+      "Topaz reconciliation",
+      "Topaz"
+    ],
+    "userSelectedKind": "conversation_read",
+    "kindProvenance": "predeclared-user-input-not-model-classification"
+  },
+  "h09": {
+    "intent": {
+      "kind": "conversation_read",
+      "query": "Silver absent register",
+      "title": "Silver absent register",
+      "messageIndexes": [
+        1
+      ]
+    },
+    "expectedOutcome": "safe-incomplete",
+    "genericCaseUnchanged": false,
+    "queryPolicy": "predeclared-canonical-variants",
+    "allowedQueries": [
+      "Silver absent register",
+      "Silver absent"
+    ],
+    "userSelectedKind": "conversation_read",
+    "kindProvenance": "predeclared-user-input-not-model-classification"
+  }
+}

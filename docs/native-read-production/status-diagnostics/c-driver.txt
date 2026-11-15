@@ -1,0 +1,13 @@
+pre-cancel result=2 output=null
+invalid-limit result=1 output=null
+mid-prefill-cancel result=2 output=null
+token-limit result=9 output=null
+real-two-reads result=0 output={"state":"reserved_not_executed","reserved_reads":[{"name":"get_app_info","arguments":{},"session_sequence":1},{"name":"list_models","arguments":{},"session_sequence":2}]}
+second-context-reuse result=0 output={"state":"reserved_not_executed","reserved_reads":[{"name":"get_app_info","arguments":{},"session_sequence":1},{"name":"list_models","arguments":{},"session_sequence":2}]}
+expired rejected
+occupied context rejected and preserved
+PASS 4 creation boundaries
+goal mask=1 result=0 output={"state":"reserved_not_executed","reserved_reads":[{"name":"get_app_info","arguments":{},"session_sequence":1}]}
+goal mask=2 result=0 output={"state":"reserved_not_executed","reserved_reads":[{"name":"list_models","arguments":{},"session_sequence":1}]}
+goal mask=3 result=10 output=null
+PASS 8 real-driver scenarios + one-shot/cache/model ownership checks

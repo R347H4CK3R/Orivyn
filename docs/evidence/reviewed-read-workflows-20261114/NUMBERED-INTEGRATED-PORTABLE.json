@@ -1,0 +1,136 @@
+{
+  "started_at": "2026-11-14T22:27:59.895716+00:00",
+  "scope": "Portable checks only; no Apple SDK build, simulator, device, real provider, or release verification.",
+  "source_manifest": "SOURCE-MANIFEST.json",
+  "known_exclusions": [
+    "Python real-tokenizer test may skip without its explicit local dependencies; inspect python.log.",
+    "Linux Foundation harness excludes the unsupported URLProtocol redirect fixture; inspect foundation.log."
+  ],
+  "stages": [
+    {
+      "name": "persistence",
+      "status": "skipped",
+      "reason": "No local SQLite amalgamation supplied; this is not a persistence-test pass."
+    },
+    {
+      "name": "guest-fixture",
+      "command": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+        "-B",
+        "scripts/materialize_guest.py",
+        "Fixtures/maintained.img.gz",
+        "JarvisEVO/Resources/VMAssets/maintained.img"
+      ],
+      "log": "guest-fixture.log",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.728
+    },
+    {
+      "name": "python",
+      "command": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "scripts/tests",
+        "-p",
+        "test_*.py"
+      ],
+      "log": "python.log",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 4.271
+    },
+    {
+      "name": "catalog",
+      "command": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+        "-B",
+        "scripts/model_catalog.py",
+        "--check"
+      ],
+      "log": "catalog.log",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.029
+    },
+    {
+      "name": "agent",
+      "command": [
+        "node",
+        "--test",
+        "scripts/agent-tests/context-completeness.test.cjs",
+        "scripts/agent-tests/conversation-read.test.cjs",
+        "scripts/agent-tests/core.test.cjs",
+        "scripts/agent-tests/decision-capabilities.test.cjs",
+        "scripts/agent-tests/local-read-router.test.cjs",
+        "scripts/agent-tests/paging-completion.test.cjs",
+        "scripts/agent-tests/read-plan-sequences.test.cjs",
+        "scripts/agent-tests/reviewed-workflow.test.cjs",
+        "scripts/agent-tests/source-repair.test.cjs",
+        "scripts/agent-tests/verified-plan.test.cjs"
+      ],
+      "log": "agent.log",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.659
+    },
+    {
+      "name": "vm",
+      "command": [
+        "node",
+        "--test",
+        "scripts/vm-tests/bios.test.cjs",
+        "scripts/vm-tests/boot-cancel.test.cjs",
+        "scripts/vm-tests/checkpoint-bios.test.cjs",
+        "scripts/vm-tests/checkpoint.test.cjs",
+        "scripts/vm-tests/controller.test.cjs",
+        "scripts/vm-tests/diagnostics.test.cjs",
+        "scripts/vm-tests/guest-console.test.cjs",
+        "scripts/vm-tests/guest-profile.test.cjs",
+        "scripts/vm-tests/timer-scheduler.test.cjs",
+        "scripts/vm-tests/wasm-loader.test.cjs"
+      ],
+      "log": "vm.log",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 2.337
+    },
+    {
+      "name": "foundation",
+      "command": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+        "-B",
+        "scripts/run_foundation_tests.py",
+        "--swift",
+        "/workspace/shared/swift-recovered/swift-6.1.3-RELEASE-ubuntu22.04/usr/bin/swift",
+        "--output",
+        "/workspace/scratch/8352eb8fe69c/orivyn-numbered-integrated-checks-20261114/foundation"
+      ],
+      "log": "foundation.log",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 23.882
+    }
+  ],
+  "status": "passed_with_exclusions",
+  "finished_at": "2026-11-14T22:28:32.433924+00:00",
+  "source_commit": "721926c6f32072754b412ba74a2741d0e0af7a44",
+  "log_sha256": {
+    "agent.log": "6857afd8ce20a866cad8f5bc2d90b1a19bef7850901bf787e1c3af52cd799198",
+    "catalog.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "vm.log": "b019225ea1cee86ae39ddea2c7dc6f0ca846451e4eba3580c3c038855c748a11",
+    "foundation.log": "2cf897cfe418779ea2ad96f6e8f7c1ca713dadd8a1496d829de1be2c2beeff03",
+    "guest-fixture.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "python.log": "cf279632b50bb9b15e3c857e375e78c152a0c59293abc242c88c4467765dc573"
+  },
+  "persistence": {
+    "cases": 99,
+    "failures": 0,
+    "log_sha256": "393b75d0924073a6ae028366db749ad7aa7ea059c2db31fb99937ee310ef6a0d",
+    "scope": "Installed host SQLite exact production sources; no Apple SQLite or transport/device claim."
+  }
+}

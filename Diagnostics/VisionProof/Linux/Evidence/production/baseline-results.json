@@ -1,0 +1,188 @@
+{
+  "scope": "Linux CPU, real C bridge; limited diagnostic, not general-vision or iOS acceptance",
+  "model": {
+    "repository": "ggml-org/SmolVLM-500M-Instruct-GGUF",
+    "revision": "1c289caed23f23378ec6a11cd26786ba1a51bca9",
+    "baseRevision": "a7da5b986cb59b408707209984f360a5f4ad7e47",
+    "artifacts": [
+      {
+        "file": "SmolVLM-500M-Instruct-Q8_0.gguf",
+        "size": 436806912,
+        "sha": "9d4612de6a42214499e301494a3ecc2be0abdd9de44e663bda63f1152fad1bf4",
+        "actualSHA256": "9d4612de6a42214499e301494a3ecc2be0abdd9de44e663bda63f1152fad1bf4",
+        "seconds": 17.4
+      },
+      {
+        "file": "mmproj-SmolVLM-500M-Instruct-f16.gguf",
+        "size": 199468800,
+        "sha": "4b2fca922e549e9b9608f4ba56f93565dd5220e935ba5570a2a864a0fcc988a6",
+        "actualSHA256": "4b2fca922e549e9b9608f4ba56f93565dd5220e935ba5570a2a864a0fcc988a6",
+        "seconds": 9.56
+      }
+    ]
+  },
+  "cases": [
+    {
+      "fixture": "red_circle",
+      "question": "Describe the visible image in one sentence.",
+      "output": " A red circle is the only object in the image.",
+      "status": 0,
+      "passed": true,
+      "rgb_sha256": "9d8dcd4fcc57a30ca2058a110312f3e7f2cbc3cad1fd819377e2bf005bb4a388",
+      "seconds": 5.04,
+      "report": {
+        "status": 0,
+        "phase": 5,
+        "tokens": 11,
+        "positions": 86,
+        "image_chunks": 1,
+        "callback_count": 8385,
+        "live_resources": 0
+      }
+    },
+    {
+      "fixture": "red_square",
+      "question": "Describe the visible image in one sentence.",
+      "output": " A red square is the only object present in the image.",
+      "status": 0,
+      "passed": true,
+      "rgb_sha256": "1963b35af19841148aca7535137eca16aa31e2225e7c9ceea7f3487853702318",
+      "seconds": 4.308,
+      "report": {
+        "status": 0,
+        "phase": 5,
+        "tokens": 12,
+        "positions": 86,
+        "image_chunks": 1,
+        "callback_count": 8935,
+        "live_resources": 0
+      }
+    },
+    {
+      "fixture": "blue_circle",
+      "question": "Describe the visible image in one sentence.",
+      "output": " A large blue circle is the only object in the image.",
+      "status": 0,
+      "passed": true,
+      "rgb_sha256": "fb87103dc8866bc2b9aa698e3ba69b19f82849323cf1b0d6ad7cb59e50a2eca4",
+      "seconds": 4.334,
+      "report": {
+        "status": 0,
+        "phase": 5,
+        "tokens": 12,
+        "positions": 86,
+        "image_chunks": 1,
+        "callback_count": 8935,
+        "live_resources": 0
+      }
+    },
+    {
+      "fixture": "blue_square",
+      "question": "Describe the visible image in one sentence.",
+      "output": " A blue square is the only object present in the image.",
+      "status": 0,
+      "passed": true,
+      "rgb_sha256": "ab0cb2e0d29a56cc08d16fea87ffd13fd7a25b052ad64dfdcddada3d2fc1c9af",
+      "seconds": 3.861,
+      "report": {
+        "status": 0,
+        "phase": 5,
+        "tokens": 12,
+        "positions": 86,
+        "image_chunks": 1,
+        "callback_count": 8935,
+        "live_resources": 0
+      }
+    },
+    {
+      "fixture": "spatial",
+      "question": "Where is the circle relative to the square? Answer in one sentence.",
+      "output": " Above.",
+      "status": 0,
+      "passed": false,
+      "rgb_sha256": "eb44b87046014118f78859a61c84affa9b904977d438cb3365797ee3af763e3e",
+      "seconds": 3.202,
+      "report": {
+        "status": 0,
+        "phase": 5,
+        "tokens": 2,
+        "positions": 92,
+        "image_chunks": 1,
+        "callback_count": 3435,
+        "live_resources": 0
+      }
+    },
+    {
+      "fixture": "spatial_reverse",
+      "question": "Where is the circle relative to the square? Answer in one sentence.",
+      "output": " Above.",
+      "status": 0,
+      "passed": false,
+      "rgb_sha256": "e802050dbeef18321f0d02bdff1d1d32bb60d8c8b8405c8aadeb48bf939ec8a1",
+      "seconds": 2.803,
+      "report": {
+        "status": 0,
+        "phase": 5,
+        "tokens": 2,
+        "positions": 92,
+        "image_chunks": 1,
+        "callback_count": 3435,
+        "live_resources": 0
+      }
+    },
+    {
+      "fixture": "count",
+      "question": "How many circles are visible? Answer briefly.",
+      "output": " 3.",
+      "status": 0,
+      "passed": true,
+      "rgb_sha256": "eb942bf20ce70fa4839e16fc7845bf7e478fb525dc799b50a80a7271288fa295",
+      "seconds": 2.718,
+      "report": {
+        "status": 0,
+        "phase": 5,
+        "tokens": 3,
+        "positions": 87,
+        "image_chunks": 1,
+        "callback_count": 3985,
+        "live_resources": 0
+      }
+    },
+    {
+      "fixture": "natural_landscape",
+      "question": "Describe the visible scene in one sentence.",
+      "output": " In this image, we can see a mountain with trees and a river. The sky is clear with clouds.",
+      "status": 0,
+      "passed": true,
+      "rgb_sha256": "3bccbd0d4299dd2b49ec61f06d4886ed8f64cd7017c0db8030ff9e29e7738927",
+      "seconds": 3.756,
+      "report": {
+        "status": 0,
+        "phase": 5,
+        "tokens": 22,
+        "positions": 86,
+        "image_chunks": 1,
+        "callback_count": 14435,
+        "live_resources": 0
+      }
+    },
+    {
+      "fixture": "blank",
+      "question": "Describe the visible image in one sentence.",
+      "output": "",
+      "status": 10,
+      "passed": true,
+      "rgb_sha256": "05cee4e08b431e15405ede17f74f3b6da563778652fcb974d4d987238e6e7a78",
+      "seconds": 0.001,
+      "report": {
+        "status": 10,
+        "phase": 0,
+        "tokens": 0,
+        "positions": 0,
+        "image_chunks": 0,
+        "callback_count": 0,
+        "live_resources": 0
+      }
+    }
+  ]
+}

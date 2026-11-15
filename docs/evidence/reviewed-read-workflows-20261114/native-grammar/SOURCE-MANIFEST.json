@@ -1,0 +1,22 @@
+[
+  {
+    "path": "/workspace/scratch/8352eb8fe69c/orivyn-reviewed-workflow/JarvisEVO/Core/LocalAgentGrammar.swift",
+    "sha256": "cce9791cbdd7ff5197c3c20958d9b071833d7550bb59997fab0d215635628c97"
+  },
+  {
+    "path": "/workspace/scratch/8352eb8fe69c/orivyn-reviewed-workflow/JarvisEVO/Core/LocalAgentError.swift",
+    "sha256": "778dc5b931880df35b7518ef758b60ffc1c6be6a5e57d5ddc62075b10366302e"
+  },
+  {
+    "path": "/workspace/scratch/8352eb8fe69c/orivyn-reviewed-workflow/JarvisEVO/Resources/LocalAgentDecision.gbnf",
+    "sha256": "4c833c12d0cacc7fc79bc04f37b18b1b9be83144c9bcc1ecbe0b3e10c33670b3"
+  },
+  {
+    "path": "/workspace/scratch/8352eb8fe69c/orivyn-real-llama-recovery/llama.cpp-b9049/src/llama-grammar.h",
+    "sha256": "db730e5aff77f96274aba4a43670f036400d89c7ed44b6e98d3ced41c7b9d193"
+  },
+  {
+    "path": "/workspace/scratch/8352eb8fe69c/orivyn-real-llama-recovery/build/bin/libllama.so.0.0.0",
+    "sha256": "dc053983fa3c4715ff3976f85f86c21f81f9e5a8ad0aced3f164bebbdb43dfd5"
+  }
+]

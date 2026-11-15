@@ -1,0 +1,7 @@
+{
+  "schema": 1,
+  "kind": "conversation_read",
+  "query": "Find the saved Maple journal conversation",
+  "title": "Maple journal conversation",
+  "messageIndexes": [1, 2]
+}

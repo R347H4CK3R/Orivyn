@@ -1,0 +1,6 @@
+{
+  "path": "/workspace/scratch/8352eb8fe69c/orivyn-agent-conversation-concise-orchid/llama-engine-smoke",
+  "sha256": "cf69b5cf5ed103f9531f6c34fbade94cd9a4828041c7fcbe06adaa64b367173d",
+  "SwiftSourcesUnchanged": true,
+  "changedResource": "LocalAgentCore.js"
+}

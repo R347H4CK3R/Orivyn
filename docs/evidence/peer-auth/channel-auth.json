@@ -1,0 +1,154 @@
+[
+  {
+    "expectedAuthentication" : true,
+    "name" : "valid-pair",
+    "passed" : true,
+    "peers" : [
+      {
+        "authenticated" : true,
+        "scopeValid" : true,
+        "side" : "client"
+      },
+      {
+        "authenticated" : true,
+        "scopeValid" : true,
+        "side" : "server"
+      }
+    ],
+    "seconds" : 0.03059399127960205,
+    "timedOut" : false
+  },
+  {
+    "expectedAuthentication" : false,
+    "name" : "unpaired-client",
+    "passed" : true,
+    "peers" : [
+      {
+        "authenticated" : false,
+        "scopeValid" : false,
+        "side" : "client"
+      },
+      {
+        "authenticated" : false,
+        "scopeValid" : false,
+        "side" : "server"
+      }
+    ],
+    "seconds" : 0.015956997871398926,
+    "timedOut" : false
+  },
+  {
+    "expectedAuthentication" : false,
+    "name" : "generation-mismatch",
+    "passed" : true,
+    "peers" : [
+      {
+        "authenticated" : false,
+        "scopeValid" : false,
+        "side" : "client"
+      },
+      {
+        "authenticated" : false,
+        "scopeValid" : false,
+        "side" : "server"
+      }
+    ],
+    "seconds" : 0.011852025985717773,
+    "timedOut" : false
+  },
+  {
+    "expectedAuthentication" : false,
+    "name" : "expired",
+    "passed" : true,
+    "peers" : [
+      {
+        "authenticated" : false,
+        "scopeValid" : false,
+        "side" : "client"
+      },
+      {
+        "authenticated" : false,
+        "scopeValid" : false,
+        "side" : "server"
+      }
+    ],
+    "seconds" : 0.009934067726135254,
+    "timedOut" : false
+  },
+  {
+    "expectedAuthentication" : false,
+    "name" : "future",
+    "passed" : true,
+    "peers" : [
+      {
+        "authenticated" : false,
+        "scopeValid" : false,
+        "side" : "client"
+      },
+      {
+        "authenticated" : false,
+        "scopeValid" : false,
+        "side" : "server"
+      }
+    ],
+    "seconds" : 0.010195016860961914,
+    "timedOut" : false
+  },
+  {
+    "expectedAuthentication" : false,
+    "name" : "wrong-usage",
+    "passed" : true,
+    "peers" : [
+      {
+        "authenticated" : false,
+        "scopeValid" : false,
+        "side" : "client"
+      },
+      {
+        "authenticated" : false,
+        "scopeValid" : false,
+        "side" : "server"
+      }
+    ],
+    "seconds" : 0.010985970497131348,
+    "timedOut" : false
+  },
+  {
+    "expectedAuthentication" : false,
+    "name" : "critical",
+    "passed" : true,
+    "peers" : [
+      {
+        "authenticated" : false,
+        "scopeValid" : false,
+        "side" : "client"
+      },
+      {
+        "authenticated" : false,
+        "scopeValid" : false,
+        "side" : "server"
+      }
+    ],
+    "seconds" : 0.01010596752166748,
+    "timedOut" : false
+  },
+  {
+    "expectedAuthentication" : false,
+    "name" : "bad-signature",
+    "passed" : true,
+    "peers" : [
+      {
+        "authenticated" : false,
+        "scopeValid" : false,
+        "side" : "client"
+      },
+      {
+        "authenticated" : false,
+        "scopeValid" : false,
+        "side" : "server"
+      }
+    ],
+    "seconds" : 0.01055896282196045,
+    "timedOut" : false
+  }
+]

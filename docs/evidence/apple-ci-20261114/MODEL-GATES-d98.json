@@ -1,0 +1,27 @@
+{
+  "sourceCommit": "d98a9d1e4372c88c89506ae788eb5d73512c994c",
+  "run": 43630969899,
+  "job": 132557254061,
+  "combinedRuntimeSHA256": "0d1fa10d94e0526ebbfd6adec203249d4fbe16c3178b9a88c7f6e0e02772f0af",
+  "vision": {
+    "passed": true,
+    "testSeconds": 125.548,
+    "answerFile": "VISION-d98-ANSWER.txt",
+    "scope": "One generated PNG through production ImageIO/hash verification/native CPU runtime/release; no broad-accuracy or physical-device acceptance"
+  },
+  "nativeTools": {
+    "passed": false,
+    "status": 3,
+    "meaning": "deadline expired",
+    "nativeElapsedSeconds": 97.845035291,
+    "testSeconds": 128.828,
+    "deadlineMilliseconds": 60000,
+    "note": "Deadline checks are cooperative at native decode boundaries; this run overshot before detecting expiry. No proposal or tool execution returned."
+  },
+  "artifact": {
+    "id": 14128783330,
+    "bytes": 53747767,
+    "sha256": "5343de628da70010fa330ef54045a71564d1c730bf198ad9a43a91333f01083b"
+  },
+  "releaseAccepted": false
+}

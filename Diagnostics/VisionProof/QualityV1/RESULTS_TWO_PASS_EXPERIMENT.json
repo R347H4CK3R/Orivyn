@@ -1,0 +1,291 @@
+{
+  "experiment": "Image description followed by image-conditioned original question; rejected",
+  "binarySHA256": "52c9c4c2961450674e128825513c8f22dbc74111fe70e6afd5f05d8b8d566db5",
+  "captionPrompt": "Describe the visible objects, their colors, counts, and relative positions. Be precise.",
+  "answerPromptTemplate": "Answer the question using the image. A preliminary description, which may be wrong, is: {caption}\nQuestion: {originalQuestion}",
+  "processNotes": [
+    "First process exited 137 after four completed cases during overlapping model work; cause not confirmed.",
+    "Remaining six cases were run sequentially in a fresh process.",
+    "case10 caption status was 8; its final answer is not credited as a completed two-stage result.",
+    "Only second-stage Report fields and first-stage status/caption were captured.",
+    "Existing Linux binary provenance is recorded; it was not rebuilt for this diagnostic."
+  ],
+  "cases": [
+    {
+      "caption": " The image contains two objects: a blue circle and an orange square. The blue circle is located on the left side of the image, while the orange square is positioned on the right side. The relative positions of the objects are such that the blue circle is to the left of the orange square.",
+      "captionStatus": 0,
+      "id": "case01",
+      "status": 0,
+      "output": " left",
+      "report": {
+        "status": 0,
+        "phase": 5,
+        "tokens": 1,
+        "positions": 201,
+        "image_chunks": 1,
+        "callback_count": 2734,
+        "live_resources": 0
+      },
+      "closeAcknowledged": true,
+      "rgbSHA256": "a7747e45a7ec97a95cfb02bcad4ddfd7277c8d22b2c45396f52c2443ed60089e",
+      "question": "Where is the blue circle relative to the orange square? Answer with one word: left, right, above, or below.",
+      "seconds": 28.79
+    },
+    {
+      "caption": " The image contains two geometric shapes: a square and a circle. The square is colored orange and is positioned on the left side of the image. The circle is colored blue and is positioned on the right side of the image. The relative positions of the square and the circle are such that the square is to the left of the circle.",
+      "captionStatus": 0,
+      "id": "case02",
+      "status": 0,
+      "output": " left",
+      "report": {
+        "status": 0,
+        "phase": 5,
+        "tokens": 1,
+        "positions": 209,
+        "image_chunks": 1,
+        "callback_count": 2734,
+        "live_resources": 0
+      },
+      "closeAcknowledged": true,
+      "rgbSHA256": "41b273ed0e2df5d34bf7c5aecb1b04f4e1b82f84ef01a7167b507cc6e416fd94",
+      "question": "Where is the blue circle relative to the orange square? Answer with one word: left, right, above, or below.",
+      "seconds": 54.44
+    },
+    {
+      "caption": " The image contains three distinct objects: a blue circle, an orange square, and a white circle. The blue circle is located at the top of the image, followed by the orange square in the middle, and the white circle at the bottom. The relative positions of the objects are as follows: the blue circle is above the orange square, and the white circle is below the orange square.",
+      "captionStatus": 0,
+      "id": "case03",
+      "status": 0,
+      "output": " above",
+      "report": {
+        "status": 0,
+        "phase": 5,
+        "tokens": 1,
+        "positions": 220,
+        "image_chunks": 1,
+        "callback_count": 3148,
+        "live_resources": 0
+      },
+      "closeAcknowledged": true,
+      "rgbSHA256": "a610b3f017ecdce7bb6afdc81ae5062e1a4ac481ea41f55443c127d45c35b217",
+      "question": "Where is the blue circle relative to the orange square? Answer with one word: left, right, above, or below.",
+      "seconds": 59.45
+    },
+    {
+      "caption": " The image contains three geometric shapes: a blue circle, an orange square, and a blue circle. The blue circle is located at the bottom left of the image, the orange square is positioned above the blue circle, and the blue circle is located at the top right of the image. The relative positions of the shapes are as follows: the blue circle is above the orange square, and the orange square is above the blue circle.",
+      "captionStatus": 0,
+      "id": "case04",
+      "status": 0,
+      "output": " above",
+      "report": {
+        "status": 0,
+        "phase": 5,
+        "tokens": 1,
+        "positions": 228,
+        "image_chunks": 1,
+        "callback_count": 3148,
+        "live_resources": 0
+      },
+      "closeAcknowledged": true,
+      "rgbSHA256": "095e6fc19b8a28536216def1f623d5c3f4a7b738fae822a8768ce3b52cbbdbef",
+      "question": "Where is the blue circle relative to the orange square? Answer with one word: left, right, above, or below.",
+      "seconds": 67.98
+    },
+    {
+      "caption": " The image contains four orange squares arranged in a diamond shape. The squares are evenly spaced and form a straight line. The squares are all the same size and are positioned in a way that they form a diamond shape.",
+      "captionStatus": 0,
+      "id": "case05",
+      "status": 0,
+      "output": " 0",
+      "report": {
+        "status": 0,
+        "phase": 5,
+        "tokens": 2,
+        "positions": 171,
+        "image_chunks": 1,
+        "callback_count": 3148,
+        "live_resources": 0
+      },
+      "closeAcknowledged": true,
+      "rgbSHA256": "65e1fe416a16e7555d901aaddc14a981a6dabb73703dae18b10c84a7b3ab626a",
+      "question": "How many circles are visible? Return only the number.",
+      "seconds": 25.87
+    },
+    {
+      "caption": " The image contains three objects: two squares and one circle. The circle is located at the top of the image, while the two squares are positioned below it. The squares are positioned symmetrically, with one square on the left and the other on the right. The circle is located in the center of the image.",
+      "captionStatus": 0,
+      "id": "case06",
+      "status": 0,
+      "output": " 1",
+      "report": {
+        "status": 0,
+        "phase": 5,
+        "tokens": 2,
+        "positions": 192,
+        "image_chunks": 1,
+        "callback_count": 3148,
+        "live_resources": 0
+      },
+      "closeAcknowledged": true,
+      "rgbSHA256": "4a01f0c17f90746a56ee97372c228b6ae76d1fe61007addbfaa1073848809427",
+      "question": "How many circles are visible? Return only the number.",
+      "seconds": 27.89
+    },
+    {
+      "caption": " The image contains three objects: two blue circles and one orange square. The blue circles are located at the top of the image, while the orange square is at the bottom. The relative positions of the objects are such that the blue circles are above the orange square.",
+      "captionStatus": 0,
+      "id": "case07",
+      "status": 0,
+      "output": " 2",
+      "report": {
+        "status": 0,
+        "phase": 5,
+        "tokens": 2,
+        "positions": 181,
+        "image_chunks": 1,
+        "callback_count": 3148,
+        "live_resources": 0
+      },
+      "closeAcknowledged": true,
+      "rgbSHA256": "23364317a6674cc30802b9d5d535cc473adf8b5847f153890a66c45f94a706b6",
+      "question": "How many circles are visible? Return only the number.",
+      "seconds": 48.3
+    },
+    {
+      "caption": " The image displays a simple geometric arrangement. There are five blue circles and one orange square. The blue circles are arranged in a square formation, with one circle at the center and four circles forming the perimeter of the square. The orange square is positioned in the center of the image, directly above the central circle of the blue circles. The relative positions of the objects are such that the orange square is directly above the central circle of the blue circles.",
+      "captionStatus": 0,
+      "id": "case08",
+      "status": 0,
+      "output": " 5",
+      "report": {
+        "status": 0,
+        "phase": 5,
+        "tokens": 2,
+        "positions": 217,
+        "image_chunks": 1,
+        "callback_count": 3562,
+        "live_resources": 0
+      },
+      "closeAcknowledged": true,
+      "rgbSHA256": "9722e72cbcc84c577facf360cbaa3047c28140c00d4a675409da140854d55744",
+      "question": "How many circles are visible? Return only the number.",
+      "seconds": 30.02
+    },
+    {
+      "caption": " The image is a black and white pixelated image of a map. The map is labeled \"MAFLE 47\" in the center. The map appears to be a representation of a geographical area, possibly a country or region, with various symbols and markings indicating different features such as roads, rivers, and possibly cities or landmarks. The relative positions of these features are not clear due to the pixelated nature of the image. The image does not provide any additional information about the specific features or landmarks on the map.",
+      "captionStatus": 0,
+      "id": "case09",
+      "status": 0,
+      "output": " MAFLE 47",
+      "report": {
+        "status": 0,
+        "phase": 5,
+        "tokens": 6,
+        "positions": 235,
+        "image_chunks": 1,
+        "callback_count": 5218,
+        "live_resources": 0
+      },
+      "closeAcknowledged": true,
+      "rgbSHA256": "655132665db9e033f0efa6941b4e00ae8592cc7eb9c78bc3a32a3f86492d7979",
+      "question": "Transcribe all text in the image. Return only the text.",
+      "seconds": 71.78
+    },
+    {
+      "caption": "",
+      "captionStatus": 8,
+      "id": "case10",
+      "status": 0,
+      "output": " CEDAR 82",
+      "report": {
+        "status": 0,
+        "phase": 5,
+        "tokens": 6,
+        "positions": 130,
+        "image_chunks": 1,
+        "callback_count": 4804,
+        "live_resources": 0
+      },
+      "closeAcknowledged": true,
+      "rgbSHA256": "b0fb97b76cca7282c2916858e27b68f522d39e2cf9d7fc6f4d616bfa794807b0",
+      "question": "Transcribe all text in the image. Return only the text.",
+      "seconds": 90.93
+    }
+  ],
+  "score": {
+    "scope": "Frozen synthetic diagnostic only; no broad vision/OCR or device acceptance claim",
+    "passed": false,
+    "cases": [
+      {
+        "id": "case01",
+        "passed": true,
+        "runtimeComplete": true,
+        "answerMatched": true,
+        "normalizedAnswer": "left"
+      },
+      {
+        "id": "case02",
+        "passed": false,
+        "runtimeComplete": true,
+        "answerMatched": false,
+        "normalizedAnswer": "left"
+      },
+      {
+        "id": "case03",
+        "passed": true,
+        "runtimeComplete": true,
+        "answerMatched": true,
+        "normalizedAnswer": "above"
+      },
+      {
+        "id": "case04",
+        "passed": false,
+        "runtimeComplete": true,
+        "answerMatched": false,
+        "normalizedAnswer": "above"
+      },
+      {
+        "id": "case05",
+        "passed": true,
+        "runtimeComplete": true,
+        "answerMatched": true,
+        "normalizedAnswer": "0"
+      },
+      {
+        "id": "case06",
+        "passed": true,
+        "runtimeComplete": true,
+        "answerMatched": true,
+        "normalizedAnswer": "1"
+      },
+      {
+        "id": "case07",
+        "passed": true,
+        "runtimeComplete": true,
+        "answerMatched": true,
+        "normalizedAnswer": "2"
+      },
+      {
+        "id": "case08",
+        "passed": false,
+        "runtimeComplete": true,
+        "answerMatched": false,
+        "normalizedAnswer": "5"
+      },
+      {
+        "id": "case09",
+        "passed": false,
+        "runtimeComplete": true,
+        "answerMatched": false,
+        "normalizedAnswer": "mafle 47"
+      },
+      {
+        "id": "case10",
+        "passed": false,
+        "runtimeComplete": false,
+        "answerMatched": true,
+        "normalizedAnswer": "cedar 82"
+      }
+    ]
+  }
+}

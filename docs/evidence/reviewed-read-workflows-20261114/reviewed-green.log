@@ -1,0 +1,13 @@
+✔ reviewed task preserves original goal and cannot answer or broaden approved query (6.011545ms)
+✔ approved read prerequisites require all complete pages before answer (13.083965ms)
+✔ search-only never admits reading and can answer after exact search (0.821039ms)
+✔ missing ambiguous limited or changed sources fail with preserved evidence (2.227127ms)
+✔ malformed plans rejected and uncertain pending calls never replay (0.573011ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 156.312494

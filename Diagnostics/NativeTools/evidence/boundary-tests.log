@@ -1,0 +1,51 @@
+test_atomic_invalid_batch (__main__.Gate.test_atomic_invalid_batch) ... llama_model_loader: loaded meta data with 28 key-value pairs and 310 tensors from /workspace/scratch/8352eb8fe69c/orivyn-autonomy-next/model.gguf (version GGUF V3 (latest))
+ok
+test_budget (__main__.Gate.test_budget) ... llama_model_loader: loaded meta data with 28 key-value pairs and 310 tensors from /workspace/scratch/8352eb8fe69c/orivyn-autonomy-next/model.gguf (version GGUF V3 (latest))
+ok
+test_cancel (__main__.Gate.test_cancel) ... llama_model_loader: loaded meta data with 28 key-value pairs and 310 tensors from /workspace/scratch/8352eb8fe69c/orivyn-autonomy-next/model.gguf (version GGUF V3 (latest))
+ok
+test_concurrent_replay (__main__.Gate.test_concurrent_replay) ... llama_model_loader: loaded meta data with 28 key-value pairs and 310 tensors from /workspace/scratch/8352eb8fe69c/orivyn-autonomy-next/model.gguf (version GGUF V3 (latest))
+ok
+test_duplicate_batch (__main__.Gate.test_duplicate_batch) ... llama_model_loader: loaded meta data with 28 key-value pairs and 310 tensors from /workspace/scratch/8352eb8fe69c/orivyn-autonomy-next/model.gguf (version GGUF V3 (latest))
+ok
+test_duplicate_key (__main__.Gate.test_duplicate_key) ... llama_model_loader: loaded meta data with 28 key-value pairs and 310 tensors from /workspace/scratch/8352eb8fe69c/orivyn-autonomy-next/model.gguf (version GGUF V3 (latest))
+ok
+test_embedded_null (__main__.Gate.test_embedded_null) ... llama_model_loader: loaded meta data with 28 key-value pairs and 310 tensors from /workspace/scratch/8352eb8fe69c/orivyn-autonomy-next/model.gguf (version GGUF V3 (latest))
+ok
+test_escaped_duplicate (__main__.Gate.test_escaped_duplicate) ... llama_model_loader: loaded meta data with 28 key-value pairs and 310 tensors from /workspace/scratch/8352eb8fe69c/orivyn-autonomy-next/model.gguf (version GGUF V3 (latest))
+ok
+test_expiry (__main__.Gate.test_expiry) ... llama_model_loader: loaded meta data with 28 key-value pairs and 310 tensors from /workspace/scratch/8352eb8fe69c/orivyn-autonomy-next/model.gguf (version GGUF V3 (latest))
+ok
+test_extra_args (__main__.Gate.test_extra_args) ... llama_model_loader: loaded meta data with 28 key-value pairs and 310 tensors from /workspace/scratch/8352eb8fe69c/orivyn-autonomy-next/model.gguf (version GGUF V3 (latest))
+ok
+test_invalid_utf8_in_name (__main__.Gate.test_invalid_utf8_in_name) ... llama_model_loader: loaded meta data with 28 key-value pairs and 310 tensors from /workspace/scratch/8352eb8fe69c/orivyn-autonomy-next/model.gguf (version GGUF V3 (latest))
+ok
+test_mismatched_template_rejected (__main__.Gate.test_mismatched_template_rejected) ... llama_model_loader: loaded meta data with 28 key-value pairs and 310 tensors from /workspace/scratch/8352eb8fe69c/orivyn-autonomy-next/model.gguf (version GGUF V3 (latest))
+ok
+test_nested_excessive (__main__.Gate.test_nested_excessive) ... llama_model_loader: loaded meta data with 28 key-value pairs and 310 tensors from /workspace/scratch/8352eb8fe69c/orivyn-autonomy-next/model.gguf (version GGUF V3 (latest))
+ok
+test_no_eog (__main__.Gate.test_no_eog) ... llama_model_loader: loaded meta data with 28 key-value pairs and 310 tensors from /workspace/scratch/8352eb8fe69c/orivyn-autonomy-next/model.gguf (version GGUF V3 (latest))
+ok
+test_no_plain_claim (__main__.Gate.test_no_plain_claim) ... llama_model_loader: loaded meta data with 28 key-value pairs and 310 tensors from /workspace/scratch/8352eb8fe69c/orivyn-autonomy-next/model.gguf (version GGUF V3 (latest))
+ok
+test_outside_plan (__main__.Gate.test_outside_plan) ... llama_model_loader: loaded meta data with 28 key-value pairs and 310 tensors from /workspace/scratch/8352eb8fe69c/orivyn-autonomy-next/model.gguf (version GGUF V3 (latest))
+ok
+test_owner_survives (__main__.Gate.test_owner_survives) ... llama_model_loader: loaded meta data with 28 key-value pairs and 310 tensors from /workspace/scratch/8352eb8fe69c/orivyn-autonomy-next/model.gguf (version GGUF V3 (latest))
+ok
+test_replay_rejected (__main__.Gate.test_replay_rejected) ... llama_model_loader: loaded meta data with 28 key-value pairs and 310 tensors from /workspace/scratch/8352eb8fe69c/orivyn-autonomy-next/model.gguf (version GGUF V3 (latest))
+ok
+test_sequential (__main__.Gate.test_sequential) ... llama_model_loader: loaded meta data with 28 key-value pairs and 310 tensors from /workspace/scratch/8352eb8fe69c/orivyn-autonomy-next/model.gguf (version GGUF V3 (latest))
+ok
+test_size (__main__.Gate.test_size) ... llama_model_loader: loaded meta data with 28 key-value pairs and 310 tensors from /workspace/scratch/8352eb8fe69c/orivyn-autonomy-next/model.gguf (version GGUF V3 (latest))
+ok
+test_trailing_junk (__main__.Gate.test_trailing_junk) ... llama_model_loader: loaded meta data with 28 key-value pairs and 310 tensors from /workspace/scratch/8352eb8fe69c/orivyn-autonomy-next/model.gguf (version GGUF V3 (latest))
+ok
+test_truncated_close (__main__.Gate.test_truncated_close) ... llama_model_loader: loaded meta data with 28 key-value pairs and 310 tensors from /workspace/scratch/8352eb8fe69c/orivyn-autonomy-next/model.gguf (version GGUF V3 (latest))
+ok
+test_utf8 (__main__.Gate.test_utf8) ... llama_model_loader: loaded meta data with 28 key-value pairs and 310 tensors from /workspace/scratch/8352eb8fe69c/orivyn-autonomy-next/model.gguf (version GGUF V3 (latest))
+ok
+test_valid_batch (__main__.Gate.test_valid_batch) ... llama_model_loader: loaded meta data with 28 key-value pairs and 310 tensors from /workspace/scratch/8352eb8fe69c/orivyn-autonomy-next/model.gguf (version GGUF V3 (latest))
+ok
+----------------------------------------------------------------------
+Ran 24 tests in 8.640s
+OK

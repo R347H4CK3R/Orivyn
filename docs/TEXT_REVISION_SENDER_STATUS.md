@@ -1,0 +1,11 @@
+# Durable revision sender status
+
+The sender stages exactly the reviewed local text snapshot, including the last acknowledged base for each source. Receiver epoch, sender identity, peer identity and pairing generation isolate ancestry. Only one pending envelope per destination is allowed. Retry bytes and transfer identity survive restart; new local edits cannot modify them. A receipt must bind the exact identity, payload and canonical receiver summary. Socket-send completion cannot advance the base. Receipt persistence and ancestry advancement share a transaction; replay of an old receipt cannot rewind newer ancestry.
+
+The APIs are dormant. A future native coordinator must authenticate the peer, bind receipts to an authenticated channel, require explicit send approval, and invalidate live transfers on lock, revocation or erasure. These data types do not prove authentication. No listener, automatic sender or background service is enabled.
+
+Peer revocation deletes its outgoing revision metadata; history erasure clears all retained outgoing snapshots and bases. The schema migrates only known intact metadata and does not reconstruct missing tables or serialization metadata. Sender and receiver capacities remain bounded, with no silent eviction.
+
+Validation: the pre-implementation tests failed on missing sender methods in run 43652896283. Implementation commit 6e3ac4b7 passed all 125 persistence tests in run 43653107083, including 13 new sender tests. All 129 persistence tests, including 17 sender tests, passed on a48a59c30f6bb101b34ba624d19319ce4d1e5542 in https://github.com/R347H4CK3R/Orivyn/actions/runs/43653606975 after correcting a test-only Swift concurrency capture. This includes concurrent database connections, delayed receipt replay, missing serialization metadata and no-op revisions. These run production Swift/SQLite on Linux; they simulate delivery between two stores, not two networked devices.
+
+Remaining integration: authenticated pairing and transport, live transfer leases, foreground/background lifecycle, automatic selection and approval policy, bidirectional echo suppression/convergence, unsaved UI edit coordination, attachment ownership, and two-device acceptance. Do not label automatic sync complete.

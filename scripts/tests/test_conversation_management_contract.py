@@ -7,8 +7,10 @@ class ConversationManagementContract(unittest.TestCase):
   s=(ROOT/'JarvisEVO/UI/AppModel.swift').read_text()
   for name,next_name in [('rename','archive'),('archive','delete')]:
    method=s[s.index('    func '+name+'('):s.index('    func '+next_name+'(')]
-   self.assertLess(method.index('try await store.save(proposed)'),method.index('conversations[index].'))
+   self.assertLess(method.index('try await saveConversation(proposed)'),method.index('conversations[index].'))
    self.assertIn('generatingConversationID != id',method)
+  helper=s[s.index('    private func saveConversation('):s.index('    private func persist(')]
+  self.assertLess(helper.index('try await store.save(conversation)'),helper.index('ownedAttachmentImports ='))
  def test_edit_awaits_success_and_original_context_is_bound(self):
   view=(ROOT/'JarvisEVO/UI/MessageRow.swift').read_text()
   self.assertIn('let saved = await onSave(text)',view)

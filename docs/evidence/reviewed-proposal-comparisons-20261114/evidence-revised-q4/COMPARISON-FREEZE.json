@@ -1,0 +1,10 @@
+{
+  "beforeModelOutputs": true,
+  "track": "reused-holdout-development-comparison-not-new-independent-holdouts",
+  "originalBackend": "35f608c16131eb4c55f96340f55ca7ef28f4d97f",
+  "onlyProductionChange": "LocalReadPlan.swift prompt wording",
+  "oldSHA256": "7664e3d9ba76528d9bf9c68bd82f801be20eb014142f82025e395f0de1669538",
+  "newSHA256": "bca359ddb26422f404b3ff3377083edb3e775eddcca473c5f05b49735c4d3220",
+  "unchangedScorerSHA256": "cebe4d5c41b406b47c0b2afc7bb2594e166a0d99b3b0057f7514aac30aa6546b",
+  "unchangedFixtureSHA256": "e27c3262a60cd146901ff94398003c8fa3e0246afd074dbf9a03bcc00bfe3447"
+}

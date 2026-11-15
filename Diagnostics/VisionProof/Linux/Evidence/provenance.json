@@ -1,0 +1,13 @@
+{
+  "upstream": "2496f9c14965c39589f53eea31bdb6d762b1d360",
+  "scope": "Linux CPU only",
+  "files": {
+    "JarvisEVO/Core/VisionSession.swift": "c15f206e2c9e60ae3ec5401d76a3de06845179797442e61c36ab1770fff4eb88",
+    "JarvisEVO/Core/LocalHeavyWork.swift": "22f57f9fa80ce2ff220528bf8d75416049bd6da2dc843a71d95b8cde93efd677",
+    "Diagnostics/VisionProof/Bridge/vision_bridge.cpp": "8bcf74643373a13d2ac0a2c3e1643677977a136772e56365b7a9541bc4408469",
+    "Diagnostics/VisionProof/Bridge/vision_bridge.h": "88c0b536a331fef4e686795fbecb73f4977ab2b227f27186ab7b30ede16bd4ba",
+    "Diagnostics/VisionProof/Linux/real_gate.py": "fb914e0ffcbb1a65e1eab12b21d55def8deb3072213d3e603dd7f65607e60d97",
+    "Diagnostics/VisionProof/Linux/session_checks.swift": "37d123c8b2a0a7e64dde2355dce9b29ceeb17ba8643831781d5845fe66a73972",
+    "Diagnostics/VisionProof/Linux/Evidence/results.json": "bf0916d7dc910214c942dbc3f9a32fb5f4df5c275fca8aaf6d8999610f80612e"
+  }
+}

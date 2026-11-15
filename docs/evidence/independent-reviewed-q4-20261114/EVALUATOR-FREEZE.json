@@ -1,0 +1,17 @@
+{
+  "modelRuns": 0,
+  "reviewedAdapter": "pending stable production interfaces",
+  "files": {
+    "DESIGN-FREEZE.json": "6b2beba34f3b8b11b5bc24cbb370e9cdc7e2adbeb14ac596c2ec669032796c16",
+    "sealed-cases.json": "e27c3262a60cd146901ff94398003c8fa3e0246afd074dbf9a03bcc00bfe3447",
+    "supplemental-case.json": "4cf4e4c1660def950c32cdccabdbcc09acc96bbf26ed61326e2d5e421181d12a",
+    "reviewed-intents.json": "041ab2823002a49777f578a0dfe1e76b76f053fa5d4d8a8a559e78f5939ff22a",
+    "proposal_approval.py": "cebe4d5c41b406b47c0b2afc7bb2594e166a0d99b3b0057f7514aac30aa6546b",
+    "IndependentHoldoutDriver.swift": "80bff05a1932d93d32cfa94a7c854d3f472c92b3dbdd4e36c8d561a0936f99eb",
+    "prepare_generic.py": "eb6493513127632d12c64c32e5aeb67d928168d47a0da23d05c2382d85f7e4d3",
+    "run_generic.py": "18b110a14b62fbbdbf93e0334aa5e20a58c92a2e1223bc33188339be231f4ec6",
+    "test_design.py": "e3594751a6c294a3dbc1e4b8e3b96833e58d9f175a7d551e1325fa8bf96a4428",
+    "REVIEWED-DESIGN-FREEZE.json": "fd678a429befc4d2166a59456d122f7d340a0a9f875253351cd33d7a2239fa61"
+  },
+  "kindSelection": "predeclared-user-input"
+}

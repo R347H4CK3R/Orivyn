@@ -1,0 +1,207 @@
+[
+  {
+    "path": "/workspace/scratch/8352eb8fe69c/orivyn-independent-4b-results/MANIFEST.json",
+    "bytes": 3676,
+    "sha256": "e490a2f71ea0c268cd4f1be81aaa7c21f5a8e6d37b5f0127573084563a00809e"
+  },
+  {
+    "path": "/workspace/scratch/8352eb8fe69c/orivyn-independent-4b-results/RESULTS.json",
+    "bytes": 2274,
+    "sha256": "ba97db394a9d0f202154c4c6677fa63d403d3deadf2239e4e7957b3f39edbee0"
+  },
+  {
+    "path": "/workspace/scratch/8352eb8fe69c/orivyn-independent-4b-results/h01/APPROVAL.json",
+    "bytes": 94,
+    "sha256": "c91a457930e6a52784858de67c94b72cb66328e67b54c818501f9f0116e5e130"
+  },
+  {
+    "path": "/workspace/scratch/8352eb8fe69c/orivyn-independent-4b-results/h01/ERROR.txt",
+    "bytes": 72,
+    "sha256": "c3e9acead0b0e4f1d7f4f1f2a6444189a9a9564cc8245e41405f8cee3cc0a767"
+  },
+  {
+    "path": "/workspace/scratch/8352eb8fe69c/orivyn-independent-4b-results/h01/proposal-prompt.txt",
+    "bytes": 585,
+    "sha256": "64e0852a42013f1c604c7a1fbf0208edec9c290531ffdc6a69f3a37581813bdc"
+  },
+  {
+    "path": "/workspace/scratch/8352eb8fe69c/orivyn-independent-4b-results/h01/proposal-raw.json",
+    "bytes": 229,
+    "sha256": "fbe402884a3a525ffee154a70d8feba9af9aa1a9dc6c4cffab0dd420f6b357d5"
+  },
+  {
+    "path": "/workspace/scratch/8352eb8fe69c/orivyn-independent-4b-results/h01/proposal-request.json",
+    "bytes": 186,
+    "sha256": "46e43ffe2260778c7ddebf55f67f0e65b6f634922796b547253a9f3bcdbefa88"
+  },
+  {
+    "path": "/workspace/scratch/8352eb8fe69c/orivyn-independent-4b-results/h01.memory.json",
+    "bytes": 3884,
+    "sha256": "503c41fef5ff42271ba468f8f818dc5220582f7bb30cff06969181c0f5822c77"
+  },
+  {
+    "path": "/workspace/scratch/8352eb8fe69c/orivyn-independent-4b-results/h01.stderr",
+    "bytes": 47587,
+    "sha256": "d957b7d53fa8e80be33ebd9fffe525eff83a6ac9312e051fa010c5e7e670701f"
+  },
+  {
+    "path": "/workspace/scratch/8352eb8fe69c/orivyn-independent-4b-results/h01.stdout",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "/workspace/scratch/8352eb8fe69c/orivyn-independent-4b-results/h02/APPROVAL.json",
+    "bytes": 94,
+    "sha256": "c91a457930e6a52784858de67c94b72cb66328e67b54c818501f9f0116e5e130"
+  },
+  {
+    "path": "/workspace/scratch/8352eb8fe69c/orivyn-independent-4b-results/h02/ERROR.txt",
+    "bytes": 72,
+    "sha256": "c3e9acead0b0e4f1d7f4f1f2a6444189a9a9564cc8245e41405f8cee3cc0a767"
+  },
+  {
+    "path": "/workspace/scratch/8352eb8fe69c/orivyn-independent-4b-results/h02/proposal-prompt.txt",
+    "bytes": 608,
+    "sha256": "ec716822f7d412fd111285b7668d437264da5f09a65be1fe895fbe49ae72f494"
+  },
+  {
+    "path": "/workspace/scratch/8352eb8fe69c/orivyn-independent-4b-results/h02/proposal-raw.json",
+    "bytes": 296,
+    "sha256": "846292c98b969d31615096b1e5cc0eb88c968d799ff4d71a2b1da71f998f708d"
+  },
+  {
+    "path": "/workspace/scratch/8352eb8fe69c/orivyn-independent-4b-results/h02/proposal-request.json",
+    "bytes": 186,
+    "sha256": "46e43ffe2260778c7ddebf55f67f0e65b6f634922796b547253a9f3bcdbefa88"
+  },
+  {
+    "path": "/workspace/scratch/8352eb8fe69c/orivyn-independent-4b-results/h02.memory.json",
+    "bytes": 3585,
+    "sha256": "e7c7a4c6ca92cc1d7df47849eeea7434e1712f0ef2404e1ff88f59507067b0b2"
+  },
+  {
+    "path": "/workspace/scratch/8352eb8fe69c/orivyn-independent-4b-results/h02.stderr",
+    "bytes": 47587,
+    "sha256": "5820b6ec6062389c504c948ccba0c58be3a4105a8b0c057b443040653da0952a"
+  },
+  {
+    "path": "/workspace/scratch/8352eb8fe69c/orivyn-independent-4b-results/h02.stdout",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "/workspace/scratch/8352eb8fe69c/orivyn-independent-4b-results/h03/APPROVAL.json",
+    "bytes": 94,
+    "sha256": "c91a457930e6a52784858de67c94b72cb66328e67b54c818501f9f0116e5e130"
+  },
+  {
+    "path": "/workspace/scratch/8352eb8fe69c/orivyn-independent-4b-results/h03/ERROR.txt",
+    "bytes": 72,
+    "sha256": "c3e9acead0b0e4f1d7f4f1f2a6444189a9a9564cc8245e41405f8cee3cc0a767"
+  },
+  {
+    "path": "/workspace/scratch/8352eb8fe69c/orivyn-independent-4b-results/h03/proposal-prompt.txt",
+    "bytes": 605,
+    "sha256": "afacea098ac17be9d4426b49da74b9c68666a1e25206eefe018f30c7b94f298d"
+  },
+  {
+    "path": "/workspace/scratch/8352eb8fe69c/orivyn-independent-4b-results/h03/proposal-raw.json",
+    "bytes": 297,
+    "sha256": "ea8d9095f3f9ae012d287bf734b16c32d8a4d56b705bced9a0968195aeb01b9a"
+  },
+  {
+    "path": "/workspace/scratch/8352eb8fe69c/orivyn-independent-4b-results/h03/proposal-request.json",
+    "bytes": 186,
+    "sha256": "46e43ffe2260778c7ddebf55f67f0e65b6f634922796b547253a9f3bcdbefa88"
+  },
+  {
+    "path": "/workspace/scratch/8352eb8fe69c/orivyn-independent-4b-results/h03.memory.json",
+    "bytes": 17566,
+    "sha256": "1fe51b63b78da7950dbd804cff9767298beeaa686c4721053372c0500fc38155"
+  },
+  {
+    "path": "/workspace/scratch/8352eb8fe69c/orivyn-independent-4b-results/h03.stderr",
+    "bytes": 47587,
+    "sha256": "9b274110ba0d57f2f51659b3a6892aa01092032c10e5b872306517bc106c1dc6"
+  },
+  {
+    "path": "/workspace/scratch/8352eb8fe69c/orivyn-independent-4b-results/h03.stdout",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "/workspace/scratch/8352eb8fe69c/orivyn-independent-4b-results/h04/APPROVAL.json",
+    "bytes": 94,
+    "sha256": "c91a457930e6a52784858de67c94b72cb66328e67b54c818501f9f0116e5e130"
+  },
+  {
+    "path": "/workspace/scratch/8352eb8fe69c/orivyn-independent-4b-results/h04/ERROR.txt",
+    "bytes": 72,
+    "sha256": "c3e9acead0b0e4f1d7f4f1f2a6444189a9a9564cc8245e41405f8cee3cc0a767"
+  },
+  {
+    "path": "/workspace/scratch/8352eb8fe69c/orivyn-independent-4b-results/h04/proposal-prompt.txt",
+    "bytes": 588,
+    "sha256": "473269056cfda3ca749ec61b6ebb99fccd4823a4559191ded3093375db8da640"
+  },
+  {
+    "path": "/workspace/scratch/8352eb8fe69c/orivyn-independent-4b-results/h04/proposal-raw.json",
+    "bytes": 228,
+    "sha256": "185c059c9fb7a423c57d19e1bc07e6cd9016231d35263c2523d6d8d92e12f1fe"
+  },
+  {
+    "path": "/workspace/scratch/8352eb8fe69c/orivyn-independent-4b-results/h04/proposal-request.json",
+    "bytes": 186,
+    "sha256": "46e43ffe2260778c7ddebf55f67f0e65b6f634922796b547253a9f3bcdbefa88"
+  },
+  {
+    "path": "/workspace/scratch/8352eb8fe69c/orivyn-independent-4b-results/h04.memory.json",
+    "bytes": 14795,
+    "sha256": "2edd50d6355c144ebc44642aaf627b8cf0ea8bc38f39736ed2025db6294d2732"
+  },
+  {
+    "path": "/workspace/scratch/8352eb8fe69c/orivyn-independent-4b-results/h04.stderr",
+    "bytes": 47587,
+    "sha256": "d28523763336c71a0c4126cbfc5eca96af7f8fb1c8abca4a78035d24669d5b24"
+  },
+  {
+    "path": "/workspace/scratch/8352eb8fe69c/orivyn-independent-4b-results/h04.stdout",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "/workspace/scratch/8352eb8fe69c/orivyn-independent-4b-results/h05/APPROVAL.json",
+    "bytes": 80,
+    "sha256": "f6a12be5bfdd3fac14e15c9339b017a02c562f3adeea35e67c6e6d6fd3e9b87f"
+  },
+  {
+    "path": "/workspace/scratch/8352eb8fe69c/orivyn-independent-4b-results/h05/proposal-prompt.txt",
+    "bytes": 559,
+    "sha256": "b89142895786536423aa0929bd773cf6176212f6f765a23751a803634769726a"
+  },
+  {
+    "path": "/workspace/scratch/8352eb8fe69c/orivyn-independent-4b-results/h05/proposal-raw.json",
+    "bytes": 85,
+    "sha256": "88afc34617c8575ff7f3ce8865d0397b02f50661810feb157b75ebaffa760425"
+  },
+  {
+    "path": "/workspace/scratch/8352eb8fe69c/orivyn-independent-4b-results/h05/proposal-request.json",
+    "bytes": 188,
+    "sha256": "dd14c5b2d29aaaae5c9b9b8f0006e351f31df06084e7c53bfc1a0f040e4f3db2"
+  },
+  {
+    "path": "/workspace/scratch/8352eb8fe69c/orivyn-independent-4b-results/h05.memory.json",
+    "bytes": 8550,
+    "sha256": "28e93861a2e5be06aa8db81257b87af6bf32564cbbf84b6621983b9bd3be4b32"
+  },
+  {
+    "path": "/workspace/scratch/8352eb8fe69c/orivyn-independent-4b-results/h05.stderr",
+    "bytes": 47486,
+    "sha256": "c4822180512371c9253b4ca1ee90807c5a171fcd95629817aaae1d8c17e3581f"
+  },
+  {
+    "path": "/workspace/scratch/8352eb8fe69c/orivyn-independent-4b-results/h05.stdout",
+    "bytes": 75,
+    "sha256": "c2190510f1048a72cedfd3e9242d8731296dc41ff171039a1908ad75818c9716"
+  }
+]

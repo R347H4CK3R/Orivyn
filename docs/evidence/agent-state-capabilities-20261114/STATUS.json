@@ -1,0 +1,9 @@
+{
+  "retained": "capability-only",
+  "guidanceRetained": false,
+  "goalsUnchanged": true,
+  "grammarNativeCases": 36,
+  "realModelWorkflowPasses": 0,
+  "realModelWorkflowCases": 4,
+  "nativeIOSVerified": false
+}

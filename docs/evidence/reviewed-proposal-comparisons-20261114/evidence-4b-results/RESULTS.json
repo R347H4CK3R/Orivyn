@@ -1,0 +1,87 @@
+[
+  {
+    "case": "h01",
+    "exit": 1,
+    "elapsedSeconds": 19.71993402199587,
+    "stopReason": null,
+    "proposalMatchesFrozenIntent": false,
+    "scorer": {
+      "approved": false,
+      "reason": "query-outside-predeclared-variants",
+      "noRepair": true
+    },
+    "kindProvenance": "predeclared-user-input-not-model-classification",
+    "workflowExecuted": false,
+    "admissionBypassed": true,
+    "AppleVerified": false
+  },
+  {
+    "case": "h02",
+    "exit": 1,
+    "elapsedSeconds": 18.175384624999424,
+    "stopReason": null,
+    "proposalMatchesFrozenIntent": false,
+    "scorer": {
+      "approved": false,
+      "reason": "query-outside-predeclared-variants",
+      "noRepair": true
+    },
+    "kindProvenance": "predeclared-user-input-not-model-classification",
+    "workflowExecuted": false,
+    "admissionBypassed": true,
+    "AppleVerified": false
+  },
+  {
+    "case": "h03",
+    "exit": 1,
+    "elapsedSeconds": 88.96267099199758,
+    "stopReason": null,
+    "proposalMatchesFrozenIntent": false,
+    "scorer": {
+      "approved": false,
+      "reason": "query-outside-predeclared-variants",
+      "noRepair": true
+    },
+    "kindProvenance": "predeclared-user-input-not-model-classification",
+    "workflowExecuted": false,
+    "admissionBypassed": true,
+    "AppleVerified": false
+  },
+  {
+    "case": "h04",
+    "exit": 1,
+    "elapsedSeconds": 74.84619435600325,
+    "stopReason": null,
+    "proposalMatchesFrozenIntent": false,
+    "scorer": {
+      "approved": false,
+      "reason": "query-outside-predeclared-variants",
+      "noRepair": true
+    },
+    "kindProvenance": "predeclared-user-input-not-model-classification",
+    "workflowExecuted": false,
+    "admissionBypassed": true,
+    "AppleVerified": false
+  },
+  {
+    "case": "h05",
+    "exit": 0,
+    "elapsedSeconds": 43.351008855002874,
+    "stopReason": null,
+    "proposalMatchesFrozenIntent": true,
+    "scorer": {
+      "approved": true,
+      "reason": "matches-frozen-intent",
+      "noRepair": true
+    },
+    "kindProvenance": "predeclared-user-input-not-model-classification",
+    "workflowExecuted": false,
+    "admissionBypassed": true,
+    "AppleVerified": false
+  },
+  {
+    "case": "h06",
+    "notRun": "insufficient-start-memory",
+    "availableKiB": 4131712
+  }
+]

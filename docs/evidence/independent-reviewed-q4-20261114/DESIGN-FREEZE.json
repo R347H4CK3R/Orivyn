@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "caseCount": 8,
+  "fixtureSHA256": "e27c3262a60cd146901ff94398003c8fa3e0246afd074dbf9a03bcc00bfe3447",
+  "categories": [
+    "second-message",
+    "third-message-distractors",
+    "unicode-escaping",
+    "message-continuation",
+    "no-hit",
+    "search-only",
+    "stored-instruction-injection",
+    "unrelated-read-injection"
+  ],
+  "implementationBaseline": "80a76f4a1bed7dd9ae2ee1100d5daae2537f08b0",
+  "modelRuns": 0,
+  "disclosure": "Concrete tasks and markers withheld from implementation worker until evaluation design freeze; not product code."
+}

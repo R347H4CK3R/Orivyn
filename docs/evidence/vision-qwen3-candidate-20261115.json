@@ -1,0 +1,278 @@
+{
+  "scope": "Linux diagnostic only; binary-to-source provenance requires separate build evidence",
+  "librarySHA256": "79ca739081659037968483f0e25d773fadfe683a963e45a23b606136c5efdeec",
+  "modelManifest": {
+    "repository": "ggml-org/Qwen3-VL-2B-Instruct-GGUF",
+    "revision": "ea6a11058182570be6436b9a2e4ee7f7b49f908d",
+    "artifacts": [
+      {
+        "file": "Qwen3-VL-2B-Instruct-Q8_0.gguf",
+        "size": 1834427296,
+        "sha": "b7802e29f71a9e5b5e3f83f613df898a2204342dcea71a231ea501d481813c39"
+      },
+      {
+        "file": "mmproj-Qwen3-VL-2B-Instruct-Q8_0.gguf",
+        "size": 445053056,
+        "sha": "69066c8f279ec85ff48ab4059f6ebba0d2932ca57667f2bbdac7d9805bca9e7b"
+      }
+    ]
+  },
+  "cases": [
+    {
+      "id": "case01",
+      "status": 0,
+      "output": "left",
+      "report": {
+        "status": 0,
+        "phase": 5,
+        "tokens": 1,
+        "positions": 48,
+        "image_chunks": 1,
+        "callback_count": 3783,
+        "live_resources": 0
+      },
+      "closeAcknowledged": true,
+      "rgbSHA256": "a7747e45a7ec97a95cfb02bcad4ddfd7277c8d22b2c45396f52c2443ed60089e",
+      "question": "Where is the blue circle relative to the orange square? Answer with one word: left, right, above, or below.",
+      "seconds": 7.55
+    },
+    {
+      "id": "case02",
+      "status": 0,
+      "output": "right",
+      "report": {
+        "status": 0,
+        "phase": 5,
+        "tokens": 1,
+        "positions": 48,
+        "image_chunks": 1,
+        "callback_count": 3783,
+        "live_resources": 0
+      },
+      "closeAcknowledged": true,
+      "rgbSHA256": "41b273ed0e2df5d34bf7c5aecb1b04f4e1b82f84ef01a7167b507cc6e416fd94",
+      "question": "Where is the blue circle relative to the orange square? Answer with one word: left, right, above, or below.",
+      "seconds": 7.49
+    },
+    {
+      "id": "case03",
+      "status": 0,
+      "output": "above",
+      "report": {
+        "status": 0,
+        "phase": 5,
+        "tokens": 1,
+        "positions": 48,
+        "image_chunks": 1,
+        "callback_count": 3783,
+        "live_resources": 0
+      },
+      "closeAcknowledged": true,
+      "rgbSHA256": "a610b3f017ecdce7bb6afdc81ae5062e1a4ac481ea41f55443c127d45c35b217",
+      "question": "Where is the blue circle relative to the orange square? Answer with one word: left, right, above, or below.",
+      "seconds": 7.51
+    },
+    {
+      "id": "case04",
+      "status": 0,
+      "output": "below",
+      "report": {
+        "status": 0,
+        "phase": 5,
+        "tokens": 1,
+        "positions": 48,
+        "image_chunks": 1,
+        "callback_count": 3783,
+        "live_resources": 0
+      },
+      "closeAcknowledged": true,
+      "rgbSHA256": "095e6fc19b8a28536216def1f623d5c3f4a7b738fae822a8768ce3b52cbbdbef",
+      "question": "Where is the blue circle relative to the orange square? Answer with one word: left, right, above, or below.",
+      "seconds": 7.44
+    },
+    {
+      "id": "case05",
+      "status": 0,
+      "output": "3",
+      "report": {
+        "status": 0,
+        "phase": 5,
+        "tokens": 1,
+        "positions": 34,
+        "image_chunks": 1,
+        "callback_count": 3783,
+        "live_resources": 0
+      },
+      "closeAcknowledged": true,
+      "rgbSHA256": "65e1fe416a16e7555d901aaddc14a981a6dabb73703dae18b10c84a7b3ab626a",
+      "question": "How many circles are visible? Return only the number.",
+      "seconds": 7.13
+    },
+    {
+      "id": "case06",
+      "status": 0,
+      "output": "3",
+      "report": {
+        "status": 0,
+        "phase": 5,
+        "tokens": 1,
+        "positions": 34,
+        "image_chunks": 1,
+        "callback_count": 3783,
+        "live_resources": 0
+      },
+      "closeAcknowledged": true,
+      "rgbSHA256": "4a01f0c17f90746a56ee97372c228b6ae76d1fe61007addbfaa1073848809427",
+      "question": "How many circles are visible? Return only the number.",
+      "seconds": 7.29
+    },
+    {
+      "id": "case07",
+      "status": 0,
+      "output": "3",
+      "report": {
+        "status": 0,
+        "phase": 5,
+        "tokens": 1,
+        "positions": 34,
+        "image_chunks": 1,
+        "callback_count": 3783,
+        "live_resources": 0
+      },
+      "closeAcknowledged": true,
+      "rgbSHA256": "23364317a6674cc30802b9d5d535cc473adf8b5847f153890a66c45f94a706b6",
+      "question": "How many circles are visible? Return only the number.",
+      "seconds": 7.23
+    },
+    {
+      "id": "case08",
+      "status": 0,
+      "output": "6",
+      "report": {
+        "status": 0,
+        "phase": 5,
+        "tokens": 1,
+        "positions": 34,
+        "image_chunks": 1,
+        "callback_count": 3783,
+        "live_resources": 0
+      },
+      "closeAcknowledged": true,
+      "rgbSHA256": "9722e72cbcc84c577facf360cbaa3047c28140c00d4a675409da140854d55744",
+      "question": "How many circles are visible? Return only the number.",
+      "seconds": 7.13
+    },
+    {
+      "id": "case09",
+      "status": 0,
+      "output": "47",
+      "report": {
+        "status": 0,
+        "phase": 5,
+        "tokens": 2,
+        "positions": 36,
+        "image_chunks": 1,
+        "callback_count": 4325,
+        "live_resources": 0
+      },
+      "closeAcknowledged": true,
+      "rgbSHA256": "655132665db9e033f0efa6941b4e00ae8592cc7eb9c78bc3a32a3f86492d7979",
+      "question": "Transcribe all text in the image. Return only the text.",
+      "seconds": 7.36
+    },
+    {
+      "id": "case10",
+      "status": 0,
+      "output": "CDEP",
+      "report": {
+        "status": 0,
+        "phase": 5,
+        "tokens": 3,
+        "positions": 36,
+        "image_chunks": 1,
+        "callback_count": 4867,
+        "live_resources": 0
+      },
+      "closeAcknowledged": true,
+      "rgbSHA256": "b0fb97b76cca7282c2916858e27b68f522d39e2cf9d7fc6f4d616bfa794807b0",
+      "question": "Transcribe all text in the image. Return only the text.",
+      "seconds": 7.5
+    }
+  ],
+  "score": {
+    "scope": "Frozen synthetic diagnostic only; no broad vision/OCR or device acceptance claim",
+    "passed": false,
+    "cases": [
+      {
+        "id": "case01",
+        "passed": true,
+        "runtimeComplete": true,
+        "answerMatched": true,
+        "normalizedAnswer": "left"
+      },
+      {
+        "id": "case02",
+        "passed": true,
+        "runtimeComplete": true,
+        "answerMatched": true,
+        "normalizedAnswer": "right"
+      },
+      {
+        "id": "case03",
+        "passed": true,
+        "runtimeComplete": true,
+        "answerMatched": true,
+        "normalizedAnswer": "above"
+      },
+      {
+        "id": "case04",
+        "passed": true,
+        "runtimeComplete": true,
+        "answerMatched": true,
+        "normalizedAnswer": "below"
+      },
+      {
+        "id": "case05",
+        "passed": false,
+        "runtimeComplete": true,
+        "answerMatched": false,
+        "normalizedAnswer": "3"
+      },
+      {
+        "id": "case06",
+        "passed": false,
+        "runtimeComplete": true,
+        "answerMatched": false,
+        "normalizedAnswer": "3"
+      },
+      {
+        "id": "case07",
+        "passed": false,
+        "runtimeComplete": true,
+        "answerMatched": false,
+        "normalizedAnswer": "3"
+      },
+      {
+        "id": "case08",
+        "passed": false,
+        "runtimeComplete": true,
+        "answerMatched": false,
+        "normalizedAnswer": "6"
+      },
+      {
+        "id": "case09",
+        "passed": false,
+        "runtimeComplete": true,
+        "answerMatched": false,
+        "normalizedAnswer": "47"
+      },
+      {
+        "id": "case10",
+        "passed": false,
+        "runtimeComplete": true,
+        "answerMatched": false,
+        "normalizedAnswer": "cdep"
+      }
+    ]
+  }
+}

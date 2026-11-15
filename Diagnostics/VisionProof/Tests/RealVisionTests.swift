@@ -94,7 +94,7 @@ final class RealVisionTests: XCTestCase {
     func testNativeEncodeAndDecodeCancellationRelease() throws {
         let (model, projector) = try pair()
         let image = try redCircle()
-        for phase: Int32 in [3, 5] {
+        for phase: Int32 in [1, 3, 5] {
             let session = try XCTUnwrap(ov_create()); defer { ov_destroy(session) }
             ov_test_cancel_at(session, phase)
             var report = ov_report(); var output = [CChar](repeating: 0, count: 16384)

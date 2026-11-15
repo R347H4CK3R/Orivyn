@@ -1,0 +1,7 @@
+{
+  "schema": 1,
+  "kind": "conversation_read",
+  "query": "Copper register",
+  "title": "Copper register",
+  "messageIndexes": [0]
+}

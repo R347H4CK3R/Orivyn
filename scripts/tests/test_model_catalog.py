@@ -85,6 +85,18 @@ class CatalogTests(unittest.TestCase):
             self.assertEqual(subprocess.run(args, capture_output=True).returncode, 0)
             self.assertEqual(subprocess.run(args + ['--check'], capture_output=True).returncode, 0)
 
+    def test_only_exact_reviewed_community_repository_is_allowed(self):
+        for repository, accepted in [('ggml-org/Qwen3-1.7B-GGUF', True), ('ggml-org/Unreviewed-GGUF', False)]:
+            d, e, t = fixture(), evidence(), templates()
+            d['models'][0]['repository'] = repository
+            e['sources'][0]['repository'] = repository
+            e['sources'][0]['licenseURL'] = 'https://huggingface.co/' + repository + '/resolve/' + 'a' * 40 + '/LICENSE'
+            t[0]['repository'] = repository
+            if accepted:
+                self.assertIn(repository, self.renderer()(d, e, t))
+            else:
+                with self.assertRaises(ValueError): self.renderer()(d, e, t)
+
     def test_shipped_catalog_is_valid_and_generated_output_current(self):
         self.renderer()
         p = subprocess.run([sys.executable, str(SCRIPT), '--check'], capture_output=True, text=True)

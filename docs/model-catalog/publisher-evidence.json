@@ -283,7 +283,26 @@
           "byteCount": 1834426016,
           "sha256": "061b54daade076b5d3362dac252678d17da8c68f07560be70818cace6590cb1a"
         }
-      ]
+      ],
+      "reverifiedAt": "2026-11-14"
+    },
+    {
+      "repository": "ggml-org/Qwen3-1.7B-GGUF",
+      "revision": "daeb8e2d528a760970442092f6bf1e55c3b659eb",
+      "apiURL": "https://huggingface.co/api/models/ggml-org/Qwen3-1.7B-GGUF/revision/daeb8e2d528a760970442092f6bf1e55c3b659eb?blobs=true",
+      "publisherLicense": "apache-2.0",
+      "gated": false,
+      "licenseURL": "https://huggingface.co/ggml-org/Qwen3-1.7B-GGUF/resolve/daeb8e2d528a760970442092f6bf1e55c3b659eb/README.md",
+      "licenseSHA256": "88dcfc58886877ec8af9b8352fce0fd73991de7b8e01588ee0fafd389e53cfff",
+      "licenseEvidence": "Publisher model-card Apache-2.0 declaration; base model Qwen/Qwen3-1.7B",
+      "files": [
+        {
+          "fileName": "Qwen3-1.7B-Q4_K_M.gguf",
+          "byteCount": 1282439264,
+          "sha256": "d2387ca2dbfee2ffabce7120d3770dadca0b293052bc2f0e138fdc940d9bc7b5"
+        }
+      ],
+      "reverifiedAt": "2026-11-14"
     }
   ]
 }

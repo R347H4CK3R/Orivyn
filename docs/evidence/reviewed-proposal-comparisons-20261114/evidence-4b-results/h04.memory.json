@@ -1,0 +1,747 @@
+[
+  {
+    "seconds": 0.000857011997140944,
+    "availableKiB": 4408680,
+    "childRSSKiB": 68
+  },
+  {
+    "seconds": 0.5011887240034412,
+    "availableKiB": 4360616,
+    "childRSSKiB": 1731516
+  },
+  {
+    "seconds": 1.0015387550010928,
+    "availableKiB": 4212640,
+    "childRSSKiB": 2930456
+  },
+  {
+    "seconds": 1.5099782769975718,
+    "availableKiB": 4004416,
+    "childRSSKiB": 3110936
+  },
+  {
+    "seconds": 2.0106594289973145,
+    "availableKiB": 3719388,
+    "childRSSKiB": 3355484
+  },
+  {
+    "seconds": 2.511024161998648,
+    "availableKiB": 3219336,
+    "childRSSKiB": 3415728
+  },
+  {
+    "seconds": 3.0114961579965893,
+    "availableKiB": 2745740,
+    "childRSSKiB": 3434036
+  },
+  {
+    "seconds": 3.5178095790033694,
+    "availableKiB": 2356992,
+    "childRSSKiB": 3235240
+  },
+  {
+    "seconds": 4.018662150003365,
+    "availableKiB": 2372744,
+    "childRSSKiB": 3056444
+  },
+  {
+    "seconds": 4.519803230999969,
+    "availableKiB": 2350520,
+    "childRSSKiB": 2868180
+  },
+  {
+    "seconds": 5.020254902003217,
+    "availableKiB": 2405696,
+    "childRSSKiB": 2790008
+  },
+  {
+    "seconds": 5.540663583000423,
+    "availableKiB": 2409660,
+    "childRSSKiB": 2751132
+  },
+  {
+    "seconds": 6.04176738300157,
+    "availableKiB": 2395412,
+    "childRSSKiB": 2699180
+  },
+  {
+    "seconds": 6.54214476999914,
+    "availableKiB": 2379372,
+    "childRSSKiB": 2650252
+  },
+  {
+    "seconds": 7.0426572500000475,
+    "availableKiB": 2421628,
+    "childRSSKiB": 2752916
+  },
+  {
+    "seconds": 7.561588837997988,
+    "availableKiB": 2307208,
+    "childRSSKiB": 2431868
+  },
+  {
+    "seconds": 8.062585006999143,
+    "availableKiB": 2379652,
+    "childRSSKiB": 2438316
+  },
+  {
+    "seconds": 8.563145159998385,
+    "availableKiB": 2375504,
+    "childRSSKiB": 2511504
+  },
+  {
+    "seconds": 9.063707941997563,
+    "availableKiB": 2294016,
+    "childRSSKiB": 2433824
+  },
+  {
+    "seconds": 9.565280253998935,
+    "availableKiB": 2246696,
+    "childRSSKiB": 2398904
+  },
+  {
+    "seconds": 10.06640915099706,
+    "availableKiB": 2315188,
+    "childRSSKiB": 2641104
+  },
+  {
+    "seconds": 10.566860933999124,
+    "availableKiB": 2245260,
+    "childRSSKiB": 2403908
+  },
+  {
+    "seconds": 11.067363690999628,
+    "availableKiB": 2178988,
+    "childRSSKiB": 2589324
+  },
+  {
+    "seconds": 11.56814265900175,
+    "availableKiB": 2223176,
+    "childRSSKiB": 2609900
+  },
+  {
+    "seconds": 12.069368370997836,
+    "availableKiB": 2173836,
+    "childRSSKiB": 2289800
+  },
+  {
+    "seconds": 12.569774611001776,
+    "availableKiB": 2139104,
+    "childRSSKiB": 2697348
+  },
+  {
+    "seconds": 13.07014961400273,
+    "availableKiB": 2043676,
+    "childRSSKiB": 2355436
+  },
+  {
+    "seconds": 13.570545096998103,
+    "availableKiB": 2125336,
+    "childRSSKiB": 2632624
+  },
+  {
+    "seconds": 14.070890210998186,
+    "availableKiB": 2044836,
+    "childRSSKiB": 2410244
+  },
+  {
+    "seconds": 14.57272612900124,
+    "availableKiB": 1952652,
+    "childRSSKiB": 2447256
+  },
+  {
+    "seconds": 15.073169625000446,
+    "availableKiB": 2244540,
+    "childRSSKiB": 2413760
+  },
+  {
+    "seconds": 15.573566509003285,
+    "availableKiB": 2394940,
+    "childRSSKiB": 2768688
+  },
+  {
+    "seconds": 16.074033596996742,
+    "availableKiB": 2231848,
+    "childRSSKiB": 2497592
+  },
+  {
+    "seconds": 16.574404578001122,
+    "availableKiB": 2402028,
+    "childRSSKiB": 2743004
+  },
+  {
+    "seconds": 17.07487525900069,
+    "availableKiB": 2382356,
+    "childRSSKiB": 2669672
+  },
+  {
+    "seconds": 17.57905383400066,
+    "availableKiB": 2361828,
+    "childRSSKiB": 2701332
+  },
+  {
+    "seconds": 18.07949960300175,
+    "availableKiB": 2340976,
+    "childRSSKiB": 2762272
+  },
+  {
+    "seconds": 18.58002201999625,
+    "availableKiB": 2358804,
+    "childRSSKiB": 2699616
+  },
+  {
+    "seconds": 19.08054180900217,
+    "availableKiB": 2362996,
+    "childRSSKiB": 2832916
+  },
+  {
+    "seconds": 19.58095635099744,
+    "availableKiB": 2336924,
+    "childRSSKiB": 2558112
+  },
+  {
+    "seconds": 20.091580720996717,
+    "availableKiB": 2439628,
+    "childRSSKiB": 2769336
+  },
+  {
+    "seconds": 20.59407855400059,
+    "availableKiB": 2432856,
+    "childRSSKiB": 2773564
+  },
+  {
+    "seconds": 21.094535869000538,
+    "availableKiB": 2463240,
+    "childRSSKiB": 2557844
+  },
+  {
+    "seconds": 21.59497820300021,
+    "availableKiB": 2415944,
+    "childRSSKiB": 2707412
+  },
+  {
+    "seconds": 22.095370157003345,
+    "availableKiB": 2374936,
+    "childRSSKiB": 2811424
+  },
+  {
+    "seconds": 22.600027699001657,
+    "availableKiB": 2379148,
+    "childRSSKiB": 2707440
+  },
+  {
+    "seconds": 23.100399397997535,
+    "availableKiB": 2351212,
+    "childRSSKiB": 2766148
+  },
+  {
+    "seconds": 23.600955709996924,
+    "availableKiB": 2375852,
+    "childRSSKiB": 2703768
+  },
+  {
+    "seconds": 24.101369345997227,
+    "availableKiB": 2462776,
+    "childRSSKiB": 2804512
+  },
+  {
+    "seconds": 24.60196715899656,
+    "availableKiB": 2430372,
+    "childRSSKiB": 2707532
+  },
+  {
+    "seconds": 25.10236871700181,
+    "availableKiB": 2475188,
+    "childRSSKiB": 2804568
+  },
+  {
+    "seconds": 25.602833773002203,
+    "availableKiB": 2424156,
+    "childRSSKiB": 2588776
+  },
+  {
+    "seconds": 26.103317180997692,
+    "availableKiB": 2414392,
+    "childRSSKiB": 2822540
+  },
+  {
+    "seconds": 26.605165784996643,
+    "availableKiB": 2427828,
+    "childRSSKiB": 2626120
+  },
+  {
+    "seconds": 27.10571680800058,
+    "availableKiB": 2439056,
+    "childRSSKiB": 2834528
+  },
+  {
+    "seconds": 27.606164167002134,
+    "availableKiB": 2327424,
+    "childRSSKiB": 2517300
+  },
+  {
+    "seconds": 28.106680964003317,
+    "availableKiB": 2241908,
+    "childRSSKiB": 2834416
+  },
+  {
+    "seconds": 28.60708899400197,
+    "availableKiB": 2212884,
+    "childRSSKiB": 2524564
+  },
+  {
+    "seconds": 29.107479127997067,
+    "availableKiB": 2282156,
+    "childRSSKiB": 2871100
+  },
+  {
+    "seconds": 29.607925855001668,
+    "availableKiB": 2218580,
+    "childRSSKiB": 2458844
+  },
+  {
+    "seconds": 30.108276264996675,
+    "availableKiB": 2187128,
+    "childRSSKiB": 2820632
+  },
+  {
+    "seconds": 30.628349266997247,
+    "availableKiB": 2138928,
+    "childRSSKiB": 2469988
+  },
+  {
+    "seconds": 31.129462288998184,
+    "availableKiB": 2254220,
+    "childRSSKiB": 2844072
+  },
+  {
+    "seconds": 31.629910032002954,
+    "availableKiB": 2168288,
+    "childRSSKiB": 2470648
+  },
+  {
+    "seconds": 32.1302644929965,
+    "availableKiB": 2145752,
+    "childRSSKiB": 2852572
+  },
+  {
+    "seconds": 32.66882672000065,
+    "availableKiB": 2202772,
+    "childRSSKiB": 2564540
+  },
+  {
+    "seconds": 33.17500024799665,
+    "availableKiB": 2137936,
+    "childRSSKiB": 2816652
+  },
+  {
+    "seconds": 33.67550328299694,
+    "availableKiB": 2198652,
+    "childRSSKiB": 2586684
+  },
+  {
+    "seconds": 34.17603477399825,
+    "availableKiB": 2246256,
+    "childRSSKiB": 2755980
+  },
+  {
+    "seconds": 34.67642486099794,
+    "availableKiB": 2301716,
+    "childRSSKiB": 2906548
+  },
+  {
+    "seconds": 35.17697465400124,
+    "availableKiB": 2325748,
+    "childRSSKiB": 2808248
+  },
+  {
+    "seconds": 35.6773622719993,
+    "availableKiB": 2294336,
+    "childRSSKiB": 2791436
+  },
+  {
+    "seconds": 36.177803600003244,
+    "availableKiB": 2158836,
+    "childRSSKiB": 2665532
+  },
+  {
+    "seconds": 36.678163245996984,
+    "availableKiB": 2319880,
+    "childRSSKiB": 2907980
+  },
+  {
+    "seconds": 37.17895591999695,
+    "availableKiB": 2260972,
+    "childRSSKiB": 2562812
+  },
+  {
+    "seconds": 37.68301066199638,
+    "availableKiB": 2308024,
+    "childRSSKiB": 2887020
+  },
+  {
+    "seconds": 38.18360984399624,
+    "availableKiB": 2281512,
+    "childRSSKiB": 2574024
+  },
+  {
+    "seconds": 38.68399366599624,
+    "availableKiB": 2342392,
+    "childRSSKiB": 2922620
+  },
+  {
+    "seconds": 39.19037104200106,
+    "availableKiB": 2285804,
+    "childRSSKiB": 2545816
+  },
+  {
+    "seconds": 39.69101423500251,
+    "availableKiB": 2400612,
+    "childRSSKiB": 2908832
+  },
+  {
+    "seconds": 40.19138648400258,
+    "availableKiB": 2251112,
+    "childRSSKiB": 2512232
+  },
+  {
+    "seconds": 40.69182498699956,
+    "availableKiB": 2265868,
+    "childRSSKiB": 2880100
+  },
+  {
+    "seconds": 41.19222937199811,
+    "availableKiB": 2091728,
+    "childRSSKiB": 2458208
+  },
+  {
+    "seconds": 41.69260037100321,
+    "availableKiB": 2261508,
+    "childRSSKiB": 2786992
+  },
+  {
+    "seconds": 42.193009126000106,
+    "availableKiB": 2186908,
+    "childRSSKiB": 2446452
+  },
+  {
+    "seconds": 42.6944297969967,
+    "availableKiB": 2136196,
+    "childRSSKiB": 2761080
+  },
+  {
+    "seconds": 43.20605670999794,
+    "availableKiB": 2004272,
+    "childRSSKiB": 2468724
+  },
+  {
+    "seconds": 43.711055647996545,
+    "availableKiB": 2061700,
+    "childRSSKiB": 2682964
+  },
+  {
+    "seconds": 44.211502076002944,
+    "availableKiB": 1990568,
+    "childRSSKiB": 2445992
+  },
+  {
+    "seconds": 44.711882741998124,
+    "availableKiB": 2089188,
+    "childRSSKiB": 2465952
+  },
+  {
+    "seconds": 45.2378085570017,
+    "availableKiB": 1968132,
+    "childRSSKiB": 2472120
+  },
+  {
+    "seconds": 45.74320412900124,
+    "availableKiB": 2033872,
+    "childRSSKiB": 2428900
+  },
+  {
+    "seconds": 46.24360685199645,
+    "availableKiB": 1940628,
+    "childRSSKiB": 2426292
+  },
+  {
+    "seconds": 46.74397766400216,
+    "availableKiB": 1974220,
+    "childRSSKiB": 2679128
+  },
+  {
+    "seconds": 47.247455495002214,
+    "availableKiB": 1887124,
+    "childRSSKiB": 2505788
+  },
+  {
+    "seconds": 47.748539651998726,
+    "availableKiB": 1857040,
+    "childRSSKiB": 2584052
+  },
+  {
+    "seconds": 48.24887335299718,
+    "availableKiB": 1990300,
+    "childRSSKiB": 2592868
+  },
+  {
+    "seconds": 48.75099384799978,
+    "availableKiB": 2007372,
+    "childRSSKiB": 2544456
+  },
+  {
+    "seconds": 49.251348491998215,
+    "availableKiB": 2028752,
+    "childRSSKiB": 2887532
+  },
+  {
+    "seconds": 49.75257932800014,
+    "availableKiB": 2008412,
+    "childRSSKiB": 2533000
+  },
+  {
+    "seconds": 50.25501169900235,
+    "availableKiB": 1922304,
+    "childRSSKiB": 2555336
+  },
+  {
+    "seconds": 50.755403748997196,
+    "availableKiB": 1965368,
+    "childRSSKiB": 2579264
+  },
+  {
+    "seconds": 51.255899843003135,
+    "availableKiB": 2028508,
+    "childRSSKiB": 2558096
+  },
+  {
+    "seconds": 51.75720640600048,
+    "availableKiB": 1973492,
+    "childRSSKiB": 2807920
+  },
+  {
+    "seconds": 52.25774173899845,
+    "availableKiB": 2051392,
+    "childRSSKiB": 2526076
+  },
+  {
+    "seconds": 52.75807332400291,
+    "availableKiB": 2064604,
+    "childRSSKiB": 2863212
+  },
+  {
+    "seconds": 53.258450371002255,
+    "availableKiB": 2047140,
+    "childRSSKiB": 2513488
+  },
+  {
+    "seconds": 53.76491216199793,
+    "availableKiB": 1951456,
+    "childRSSKiB": 2620376
+  },
+  {
+    "seconds": 54.267253553000046,
+    "availableKiB": 2148808,
+    "childRSSKiB": 2578140
+  },
+  {
+    "seconds": 54.767782287002774,
+    "availableKiB": 1991192,
+    "childRSSKiB": 2579972
+  },
+  {
+    "seconds": 55.26820124599908,
+    "availableKiB": 1920896,
+    "childRSSKiB": 2547632
+  },
+  {
+    "seconds": 55.785226653999416,
+    "availableKiB": 2014932,
+    "childRSSKiB": 2557636
+  },
+  {
+    "seconds": 56.28632441700029,
+    "availableKiB": 2127396,
+    "childRSSKiB": 2784536
+  },
+  {
+    "seconds": 56.78683318899857,
+    "availableKiB": 1983848,
+    "childRSSKiB": 2526224
+  },
+  {
+    "seconds": 57.29100382899924,
+    "availableKiB": 2054668,
+    "childRSSKiB": 2876468
+  },
+  {
+    "seconds": 57.79136338800163,
+    "availableKiB": 2071836,
+    "childRSSKiB": 2526552
+  },
+  {
+    "seconds": 58.29258963000029,
+    "availableKiB": 2033680,
+    "childRSSKiB": 2578656
+  },
+  {
+    "seconds": 58.794825527002104,
+    "availableKiB": 2092172,
+    "childRSSKiB": 2606488
+  },
+  {
+    "seconds": 59.29520395400323,
+    "availableKiB": 2062608,
+    "childRSSKiB": 2514628
+  },
+  {
+    "seconds": 59.7990080449963,
+    "availableKiB": 2077184,
+    "childRSSKiB": 2656168
+  },
+  {
+    "seconds": 60.30025274900254,
+    "availableKiB": 1997120,
+    "childRSSKiB": 2534792
+  },
+  {
+    "seconds": 60.80089897500147,
+    "availableKiB": 2150756,
+    "childRSSKiB": 2824940
+  },
+  {
+    "seconds": 61.30134878300305,
+    "availableKiB": 2035700,
+    "childRSSKiB": 2512300
+  },
+  {
+    "seconds": 61.801783369002806,
+    "availableKiB": 1890148,
+    "childRSSKiB": 2644536
+  },
+  {
+    "seconds": 62.302112299003056,
+    "availableKiB": 1934404,
+    "childRSSKiB": 2489420
+  },
+  {
+    "seconds": 62.802716306003276,
+    "availableKiB": 1946676,
+    "childRSSKiB": 2621248
+  },
+  {
+    "seconds": 63.307152496003255,
+    "availableKiB": 1903164,
+    "childRSSKiB": 2736420
+  },
+  {
+    "seconds": 63.80759160400339,
+    "availableKiB": 1891228,
+    "childRSSKiB": 2609152
+  },
+  {
+    "seconds": 64.31498467100027,
+    "availableKiB": 2003032,
+    "childRSSKiB": 2922860
+  },
+  {
+    "seconds": 64.81690906899894,
+    "availableKiB": 1952240,
+    "childRSSKiB": 2588368
+  },
+  {
+    "seconds": 65.31731359200057,
+    "availableKiB": 1982632,
+    "childRSSKiB": 2851388
+  },
+  {
+    "seconds": 65.81900180200319,
+    "availableKiB": 1904288,
+    "childRSSKiB": 2676344
+  },
+  {
+    "seconds": 66.31933460300206,
+    "availableKiB": 1811756,
+    "childRSSKiB": 2711008
+  },
+  {
+    "seconds": 66.82871619400248,
+    "availableKiB": 1914528,
+    "childRSSKiB": 2791292
+  },
+  {
+    "seconds": 67.3294455849973,
+    "availableKiB": 1815584,
+    "childRSSKiB": 2545136
+  },
+  {
+    "seconds": 67.83102596899698,
+    "availableKiB": 1936936,
+    "childRSSKiB": 2920976
+  },
+  {
+    "seconds": 68.33140580100007,
+    "availableKiB": 1862744,
+    "childRSSKiB": 2554368
+  },
+  {
+    "seconds": 68.83411767600046,
+    "availableKiB": 1889520,
+    "childRSSKiB": 2878568
+  },
+  {
+    "seconds": 69.33463678399858,
+    "availableKiB": 1968956,
+    "childRSSKiB": 2596392
+  },
+  {
+    "seconds": 69.8350090649983,
+    "availableKiB": 1877996,
+    "childRSSKiB": 2767048
+  },
+  {
+    "seconds": 70.33901748099743,
+    "availableKiB": 1913100,
+    "childRSSKiB": 2757524
+  },
+  {
+    "seconds": 70.8396544089992,
+    "availableKiB": 1896632,
+    "childRSSKiB": 2563004
+  },
+  {
+    "seconds": 71.3401363869998,
+    "availableKiB": 2027616,
+    "childRSSKiB": 2901444
+  },
+  {
+    "seconds": 71.84049589299684,
+    "availableKiB": 1949956,
+    "childRSSKiB": 2545948
+  },
+  {
+    "seconds": 72.34300296899892,
+    "availableKiB": 2042708,
+    "childRSSKiB": 2952744
+  },
+  {
+    "seconds": 72.84335196299799,
+    "availableKiB": 1943176,
+    "childRSSKiB": 2564696
+  },
+  {
+    "seconds": 73.34370082600071,
+    "availableKiB": 2067604,
+    "childRSSKiB": 2911384
+  },
+  {
+    "seconds": 73.84408167500078,
+    "availableKiB": 2027556,
+    "childRSSKiB": 2694376
+  },
+  {
+    "seconds": 74.3444551040011,
+    "availableKiB": 2008388,
+    "childRSSKiB": 2796556
+  }
+]

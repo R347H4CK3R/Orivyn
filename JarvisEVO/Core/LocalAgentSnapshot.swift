@@ -18,6 +18,8 @@ struct LocalAgentSnapshot: Decodable, Identifiable {
             return LocalCalculationEvidence.validated(goal: goal, arguments: arguments, result: result)
         }
     }
+    let readPlan: LocalReadPlan?
+    let approvalRevision: Int?
     let history: [Event]
     let id: String
     let goal: String

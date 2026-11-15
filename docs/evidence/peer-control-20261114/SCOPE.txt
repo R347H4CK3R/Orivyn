@@ -1,0 +1,1 @@
+64 XCTest cases passed on Linux Swift 6.1.3: 8 new frame tests + 16 text receive + 40 prior. Native PeerTLSProbe.swift NOT compiled or run. Native code remains gated off. Host harness /workspace/scratch/8352eb8fe69c/orivyn-sync-next-proof using host SQLite and command preserved in ../text-receive-20261114/COMMAND.txt.

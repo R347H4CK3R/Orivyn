@@ -3,10 +3,20 @@ import Foundation
 /// Shared native read-only tool implementation; no network or model interpretation.
 @MainActor
 enum LocalReadTools {
-    static func execute(name: String, arguments: MCPJSONValue, model: AppModel, resultByteLimit: Int? = nil, trustedGoal: String? = nil) throws -> String {
+    static func execute(name: String, arguments: MCPJSONValue, model: AppModel, resultByteLimit: Int? = nil, trustedGoal: String? = nil, authorizedConversationIDs: Set<UUID> = [], reviewedPlan: LocalReadPlan? = nil) throws -> String {
+        if name == "search_conversations", let plan=reviewedPlan {
+            guard arguments == .object(["query":.string(plan.query),"limit":.integer(10)]),resultByteLimit==4096 else { throw LocalAgentError.invalidState }
+            return String(decoding:try LocalReviewedSearch.result(plan:plan,conversations:model.conversations).encoded(maximumBytes:4096),as:UTF8.self)
+        }
         if name == "calculate" {
             guard let trustedGoal else { throw LocalAgentError.invalidState }
             return try LocalCalculatorTool.execute(arguments: arguments, requestedGoal: trustedGoal, maximumBytes: resultByteLimit ?? 4096)
+        }
+        if name == "read_conversation" {
+            let page = try LocalConversationRead.read(conversations: model.conversations, arguments: arguments, authorizedIDs: authorizedConversationIDs)
+            let data = try page.encoded(maximumBytes: resultByteLimit ?? 4096)
+            guard let text = String(data: data, encoding: .utf8) else { throw LocalAgentError.invalidState }
+            return text
         }
         let object: MCPJSONValue
         switch name {
@@ -31,8 +41,9 @@ enum LocalReadTools {
                     "excerpt": .string(match.excerpt), "excerptMayBeTruncated": .bool(match.excerptMayBeTruncated),
                     "evidenceSource": .string(match.evidenceSource)])
             }
-            object = .object(["matches": .array(matches), "searchedConversations": .integer(Int64(result.searchedConversations)), "searchLimited": .bool(result.searchLimited),
-                "totalMatchesInWindow": .integer(Int64(result.totalMatchesInWindow)), "resultsLimited": .bool(result.resultsLimited)])
+            let fields: [String:MCPJSONValue] = ["matches": .array(matches), "searchedConversations": .integer(Int64(result.searchedConversations)), "searchLimited": .bool(result.searchLimited),
+                "totalMatchesInWindow": .integer(Int64(result.totalMatchesInWindow)), "resultsLimited": .bool(result.resultsLimited)]
+            object = .object(fields)
         case "search_memory":
             guard let args = arguments.objectValue, Set(args.keys) == Set(["query", "limit"]),
                   let query = args["query"]?.stringValue,

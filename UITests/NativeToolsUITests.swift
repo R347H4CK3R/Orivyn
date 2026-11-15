@@ -25,8 +25,10 @@ final class NativeToolsUITests: XCTestCase {
         let title = app.textFields["calendar.title"]
         XCTAssertTrue(title.waitForExistence(timeout: 5)); title.tap(); title.typeText("Do not save this test event")
         app.buttons["calendar.review"].tap()
-        let cancel = app.navigationBars.buttons["Cancel"].firstMatch
-        XCTAssertTrue(cancel.waitForExistence(timeout: 8))
+        let editor = app.navigationBars["New Event"]
+        XCTAssertTrue(editor.waitForExistence(timeout: 20))
+        let cancel = editor.buttons["cancel-button"]
+        XCTAssertTrue(cancel.waitForExistence(timeout: 5))
         capture("Orivyn actual system calendar editor")
         cancel.tap()
         let discard = app.buttons["Discard Changes"]

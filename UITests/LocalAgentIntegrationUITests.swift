@@ -13,7 +13,15 @@ final class LocalAgentIntegrationUITests: XCTestCase {
         let input = app.textViews["agent.goal"]
         XCTAssertTrue(input.waitForExistence(timeout: 5))
         input.tap(); input.typeText(goal)
-        app.buttons["agent.create"].tap()
+        XCTAssertEqual(input.value as? String, goal)
+        // Form rows below the expanded plan guidance are lazy and may not exist
+        // while the goal editor/keyboard is visible. Reach the actual control.
+        let form = app.collectionViews.firstMatch
+        let create = app.buttons["agent.create"]
+        reveal(create, in: form)
+        XCTAssertTrue(create.isEnabled)
+        create.tap()
+        reveal(app.buttons["agent.run"], in: form)
         XCTAssertTrue(app.buttons["agent.run"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.staticTexts["agent.answer"].exists)
         app.terminate()
@@ -23,6 +31,8 @@ final class LocalAgentIntegrationUITests: XCTestCase {
         let saved = app.buttons.containing(.staticText, identifier: goal).firstMatch
         reveal(saved, in: app.collectionViews.firstMatch)
         saved.tap()
+        // Selection inserts Current task rows; the lazy form may reset to its top.
+        reveal(app.buttons["agent.run"], in: app.collectionViews.firstMatch)
         XCTAssertTrue(app.buttons["agent.run"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.staticTexts["agent.answer"].exists)
         XCTAssertTrue(app.staticTexts["agent.status"].label.contains("Resume is explicit"))

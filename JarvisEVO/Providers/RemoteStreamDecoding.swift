@@ -29,6 +29,7 @@ struct SSEDecoder {
                 let tool_calls: [UnsupportedCall]?
                 let function_call: UnsupportedCall?
             }
+            let index: Int?
             let delta: Delta?
             let finish_reason: String?
         }
@@ -49,7 +50,12 @@ struct SSEDecoder {
         }
         guard let value = try? JSONDecoder().decode(Envelope.self, from: Data(text.utf8)) else { throw ProviderError.invalidResponse }
         if value.error != nil { throw ProviderError.rejected("The provider rejected the request. Check its credentials, model and usage limits.") }
-        guard let choice = value.choices?.first else { return .ignored }
+        guard let choices = value.choices, !choices.isEmpty else { return .ignored }
+        // This connection requests one answer. Never stitch another choice's text
+        // into it or let another choice's stop mark the displayed answer complete.
+        // Older compatible servers may omit index for their sole choice.
+        guard choices.count == 1, let choice = choices.first,
+              choice.index == nil || choice.index == 0 else { throw ProviderError.invalidResponse }
         guard choice.delta?.tool_calls == nil, choice.delta?.function_call == nil else {
             throw ProviderError.rejected("The provider requested a tool or function call that this text connection does not support. No tool was executed.")
         }

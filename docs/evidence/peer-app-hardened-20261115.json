@@ -1,0 +1,24 @@
+{
+  "run": 43672467858,
+  "artifact": 14144918208,
+  "evidence": {
+    "SCOPE.txt": "Compile-only isolated iOS app integration with peer SPI. No listeners, pairing, automatic sync, package or release publication. Vision/tools feature flags are not enabled in this gate.\n",
+    "build-iOS-Simulator.log": {
+      "buildSucceeded": true,
+      "peerExchangeCompiled": true
+    },
+    "build-iOS.log": {
+      "buildSucceeded": true,
+      "peerExchangeCompiled": true
+    },
+    "result.json": "{\n  \"deviceBuild\": true,\n  \"simulatorBuild\": true,\n  \"runtimeTests\": false,\n  \"dependencies\": {\n    \"swift-asn1\": \"12b0abc19498e562a8d97eebb67a11e9e6a255dd\",\n    \"swift-certificates\": \"8789d7e78f996d56272836c8bf3590c5bd9c9754\",\n    \"swift-crypto\": \"9f96b82711cc4ce5816343c02eccd5ad907972d3\"\n  }\n}\n",
+    "source-commit.txt": "0a68886d1834d70e79acc2711c2500125d236097\n",
+    "xcode-version.txt": "Xcode 26.3\nBuild version 17C529\n"
+  },
+  "review": "Independent review found no blocking issues for isolated compilation. Evidence freshness issue corrected.",
+  "limitations": [
+    "No runtime tests",
+    "No automatic sync or pairing",
+    "Vision/tools flags not combined in this gate"
+  ]
+}

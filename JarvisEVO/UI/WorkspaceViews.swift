@@ -62,6 +62,7 @@ struct LocalSpaceView: View {
     @State private var query = ""
     @State private var filter = "All"
     @State private var preview: ChatAttachment?
+    @State private var visionImage: ChatAttachment?
     @State private var error: String?
     @State private var showsImageCreation = false
     @State private var imageLeaseID: UUID?
@@ -127,12 +128,20 @@ struct LocalSpaceView: View {
                                 }
                             }.frame(maxWidth: .infinity, alignment: .leading)
                         }.buttonStyle(.plain)
+                        if entry.attachment.isImage {
+                            Button { visionImage = entry.attachment } label: { Image(systemName: "eye") }
+                                .buttonStyle(.borderless).accessibilityLabel("Analyze image")
+                                .accessibilityIdentifier("vision.analyze.\(entry.attachment.id)")
+                        }
                         Button {
                             do { try model.workspace.toggleFavorite(entry.id) } catch { self.error = error.localizedDescription }
                         } label: { Image(systemName: model.workspace.isFavorite(entry.id) ? "star.fill" : "star") }
                             .buttonStyle(.borderless).accessibilityLabel(model.workspace.isFavorite(entry.id) ? "Remove favorite" : "Favorite file")
                     }.padding(.vertical, 4).listRowSeparator(.hidden)
                         .contextMenu {
+                            if entry.attachment.isImage {
+                                Button("Analyze image", systemImage: "eye") { visionImage = entry.attachment }
+                            }
                             Button("Open conversation", systemImage: "bubble.left") { model.selectConversation(entry.conversationID); openChat() }
                         }
                 }.listStyle(.plain).scrollContentBackground(.hidden)
@@ -147,6 +156,9 @@ struct LocalSpaceView: View {
         .sheet(item: $preview) { attachment in
             AttachmentPreviewView(attachment: attachment, originalURL: model.attachmentService.url(for: attachment),
                                   previewURL: model.attachmentService.previewURL(for: attachment))
+        }
+        .sheet(item: $visionImage) { attachment in
+            VisionAnalysisView(model: model, attachment: attachment, originalURL: model.attachmentService.url(for: attachment))
         }
         .sheet(isPresented: $showsImageCreation, onDismiss: {
             // This stable outer presenter owns release, not the nested Apple sheet.

@@ -27,7 +27,7 @@ def validate(document, evidence, templates):
         require(re.fullmatch('[a-z0-9._-]+', model['id']), 'Unsafe ID')
         require(model['id'] not in ids, 'Duplicate ID')
         ids.add(model['id'])
-        require(re.fullmatch('(Qwen|HuggingFaceTB)/[A-Za-z0-9._-]+', model.get('repository', '')), 'Unreviewed publisher')
+        require(re.fullmatch('(Qwen|HuggingFaceTB)/[A-Za-z0-9._-]+', model.get('repository', '')) or model.get('repository') == 'ggml-org/Qwen3-1.7B-GGUF', 'Unreviewed publisher')
         require(re.fullmatch('[a-f0-9]{40}', model.get('revision', '')), 'Pin an immutable revision')
         require(re.fullmatch('[A-Za-z0-9._-]+\\.gguf', model.get('fileName', '')), 'Unsafe filename')
         require(model['fileName'].lower() not in names, 'Duplicate filename')

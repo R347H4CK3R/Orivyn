@@ -1,0 +1,38 @@
+✔ reviewed task preserves original goal and cannot answer or broaden approved query (4.436738ms)
+✔ approved read prerequisites require all complete pages before answer (7.799752ms)
+✔ search-only never admits reading and can answer after exact search (0.978703ms)
+✔ missing ambiguous limited or changed sources fail with preserved evidence (2.904803ms)
+✔ malformed plans rejected and uncertain pending calls never replay (0.528725ms)
+✔ forged terminal reviewed state cannot claim unmet prerequisites (0.904804ms)
+✔ stored instructions cannot change contract or authorize skipped indexes (1.284958ms)
+✔ incomplete six-call workflow fails preserving every page and no answer (4.28335ms)
+✔ all approved indexes require contiguous complete pages (1.744941ms)
+✖ forged completed contract cannot bypass simultaneous context budget (2.298754ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 9
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 148.827292
+
+✖ failing tests:
+
+test at scripts/agent-tests/reviewed-workflow.test.cjs:21:1
+✖ forged completed contract cannot bypass simultaneous context budget (2.298754ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (/workspace/scratch/8352eb8fe69c/orivyn-reviewed-workflow/scripts/agent-tests/reviewed-workflow.test.cjs:21:256)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: undefined,
+    operator: 'throws',
+    diff: 'simple'
+  }

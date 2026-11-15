@@ -1,0 +1,186 @@
+{
+  "scope": "Linux CPU, real C bridge; limited diagnostic, not general-vision or iOS acceptance",
+  "model": {
+    "repository": "ggml-org/SmolVLM2-2.2B-Instruct-GGUF",
+    "revision": "1bc3c9f74ceafd4c8d4411cc9cf188bba3798f91",
+    "license": "Apache-2.0",
+    "artifacts": [
+      {
+        "file": "SmolVLM2-2.2B-Instruct-Q4_K_M.gguf",
+        "size": 1112602656,
+        "sha": "0cf76814555b8665149075b74ab6b5c1d428ea1d3d01c1918c12012e8d7c9f58",
+        "actualSHA256": "0cf76814555b8665149075b74ab6b5c1d428ea1d3d01c1918c12012e8d7c9f58"
+      },
+      {
+        "file": "mmproj-SmolVLM2-2.2B-Instruct-f16.gguf",
+        "size": 872303680,
+        "sha": "db9a3a1648cab1ebc3af4a2b0c8145dd8faebf6f7dd7b16e7dc1842229f14ac4",
+        "actualSHA256": "db9a3a1648cab1ebc3af4a2b0c8145dd8faebf6f7dd7b16e7dc1842229f14ac4"
+      }
+    ]
+  },
+  "cases": [
+    {
+      "fixture": "red_circle",
+      "question": "Describe the visible image in one sentence.",
+      "output": " A red circle is centered on a white background.",
+      "status": 0,
+      "passed": true,
+      "rgb_sha256": "9d8dcd4fcc57a30ca2058a110312f3e7f2cbc3cad1fd819377e2bf005bb4a388",
+      "seconds": 11.343,
+      "report": {
+        "status": 0,
+        "phase": 5,
+        "tokens": 10,
+        "positions": 103,
+        "image_chunks": 1,
+        "callback_count": 6460,
+        "live_resources": 0
+      }
+    },
+    {
+      "fixture": "red_square",
+      "question": "Describe the visible image in one sentence.",
+      "output": " The image is a red square on a white background.",
+      "status": 0,
+      "passed": true,
+      "rgb_sha256": "1963b35af19841148aca7535137eca16aa31e2225e7c9ceea7f3487853702318",
+      "seconds": 10.049,
+      "report": {
+        "status": 0,
+        "phase": 5,
+        "tokens": 11,
+        "positions": 103,
+        "image_chunks": 1,
+        "callback_count": 6874,
+        "live_resources": 0
+      }
+    },
+    {
+      "fixture": "blue_circle",
+      "question": "Describe the visible image in one sentence.",
+      "output": " A blue circle is centered on a white background.",
+      "status": 0,
+      "passed": true,
+      "rgb_sha256": "fb87103dc8866bc2b9aa698e3ba69b19f82849323cf1b0d6ad7cb59e50a2eca4",
+      "seconds": 9.877,
+      "report": {
+        "status": 0,
+        "phase": 5,
+        "tokens": 10,
+        "positions": 103,
+        "image_chunks": 1,
+        "callback_count": 6460,
+        "live_resources": 0
+      }
+    },
+    {
+      "fixture": "blue_square",
+      "question": "Describe the visible image in one sentence.",
+      "output": " The image is a blue square on a white background.",
+      "status": 0,
+      "passed": true,
+      "rgb_sha256": "ab0cb2e0d29a56cc08d16fea87ffd13fd7a25b052ad64dfdcddada3d2fc1c9af",
+      "seconds": 20.656,
+      "report": {
+        "status": 0,
+        "phase": 5,
+        "tokens": 11,
+        "positions": 103,
+        "image_chunks": 1,
+        "callback_count": 6874,
+        "live_resources": 0
+      }
+    },
+    {
+      "fixture": "spatial",
+      "question": "Where is the circle relative to the square? Answer in one sentence.",
+      "output": " The circle is to the left of the square.",
+      "status": 0,
+      "passed": true,
+      "rgb_sha256": "eb44b87046014118f78859a61c84affa9b904977d438cb3365797ee3af763e3e",
+      "seconds": 22.719,
+      "report": {
+        "status": 0,
+        "phase": 5,
+        "tokens": 10,
+        "positions": 109,
+        "image_chunks": 1,
+        "callback_count": 6460,
+        "live_resources": 0
+      }
+    },
+    {
+      "fixture": "spatial_reverse",
+      "question": "Where is the circle relative to the square? Answer in one sentence.",
+      "output": " The circle is to the right of the square.",
+      "status": 0,
+      "passed": true,
+      "rgb_sha256": "e802050dbeef18321f0d02bdff1d1d32bb60d8c8b8405c8aadeb48bf939ec8a1",
+      "seconds": 19.178,
+      "report": {
+        "status": 0,
+        "phase": 5,
+        "tokens": 10,
+        "positions": 109,
+        "image_chunks": 1,
+        "callback_count": 6460,
+        "live_resources": 0
+      }
+    },
+    {
+      "fixture": "count",
+      "question": "How many circles are visible? Answer briefly.",
+      "output": " 3.",
+      "status": 0,
+      "passed": true,
+      "rgb_sha256": "eb942bf20ce70fa4839e16fc7845bf7e478fb525dc799b50a80a7271288fa295",
+      "seconds": 9.824,
+      "report": {
+        "status": 0,
+        "phase": 5,
+        "tokens": 3,
+        "positions": 104,
+        "image_chunks": 1,
+        "callback_count": 3562,
+        "live_resources": 0
+      }
+    },
+    {
+      "fixture": "natural_landscape",
+      "question": "Describe the visible scene in one sentence.",
+      "output": " A vast mountain range with a river running through the valley.",
+      "status": 0,
+      "passed": true,
+      "rgb_sha256": "3bccbd0d4299dd2b49ec61f06d4886ed8f64cd7017c0db8030ff9e29e7738927",
+      "seconds": 10.477,
+      "report": {
+        "status": 0,
+        "phase": 5,
+        "tokens": 12,
+        "positions": 103,
+        "image_chunks": 1,
+        "callback_count": 7288,
+        "live_resources": 0
+      }
+    },
+    {
+      "fixture": "blank",
+      "question": "Describe the visible image in one sentence.",
+      "output": "",
+      "status": 10,
+      "passed": true,
+      "rgb_sha256": "05cee4e08b431e15405ede17f74f3b6da563778652fcb974d4d987238e6e7a78",
+      "seconds": 0.001,
+      "report": {
+        "status": 10,
+        "phase": 0,
+        "tokens": 0,
+        "positions": 0,
+        "image_chunks": 0,
+        "callback_count": 0,
+        "live_resources": 0
+      }
+    }
+  ]
+}

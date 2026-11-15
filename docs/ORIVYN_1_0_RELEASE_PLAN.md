@@ -1,6 +1,15 @@
 # Orivyn 1.0.0 release plan and acceptance ledger
 
-## Current acceptance audit
+## Latest private development checkpoint
+
+The [2026-11-14 capability implementation record](CAPABILITIES_PRIVATE_20261114.md)
+updates the older audit below. Actual pixel vision and native read suggestions now
+have private production integration; automatic sync remains unfinished. These
+changes have portable evidence but no new Apple package/device acceptance. Public
+0.1.1 build 6 is recorded in BUILD6_PUBLICATION.md; no later preview is published.
+The historical audits below retain their original source and test scope.
+
+## Prior acceptance audit
 
 Source inspected: `ad0a63d94c609c9639baa8210945e95060d566a8`, PR #4. Target **1.0.0** is **not release-ready**. `project.yml` still correctly identifies development **0.1.1 build 5**. The documented public preview remains 0.1.0 build 4; this audit does not activate or revalidate the public catalog.
 

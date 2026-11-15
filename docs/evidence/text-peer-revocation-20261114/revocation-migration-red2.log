@@ -1,0 +1,273 @@
+Building for debugging...
+[0/13] Write sources
+[2/13] Write swift-version--553A0786DAFFE0A1.txt
+[4/18] Emitting module JarvisEVO
+[5/22] Compiling JarvisEVO OCRLineEvidence.swift
+[6/22] Compiling JarvisEVO PeerSyncControlFrame.swift
+[7/22] Compiling JarvisEVO ReviewedTextSnapshot.swift
+[8/22] Compiling JarvisEVO SQLiteConversationStore.swift
+[9/22] Compiling JarvisEVO Conversation.swift
+[10/22] Compiling JarvisEVO ConversationSearch.swift
+[11/22] Compiling JarvisEVO ImageOCRResult.swift
+[12/22] Compiling JarvisEVO MemoryNote.swift
+[13/23] Wrapping AST for JarvisEVO for debugging
+[15/29] Emitting module JarvisEVOTests
+[16/34] Compiling JarvisEVOTests ConversationSearchTests.swift
+[17/34] Compiling JarvisEVOTests ConversationTests.swift
+[18/34] Compiling JarvisEVOTests ImageIdentityPersistenceTests.swift
+[19/34] Compiling JarvisEVOTests OCRLineEvidenceTests.swift
+[20/34] Compiling JarvisEVOTests PeerSyncControlFrameTests.swift
+[21/34] Compiling JarvisEVOTests PersistenceTests.swift
+[22/34] Compiling JarvisEVOTests ReviewedTextSnapshotTests.swift
+[23/34] Compiling JarvisEVOTests TextPeerRevocationTests.swift
+[24/34] Compiling JarvisEVOTests TextReceivePersistenceTests.swift
+[25/34] Compiling JarvisEVOTests TextSendOutboxTests.swift
+[26/35] /workspace/scratch/8352eb8fe69c/orivyn-revocation-migration-red2/.build/x86_64-unknown-linux-gnu/debug/PersistenceSystemSQLitePackageDiscoveredTests.derived/all-discovered-tests.swift
+[27/35] Write sources
+[28/35] Wrapping AST for JarvisEVOTests for debugging
+[30/37] Emitting module PersistenceSystemSQLitePackageDiscoveredTests
+[31/37] Compiling PersistenceSystemSQLitePackageDiscoveredTests JarvisEVOTests.swift
+[32/38] Compiling PersistenceSystemSQLitePackageDiscoveredTests all-discovered-tests.swift
+[33/39] /workspace/scratch/8352eb8fe69c/orivyn-revocation-migration-red2/.build/x86_64-unknown-linux-gnu/debug/PersistenceSystemSQLitePackageTests.derived/runner.swift
+[34/39] Write sources
+[35/39] Wrapping AST for PersistenceSystemSQLitePackageDiscoveredTests for debugging
+[37/41] Emitting module PersistenceSystemSQLitePackageTests
+[38/41] Compiling PersistenceSystemSQLitePackageTests runner.swift
+[39/42] Wrapping AST for PersistenceSystemSQLitePackageTests for debugging
+[40/42] Write Objects.LinkFileList
+[41/42] Linking PersistenceSystemSQLitePackageTests.xctest
+Build complete! (16.69s)
+Test Suite 'All tests' started at 2026-11-14 16:18:02.650
+Test Suite 'debug.xctest' started at 2026-11-14 16:18:02.685
+Test Suite 'ConversationSearchTests' started at 2026-11-14 16:18:02.685
+Test Case 'ConversationSearchTests.testLiteralSearchIncludesExtractedFilesWithoutOpeningThem' started at 2026-11-14 16:18:02.685
+Test Case 'ConversationSearchTests.testLiteralSearchIncludesExtractedFilesWithoutOpeningThem' passed (0.003 seconds)
+Test Suite 'ConversationSearchTests' passed at 2026-11-14 16:18:02.688
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.003 (0.003) seconds
+Test Suite 'ConversationTests' started at 2026-11-14 16:18:02.688
+Test Case 'ConversationTests.testAssistantOnlyInputProducesNoFalseUserContext' started at 2026-11-14 16:18:02.688
+Test Case 'ConversationTests.testAssistantOnlyInputProducesNoFalseUserContext' passed (0.0 seconds)
+Test Case 'ConversationTests.testAttachmentTextParticipatesInContextBudget' started at 2026-11-14 16:18:02.688
+Test Case 'ConversationTests.testAttachmentTextParticipatesInContextBudget' passed (0.101 seconds)
+Test Case 'ConversationTests.testBranchRetainsMessagesOnlyThroughSelectedMessageAndUsesNewIdentity' started at 2026-11-14 16:18:02.789
+Test Case 'ConversationTests.testBranchRetainsMessagesOnlyThroughSelectedMessageAndUsesNewIdentity' passed (0.102 seconds)
+Test Case 'ConversationTests.testContextDropsAllLeadingAssistantFragmentsAfterTrimming' started at 2026-11-14 16:18:02.891
+Test Case 'ConversationTests.testContextDropsAllLeadingAssistantFragmentsAfterTrimming' passed (0.0 seconds)
+Test Case 'ConversationTests.testContextKeepsExactFullHistoryAndSystemMetadataWhenItFits' started at 2026-11-14 16:18:02.892
+Test Case 'ConversationTests.testContextKeepsExactFullHistoryAndSystemMetadataWhenItFits' passed (0.0 seconds)
+Test Case 'ConversationTests.testContextKeepsSystemAndNewestWholeMessagesWithinBudget' started at 2026-11-14 16:18:02.892
+Test Case 'ConversationTests.testContextKeepsSystemAndNewestWholeMessagesWithinBudget' passed (0.0 seconds)
+Test Case 'ConversationTests.testContextRejectsBudgetThatKeepsOnlyAnswerButDropsLatestUser' started at 2026-11-14 16:18:02.892
+Test Case 'ConversationTests.testContextRejectsBudgetThatKeepsOnlyAnswerButDropsLatestUser' passed (0.0 seconds)
+Test Case 'ConversationTests.testContextTrimmingDoesNotKeepAnAnswerWithoutItsQuestion' started at 2026-11-14 16:18:02.892
+Test Case 'ConversationTests.testContextTrimmingDoesNotKeepAnAnswerWithoutItsQuestion' passed (0.0 seconds)
+Test Case 'ConversationTests.testContextTrimmingDoesNotLetSystemMessageHideOrphanedAnswers' started at 2026-11-14 16:18:02.893
+Test Case 'ConversationTests.testContextTrimmingDoesNotLetSystemMessageHideOrphanedAnswers' passed (0.0 seconds)
+Test Case 'ConversationTests.testContextTrimmingKeepsWholeRecentTurnsAndLatestAttachment' started at 2026-11-14 16:18:02.893
+Test Case 'ConversationTests.testContextTrimmingKeepsWholeRecentTurnsAndLatestAttachment' passed (0.0 seconds)
+Test Case 'ConversationTests.testEditingAssistantMessageIsRejected' started at 2026-11-14 16:18:02.893
+Test Case 'ConversationTests.testEditingAssistantMessageIsRejected' passed (0.0 seconds)
+Test Case 'ConversationTests.testEditingUserMessageInvalidatesOnlySubsequentHistory' started at 2026-11-14 16:18:02.893
+Test Case 'ConversationTests.testEditingUserMessageInvalidatesOnlySubsequentHistory' passed (0.0 seconds)
+Test Case 'ConversationTests.testEmptyEditIsRejectedWithoutMutatingHistory' started at 2026-11-14 16:18:02.893
+Test Case 'ConversationTests.testEmptyEditIsRejectedWithoutMutatingHistory' passed (0.0 seconds)
+Test Case 'ConversationTests.testFailedOrEmptyUserDoesNotAnchorLeadingAssistantAnswer' started at 2026-11-14 16:18:02.893
+Test Case 'ConversationTests.testFailedOrEmptyUserDoesNotAnchorLeadingAssistantAnswer' passed (0.011 seconds)
+Test Case 'ConversationTests.testOversizedLatestTurnIsRejectedInsteadOfDiscarded' started at 2026-11-14 16:18:02.905
+Test Case 'ConversationTests.testOversizedLatestTurnIsRejectedInsteadOfDiscarded' passed (0.0 seconds)
+Test Suite 'ConversationTests' passed at 2026-11-14 16:18:02.905
+	 Executed 15 tests, with 0 failures (0 unexpected) in 0.217 (0.217) seconds
+Test Suite 'ImageIdentityPersistenceTests' started at 2026-11-14 16:18:02.905
+Test Case 'ImageIdentityPersistenceTests.testConcurrentWritersCannotCommitConflictingImageIdentities' started at 2026-11-14 16:18:02.905
+Test Case 'ImageIdentityPersistenceTests.testConcurrentWritersCannotCommitConflictingImageIdentities' passed (0.007 seconds)
+Test Case 'ImageIdentityPersistenceTests.testConflictingSharedBranchSavePreservesBothExistingRows' started at 2026-11-14 16:18:02.912
+Test Case 'ImageIdentityPersistenceTests.testConflictingSharedBranchSavePreservesBothExistingRows' passed (0.002 seconds)
+Test Case 'ImageIdentityPersistenceTests.testPartialConflictRejectsBeforeWritesButCompleteReplacementIsAccepted' started at 2026-11-14 16:18:02.914
+Test Case 'ImageIdentityPersistenceTests.testPartialConflictRejectsBeforeWritesButCompleteReplacementIsAccepted' passed (0.104 seconds)
+Test Suite 'ImageIdentityPersistenceTests' passed at 2026-11-14 16:18:03.018
+	 Executed 3 tests, with 0 failures (0 unexpected) in 0.113 (0.113) seconds
+Test Suite 'OCRLineEvidenceTests' started at 2026-11-14 16:18:03.018
+Test Case 'OCRLineEvidenceTests.testInvalidScoresAndTruncatedLinesAreExplicit' started at 2026-11-14 16:18:03.018
+Test Case 'OCRLineEvidenceTests.testInvalidScoresAndTruncatedLinesAreExplicit' passed (0.02 seconds)
+Test Case 'OCRLineEvidenceTests.testLowConfidenceTextIsPreservedRatherThanInventedOrDropped' started at 2026-11-14 16:18:03.038
+Test Case 'OCRLineEvidenceTests.testLowConfidenceTextIsPreservedRatherThanInventedOrDropped' passed (0.0 seconds)
+Test Suite 'OCRLineEvidenceTests' passed at 2026-11-14 16:18:03.038
+	 Executed 2 tests, with 0 failures (0 unexpected) in 0.02 (0.02) seconds
+Test Suite 'PeerSyncControlFrameTests' started at 2026-11-14 16:18:03.038
+Test Case 'PeerSyncControlFrameTests.testChallengeAndEchoRoundTrip' started at 2026-11-14 16:18:03.038
+Test Case 'PeerSyncControlFrameTests.testChallengeAndEchoRoundTrip' passed (0.0 seconds)
+Test Case 'PeerSyncControlFrameTests.testEveryFragmentationBoundary' started at 2026-11-14 16:18:03.039
+Test Case 'PeerSyncControlFrameTests.testEveryFragmentationBoundary' passed (0.001 seconds)
+Test Case 'PeerSyncControlFrameTests.testNonCanonicalAndMalformedIdentityReject' started at 2026-11-14 16:18:03.040
+Test Case 'PeerSyncControlFrameTests.testNonCanonicalAndMalformedIdentityReject' passed (0.0 seconds)
+Test Case 'PeerSyncControlFrameTests.testOneByteFragmentsAndNoSecondFrame' started at 2026-11-14 16:18:03.040
+Test Case 'PeerSyncControlFrameTests.testOneByteFragmentsAndNoSecondFrame' passed (0.0 seconds)
+Test Case 'PeerSyncControlFrameTests.testOnlyFullLengthRandomChallengesCanBeEncoded' started at 2026-11-14 16:18:03.040
+Test Case 'PeerSyncControlFrameTests.testOnlyFullLengthRandomChallengesCanBeEncoded' passed (0.0 seconds)
+Test Case 'PeerSyncControlFrameTests.testRejectsOversizedOrWrongDeclaredLengthBeforeBody' started at 2026-11-14 16:18:03.041
+Test Case 'PeerSyncControlFrameTests.testRejectsOversizedOrWrongDeclaredLengthBeforeBody' passed (0.0 seconds)
+Test Case 'PeerSyncControlFrameTests.testTruncationAndTrailingBytesReject' started at 2026-11-14 16:18:03.041
+Test Case 'PeerSyncControlFrameTests.testTruncationAndTrailingBytesReject' passed (0.0 seconds)
+Test Case 'PeerSyncControlFrameTests.testWrongMagicVersionAndUnknownKindReject' started at 2026-11-14 16:18:03.041
+Test Case 'PeerSyncControlFrameTests.testWrongMagicVersionAndUnknownKindReject' passed (0.0 seconds)
+Test Suite 'PeerSyncControlFrameTests' passed at 2026-11-14 16:18:03.041
+	 Executed 8 tests, with 0 failures (0 unexpected) in 0.003 (0.003) seconds
+Test Suite 'PersistenceTests' started at 2026-11-14 16:18:03.041
+Test Case 'PersistenceTests.testArchiveIsExcludedByDefaultAndIncludedExplicitly' started at 2026-11-14 16:18:03.041
+Test Case 'PersistenceTests.testArchiveIsExcludedByDefaultAndIncludedExplicitly' passed (0.003 seconds)
+Test Case 'PersistenceTests.testAttachmentIdentityCanBeSharedAcrossMessagesButDistinctWithinEachMessage' started at 2026-11-14 16:18:03.044
+Test Case 'PersistenceTests.testAttachmentIdentityCanBeSharedAcrossMessagesButDistinctWithinEachMessage' passed (0.002 seconds)
+Test Case 'PersistenceTests.testBackupRecordCountBoundaryRoundTripsBothCollectionsAtTenThousand' started at 2026-11-14 16:18:03.046
+Test Case 'PersistenceTests.testBackupRecordCountBoundaryRoundTripsBothCollectionsAtTenThousand' passed (1.757 seconds)
+Test Case 'PersistenceTests.testCancelledImportDoesNotWriteOrReplaceLocalRecords' started at 2026-11-14 16:18:04.803
+Test Case 'PersistenceTests.testCancelledImportDoesNotWriteOrReplaceLocalRecords' passed (0.002 seconds)
+Test Case 'PersistenceTests.testDeleteAllRemovesConversationsAndMemory' started at 2026-11-14 16:18:04.805
+Test Case 'PersistenceTests.testDeleteAllRemovesConversationsAndMemory' passed (0.006 seconds)
+Test Case 'PersistenceTests.testDuplicateDocumentAndMixedAttachmentIDsRejectBeforeChangingBackupState' started at 2026-11-14 16:18:04.811
+Test Case 'PersistenceTests.testDuplicateDocumentAndMixedAttachmentIDsRejectBeforeChangingBackupState' passed (0.001 seconds)
+Test Case 'PersistenceTests.testExportImportRoundTripAndMalformedImportDoesNotEraseData' started at 2026-11-14 16:18:04.812
+Test Case 'PersistenceTests.testExportImportRoundTripAndMalformedImportDoesNotEraseData' passed (0.002 seconds)
+Test Case 'PersistenceTests.testExportLargerThanTwentyMegabytesRemainsRestorable' started at 2026-11-14 16:18:04.814
+Test Case 'PersistenceTests.testExportLargerThanTwentyMegabytesRemainsRestorable' passed (0.69 seconds)
+Test Case 'PersistenceTests.testExportRejectsTenThousandAndOneRecordsWithoutTruncationAndReleasesTransaction' started at 2026-11-14 16:18:05.504
+Test Case 'PersistenceTests.testExportRejectsTenThousandAndOneRecordsWithoutTruncationAndReleasesTransaction' passed (0.871 seconds)
+Test Case 'PersistenceTests.testExportUsesOneSnapshotAcrossConversationAndMemoryTables' started at 2026-11-14 16:18:06.375
+Test Case 'PersistenceTests.testExportUsesOneSnapshotAcrossConversationAndMemoryTables' passed (2.695 seconds)
+Test Case 'PersistenceTests.testFailedExportReleasesReadTransactionForRepairAndLaterWrites' started at 2026-11-14 16:18:09.070
+Test Case 'PersistenceTests.testFailedExportReleasesReadTransactionForRepairAndLaterWrites' passed (0.008 seconds)
+Test Case 'PersistenceTests.testFailedMemoryWriteRollsBackEarlierConversationChangesAndAllowsRetry' started at 2026-11-14 16:18:09.079
+Test Case 'PersistenceTests.testFailedMemoryWriteRollsBackEarlierConversationChangesAndAllowsRetry' passed (0.007 seconds)
+Test Case 'PersistenceTests.testHistorySurvivesReopenAndSearchFindsMessageContent' started at 2026-11-14 16:18:09.086
+Test Case 'PersistenceTests.testHistorySurvivesReopenAndSearchFindsMessageContent' passed (0.003 seconds)
+Test Case 'PersistenceTests.testImportRejectsAttachmentTraversalBeforeWriting' started at 2026-11-14 16:18:09.089
+Test Case 'PersistenceTests.testImportRejectsAttachmentTraversalBeforeWriting' passed (0.004 seconds)
+Test Case 'PersistenceTests.testImportedMemoryCreationDateControlsOrderingAfterReplacement' started at 2026-11-14 16:18:09.093
+Test Case 'PersistenceTests.testImportedMemoryCreationDateControlsOrderingAfterReplacement' passed (0.008 seconds)
+Test Case 'PersistenceTests.testInterruptedStreamIsRecoveredButCompletedMessageIsUntouched' started at 2026-11-14 16:18:09.101
+Test Case 'PersistenceTests.testInterruptedStreamIsRecoveredButCompletedMessageIsUntouched' passed (0.002 seconds)
+Test Case 'PersistenceTests.testOversizedBackupIsRejectedWithoutErasingExistingHistory' started at 2026-11-14 16:18:09.103
+Test Case 'PersistenceTests.testOversizedBackupIsRejectedWithoutErasingExistingHistory' passed (0.054 seconds)
+Test Case 'PersistenceTests.testPreserveLocalImportAddsMissingWithoutOverwritingConflicts' started at 2026-11-14 16:18:09.156
+Test Case 'PersistenceTests.testPreserveLocalImportAddsMissingWithoutOverwritingConflicts' passed (0.002 seconds)
+Test Case 'PersistenceTests.testSearchRetainsTextAfterEmbeddedNul' started at 2026-11-14 16:18:09.158
+Test Case 'PersistenceTests.testSearchRetainsTextAfterEmbeddedNul' passed (0.001 seconds)
+Test Suite 'PersistenceTests' passed at 2026-11-14 16:18:09.160
+	 Executed 19 tests, with 0 failures (0 unexpected) in 6.118 (6.118) seconds
+Test Suite 'ReviewedTextSnapshotTests' started at 2026-11-14 16:18:09.160
+Test Case 'ReviewedTextSnapshotTests.testAllUnfinishedMessageStatesAreRejected' started at 2026-11-14 16:18:09.160
+Test Case 'ReviewedTextSnapshotTests.testAllUnfinishedMessageStatesAreRejected' passed (0.007 seconds)
+Test Case 'ReviewedTextSnapshotTests.testArchivedSelectedConversationIsIncluded' started at 2026-11-14 16:18:09.166
+Test Case 'ReviewedTextSnapshotTests.testArchivedSelectedConversationIsIncluded' passed (0.002 seconds)
+Test Case 'ReviewedTextSnapshotTests.testAttachmentsAreRejectedInsteadOfSilentlyDropped' started at 2026-11-14 16:18:09.169
+Test Case 'ReviewedTextSnapshotTests.testAttachmentsAreRejectedInsteadOfSilentlyDropped' passed (0.001 seconds)
+Test Case 'ReviewedTextSnapshotTests.testCanceledReadDoesNotLeakTransactionAndNextReadSucceeds' started at 2026-11-14 16:18:09.170
+Test Case 'ReviewedTextSnapshotTests.testCanceledReadDoesNotLeakTransactionAndNextReadSucceeds' passed (0.004 seconds)
+Test Case 'ReviewedTextSnapshotTests.testEmptyMissingAndOversizedSelectionFailWithoutPartialExport' started at 2026-11-14 16:18:09.174
+Test Case 'ReviewedTextSnapshotTests.testEmptyMissingAndOversizedSelectionFailWithoutPartialExport' passed (0.001 seconds)
+Test Case 'ReviewedTextSnapshotTests.testExportsOnlySelectedTextAndNoMemories' started at 2026-11-14 16:18:09.175
+Test Case 'ReviewedTextSnapshotTests.testExportsOnlySelectedTextAndNoMemories' passed (0.001 seconds)
+Test Case 'ReviewedTextSnapshotTests.testReviewMessageAndByteLimitsReject' started at 2026-11-14 16:18:09.176
+Test Case 'ReviewedTextSnapshotTests.testReviewMessageAndByteLimitsReject' passed (0.18 seconds)
+Test Case 'ReviewedTextSnapshotTests.testSnapshotBytesStayFixedAfterEditAndDeletion' started at 2026-11-14 16:18:09.356
+Test Case 'ReviewedTextSnapshotTests.testSnapshotBytesStayFixedAfterEditAndDeletion' passed (0.004 seconds)
+Test Suite 'ReviewedTextSnapshotTests' passed at 2026-11-14 16:18:09.360
+	 Executed 8 tests, with 0 failures (0 unexpected) in 0.2 (0.2) seconds
+Test Suite 'TextPeerRevocationTests' started at 2026-11-14 16:18:09.360
+Test Case 'TextPeerRevocationTests.testConcurrentReceiveAndRevocationHaveOneSerializedCommitBoundary' started at 2026-11-14 16:18:09.360
+Test Case 'TextPeerRevocationTests.testConcurrentReceiveAndRevocationHaveOneSerializedCommitBoundary' passed (0.007 seconds)
+Test Case 'TextPeerRevocationTests.testFailedMetadataCleanupRollsBackRevocationAndKeepsDraft' started at 2026-11-14 16:18:09.366
+Test Case 'TextPeerRevocationTests.testFailedMetadataCleanupRollsBackRevocationAndKeepsDraft' passed (0.003 seconds)
+Test Case 'TextPeerRevocationTests.testFullRevocationStorageRejectsNewScopeWithoutEvictionOrPartialCleanup' started at 2026-11-14 16:18:09.369
+Test Case 'TextPeerRevocationTests.testFullRevocationStorageRejectsNewScopeWithoutEvictionOrPartialCleanup' passed (0.017 seconds)
+Test Case 'TextPeerRevocationTests.testLegacyMigrationPreservesExistingOutboxAndReceiptScopes' started at 2026-11-14 16:18:09.386
+Test Case 'TextPeerRevocationTests.testLegacyMigrationPreservesExistingOutboxAndReceiptScopes' passed (0.003 seconds)
+Test Case 'TextPeerRevocationTests.testLossOfBothTablesDoesNotReclassifyMigratedDatabaseAsLegacy' started at 2026-11-14 16:18:09.389
+/workspace/scratch/8352eb8fe69c/orivyn-revocation-migration-red2/Tests/JarvisEVOTests/TextPeerRevocationTests.swift:64: error: TextPeerRevocationTests.testLossOfBothTablesDoesNotReclassifyMigratedDatabaseAsLegacy : failed - Both lost tables revived peer
+Test Case 'TextPeerRevocationTests.testLossOfBothTablesDoesNotReclassifyMigratedDatabaseAsLegacy' failed (0.103 seconds)
+Test Case 'TextPeerRevocationTests.testMissingRevocationMetadataFailsClosedButLocalErasureStillWorks' started at 2026-11-14 16:18:09.492
+Test Case 'TextPeerRevocationTests.testMissingRevocationMetadataFailsClosedButLocalErasureStillWorks' passed (0.004 seconds)
+Test Case 'TextPeerRevocationTests.testRevocationIsIdempotentSelectiveAndDoesNotAuthorizeNewGeneration' started at 2026-11-14 16:18:09.497
+Test Case 'TextPeerRevocationTests.testRevocationIsIdempotentSelectiveAndDoesNotAuthorizeNewGeneration' passed (0.002 seconds)
+Test Case 'TextPeerRevocationTests.testRevocationSurvivesReopenAndBlocksReceiveStageAndLateReceipt' started at 2026-11-14 16:18:09.499
+Test Case 'TextPeerRevocationTests.testRevocationSurvivesReopenAndBlocksReceiveStageAndLateReceipt' passed (0.003 seconds)
+Test Suite 'TextPeerRevocationTests' failed at 2026-11-14 16:18:09.502
+	 Executed 8 tests, with 1 failure (0 unexpected) in 0.142 (0.142) seconds
+Test Suite 'TextReceivePersistenceTests' started at 2026-11-14 16:18:09.502
+Test Case 'TextReceivePersistenceTests.testAttachmentsMemoriesAndStreamingRejectWholeBatch' started at 2026-11-14 16:18:09.502
+Test Case 'TextReceivePersistenceTests.testAttachmentsMemoriesAndStreamingRejectWholeBatch' passed (0.001 seconds)
+Test Case 'TextReceivePersistenceTests.testChangedPayloadPeerAndGenerationRejectSameTransfer' started at 2026-11-14 16:18:09.503
+Test Case 'TextReceivePersistenceTests.testChangedPayloadPeerAndGenerationRejectSameTransfer' passed (0.002 seconds)
+Test Case 'TextReceivePersistenceTests.testConcurrentConnectionsCommitOnlyOneConflictCopy' started at 2026-11-14 16:18:09.505
+Test Case 'TextReceivePersistenceTests.testConcurrentConnectionsCommitOnlyOneConflictCopy' passed (0.004 seconds)
+Test Case 'TextReceivePersistenceTests.testConflictRetryAfterReopenDoesNotDuplicateOrOverwriteLocalEdit' started at 2026-11-14 16:18:09.509
+Test Case 'TextReceivePersistenceTests.testConflictRetryAfterReopenDoesNotDuplicateOrOverwriteLocalEdit' passed (0.003 seconds)
+Test Case 'TextReceivePersistenceTests.testContentFailureDoesNotCommitReceipt' started at 2026-11-14 16:18:09.512
+Test Case 'TextReceivePersistenceTests.testContentFailureDoesNotCommitReceipt' passed (0.003 seconds)
+Test Case 'TextReceivePersistenceTests.testDeleteAllRotatesEpochAndRejectsOldRetry' started at 2026-11-14 16:18:09.515
+Test Case 'TextReceivePersistenceTests.testDeleteAllRotatesEpochAndRejectsOldRetry' passed (0.002 seconds)
+Test Case 'TextReceivePersistenceTests.testFailedErasePreservesEpochAndReceipt' started at 2026-11-14 16:18:09.517
+Test Case 'TextReceivePersistenceTests.testFailedErasePreservesEpochAndReceipt' passed (0.002 seconds)
+Test Case 'TextReceivePersistenceTests.testIndividualDeleteClearsReceiptTextAndInvalidatesOldReceive' started at 2026-11-14 16:18:09.519
+Test Case 'TextReceivePersistenceTests.testIndividualDeleteClearsReceiptTextAndInvalidatesOldReceive' passed (0.003 seconds)
+Test Case 'TextReceivePersistenceTests.testManualImportStillCopiesOnRepeatedConflicts' started at 2026-11-14 16:18:09.522
+Test Case 'TextReceivePersistenceTests.testManualImportStillCopiesOnRepeatedConflicts' passed (0.002 seconds)
+Test Case 'TextReceivePersistenceTests.testMissingEpochDoesNotReseedOnReopen' started at 2026-11-14 16:18:09.524
+Test Case 'TextReceivePersistenceTests.testMissingEpochDoesNotReseedOnReopen' passed (0.002 seconds)
+Test Case 'TextReceivePersistenceTests.testMissingEpochRowStillAllowsErasureAndReceiveStaysClosed' started at 2026-11-14 16:18:09.525
+Test Case 'TextReceivePersistenceTests.testMissingEpochRowStillAllowsErasureAndReceiveStaysClosed' passed (0.002 seconds)
+Test Case 'TextReceivePersistenceTests.testMissingReceiptTableDoesNotReseedOnReopen' started at 2026-11-14 16:18:09.527
+Test Case 'TextReceivePersistenceTests.testMissingReceiptTableDoesNotReseedOnReopen' passed (0.002 seconds)
+Test Case 'TextReceivePersistenceTests.testMissingReceiptTableStillAllowsIndividualAndAllHistoryErasure' started at 2026-11-14 16:18:09.529
+Test Case 'TextReceivePersistenceTests.testMissingReceiptTableStillAllowsIndividualAndAllHistoryErasure' passed (0.004 seconds)
+Test Case 'TextReceivePersistenceTests.testReceiptCapacityFailsWithoutEvictionOrContentWrite' started at 2026-11-14 16:18:09.533
+Test Case 'TextReceivePersistenceTests.testReceiptCapacityFailsWithoutEvictionOrContentWrite' passed (0.193 seconds)
+Test Case 'TextReceivePersistenceTests.testReceiptFailureRollsBackContentAndRetryWorks' started at 2026-11-14 16:18:09.727
+Test Case 'TextReceivePersistenceTests.testReceiptFailureRollsBackContentAndRetryWorks' passed (0.002 seconds)
+Test Case 'TextReceivePersistenceTests.testRepeatedInitializationMigrationFailureDoesNotLeakDatabaseDescriptors' started at 2026-11-14 16:18:09.729
+Test Case 'TextReceivePersistenceTests.testRepeatedInitializationMigrationFailureDoesNotLeakDatabaseDescriptors' passed (0.025 seconds)
+Test Suite 'TextReceivePersistenceTests' passed at 2026-11-14 16:18:09.754
+	 Executed 16 tests, with 0 failures (0 unexpected) in 0.252 (0.252) seconds
+Test Suite 'TextSendOutboxTests' started at 2026-11-14 16:18:09.754
+Test Case 'TextSendOutboxTests.testCapacityAndInsertFailureDoNotStageOrModifySelection' started at 2026-11-14 16:18:09.754
+Test Case 'TextSendOutboxTests.testCapacityAndInsertFailureDoNotStageOrModifySelection' passed (0.094 seconds)
+Test Case 'TextSendOutboxTests.testChangedStreamingOrOversizedSourceRejectsBeforeStaging' started at 2026-11-14 16:18:09.849
+Test Case 'TextSendOutboxTests.testChangedStreamingOrOversizedSourceRejectsBeforeStaging' passed (0.01 seconds)
+Test Case 'TextSendOutboxTests.testCorruptPayloadOrDeliveryStorageTypeFailsClosed' started at 2026-11-14 16:18:09.859
+Test Case 'TextSendOutboxTests.testCorruptPayloadOrDeliveryStorageTypeFailsClosed' passed (0.007 seconds)
+Test Case 'TextSendOutboxTests.testDeliveryReceiptIsIdempotentAndSurvivesReopen' started at 2026-11-14 16:18:09.867
+Test Case 'TextSendOutboxTests.testDeliveryReceiptIsIdempotentAndSurvivesReopen' passed (0.005 seconds)
+Test Case 'TextSendOutboxTests.testDiscardDoesNotDeleteConversationAndRejectsLateReceipt' started at 2026-11-14 16:18:09.872
+Test Case 'TextSendOutboxTests.testDiscardDoesNotDeleteConversationAndRejectsLateReceipt' passed (0.002 seconds)
+Test Case 'TextSendOutboxTests.testErasureFailurePreservesContentAndOutboxTogether' started at 2026-11-14 16:18:09.874
+Test Case 'TextSendOutboxTests.testErasureFailurePreservesContentAndOutboxTogether' passed (0.002 seconds)
+Test Case 'TextSendOutboxTests.testFailedReceiptUpdateRemainsPendingAndRetryWorks' started at 2026-11-14 16:18:09.876
+Test Case 'TextSendOutboxTests.testFailedReceiptUpdateRemainsPendingAndRetryWorks' passed (0.003 seconds)
+Test Case 'TextSendOutboxTests.testHiddenUnknownJSONFieldCannotBeReturnedForSending' started at 2026-11-14 16:18:09.878
+Test Case 'TextSendOutboxTests.testHiddenUnknownJSONFieldCannotBeReturnedForSending' passed (0.041 seconds)
+Test Case 'TextSendOutboxTests.testHistoryErasureClearsPendingAndDeliveredDraftText' started at 2026-11-14 16:18:09.919
+Test Case 'TextSendOutboxTests.testHistoryErasureClearsPendingAndDeliveredDraftText' passed (0.003 seconds)
+Test Case 'TextSendOutboxTests.testMissingOutboxDoesNotBlockUserErasure' started at 2026-11-14 16:18:09.922
+Test Case 'TextSendOutboxTests.testMissingOutboxDoesNotBlockUserErasure' passed (0.002 seconds)
+Test Case 'TextSendOutboxTests.testReceiptCountCapacityRejectsWithoutEvictingExistingRows' started at 2026-11-14 16:18:09.924
+Test Case 'TextSendOutboxTests.testReceiptCountCapacityRejectsWithoutEvictingExistingRows' passed (0.011 seconds)
+Test Case 'TextSendOutboxTests.testReceiptRejectsChangedBytesRecipientSenderPairAndEpoch' started at 2026-11-14 16:18:09.936
+Test Case 'TextSendOutboxTests.testReceiptRejectsChangedBytesRecipientSenderPairAndEpoch' passed (0.002 seconds)
+Test Case 'TextSendOutboxTests.testSelectedExactBytesAndBothIdentitiesSurviveReopenAndLocalEdit' started at 2026-11-14 16:18:09.938
+Test Case 'TextSendOutboxTests.testSelectedExactBytesAndBothIdentitiesSurviveReopenAndLocalEdit' passed (0.002 seconds)
+Test Case 'TextSendOutboxTests.testSelectionChangedBeforeStagingRejectsWithoutDraft' started at 2026-11-14 16:18:09.940
+Test Case 'TextSendOutboxTests.testSelectionChangedBeforeStagingRejectsWithoutDraft' passed (0.002 seconds)
+Test Case 'TextSendOutboxTests.testTwoDatabasesRecoverLostReceiptWithoutDuplicateConflictCopy' started at 2026-11-14 16:18:09.941
+Test Case 'TextSendOutboxTests.testTwoDatabasesRecoverLostReceiptWithoutDuplicateConflictCopy' passed (0.004 seconds)
+Test Case 'TextSendOutboxTests.testWrongPinLengthAndSelfDestinationReject' started at 2026-11-14 16:18:09.946
+Test Case 'TextSendOutboxTests.testWrongPinLengthAndSelfDestinationReject' passed (0.001 seconds)
+Test Suite 'TextSendOutboxTests' passed at 2026-11-14 16:18:09.947
+	 Executed 16 tests, with 0 failures (0 unexpected) in 0.192 (0.192) seconds
+Test Suite 'debug.xctest' failed at 2026-11-14 16:18:09.947
+	 Executed 96 tests, with 1 failure (0 unexpected) in 7.26 (7.26) seconds
+Test Suite 'All tests' failed at 2026-11-14 16:18:09.947
+	 Executed 96 tests, with 1 failure (0 unexpected) in 7.26 (7.26) seconds
+◇ Test run started.
+↳ Testing Library Version: 6.1.3 (1d1f7e489c9c606)
+↳ Target Platform: x86_64-unknown-linux-gnu
+✔ Test run with 0 tests passed after 0.001 seconds.
+

@@ -1,0 +1,1 @@
+failed("Proposal rejected against frozen intent; no approval or repair")

@@ -1,8 +1,8 @@
 {
   "upstreamCommit": "2496f9c14965c39589f53eea31bdb6d762b1d360",
-  "source": "Orivyn-vision-prototype C ABI with verified invalid-special-token rejection",
+  "source": "Orivyn vision C ABI; mtmd/clip privacy logger configured once before owned session, with real old/new stderr regression",
   "files": {
-    "vision_bridge.cpp": "012d3a766c56bce28a1dd3471a27ca4040f5b68227d92f2a7a2ae8a40f603b58",
-    "vision_bridge.h": "88c0b536a331fef4e686795fbecb73f4977ab2b227f27186ab7b30ede16bd4ba"
+    "vision_bridge.cpp": "37f8b6c823f6401512f4567d4177e76b014c485042ade65309ab11c3ac6d129b",
+    "vision_bridge.h": "805d19ded1c2757a398090cb26ff14a613442a1ffcecb2dd3051fcc53bcfd3fe"
   }
 }

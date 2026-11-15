@@ -1,0 +1,220 @@
+{
+  "commit": "ad3447407a5ae5378b3606b4a72fb3134027b803",
+  "run": "https://github.com/R347H4CK3R/Orivyn/actions/runs/43657760816",
+  "scope": "Actual production Swift engine/reducer on Linux; host scaffolding; no simulator/device claim",
+  "results": [
+    {
+      "case": "independent-quoted",
+      "status": "answered",
+      "plan": {
+        "kind": "conversation_read",
+        "messageIndexes": [
+          1
+        ],
+        "query": "Conversation about Q2",
+        "schema": 1,
+        "title": "Conversation about Q2"
+      },
+      "calls": [
+        {
+          "name": "search_conversations",
+          "arguments": {
+            "limit": 10,
+            "query": "Conversation about Q2"
+          },
+          "outcome": "succeeded"
+        },
+        {
+          "name": "read_conversation",
+          "arguments": {
+            "id": "abcdefab-1234-1234-1234-123456789abc",
+            "messageIndex": 1,
+            "offset": 0
+          },
+          "outcome": "succeeded"
+        }
+      ],
+      "answerEqualsMarker": true,
+      "answer": "HOLDOUT-AF17881A-797F-4109-919C-DC32C7FBEABF"
+    },
+    {
+      "case": "independent-unquoted",
+      "status": "answered",
+      "plan": {
+        "kind": "conversation_read",
+        "messageIndexes": [
+          1
+        ],
+        "query": "Moss-trail 27",
+        "schema": 1,
+        "title": "Moss-trail 27"
+      },
+      "calls": [
+        {
+          "name": "search_conversations",
+          "arguments": {
+            "limit": 10,
+            "query": "Moss-trail 27"
+          },
+          "outcome": "succeeded"
+        },
+        {
+          "name": "read_conversation",
+          "arguments": {
+            "id": "abcdefab-1234-1234-1234-123456789abc",
+            "messageIndex": 1,
+            "offset": 0
+          },
+          "outcome": "succeeded"
+        }
+      ],
+      "answerEqualsMarker": true,
+      "answer": "HOLDOUT-517B9A89-EF18-45A6-8801-A0ABB418D1E5"
+    },
+    {
+      "case": "maple",
+      "status": "answered",
+      "plan": {
+        "kind": "conversation_read",
+        "messageIndexes": [
+          1
+        ],
+        "query": "Maple journal",
+        "schema": 1,
+        "title": "Maple journal"
+      },
+      "calls": [
+        {
+          "name": "search_conversations",
+          "arguments": {
+            "limit": 10,
+            "query": "Maple journal"
+          },
+          "outcome": "succeeded"
+        },
+        {
+          "name": "read_conversation",
+          "arguments": {
+            "id": "abcdefab-1234-1234-1234-123456789abc",
+            "messageIndex": 1,
+            "offset": 0
+          },
+          "outcome": "succeeded"
+        }
+      ],
+      "answerEqualsMarker": true,
+      "answer": "HARBOR-319"
+    },
+    {
+      "case": "orchid",
+      "status": "answered",
+      "plan": {
+        "kind": "conversation_read",
+        "messageIndexes": [
+          1
+        ],
+        "query": "Orchid notebook",
+        "schema": 1,
+        "title": "Orchid notebook"
+      },
+      "calls": [
+        {
+          "name": "search_conversations",
+          "arguments": {
+            "limit": 10,
+            "query": "Orchid notebook"
+          },
+          "outcome": "succeeded"
+        },
+        {
+          "name": "read_conversation",
+          "arguments": {
+            "id": "abcdefab-1234-1234-1234-123456789abc",
+            "messageIndex": 1,
+            "offset": 0
+          },
+          "outcome": "succeeded"
+        }
+      ],
+      "answerEqualsMarker": true,
+      "answer": "LANTERN-742"
+    },
+    {
+      "case": "pagination",
+      "status": "answered",
+      "plan": {
+        "kind": "conversation_read",
+        "messageIndexes": [
+          1
+        ],
+        "query": "Juniper pages",
+        "schema": 1,
+        "title": "Juniper pages"
+      },
+      "calls": [
+        {
+          "name": "search_conversations",
+          "arguments": {
+            "limit": 10,
+            "query": "Juniper pages"
+          },
+          "outcome": "succeeded"
+        },
+        {
+          "name": "read_conversation",
+          "arguments": {
+            "id": "abcdefab-1234-1234-1234-123456789abc",
+            "messageIndex": 1,
+            "offset": 0
+          },
+          "outcome": "succeeded"
+        },
+        {
+          "name": "read_conversation",
+          "arguments": {
+            "id": "abcdefab-1234-1234-1234-123456789abc",
+            "messageIndex": 1,
+            "offset": 512
+          },
+          "outcome": "succeeded"
+        }
+      ],
+      "answerEqualsMarker": true,
+      "answer": "PAGE-DBE352FD-5D0D-4CC8-9B48-F5A1D0C7D8EB"
+    },
+    {
+      "case": "quoted-title",
+      "status": "answered",
+      "plan": {
+        "kind": "conversation_read",
+        "messageIndexes": [
+          1
+        ],
+        "query": "Willow conversation",
+        "schema": 1,
+        "title": "Willow conversation"
+      },
+      "calls": [
+        {
+          "name": "search_conversations",
+          "arguments": {
+            "limit": 10,
+            "query": "Willow conversation"
+          },
+          "outcome": "succeeded"
+        },
+        {
+          "name": "read_conversation",
+          "arguments": {
+            "id": "abcdefab-1234-1234-1234-123456789abc",
+            "messageIndex": 1,
+            "offset": 0
+          },
+          "outcome": "succeeded"
+        }
+      ],
+      "answerEqualsMarker": true,
+      "answer": "QUOTE-D2FA1D0B-90B0-4C56-99E4-5592BB6A6B6C"
+    }
+  ]
+}

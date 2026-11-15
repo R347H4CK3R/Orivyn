@@ -1,0 +1,14 @@
+10668f14a3bf053ba83d82dc3c0fdd3cb21701c97d4c129454ea608043e3890c  /workspace/scratch/8352eb8fe69c/orivyn-capabilities-next/Diagnostics/NativeTools/bridge.cpp
+06e4275e1ae234dbd097c462161ae30cb6ccfcc1ed8613c2ba6999220212ce17  /workspace/scratch/8352eb8fe69c/orivyn-capabilities-next/Diagnostics/NativeTools/bridge.h
+71d78936ae03d48522e170dc01bd95574484fd53255d228bec253a668afe55df  /workspace/scratch/8352eb8fe69c/orivyn-capabilities-next/Diagnostics/NativeTools/pinned-template.h
+82d2f841ba9d0dfeb1b995c8c3c02675360b5fe9743dcdb5eb8aa1798968300c  /workspace/scratch/8352eb8fe69c/orivyn-capabilities-next/Diagnostics/VisionProof/Bridge/vision_bridge.cpp
+805d19ded1c2757a398090cb26ff14a613442a1ffcecb2dd3051fcc53bcfd3fe  /workspace/scratch/8352eb8fe69c/orivyn-capabilities-next/Diagnostics/VisionProof/Bridge/vision_bridge.h
+d7ed38e7c59f9e9965804827538be8e509bf720636f5e3214ff4cc3be481a983  /workspace/scratch/8352eb8fe69c/orivyn-native-packaging-audit/combined-build/llama/common/libllama-common.a
+eaf7ec3c87ff185ff65e6a8279cecf9ec6ed39f2b4a2d55e7f7da176d26fcb0e  /workspace/scratch/8352eb8fe69c/orivyn-native-packaging-audit/combined-build/llama/common/libllama-common-base.a
+62f902b1e5ae70aacb0174aaaa1ae0736de02800f44e524e737bc25923a70500  /workspace/scratch/8352eb8fe69c/orivyn-native-packaging-audit/combined-build/llama/tools/mtmd/libmtmd.a
+e055b5e3d68b051c5b11f367e9785a88e49e9cfd58194268e58579de25038856  /workspace/scratch/8352eb8fe69c/orivyn-native-packaging-audit/combined-build/llama/src/libllama.a
+3e500b3e614bac2c927e44a5be6780918abf9c435fcdb6abbff3a836f7f301d6  /workspace/scratch/8352eb8fe69c/orivyn-native-packaging-audit/combined-build/llama/ggml/src/libggml.a
+abe2d9450a96ca393be2fcc54b5b3b6c125b903a2c207aed3b949a33ea249d8f  /workspace/scratch/8352eb8fe69c/orivyn-native-packaging-audit/combined-build/llama/ggml/src/libggml-base.a
+b768447ab2d90364248b12458a99dd8b676b0db386d4b5f0f1d24e2e741f18b0  /workspace/scratch/8352eb8fe69c/orivyn-native-packaging-audit/combined-build/llama/ggml/src/libggml-cpu.a
+55fccb0e972cb4968d2383ea4643600051c306d7ae04f682ef87a98c3224423d  /workspace/scratch/8352eb8fe69c/orivyn-native-packaging-audit/combined-build/llama/vendor/cpp-httplib/libcpp-httplib.a
+2f857d71d3a0b4333cdf2705951383ddeb9aba6ac09b54d900daf2a7f58b0638  /workspace/scratch/8352eb8fe69c/orivyn-combined-final-evidence/libOrivynCombined.so

@@ -1,0 +1,7 @@
+{
+  "library": "/usr/lib/x86_64-linux-gnu/libsqlite3.so.0",
+  "runtimeVersion": "3.46.1",
+  "header": "/workspace/scratch/8352eb8fe69c/orivyn-release-core-audit/sqlite/sqlite3.h",
+  "headerVersion": "3.50.4",
+  "appleSQLiteVerified": false
+}

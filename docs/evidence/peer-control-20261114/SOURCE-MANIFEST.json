@@ -1,0 +1,22 @@
+[
+  {
+    "path": "JarvisEVO/Core/PeerSyncControlFrame.swift",
+    "sha256": "b8359301a74373afe662a8d45b720010a1478c1228fca45739dde3b00e553190",
+    "executedOnLinux": true
+  },
+  {
+    "path": "JarvisEVO/Services/PeerTLSProbe.swift",
+    "sha256": "9a0b808b84255a30aa434b4bdbb60b2a6fcd261ee3721a813f6fbd6f67b858c6",
+    "executedOnLinux": false
+  },
+  {
+    "path": "Tests/PeerSyncControlFrameTests.swift",
+    "sha256": "e1903c706123eda867de56a6e6119376cdef772affbcfa6a67aa26b9cb3de10e",
+    "executedOnLinux": true
+  },
+  {
+    "path": "scripts/run_persistence_tests.py",
+    "sha256": "48a4c265f4c463fe41a26cb52bddfcc4e85745db7a03d0f37dc849467daba8fa",
+    "executedOnLinux": false
+  }
+]

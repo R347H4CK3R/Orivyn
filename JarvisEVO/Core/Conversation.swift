@@ -102,7 +102,7 @@ struct Conversation: Codable, Identifiable, Equatable, Sendable {
 
 enum BackupImportPolicy: Sendable { case preserveLocal, replaceMatching, keepBoth }
 
-struct BackupImportSummary: Sendable {
+struct BackupImportSummary: Codable, Sendable {
     let writtenConversations: Int
     let writtenMemories: Int
     let skippedConversations: Int

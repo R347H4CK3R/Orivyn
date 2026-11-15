@@ -1,0 +1,54 @@
+{
+  "sourceCommit": "bd4b4944ccf29ccd3aa36f99e2d2393e6c932dd7",
+  "run": "https://github.com/R347H4CK3R/Orivyn/actions/runs/43633448757",
+  "unitTests": {
+    "job": 132564980326,
+    "passed": 925,
+    "skipped": 3,
+    "failed": 0,
+    "skipReasons": [
+      "Physical-device data protection unavailable in simulator",
+      "Production native tool opt-in executed in separate inference job",
+      "Production vision opt-in executed in separate inference job"
+    ]
+  },
+  "ui0": {
+    "job": 132564980281,
+    "passed": 23,
+    "failed": 0,
+    "includes": "Guest file creation, checkpoint and fresh guest read after relaunch"
+  },
+  "ui1": {
+    "job": 132564980271,
+    "status": "failed",
+    "failures": [
+      "Automatic real inference test observed previous response with next prompt unsent",
+      "Calendar editor Cancel wait failed; failure hierarchy contains actual New Event editor and cancel-button"
+    ],
+    "followupCommit": "bc141cc4364325fd7a77b1027154252390abd89c",
+    "followupStatus": "Mac verification pending"
+  },
+  "ui2": {
+    "job": 132564980408,
+    "passed": 10,
+    "failed": 1,
+    "failure": "Report query used StaticText; actual selectable report exposes Other and needs scrolling. Read state complete, two reads completed.",
+    "artifactID": 14129519211
+  },
+  "productionInference": {
+    "job": 132564980001,
+    "vision": "passed, 110.607 seconds",
+    "nativeTools": "failed, expired status 3 at 61.414151583 seconds"
+  },
+  "unsignedPackage": {
+    "file": "Orivyn-0.1.1-build7-unsigned.ipa",
+    "bytes": 36960928,
+    "sha256": "b7fc16bd777cdbf06cfa90c29157ac85d9a7a3084e5da7dbddca8511459b3481",
+    "bundleIdentifier": "app.jarvisevo.ios",
+    "minimumOS": "26.0",
+    "architecture": "arm64",
+    "artifactID": 14129651972,
+    "scope": "Release iphoneos build and package structure/resource checks; not signing, installation or runtime acceptance"
+  },
+  "release": "Not published; general autonomy and automatic sync remain incomplete."
+}

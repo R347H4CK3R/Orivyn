@@ -1,0 +1,22 @@
+{
+  "app": "Orivyn",
+  "bundle_identifier": "app.jarvisevo.ios",
+  "version": "0.1.1",
+  "build": "8",
+  "architecture": "arm64",
+  "minimum_ios": "26.0",
+  "frameworks": [
+    "Payload/JarvisEVO.app/Frameworks/llama.framework/llama"
+  ],
+  "sha256": "04c2bd77eb6f807eb17c24bce6ff0a8cf88cae5d74e0e43955cba9230d01723d",
+  "size": 37072679,
+  "release_fixture_markers_absent": true,
+  "candidate3_resources_required": true,
+  "bundled_resources": {
+    "katex-0.19.1.min.js": "fa140498b8cfc8302cbe5e7cb1bdbc1f952bc38b3fa258ede09e73edbf9a74bc",
+    "KaTeX-0.19.1-LICENSE.txt": "766ccc1f306c885aa45542a9846bbd0a505b27a0374f146778171c2254ce18e3",
+    "llama.cpp-LICENSE.txt": "94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d"
+  },
+  "bundled_test_media_absent": true,
+  "verification": "package structure, executable fixture exclusion and build-specific resources only; runtime and SideStore signing are separate gates"
+}

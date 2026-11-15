@@ -1,0 +1,60 @@
+{
+  "experiment": "512-pixel nearest-neighbor preprocessing diagnostic; rejected",
+  "binarySHA256": "52c9c4c2961450674e128825513c8f22dbc74111fe70e6afd5f05d8b8d566db5",
+  "sourceSize": [
+    384,
+    384
+  ],
+  "runtimeSize": [
+    512,
+    512
+  ],
+  "transform": "output(x,y,c) = source(floor(x*384/512),floor(y*384/512),c)",
+  "passedTargetedCases": 0,
+  "totalTargetedCases": 2,
+  "scope": "Separate preprocessing diagnostic; not a replacement for the frozen 384-pixel gate.",
+  "cases": [
+    {
+      "sourceRGBSHA256": "41b273ed0e2df5d34bf7c5aecb1b04f4e1b82f84ef01a7167b507cc6e416fd94",
+      "width": 512,
+      "height": 512,
+      "id": "case02",
+      "status": 0,
+      "output": " above",
+      "report": {
+        "status": 0,
+        "phase": 5,
+        "tokens": 1,
+        "positions": 120,
+        "image_chunks": 1,
+        "callback_count": 2734,
+        "live_resources": 0
+      },
+      "closeAcknowledged": true,
+      "rgbSHA256": "11b37de25210cb52531cc210fd2357d8fb7a78c510b4598ad5053e6648e87e90",
+      "question": "Where is the blue circle relative to the orange square? Answer with one word: left, right, above, or below.",
+      "seconds": 13.22
+    },
+    {
+      "sourceRGBSHA256": "9722e72cbcc84c577facf360cbaa3047c28140c00d4a675409da140854d55744",
+      "width": 512,
+      "height": 512,
+      "id": "case08",
+      "status": 0,
+      "output": " 5",
+      "report": {
+        "status": 0,
+        "phase": 5,
+        "tokens": 2,
+        "positions": 106,
+        "image_chunks": 1,
+        "callback_count": 3148,
+        "live_resources": 0
+      },
+      "closeAcknowledged": true,
+      "rgbSHA256": "a36eaed92f67daf8c00b76425444df1cac32eb57c1bce219dccb2b064847c59b",
+      "question": "How many circles are visible? Return only the number.",
+      "seconds": 11.01
+    }
+  ]
+}

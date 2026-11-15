@@ -1,0 +1,43 @@
+name: Verify native peer authentication
+on:
+  workflow_dispatch:
+  push:
+    branches: [codex/complete-capabilities-20261114, codex/native-peer-auth-tests-20261114, codex/authenticated-channel-20261115]
+    paths:
+      - 'Diagnostics/PeerAuthentication/**'
+      - 'JarvisEVO/Services/PeerTLSProbe.swift'
+      - 'JarvisEVO/Services/PeerTextRevisionExchange.swift'
+      - 'JarvisEVO/Core/PeerSyncControlFrame.swift'
+      - '.github/workflows/peer-auth.yml'
+permissions:
+  contents: read
+jobs:
+  peer-auth:
+    if: github.event.repository.private == false
+    runs-on: macos-15-intel
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Select Xcode 26
+        run: |
+          XCODE=$(find /Applications -maxdepth 1 -name 'Xcode_26*.app' | sort -V | tail -1)
+          test -n "$XCODE"
+          sudo xcode-select -s "$XCODE/Contents/Developer"
+      - name: Typecheck bounded channel API
+        run: xcrun swiftc -swift-version 6 -D ORIVYN_PEER_TLS_SPIKE -parse-as-library -typecheck -target x86_64-apple-macosx15.0 JarvisEVO/Core/PeerSyncControlFrame.swift JarvisEVO/Services/PeerTLSProbe.swift
+      # The SwiftPM gate below compiles the complete test executable with SQLite
+      # and pinned X509 dependencies, then runs every authentication/exchange case.
+      - name: Exercise actual platform mutual TLS
+        run: bash Diagnostics/PeerAuthentication/run.sh "$RUNNER_TEMP/orivyn-peer-auth-evidence"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-peer-auth-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/orivyn-peer-auth-evidence/*.json
+            ${{ runner.temp }}/orivyn-peer-auth-evidence/*.log
+            ${{ runner.temp }}/orivyn-peer-auth-evidence/*.txt
+          retention-days: 1
+          if-no-files-found: warn

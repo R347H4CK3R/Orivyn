@@ -1,0 +1,8 @@
+{
+  "JarvisEVO/Core/ReviewedTextSnapshot.swift": "902727b200f99a481fc511d3e8ceb69aa6f45830481d5130a362fff2d2058459",
+  "JarvisEVO/Persistence/SQLiteConversationStore.swift": "8d01b5af10cf9d14b36cb10f76a08ca8008df97f6fcba81131ac59ae19b8603f",
+  "Tests/ReviewedTextSnapshotTests.swift": "f09f7fa28600b52addd8ab482666d9789c7988e7b6dcdf37950710f93a392553",
+  "JarvisEVO/UI/TextExportView.swift": "e0cd090c5672735fe912c3a6960a9ed77e299451f1c003262bc6fbb094c80d46",
+  "JarvisEVO/UI/AppModel.swift": "260ba03f1f63001c2c131eeadf0cee827f9b513dfe37d1bbce2fd4cd3bcf511b",
+  "JarvisEVO/UI/SettingsView.swift": "67f66c8bd50ca65ee8ae5620be6fe9ce77af2cbc09a6f46d597b53c8341f76f5"
+}

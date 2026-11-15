@@ -34,6 +34,20 @@ struct VerifiedLocalReadView: View {
                         }
                     } catch { routingMessage = error.localizedDescription }
                 }.disabled(session?.canManage != true || requestText.utf8.count > 1024)
+                #if ORIVYN_NATIVE_TOOLS
+                Button(session?.isSuggesting == true ? "Suggesting locally…" : "Suggest with on-device model") {
+                    Task { @MainActor in
+                        do {
+                            guard let proposal = try await session?.proposeNative(requestText) else { return }
+                            appInfo = proposal.appInfo; installedModels = proposal.installedModels
+                            searchEnabled = false; query = ""; memoryEnabled = false; memoryQuery = ""
+                            routingMessage = "Model suggestion only. Review the selected reads, then create and run the plan explicitly."
+                        } catch { routingMessage = error.localizedDescription }
+                    }
+                }.disabled(session?.canManage != true || requestText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || requestText.utf8.count > 2048)
+                Text("On-device model suggestions cover app identity and installed models. They do not read your conversations or saved memories, and never execute a plan.").font(.caption)
+                Button("Stop suggestion") { session?.stop() }.disabled(session?.isSuggesting != true)
+                #endif
                 if let routingMessage { Text(routingMessage).font(.caption).foregroundStyle(.secondary) }
                 Text("Review the selected operations below. Suggesting a plan does not create or run it.").font(.caption)
             }

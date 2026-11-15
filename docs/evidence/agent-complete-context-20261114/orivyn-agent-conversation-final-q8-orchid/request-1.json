@@ -1,0 +1,1 @@
+{"conciseQwen3":true,"factory":"GenerationRequest.localAgent","grammar":"bundled production LocalAgentDecision.gbnf","localAgentRequiresTool":false,"maxTokens":384,"temperature":0}

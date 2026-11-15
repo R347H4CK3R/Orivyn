@@ -1,0 +1,7 @@
+{
+  "schema": 1,
+  "kind": "conversation_read",
+  "query": "Find \"Aster dispatch\" and inspect the full second message, continuing through its text pages if necessary.",
+  "title": "Aster dispatch",
+  "messageIndexes": [1, 2]
+}

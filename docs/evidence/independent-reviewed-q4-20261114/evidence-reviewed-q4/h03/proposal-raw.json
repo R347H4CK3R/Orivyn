@@ -1,0 +1,7 @@
+{
+  "schema": 1,
+  "kind": "conversation_read",
+  "query": "Search for the conversation titled Café \"北\" \\ receipts.",
+  "title": "Café \"北\" \\ receipts",
+  "messageIndexes": [1, 2]
+}

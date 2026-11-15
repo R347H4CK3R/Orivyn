@@ -1,0 +1,44 @@
+[
+  {
+    "name" : "approved-request-receipt",
+    "passed" : true,
+    "receiverUnchanged" : false,
+    "senderDelivered" : true
+  },
+  {
+    "name" : "unapproved-source",
+    "passed" : true,
+    "receiverUnchanged" : true,
+    "senderDelivered" : false
+  },
+  {
+    "name" : "wrong-epoch",
+    "passed" : true,
+    "receiverUnchanged" : true,
+    "senderDelivered" : false
+  },
+  {
+    "name" : "revoked-receiver",
+    "passed" : true,
+    "receiverUnchanged" : true,
+    "senderDelivered" : false
+  },
+  {
+    "name" : "wrong-request-digest",
+    "passed" : true,
+    "receiverUnchanged" : true,
+    "senderDelivered" : false
+  },
+  {
+    "name" : "false-receipt-digest",
+    "passed" : true,
+    "receiverUnchanged" : true,
+    "senderDelivered" : false
+  },
+  {
+    "name" : "false-receipt-transfer",
+    "passed" : true,
+    "receiverUnchanged" : true,
+    "senderDelivered" : false
+  }
+]

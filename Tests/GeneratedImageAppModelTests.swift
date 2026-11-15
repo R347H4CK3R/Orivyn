@@ -138,6 +138,22 @@ final class GeneratedImageAppModelTests: XCTestCase {
         let saved = try await store.list(includeArchived: true)
         XCTAssertEqual(saved.count, 1); XCTAssertEqual(model.conversations.count, 1)
     }
+    func testCommittedGeneratedImageRelinquishesRollbackOwnershipBeforeHistoryLoad() async throws {
+        let (model, store, _) = try fixture()
+        let stager = try staging(); let owned = try stage(stager)
+        let task = try XCTUnwrap(model.acceptGeneratedImage(owned, concept: "Blue square", stager: stager))
+        await task.value
+        let savedRows = try await store.list(includeArchived: true)
+        let saved = try XCTUnwrap(savedRows.first)
+        let image = try XCTUnwrap(saved.messages.last?.attachments.first)
+        await model.delete(saved.id)
+        // A successful save transferred the fresh-file lease. Until a complete
+        // history read, rollback cannot assume another persisted branch is absent.
+        XCTAssertNotNil(model.attachmentService.url(for: image))
+        await model.bootstrap()
+        XCTAssertTrue(try files(model).isEmpty)
+    }
+
     private func fixture(held: Bool = false) throws -> (AppModel, SQLiteConversationStore, GeneratedImageHoldingImporter) {
         let store = try SQLiteConversationStore(url: root.appendingPathComponent("test.sqlite"))
         let service = try AttachmentService(directory: root.appendingPathComponent("Attachments"))

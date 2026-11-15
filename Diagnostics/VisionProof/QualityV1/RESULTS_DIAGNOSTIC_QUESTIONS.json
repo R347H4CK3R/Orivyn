@@ -1,0 +1,115 @@
+{
+  "scope": "Additional diagnostic questions only; frozen acceptance failures remain unchanged",
+  "librarySHA256": "52c9c4c2961450674e128825513c8f22dbc74111fe70e6afd5f05d8b8d566db5",
+  "model": "SmolVLM2-2.2B-Instruct-Q4_K_M",
+  "cases": [
+    {
+      "id": "right-description",
+      "status": 0,
+      "output": " The image features two geometric shapes: a blue circle and an orange square. The blue circle is positioned to the right of the orange square. Both shapes are placed on a white background, creating a simple and clear visual representation. The relative positions of the shapes are such that the blue circle is to the right of the orange square.",
+      "report": {
+        "status": 0,
+        "phase": 5,
+        "tokens": 66,
+        "positions": 107,
+        "image_chunks": 1,
+        "callback_count": 29644,
+        "live_resources": 0
+      },
+      "closeAcknowledged": true,
+      "rgbSHA256": "41b273ed0e2df5d34bf7c5aecb1b04f4e1b82f84ef01a7167b507cc6e416fd94",
+      "question": "Describe the colors, shapes, and positions in this image.",
+      "seconds": 45.49
+    },
+    {
+      "id": "right-object",
+      "status": 0,
+      "output": " circle",
+      "report": {
+        "status": 0,
+        "phase": 5,
+        "tokens": 1,
+        "positions": 112,
+        "image_chunks": 1,
+        "callback_count": 2734,
+        "live_resources": 0
+      },
+      "closeAcknowledged": true,
+      "rgbSHA256": "41b273ed0e2df5d34bf7c5aecb1b04f4e1b82f84ef01a7167b507cc6e416fd94",
+      "question": "Which shape is on the right side of the image? Answer only circle or square.",
+      "seconds": 11.32
+    },
+    {
+      "id": "left-object",
+      "status": 0,
+      "output": " square",
+      "report": {
+        "status": 0,
+        "phase": 5,
+        "tokens": 1,
+        "positions": 112,
+        "image_chunks": 1,
+        "callback_count": 2734,
+        "live_resources": 0
+      },
+      "closeAcknowledged": true,
+      "rgbSHA256": "41b273ed0e2df5d34bf7c5aecb1b04f4e1b82f84ef01a7167b507cc6e416fd94",
+      "question": "Which shape is on the left side of the image? Answer only circle or square.",
+      "seconds": 12.33
+    },
+    {
+      "id": "count-description",
+      "status": 0,
+      "output": " The image contains a square and four circles. The square is located in the center of the image, and the circles are positioned around it. The square is orange, while the circles are blue. The arrangement of the objects is symmetrical, with the square at the center and the circles evenly distributed around it.",
+      "report": {
+        "status": 0,
+        "phase": 5,
+        "tokens": 61,
+        "positions": 102,
+        "image_chunks": 1,
+        "callback_count": 27574,
+        "live_resources": 0
+      },
+      "closeAcknowledged": true,
+      "rgbSHA256": "9722e72cbcc84c577facf360cbaa3047c28140c00d4a675409da140854d55744",
+      "question": "Describe the shapes in this image.",
+      "seconds": 43.74
+    },
+    {
+      "id": "count-squares",
+      "status": 0,
+      "output": " 1",
+      "report": {
+        "status": 0,
+        "phase": 5,
+        "tokens": 2,
+        "positions": 107,
+        "image_chunks": 1,
+        "callback_count": 3148,
+        "live_resources": 0
+      },
+      "closeAcknowledged": true,
+      "rgbSHA256": "9722e72cbcc84c577facf360cbaa3047c28140c00d4a675409da140854d55744",
+      "question": "How many orange squares are visible? Return only the number.",
+      "seconds": 12.65
+    },
+    {
+      "id": "count-blue-circles",
+      "status": 0,
+      "output": " 5",
+      "report": {
+        "status": 0,
+        "phase": 5,
+        "tokens": 2,
+        "positions": 107,
+        "image_chunks": 1,
+        "callback_count": 3148,
+        "live_resources": 0
+      },
+      "closeAcknowledged": true,
+      "rgbSHA256": "9722e72cbcc84c577facf360cbaa3047c28140c00d4a675409da140854d55744",
+      "question": "How many blue circles are visible? Return only the number.",
+      "seconds": 11.86
+    }
+  ]
+}

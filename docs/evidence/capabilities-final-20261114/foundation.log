@@ -1,0 +1,1049 @@
+Swift version 6.1.3 (swift-6.1.3-RELEASE)
+Target: x86_64-unknown-linux-gnu
+Building for debugging...
+[0/13] Write sources
+[2/13] Write swift-version--553A0786DAFFE0A1.txt
+[4/37] Emitting module JarvisEVO
+[5/59] Compiling JarvisEVO AppSelfKnowledge.swift
+[6/59] Compiling JarvisEVO AttachmentFileCopy.swift
+[7/59] Compiling JarvisEVO AttachmentTextSearch.swift
+[8/59] Compiling JarvisEVO AutomaticModelRouter.swift
+[9/59] Compiling JarvisEVO Conversation.swift
+[10/59] Compiling JarvisEVO ConversationTranscript.swift
+[11/59] Compiling JarvisEVO DeskPresentationState.swift
+[12/59] Compiling JarvisEVO FeedbackDraft.swift
+[13/59] Compiling JarvisEVO ImageOCRResult.swift
+[14/59] Compiling JarvisEVO IncomingTextRequest.swift
+[15/59] Compiling JarvisEVO LocalAgentError.swift
+[16/59] Compiling JarvisEVO LocalAgentSnapshot.swift
+[17/59] Compiling JarvisEVO LocalAgentStore.swift
+[18/59] Compiling JarvisEVO LocalCalculationEvidence.swift
+[19/59] Compiling JarvisEVO LocalCalculator.swift
+[20/59] Compiling JarvisEVO LocalCalculatorRequest.swift
+[21/59] Compiling JarvisEVO LocalCalculatorTool.swift
+[22/59] Compiling JarvisEVO LocalConversationSearch.swift
+[23/59] Compiling JarvisEVO LocalModelCatalog.swift
+[24/59] Compiling JarvisEVO LocalModelCatalogData.swift
+[25/59] Compiling JarvisEVO LocalModelInstallationPlan.swift
+[26/59] Compiling JarvisEVO LocalModelRemovalPlan.swift
+[27/59] Compiling JarvisEVO LocalPromptBuilder.swift
+[28/59] Compiling JarvisEVO LocalReminder.swift
+[29/59] Compiling JarvisEVO LocalSearchExcerpt.swift
+[30/59] Compiling JarvisEVO LocalToolResultBudget.swift
+[31/59] Compiling JarvisEVO MCPHTTPClient.swift
+[32/59] Compiling JarvisEVO MCPToolSchema.swift
+[33/59] Compiling JarvisEVO MCPTypes.swift
+[34/59] Compiling JarvisEVO MarkdownDocument.swift
+[35/59] Compiling JarvisEVO MemoryContextBuilder.swift
+[36/59] Compiling JarvisEVO MemoryNote.swift
+[37/59] Compiling JarvisEVO MemorySearch.swift
+[38/59] Compiling JarvisEVO ModelInstallTransaction.swift
+[39/59] Compiling JarvisEVO NativeToolDrafts.swift
+[40/59] Compiling JarvisEVO NativeToolSuggestion.swift
+[41/59] Compiling JarvisEVO OCRLineEvidence.swift
+[42/59] Compiling JarvisEVO PluginConnectionRemoval.swift
+[43/59] Compiling JarvisEVO PluginExecution.swift
+[44/59] Compiling JarvisEVO ProviderError.swift
+[45/59] Compiling JarvisEVO RemoteCredentialIntent.swift
+[46/59] Compiling JarvisEVO RemoteStreamDecoding.swift
+[47/59] Compiling JarvisEVO RepositorySourceDiagnostics.swift
+[48/59] Compiling JarvisEVO SourceRepairReviewBinding.swift
+[49/59] Compiling JarvisEVO UTF8TokenAccumulator.swift
+[50/60] Wrapping AST for JarvisEVO for debugging
+[52/82] Emitting module JarvisEVOTests
+[53/103] Compiling JarvisEVOTests AttachmentFileCopyTests.swift
+[54/103] Compiling JarvisEVOTests AttachmentPromptAvailabilityTests.swift
+[55/103] Compiling JarvisEVOTests AttachmentTextSearchTests.swift
+[56/103] Compiling JarvisEVOTests AutomaticModelRouterTests.swift
+[57/103] Compiling JarvisEVOTests ConversationTests.swift
+[58/103] Compiling JarvisEVOTests ConversationTranscriptTests.swift
+[59/103] Compiling JarvisEVOTests ExternalWorkspaceTests.swift
+[60/103] Compiling JarvisEVOTests FeedbackDraftTests.swift
+[61/103] Compiling JarvisEVOTests IncomingTextRequestTests.swift
+[62/103] Compiling JarvisEVOTests LocalAgentSnapshotEvidenceTests.swift
+[63/103] Compiling JarvisEVOTests LocalAgentStoreTests.swift
+[64/103] Compiling JarvisEVOTests LocalCalculationEvidenceTests.swift
+[65/103] Compiling JarvisEVOTests LocalCalculatorRequestTests.swift
+[66/103] Compiling JarvisEVOTests LocalCalculatorTests.swift
+[67/103] Compiling JarvisEVOTests LocalCalculatorToolTests.swift
+[68/103] Compiling JarvisEVOTests LocalConversationSearchTests.swift
+[69/103] Compiling JarvisEVOTests LocalModelCatalogTests.swift
+[70/103] Compiling JarvisEVOTests LocalModelInstallationPlanTests.swift
+[71/103] Compiling JarvisEVOTests LocalModelRemovalPlanTests.swift
+[72/103] Compiling JarvisEVOTests LocalPromptHistoryTests.swift
+[73/103] Compiling JarvisEVOTests LocalReminderTests.swift
+[74/103] Compiling JarvisEVOTests LocalSearchExcerptTests.swift
+[75/103] Compiling JarvisEVOTests LocalToolResultBudgetTests.swift
+[76/103] Compiling JarvisEVOTests MCPClientTests.swift
+[77/103] Compiling JarvisEVOTests MCPNumberIntegrityTests.swift
+[78/103] Compiling JarvisEVOTests MCPUnicodeSchemaTests.swift
+[79/103] Compiling JarvisEVOTests MarkdownDocumentTests.swift
+[80/103] Compiling JarvisEVOTests MemoryContextBuilderTests.swift
+[81/103] Compiling JarvisEVOTests MemoryNoteTests.swift
+[82/103] Compiling JarvisEVOTests MemorySearchTests.swift
+[83/103] Compiling JarvisEVOTests ModelInstallTransactionTests.swift
+[84/103] Compiling JarvisEVOTests NativeToolDraftsTests.swift
+[85/103] Compiling JarvisEVOTests NativeToolSuggestionTests.swift
+[86/103] Compiling JarvisEVOTests PluginConnectionRemovalTests.swift
+[87/103] Compiling JarvisEVOTests PluginExecutionTests.swift
+[88/103] Compiling JarvisEVOTests ProviderAttachmentContextTests.swift
+[89/103] Compiling JarvisEVOTests ProviderTests.swift
+[90/103] Compiling JarvisEVOTests RemoteCredentialIntentTests.swift
+[91/103] Compiling JarvisEVOTests RepositorySourceDiagnosticsTests.swift
+[92/103] Compiling JarvisEVOTests SelfKnowledgePromptTests.swift
+[93/103] Compiling JarvisEVOTests SourceRepairReviewBindingTests.swift
+[94/103] Compiling JarvisEVOTests UTF8TokenAccumulatorTests.swift
+[95/104] /workspace/scratch/8352eb8fe69c/orivyn-capabilities-final-portable/foundation/.build/x86_64-unknown-linux-gnu/debug/OrivynFoundationProofPackageDiscoveredTests.derived/all-discovered-tests.swift
+[96/104] Write sources
+[97/104] Wrapping AST for JarvisEVOTests for debugging
+[99/106] Emitting module OrivynFoundationProofPackageDiscoveredTests
+[100/106] Compiling OrivynFoundationProofPackageDiscoveredTests JarvisEVOTests.swift
+[101/107] Compiling OrivynFoundationProofPackageDiscoveredTests all-discovered-tests.swift
+[102/108] /workspace/scratch/8352eb8fe69c/orivyn-capabilities-final-portable/foundation/.build/x86_64-unknown-linux-gnu/debug/OrivynFoundationProofPackageTests.derived/runner.swift
+[103/108] Write sources
+[104/108] Wrapping AST for OrivynFoundationProofPackageDiscoveredTests for debugging
+[106/110] Compiling OrivynFoundationProofPackageTests runner.swift
+[107/110] Emitting module OrivynFoundationProofPackageTests
+[108/111] Wrapping AST for OrivynFoundationProofPackageTests for debugging
+[109/111] Write Objects.LinkFileList
+[110/111] Linking OrivynFoundationProofPackageTests.xctest
+Build complete! (16.89s)
+Test Suite 'Selected tests' started at 2026-11-14 11:51:08.735
+Test Suite 'AttachmentFileCopyTests' started at 2026-11-14 11:51:08.745
+Test Case 'AttachmentFileCopyTests.testDestinationSymlinkIsPreservedWithoutFollowingTarget' started at 2026-11-14 11:51:08.745
+Test Case 'AttachmentFileCopyTests.testDestinationSymlinkIsPreservedWithoutFollowingTarget' passed (0.002 seconds)
+Test Case 'AttachmentFileCopyTests.testDirectorySourceIsRejected' started at 2026-11-14 11:51:08.748
+Test Case 'AttachmentFileCopyTests.testDirectorySourceIsRejected' passed (0.0 seconds)
+Test Case 'AttachmentFileCopyTests.testEmptySourceLeavesNoDestination' started at 2026-11-14 11:51:08.748
+Test Case 'AttachmentFileCopyTests.testEmptySourceLeavesNoDestination' passed (0.0 seconds)
+Test Case 'AttachmentFileCopyTests.testExactLimitCopiesIdenticalBytes' started at 2026-11-14 11:51:08.749
+Test Case 'AttachmentFileCopyTests.testExactLimitCopiesIdenticalBytes' passed (0.024 seconds)
+Test Case 'AttachmentFileCopyTests.testExistingDestinationIsPreserved' started at 2026-11-14 11:51:08.772
+Test Case 'AttachmentFileCopyTests.testExistingDestinationIsPreserved' passed (0.0 seconds)
+Test Case 'AttachmentFileCopyTests.testFIFOIsRejectedWithoutBlocking' started at 2026-11-14 11:51:08.773
+Test Case 'AttachmentFileCopyTests.testFIFOIsRejectedWithoutBlocking' passed (0.0 seconds)
+Test Case 'AttachmentFileCopyTests.testInvalidLimitsDoNotTouchFiles' started at 2026-11-14 11:51:08.773
+Test Case 'AttachmentFileCopyTests.testInvalidLimitsDoNotTouchFiles' passed (0.0 seconds)
+Test Case 'AttachmentFileCopyTests.testMaximumIntegerLimitDoesNotOverflow' started at 2026-11-14 11:51:08.773
+Test Case 'AttachmentFileCopyTests.testMaximumIntegerLimitDoesNotOverflow' passed (0.0 seconds)
+Test Case 'AttachmentFileCopyTests.testMissingSourceDoesNotCreateDestination' started at 2026-11-14 11:51:08.773
+Test Case 'AttachmentFileCopyTests.testMissingSourceDoesNotCreateDestination' passed (0.0 seconds)
+Test Case 'AttachmentFileCopyTests.testNonFileURLIsRejected' started at 2026-11-14 11:51:08.773
+Test Case 'AttachmentFileCopyTests.testNonFileURLIsRejected' passed (0.0 seconds)
+Test Case 'AttachmentFileCopyTests.testOversizedSourceCannotWriteBeyondLimitOrLeaveDestination' started at 2026-11-14 11:51:08.774
+Test Case 'AttachmentFileCopyTests.testOversizedSourceCannotWriteBeyondLimitOrLeaveDestination' passed (0.0 seconds)
+Test Case 'AttachmentFileCopyTests.testPrecancelledCopyLeavesSourceAndDestinationUntouched' started at 2026-11-14 11:51:08.774
+Test Case 'AttachmentFileCopyTests.testPrecancelledCopyLeavesSourceAndDestinationUntouched' passed (0.0 seconds)
+Test Case 'AttachmentFileCopyTests.testSourceSymlinkIsRejectedWithoutFollowingTarget' started at 2026-11-14 11:51:08.774
+Test Case 'AttachmentFileCopyTests.testSourceSymlinkIsRejectedWithoutFollowingTarget' passed (0.0 seconds)
+Test Suite 'AttachmentFileCopyTests' passed at 2026-11-14 11:51:08.775
+	 Executed 13 tests, with 0 failures (0 unexpected) in 0.029 (0.029) seconds
+Test Suite 'AttachmentPromptAvailabilityTests' started at 2026-11-14 11:51:08.775
+Test Case 'AttachmentPromptAvailabilityTests.testEmptyImageHasExplicitTextOnlyLimitationEvenWhenBudgetIsZero' started at 2026-11-14 11:51:08.775
+Test Case 'AttachmentPromptAvailabilityTests.testEmptyImageHasExplicitTextOnlyLimitationEvenWhenBudgetIsZero' passed (0.0 seconds)
+Test Case 'AttachmentPromptAvailabilityTests.testImageNoticeSurvivesSmallExcerptBudgetWithoutChangingSource' started at 2026-11-14 11:51:08.775
+Test Case 'AttachmentPromptAvailabilityTests.testImageNoticeSurvivesSmallExcerptBudgetWithoutChangingSource' passed (0.0 seconds)
+Test Case 'AttachmentPromptAvailabilityTests.testMissingDocumentTextIsExplicitAndDoesNotImplyFileWasRead' started at 2026-11-14 11:51:08.776
+Test Case 'AttachmentPromptAvailabilityTests.testMissingDocumentTextIsExplicitAndDoesNotImplyFileWasRead' passed (0.0 seconds)
+Test Suite 'AttachmentPromptAvailabilityTests' passed at 2026-11-14 11:51:08.776
+	 Executed 3 tests, with 0 failures (0 unexpected) in 0.001 (0.001) seconds
+Test Suite 'AttachmentTextSearchTests' started at 2026-11-14 11:51:08.776
+Test Case 'AttachmentTextSearchTests.testFindsTextBeyondFirstFourThousandCharacters' started at 2026-11-14 11:51:08.776
+Test Case 'AttachmentTextSearchTests.testFindsTextBeyondFirstFourThousandCharacters' passed (0.101 seconds)
+Test Case 'AttachmentTextSearchTests.testFoldedUnicodeSearchUsesOriginalCharacterOffsets' started at 2026-11-14 11:51:08.877
+Test Case 'AttachmentTextSearchTests.testFoldedUnicodeSearchUsesOriginalCharacterOffsets' passed (0.001 seconds)
+Test Case 'AttachmentTextSearchTests.testInputLimitDisclosedWithoutClaimingUnknownTailMatches' started at 2026-11-14 11:51:08.878
+Test Case 'AttachmentTextSearchTests.testInputLimitDisclosedWithoutClaimingUnknownTailMatches' passed (0.005 seconds)
+Test Case 'AttachmentTextSearchTests.testInstructionAndRegexLookingTextRemainLiteralAndUnchanged' started at 2026-11-14 11:51:08.883
+Test Case 'AttachmentTextSearchTests.testInstructionAndRegexLookingTextRemainLiteralAndUnchanged' passed (0.0 seconds)
+Test Case 'AttachmentTextSearchTests.testLongMatchGetsPriorityOverPrecedingSnippetContext' started at 2026-11-14 11:51:08.884
+Test Case 'AttachmentTextSearchTests.testLongMatchGetsPriorityOverPrecedingSnippetContext' passed (0.001 seconds)
+Test Case 'AttachmentTextSearchTests.testMatchInsideComposedCharacterUsesWholeOriginalCharacter' started at 2026-11-14 11:51:08.884
+Test Case 'AttachmentTextSearchTests.testMatchInsideComposedCharacterUsesWholeOriginalCharacter' passed (0.0 seconds)
+Test Case 'AttachmentTextSearchTests.testMatchLongerThanSnippetStartsAtMatchWithoutExceedingCap' started at 2026-11-14 11:51:08.885
+Test Case 'AttachmentTextSearchTests.testMatchLongerThanSnippetStartsAtMatchWithoutExceedingCap' passed (0.0 seconds)
+Test Case 'AttachmentTextSearchTests.testOverlappingOccurrencesAreNotDoubleCounted' started at 2026-11-14 11:51:08.885
+Test Case 'AttachmentTextSearchTests.testOverlappingOccurrencesAreNotDoubleCounted' passed (0.0 seconds)
+Test Case 'AttachmentTextSearchTests.testQueryByteLimitIsExplicitAndEmptyHasNoMatches' started at 2026-11-14 11:51:08.885
+Test Case 'AttachmentTextSearchTests.testQueryByteLimitIsExplicitAndEmptyHasNoMatches' passed (0.0 seconds)
+Test Case 'AttachmentTextSearchTests.testResultLimitDetectsOneAdditionalMatch' started at 2026-11-14 11:51:08.885
+Test Case 'AttachmentTextSearchTests.testResultLimitDetectsOneAdditionalMatch' passed (0.001 seconds)
+Test Case 'AttachmentTextSearchTests.testSnippetsAndOffsetsAreBoundedOriginalCharacters' started at 2026-11-14 11:51:08.886
+Test Case 'AttachmentTextSearchTests.testSnippetsAndOffsetsAreBoundedOriginalCharacters' passed (0.001 seconds)
+Test Suite 'AttachmentTextSearchTests' passed at 2026-11-14 11:51:08.887
+	 Executed 11 tests, with 0 failures (0 unexpected) in 0.111 (0.111) seconds
+Test Suite 'AutomaticModelRouterTests' started at 2026-11-14 11:51:08.887
+Test Case 'AutomaticModelRouterTests.testAllAutomaticDownloadChoicesStayInsideSmallPinnedAllowlist' started at 2026-11-14 11:51:08.887
+Test Case 'AutomaticModelRouterTests.testAllAutomaticDownloadChoicesStayInsideSmallPinnedAllowlist' passed (0.002 seconds)
+Test Case 'AutomaticModelRouterTests.testBelowMinimumRAMDoesNotAutomaticallyLoadOrDownload' started at 2026-11-14 11:51:08.889
+Test Case 'AutomaticModelRouterTests.testBelowMinimumRAMDoesNotAutomaticallyLoadOrDownload' passed (0.0 seconds)
+Test Case 'AutomaticModelRouterTests.testCellularDownloadRequiresExplicitChoiceAndWiFiDoesNot' started at 2026-11-14 11:51:08.890
+Test Case 'AutomaticModelRouterTests.testCellularDownloadRequiresExplicitChoiceAndWiFiDoesNot' passed (0.001 seconds)
+Test Case 'AutomaticModelRouterTests.testCodingRequestsChoosePinnedCoderWithoutRunningAnotherModel' started at 2026-11-14 11:51:08.891
+Test Case 'AutomaticModelRouterTests.testCodingRequestsChoosePinnedCoderWithoutRunningAnotherModel' passed (0.002 seconds)
+Test Case 'AutomaticModelRouterTests.testCodingRequiresSixGBEvenWithInstalledModels' started at 2026-11-14 11:51:08.893
+Test Case 'AutomaticModelRouterTests.testCodingRequiresSixGBEvenWithInstalledModels' passed (0.0 seconds)
+Test Case 'AutomaticModelRouterTests.testCodingRetainsNetworkRestrictionsAndCellularOptIn' started at 2026-11-14 11:51:08.893
+Test Case 'AutomaticModelRouterTests.testCodingRetainsNetworkRestrictionsAndCellularOptIn' passed (0.001 seconds)
+Test Case 'AutomaticModelRouterTests.testCodingStorageBoundaryDoesNotFallBackToSmallInstalledCoder' started at 2026-11-14 11:51:08.894
+Test Case 'AutomaticModelRouterTests.testCodingStorageBoundaryDoesNotFallBackToSmallInstalledCoder' passed (0.0 seconds)
+Test Case 'AutomaticModelRouterTests.testConfirmedUnmeteredEthernetAllowsAutomaticDownload' started at 2026-11-14 11:51:08.894
+Test Case 'AutomaticModelRouterTests.testConfirmedUnmeteredEthernetAllowsAutomaticDownload' passed (0.0 seconds)
+Test Case 'AutomaticModelRouterTests.testEligibleInstalledCoderWinsRegardlessOfExcludedSmallCoderOrder' started at 2026-11-14 11:51:08.894
+Test Case 'AutomaticModelRouterTests.testEligibleInstalledCoderWinsRegardlessOfExcludedSmallCoderOrder' passed (0.001 seconds)
+Test Case 'AutomaticModelRouterTests.testEmptyOrNonEnglishTextUsesGeneralFallback' started at 2026-11-14 11:51:08.895
+Test Case 'AutomaticModelRouterTests.testEmptyOrNonEnglishTextUsesGeneralFallback' passed (0.001 seconds)
+Test Case 'AutomaticModelRouterTests.testExperimentalReasoningModelsDoNotBecomeAutomaticCandidates' started at 2026-11-14 11:51:08.896
+Test Case 'AutomaticModelRouterTests.testExperimentalReasoningModelsDoNotBecomeAutomaticCandidates' passed (0.0 seconds)
+Test Case 'AutomaticModelRouterTests.testGeneralInstalledModelDoesNotMasqueradeAsMatchingCoder' started at 2026-11-14 11:51:08.896
+Test Case 'AutomaticModelRouterTests.testGeneralInstalledModelDoesNotMasqueradeAsMatchingCoder' passed (0.0 seconds)
+Test Case 'AutomaticModelRouterTests.testGeneralPromptChoosesPinnedSmallGeneralDownloadWithExplanation' started at 2026-11-14 11:51:08.897
+Test Case 'AutomaticModelRouterTests.testGeneralPromptChoosesPinnedSmallGeneralDownloadWithExplanation' passed (0.0 seconds)
+Test Case 'AutomaticModelRouterTests.testImportedRemoteOrAppleLookalikesCannotBecomeAutomaticCandidates' started at 2026-11-14 11:51:08.897
+Test Case 'AutomaticModelRouterTests.testImportedRemoteOrAppleLookalikesCannotBecomeAutomaticCandidates' passed (0.0 seconds)
+Test Case 'AutomaticModelRouterTests.testInstalledCoderIsUsedInsteadOfDownloadingAnotherQuantization' started at 2026-11-14 11:51:08.898
+Test Case 'AutomaticModelRouterTests.testInstalledCoderIsUsedInsteadOfDownloadingAnotherQuantization' passed (0.0 seconds)
+Test Case 'AutomaticModelRouterTests.testInstalledFailingSmallCoderNeverBecomesAutomaticChoice' started at 2026-11-14 11:51:08.898
+Test Case 'AutomaticModelRouterTests.testInstalledFailingSmallCoderNeverBecomesAutomaticChoice' passed (0.0 seconds)
+Test Case 'AutomaticModelRouterTests.testInstalledGeneralModelWorksOfflineWithoutStorageInformation' started at 2026-11-14 11:51:08.898
+Test Case 'AutomaticModelRouterTests.testInstalledGeneralModelWorksOfflineWithoutStorageInformation' passed (0.0 seconds)
+Test Case 'AutomaticModelRouterTests.testInstalledMatchingModelWorksWithUnknownOrConstrainedNetwork' started at 2026-11-14 11:51:08.898
+Test Case 'AutomaticModelRouterTests.testInstalledMatchingModelWorksWithUnknownOrConstrainedNetwork' passed (0.0 seconds)
+Test Case 'AutomaticModelRouterTests.testLanguageAndProgrammingArtifactRequestsChooseCoder' started at 2026-11-14 11:51:08.899
+Test Case 'AutomaticModelRouterTests.testLanguageAndProgrammingArtifactRequestsChooseCoder' passed (0.002 seconds)
+Test Case 'AutomaticModelRouterTests.testLanguageWordsAndAmbiguousArtifactsAloneDoNotTriggerCoder' started at 2026-11-14 11:51:08.900
+Test Case 'AutomaticModelRouterTests.testLanguageWordsAndAmbiguousArtifactsAloneDoNotTriggerCoder' passed (0.002 seconds)
+Test Case 'AutomaticModelRouterTests.testLexicalMatchingDoesNotConfuseIncidentalSubstringsOrEverydayWords' started at 2026-11-14 11:51:08.903
+Test Case 'AutomaticModelRouterTests.testLexicalMatchingDoesNotConfuseIncidentalSubstringsOrEverydayWords' passed (0.002 seconds)
+Test Case 'AutomaticModelRouterTests.testLowRAMSkipsLargerInstalledModelRatherThanLoadingIt' started at 2026-11-14 11:51:08.904
+Test Case 'AutomaticModelRouterTests.testLowRAMSkipsLargerInstalledModelRatherThanLoadingIt' passed (0.0 seconds)
+Test Case 'AutomaticModelRouterTests.testNewLanguageRoutingRetainsInstalledAndDownloadSafeguards' started at 2026-11-14 11:51:08.905
+Test Case 'AutomaticModelRouterTests.testNewLanguageRoutingRetainsInstalledAndDownloadSafeguards' passed (0.0 seconds)
+Test Case 'AutomaticModelRouterTests.testPrefersStrongestRAMCompatibleInstalledMatchingModelIndependentOfOrder' started at 2026-11-14 11:51:08.905
+Test Case 'AutomaticModelRouterTests.testPrefersStrongestRAMCompatibleInstalledMatchingModelIndependentOfOrder' passed (0.0 seconds)
+Test Case 'AutomaticModelRouterTests.testRouterRejectsAboveUTF8LimitButAcceptsExactBoundary' started at 2026-11-14 11:51:08.905
+Test Case 'AutomaticModelRouterTests.testRouterRejectsAboveUTF8LimitButAcceptsExactBoundary' passed (0.004 seconds)
+Test Case 'AutomaticModelRouterTests.testSameIDWithWrongHashSizeOrFileNameIsNotReportedInstalled' started at 2026-11-14 11:51:08.909
+Test Case 'AutomaticModelRouterTests.testSameIDWithWrongHashSizeOrFileNameIsNotReportedInstalled' passed (0.001 seconds)
+Test Case 'AutomaticModelRouterTests.testUnknownOfflineAndConstrainedNetworksNeverStartAutomaticDownload' started at 2026-11-14 11:51:08.911
+Test Case 'AutomaticModelRouterTests.testUnknownOfflineAndConstrainedNetworksNeverStartAutomaticDownload' passed (0.0 seconds)
+Test Case 'AutomaticModelRouterTests.testUnknownStorageOrInsufficientDiskBlocksDownload' started at 2026-11-14 11:51:08.911
+Test Case 'AutomaticModelRouterTests.testUnknownStorageOrInsufficientDiskBlocksDownload' passed (0.001 seconds)
+Test Suite 'AutomaticModelRouterTests' passed at 2026-11-14 11:51:08.912
+	 Executed 28 tests, with 0 failures (0 unexpected) in 0.025 (0.025) seconds
+Test Suite 'ConversationTests' started at 2026-11-14 11:51:08.912
+Test Case 'ConversationTests.testAssistantOnlyInputProducesNoFalseUserContext' started at 2026-11-14 11:51:08.912
+Test Case 'ConversationTests.testAssistantOnlyInputProducesNoFalseUserContext' passed (0.0 seconds)
+Test Case 'ConversationTests.testAttachmentTextParticipatesInContextBudget' started at 2026-11-14 11:51:08.912
+Test Case 'ConversationTests.testAttachmentTextParticipatesInContextBudget' passed (0.0 seconds)
+Test Case 'ConversationTests.testBranchRetainsMessagesOnlyThroughSelectedMessageAndUsesNewIdentity' started at 2026-11-14 11:51:08.912
+Test Case 'ConversationTests.testBranchRetainsMessagesOnlyThroughSelectedMessageAndUsesNewIdentity' passed (0.0 seconds)
+Test Case 'ConversationTests.testContextDropsAllLeadingAssistantFragmentsAfterTrimming' started at 2026-11-14 11:51:08.913
+Test Case 'ConversationTests.testContextDropsAllLeadingAssistantFragmentsAfterTrimming' passed (0.0 seconds)
+Test Case 'ConversationTests.testContextKeepsExactFullHistoryAndSystemMetadataWhenItFits' started at 2026-11-14 11:51:08.913
+Test Case 'ConversationTests.testContextKeepsExactFullHistoryAndSystemMetadataWhenItFits' passed (0.0 seconds)
+Test Case 'ConversationTests.testContextKeepsSystemAndNewestWholeMessagesWithinBudget' started at 2026-11-14 11:51:08.913
+Test Case 'ConversationTests.testContextKeepsSystemAndNewestWholeMessagesWithinBudget' passed (0.0 seconds)
+Test Case 'ConversationTests.testContextRejectsBudgetThatKeepsOnlyAnswerButDropsLatestUser' started at 2026-11-14 11:51:08.913
+Test Case 'ConversationTests.testContextRejectsBudgetThatKeepsOnlyAnswerButDropsLatestUser' passed (0.0 seconds)
+Test Case 'ConversationTests.testContextTrimmingDoesNotKeepAnAnswerWithoutItsQuestion' started at 2026-11-14 11:51:08.913
+Test Case 'ConversationTests.testContextTrimmingDoesNotKeepAnAnswerWithoutItsQuestion' passed (0.0 seconds)
+Test Case 'ConversationTests.testContextTrimmingDoesNotLetSystemMessageHideOrphanedAnswers' started at 2026-11-14 11:51:08.914
+Test Case 'ConversationTests.testContextTrimmingDoesNotLetSystemMessageHideOrphanedAnswers' passed (0.0 seconds)
+Test Case 'ConversationTests.testContextTrimmingKeepsWholeRecentTurnsAndLatestAttachment' started at 2026-11-14 11:51:08.914
+Test Case 'ConversationTests.testContextTrimmingKeepsWholeRecentTurnsAndLatestAttachment' passed (0.0 seconds)
+Test Case 'ConversationTests.testEditingAssistantMessageIsRejected' started at 2026-11-14 11:51:08.914
+Test Case 'ConversationTests.testEditingAssistantMessageIsRejected' passed (0.0 seconds)
+Test Case 'ConversationTests.testEditingUserMessageInvalidatesOnlySubsequentHistory' started at 2026-11-14 11:51:08.914
+Test Case 'ConversationTests.testEditingUserMessageInvalidatesOnlySubsequentHistory' passed (0.0 seconds)
+Test Case 'ConversationTests.testEmptyEditIsRejectedWithoutMutatingHistory' started at 2026-11-14 11:51:08.914
+Test Case 'ConversationTests.testEmptyEditIsRejectedWithoutMutatingHistory' passed (0.0 seconds)
+Test Case 'ConversationTests.testFailedOrEmptyUserDoesNotAnchorLeadingAssistantAnswer' started at 2026-11-14 11:51:08.914
+Test Case 'ConversationTests.testFailedOrEmptyUserDoesNotAnchorLeadingAssistantAnswer' passed (0.0 seconds)
+Test Case 'ConversationTests.testOversizedLatestTurnIsRejectedInsteadOfDiscarded' started at 2026-11-14 11:51:08.915
+Test Case 'ConversationTests.testOversizedLatestTurnIsRejectedInsteadOfDiscarded' passed (0.0 seconds)
+Test Suite 'ConversationTests' passed at 2026-11-14 11:51:08.915
+	 Executed 15 tests, with 0 failures (0 unexpected) in 0.003 (0.003) seconds
+Test Suite 'ConversationTranscriptTests' started at 2026-11-14 11:51:08.915
+Test Case 'ConversationTranscriptTests.testAttachmentNamesIncludedButNotContentsPathsOrIdentifiers' started at 2026-11-14 11:51:08.915
+Test Case 'ConversationTranscriptTests.testAttachmentNamesIncludedButNotContentsPathsOrIdentifiers' passed (0.0 seconds)
+Test Case 'ConversationTranscriptTests.testAttachmentOnlyMessageAndEmptyConversationStillExport' started at 2026-11-14 11:51:08.915
+Test Case 'ConversationTranscriptTests.testAttachmentOnlyMessageAndEmptyConversationStillExport' passed (0.0 seconds)
+Test Case 'ConversationTranscriptTests.testIncompleteStatesAreExplicitAndKeepPartialText' started at 2026-11-14 11:51:08.915
+Test Case 'ConversationTranscriptTests.testIncompleteStatesAreExplicitAndKeepPartialText' passed (0.0 seconds)
+Test Case 'ConversationTranscriptTests.testMetadataCannotCreateMarkdownHeadingsOrLinks' started at 2026-11-14 11:51:08.916
+Test Case 'ConversationTranscriptTests.testMetadataCannotCreateMarkdownHeadingsOrLinks' passed (0.0 seconds)
+Test Case 'ConversationTranscriptTests.testRolesAndVisibleTextArePreservedWithoutMislabelingSystem' started at 2026-11-14 11:51:08.916
+Test Case 'ConversationTranscriptTests.testRolesAndVisibleTextArePreservedWithoutMislabelingSystem' passed (0.0 seconds)
+Test Suite 'ConversationTranscriptTests' passed at 2026-11-14 11:51:08.916
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.001 (0.001) seconds
+Test Suite 'ExternalWorkspaceTests' started at 2026-11-14 11:51:08.916
+Test Case 'ExternalWorkspaceTests.testConnectingRequiresSeparateDisclosure' started at 2026-11-14 11:51:08.916
+Test Case 'ExternalWorkspaceTests.testConnectingRequiresSeparateDisclosure' passed (0.0 seconds)
+Test Case 'ExternalWorkspaceTests.testDisconnectOneOfTwoDisplaysHidesRemainingDisplay' started at 2026-11-14 11:51:08.916
+Test Case 'ExternalWorkspaceTests.testDisconnectOneOfTwoDisplaysHidesRemainingDisplay' passed (0.0 seconds)
+Test Case 'ExternalWorkspaceTests.testDisconnectReconnectRequiresNewDisclosureAndPreservesPanel' started at 2026-11-14 11:51:08.916
+Test Case 'ExternalWorkspaceTests.testDisconnectReconnectRequiresNewDisclosureAndPreservesPanel' passed (0.0 seconds)
+Test Case 'ExternalWorkspaceTests.testInactiveClearsSharingAndForegroundDoesNotRestoreIt' started at 2026-11-14 11:51:08.917
+Test Case 'ExternalWorkspaceTests.testInactiveClearsSharingAndForegroundDoesNotRestoreIt' passed (0.0 seconds)
+Test Case 'ExternalWorkspaceTests.testNewDisplayRevokesSharingButDuplicateLifecycleDoesNot' started at 2026-11-14 11:51:08.917
+Test Case 'ExternalWorkspaceTests.testNewDisplayRevokesSharingButDuplicateLifecycleDoesNot' passed (0.0 seconds)
+Test Case 'ExternalWorkspaceTests.testPanelAndDisplayChangesDiscardOldScrollCommands' started at 2026-11-14 11:51:08.917
+Test Case 'ExternalWorkspaceTests.testPanelAndDisplayChangesDiscardOldScrollCommands' passed (0.101 seconds)
+Test Case 'ExternalWorkspaceTests.testPanelSelectionDoesNotRevealContent' started at 2026-11-14 11:51:09.017
+Test Case 'ExternalWorkspaceTests.testPanelSelectionDoesNotRevealContent' passed (0.0 seconds)
+Test Case 'ExternalWorkspaceTests.testScrollCommandsRequireVisibleWorkspaceAndNeverGrantSharing' started at 2026-11-14 11:51:09.018
+Test Case 'ExternalWorkspaceTests.testScrollCommandsRequireVisibleWorkspaceAndNeverGrantSharing' passed (0.0 seconds)
+Test Case 'ExternalWorkspaceTests.testSharingCannotStartWithoutDisplay' started at 2026-11-14 11:51:09.018
+Test Case 'ExternalWorkspaceTests.testSharingCannotStartWithoutDisplay' passed (0.0 seconds)
+Test Case 'ExternalWorkspaceTests.testUnknownDisconnectDoesNotChangeConnectedScene' started at 2026-11-14 11:51:09.018
+Test Case 'ExternalWorkspaceTests.testUnknownDisconnectDoesNotChangeConnectedScene' passed (0.0 seconds)
+Test Suite 'ExternalWorkspaceTests' passed at 2026-11-14 11:51:09.018
+	 Executed 10 tests, with 0 failures (0 unexpected) in 0.102 (0.102) seconds
+Test Suite 'FeedbackDraftTests' started at 2026-11-14 11:51:09.018
+Test Case 'FeedbackDraftTests.testExportContainsOnlyEnteredFieldsAndAppName' started at 2026-11-14 11:51:09.018
+Test Case 'FeedbackDraftTests.testExportContainsOnlyEnteredFieldsAndAppName' passed (0.0 seconds)
+Test Case 'FeedbackDraftTests.testGitHubDraftPreservesDestinationAndEncodesUserContent' started at 2026-11-14 11:51:09.018
+Test Case 'FeedbackDraftTests.testGitHubDraftPreservesDestinationAndEncodesUserContent' passed (0.001 seconds)
+Test Case 'FeedbackDraftTests.testInvalidDestinationsAndBlankOrOversizedDraftAreRejected' started at 2026-11-14 11:51:09.019
+Test Case 'FeedbackDraftTests.testInvalidDestinationsAndBlankOrOversizedDraftAreRejected' passed (0.0 seconds)
+Test Suite 'FeedbackDraftTests' passed at 2026-11-14 11:51:09.019
+	 Executed 3 tests, with 0 failures (0 unexpected) in 0.001 (0.001) seconds
+Test Suite 'IncomingTextRequestTests' started at 2026-11-14 11:51:09.019
+Test Case 'IncomingTextRequestTests.testAppendKeepsCurrentDraftAndRejectsOverflowAtomically' started at 2026-11-14 11:51:09.019
+Test Case 'IncomingTextRequestTests.testAppendKeepsCurrentDraftAndRejectsOverflowAtomically' passed (0.001 seconds)
+Test Case 'IncomingTextRequestTests.testInputLimitIsUTF8BytesAndNeverTruncates' started at 2026-11-14 11:51:09.020
+Test Case 'IncomingTextRequestTests.testInputLimitIsUTF8BytesAndNeverTruncates' passed (0.002 seconds)
+Test Case 'IncomingTextRequestTests.testRejectsOtherRoutesCredentialsPortsFragmentsAndAmbiguousParameters' started at 2026-11-14 11:51:09.022
+Test Case 'IncomingTextRequestTests.testRejectsOtherRoutesCredentialsPortsFragmentsAndAmbiguousParameters' passed (0.0 seconds)
+Test Case 'IncomingTextRequestTests.testURLDecodesExactlyOnceAndPreservesLiteralPlusWhitespaceAndUnicode' started at 2026-11-14 11:51:09.022
+Test Case 'IncomingTextRequestTests.testURLDecodesExactlyOnceAndPreservesLiteralPlusWhitespaceAndUnicode' passed (0.0 seconds)
+Test Suite 'IncomingTextRequestTests' passed at 2026-11-14 11:51:09.022
+	 Executed 4 tests, with 0 failures (0 unexpected) in 0.003 (0.003) seconds
+Test Suite 'LocalAgentSnapshotEvidenceTests' started at 2026-11-14 11:51:09.022
+Test Case 'LocalAgentSnapshotEvidenceTests.testDecodedEvidenceDoesNotDependOnModelAnswer' started at 2026-11-14 11:51:09.022
+Test Case 'LocalAgentSnapshotEvidenceTests.testDecodedEvidenceDoesNotDependOnModelAnswer' passed (0.004 seconds)
+Test Case 'LocalAgentSnapshotEvidenceTests.testOnlySuccessfulCalculatorEventsQualify' started at 2026-11-14 11:51:09.026
+Test Case 'LocalAgentSnapshotEvidenceTests.testOnlySuccessfulCalculatorEventsQualify' passed (0.0 seconds)
+Test Suite 'LocalAgentSnapshotEvidenceTests' passed at 2026-11-14 11:51:09.026
+	 Executed 2 tests, with 0 failures (0 unexpected) in 0.004 (0.004) seconds
+Test Suite 'LocalAgentStoreTests' started at 2026-11-14 11:51:09.026
+Test Case 'LocalAgentStoreTests.testArchiveFreesCapacityAndRestorationPreservesExactBytes' started at 2026-11-14 11:51:09.026
+Test Case 'LocalAgentStoreTests.testArchiveFreesCapacityAndRestorationPreservesExactBytes' passed (0.003 seconds)
+Test Case 'LocalAgentStoreTests.testCorruptRecordIsCountedUnreadableAndNeverDeleted' started at 2026-11-14 11:51:09.030
+Test Case 'LocalAgentStoreTests.testCorruptRecordIsCountedUnreadableAndNeverDeleted' passed (0.001 seconds)
+Test Case 'LocalAgentStoreTests.testDuplicateKeysCannotCreateOrOverwriteTask' started at 2026-11-14 11:51:09.030
+Test Case 'LocalAgentStoreTests.testDuplicateKeysCannotCreateOrOverwriteTask' passed (0.001 seconds)
+Test Case 'LocalAgentStoreTests.testDuplicateKeysOnDiskRemainUnreadableAndUnchanged' started at 2026-11-14 11:51:09.031
+Test Case 'LocalAgentStoreTests.testDuplicateKeysOnDiskRemainUnreadableAndUnchanged' passed (0.001 seconds)
+Test Case 'LocalAgentStoreTests.testEscapedAndNestedDuplicateKeysAreRejectedWithoutWriting' started at 2026-11-14 11:51:09.032
+Test Case 'LocalAgentStoreTests.testEscapedAndNestedDuplicateKeysAreRejectedWithoutWriting' passed (0.0 seconds)
+Test Case 'LocalAgentStoreTests.testExcessiveNestingIsRejectedBeforeWriting' started at 2026-11-14 11:51:09.033
+Test Case 'LocalAgentStoreTests.testExcessiveNestingIsRejectedBeforeWriting' passed (0.0 seconds)
+Test Case 'LocalAgentStoreTests.testInvalidInitialRevisionCannotPoisonFutureTaskUpdates' started at 2026-11-14 11:51:09.033
+Test Case 'LocalAgentStoreTests.testInvalidInitialRevisionCannotPoisonFutureTaskUpdates' passed (0.001 seconds)
+Test Case 'LocalAgentStoreTests.testInvalidRevisionOnDiskIsUnreadableAndPreserved' started at 2026-11-14 11:51:09.034
+Test Case 'LocalAgentStoreTests.testInvalidRevisionOnDiskIsUnreadableAndPreserved' passed (0.001 seconds)
+Test Case 'LocalAgentStoreTests.testRevisionRollbackAndChangedSameRevisionDoNotOverwriteState' started at 2026-11-14 11:51:09.035
+Test Case 'LocalAgentStoreTests.testRevisionRollbackAndChangedSameRevisionDoNotOverwriteState' passed (0.002 seconds)
+Test Case 'LocalAgentStoreTests.testSameRevisionRequiresIdenticalBytesNotCanonicalUnicodeEquivalence' started at 2026-11-14 11:51:09.037
+Test Case 'LocalAgentStoreTests.testSameRevisionRequiresIdenticalBytesNotCanonicalUnicodeEquivalence' passed (0.001 seconds)
+Test Case 'LocalAgentStoreTests.testSymlinkRecordCannotReadOrOverwriteAnotherFile' started at 2026-11-14 11:51:09.038
+Test Case 'LocalAgentStoreTests.testSymlinkRecordCannotReadOrOverwriteAnotherFile' passed (0.003 seconds)
+Test Case 'LocalAgentStoreTests.testUniqueLegacyAndCurrentStateKeepExactBytes' started at 2026-11-14 11:51:09.041
+Test Case 'LocalAgentStoreTests.testUniqueLegacyAndCurrentStateKeepExactBytes' passed (0.003 seconds)
+Test Suite 'LocalAgentStoreTests' passed at 2026-11-14 11:51:09.043
+	 Executed 12 tests, with 0 failures (0 unexpected) in 0.017 (0.017) seconds
+Test Suite 'LocalCalculationEvidenceTests' started at 2026-11-14 11:51:09.043
+Test Case 'LocalCalculationEvidenceTests.testActualToolEvidenceIsRecomputedAndPreservesOriginalExpression' started at 2026-11-14 11:51:09.043
+Test Case 'LocalCalculationEvidenceTests.testActualToolEvidenceIsRecomputedAndPreservesOriginalExpression' passed (0.001 seconds)
+Test Case 'LocalCalculationEvidenceTests.testApproximateFractionAndUnicodeOperatorsUseActualTool' started at 2026-11-14 11:51:09.045
+Test Case 'LocalCalculationEvidenceTests.testApproximateFractionAndUnicodeOperatorsUseActualTool' passed (0.001 seconds)
+Test Case 'LocalCalculationEvidenceTests.testChangedOperandsParenthesesAndUnsupportedGoalAreRejected' started at 2026-11-14 11:51:09.045
+Test Case 'LocalCalculationEvidenceTests.testChangedOperandsParenthesesAndUnsupportedGoalAreRejected' passed (0.001 seconds)
+Test Case 'LocalCalculationEvidenceTests.testEveryResultFieldAndExtraKeysAreValidated' started at 2026-11-14 11:51:09.047
+Test Case 'LocalCalculationEvidenceTests.testEveryResultFieldAndExtraKeysAreValidated' passed (0.004 seconds)
+Test Case 'LocalCalculationEvidenceTests.testMalformedDuplicateOversizedAndInvalidArgumentsAreRejected' started at 2026-11-14 11:51:09.050
+Test Case 'LocalCalculationEvidenceTests.testMalformedDuplicateOversizedAndInvalidArgumentsAreRejected' passed (0.001 seconds)
+Test Suite 'LocalCalculationEvidenceTests' passed at 2026-11-14 11:51:09.051
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.008 (0.008) seconds
+Test Suite 'LocalCalculatorRequestTests' started at 2026-11-14 11:51:09.051
+Test Case 'LocalCalculatorRequestTests.testDroppedParenthesesAndChangedOperandsNeverSilentlyExecute' started at 2026-11-14 11:51:09.051
+Test Case 'LocalCalculatorRequestTests.testDroppedParenthesesAndChangedOperandsNeverSilentlyExecute' passed (0.0 seconds)
+Test Case 'LocalCalculatorRequestTests.testExplicitCommandPreservesUserExpression' started at 2026-11-14 11:51:09.052
+Test Case 'LocalCalculatorRequestTests.testExplicitCommandPreservesUserExpression' passed (0.0 seconds)
+Test Case 'LocalCalculatorRequestTests.testGoalAndProposedByteBoundsDoNotDropContent' started at 2026-11-14 11:51:09.052
+Test Case 'LocalCalculatorRequestTests.testGoalAndProposedByteBoundsDoNotDropContent' passed (0.0 seconds)
+Test Case 'LocalCalculatorRequestTests.testOnlyOperatorGlyphsAndAsciiWhitespaceNormalize' started at 2026-11-14 11:51:09.052
+Test Case 'LocalCalculatorRequestTests.testOnlyOperatorGlyphsAndAsciiWhitespaceNormalize' passed (0.0 seconds)
+Test Case 'LocalCalculatorRequestTests.testReturnedOriginalExpressionProducesFiveNotModelChangedFourteen' started at 2026-11-14 11:51:09.053
+Test Case 'LocalCalculatorRequestTests.testReturnedOriginalExpressionProducesFiveNotModelChangedFourteen' passed (0.0 seconds)
+Test Case 'LocalCalculatorRequestTests.testUnsupportedGoalsRejectNegationQuotesWordProblemsAndTrailingInstructions' started at 2026-11-14 11:51:09.053
+Test Case 'LocalCalculatorRequestTests.testUnsupportedGoalsRejectNegationQuotesWordProblemsAndTrailingInstructions' passed (0.001 seconds)
+Test Suite 'LocalCalculatorRequestTests' passed at 2026-11-14 11:51:09.054
+	 Executed 6 tests, with 0 failures (0 unexpected) in 0.002 (0.002) seconds
+Test Suite 'LocalCalculatorTests' started at 2026-11-14 11:51:09.054
+Test Case 'LocalCalculatorTests.testDivideByZeroAndNonFiniteResultReject' started at 2026-11-14 11:51:09.054
+Test Case 'LocalCalculatorTests.testDivideByZeroAndNonFiniteResultReject' passed (0.001 seconds)
+Test Case 'LocalCalculatorTests.testEmptyAndMalformedExpressionsHaveActionableErrors' started at 2026-11-14 11:51:09.054
+Test Case 'LocalCalculatorTests.testEmptyAndMalformedExpressionsHaveActionableErrors' passed (0.0 seconds)
+Test Case 'LocalCalculatorTests.testFiniteLargeAndNegativeValuesAreNotRejected' started at 2026-11-14 11:51:09.055
+Test Case 'LocalCalculatorTests.testFiniteLargeAndNegativeValuesAreNotRejected' passed (0.0 seconds)
+Test Case 'LocalCalculatorTests.testInputNestingAndWorkBounds' started at 2026-11-14 11:51:09.055
+Test Case 'LocalCalculatorTests.testInputNestingAndWorkBounds' passed (0.001 seconds)
+Test Case 'LocalCalculatorTests.testNoSilentLetterStrippingUnsupportedSyntaxOrImplicitMultiplication' started at 2026-11-14 11:51:09.055
+Test Case 'LocalCalculatorTests.testNoSilentLetterStrippingUnsupportedSyntaxOrImplicitMultiplication' passed (0.0 seconds)
+Test Case 'LocalCalculatorTests.testPrecedenceParenthesesAndDecimals' started at 2026-11-14 11:51:09.056
+Test Case 'LocalCalculatorTests.testPrecedenceParenthesesAndDecimals' passed (0.0 seconds)
+Test Case 'LocalCalculatorTests.testUnarySignsAndUnicodeOperators' started at 2026-11-14 11:51:09.056
+Test Case 'LocalCalculatorTests.testUnarySignsAndUnicodeOperators' passed (0.0 seconds)
+Test Case 'LocalCalculatorTests.testWhitespaceAndApproximateDouble' started at 2026-11-14 11:51:09.056
+Test Case 'LocalCalculatorTests.testWhitespaceAndApproximateDouble' passed (0.0 seconds)
+Test Suite 'LocalCalculatorTests' passed at 2026-11-14 11:51:09.056
+	 Executed 8 tests, with 0 failures (0 unexpected) in 0.003 (0.003) seconds
+Test Suite 'LocalCalculatorToolTests' started at 2026-11-14 11:51:09.056
+Test Case 'LocalCalculatorToolTests.testActualCalculationHasExplicitApproximateResult' started at 2026-11-14 11:51:09.056
+Test Case 'LocalCalculatorToolTests.testActualCalculationHasExplicitApproximateResult' passed (0.0 seconds)
+Test Case 'LocalCalculatorToolTests.testMissingAndExtraArgumentsNeverDispatch' started at 2026-11-14 11:51:09.057
+Test Case 'LocalCalculatorToolTests.testMissingAndExtraArgumentsNeverDispatch' passed (0.0 seconds)
+Test Case 'LocalCalculatorToolTests.testModelCannotDropParenthesesFromTrustedGoal' started at 2026-11-14 11:51:09.057
+Test Case 'LocalCalculatorToolTests.testModelCannotDropParenthesesFromTrustedGoal' passed (0.001 seconds)
+Test Case 'LocalCalculatorToolTests.testParserErrorsAreNotReplacedByFabricatedResults' started at 2026-11-14 11:51:09.057
+Test Case 'LocalCalculatorToolTests.testParserErrorsAreNotReplacedByFabricatedResults' passed (0.0 seconds)
+Test Case 'LocalCalculatorToolTests.testWholeOutputMustFitBudget' started at 2026-11-14 11:51:09.058
+Test Case 'LocalCalculatorToolTests.testWholeOutputMustFitBudget' passed (0.0 seconds)
+Test Suite 'LocalCalculatorToolTests' passed at 2026-11-14 11:51:09.058
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.002 (0.002) seconds
+Test Suite 'LocalConversationSearchTests' started at 2026-11-14 11:51:09.058
+Test Case 'LocalConversationSearchTests.testAttachmentNameMatchesAndMissingTextInventsNothing' started at 2026-11-14 11:51:09.058
+Test Case 'LocalConversationSearchTests.testAttachmentNameMatchesAndMissingTextInventsNothing' passed (0.0 seconds)
+Test Case 'LocalConversationSearchTests.testBoundsOrderAndImmutableLongUnicodeEvidence' started at 2026-11-14 11:51:09.058
+Test Case 'LocalConversationSearchTests.testBoundsOrderAndImmutableLongUnicodeEvidence' passed (0.002 seconds)
+Test Case 'LocalConversationSearchTests.testDocumentOnlyFactUsesStoredTextWithEvidenceSource' started at 2026-11-14 11:51:09.060
+Test Case 'LocalConversationSearchTests.testDocumentOnlyFactUsesStoredTextWithEvidenceSource' passed (0.0 seconds)
+Test Case 'LocalConversationSearchTests.testExistingMessagePreferenceIncludingFailedMessagesIsPreserved' started at 2026-11-14 11:51:09.060
+Test Case 'LocalConversationSearchTests.testExistingMessagePreferenceIncludingFailedMessagesIsPreserved' passed (0.0 seconds)
+Test Case 'LocalConversationSearchTests.testImageOCRIsStoredTextNotVisualUnderstanding' started at 2026-11-14 11:51:09.060
+Test Case 'LocalConversationSearchTests.testImageOCRIsStoredTextNotVisualUnderstanding' passed (0.0 seconds)
+Test Case 'LocalConversationSearchTests.testInvalidQueryAndLimitFailClosed' started at 2026-11-14 11:51:09.060
+Test Case 'LocalConversationSearchTests.testInvalidQueryAndLimitFailClosed' passed (0.0 seconds)
+Test Suite 'LocalConversationSearchTests' passed at 2026-11-14 11:51:09.061
+	 Executed 6 tests, with 0 failures (0 unexpected) in 0.003 (0.003) seconds
+Test Suite 'LocalModelCatalogTests' started at 2026-11-14 11:51:09.061
+Test Case 'LocalModelCatalogTests.testLegacyImportedManifestDecodesWithoutCatalogFields' started at 2026-11-14 11:51:09.061
+Test Case 'LocalModelCatalogTests.testLegacyImportedManifestDecodesWithoutCatalogFields' passed (0.0 seconds)
+Test Case 'LocalModelCatalogTests.testPurposeAndQueryCombineWithoutChangingDefault' started at 2026-11-14 11:51:09.061
+Test Case 'LocalModelCatalogTests.testPurposeAndQueryCombineWithoutChangingDefault' passed (0.0 seconds)
+Test Case 'LocalModelCatalogTests.testPurposeSearchIsCaseInsensitiveAndTrimsWhitespace' started at 2026-11-14 11:51:09.061
+Test Case 'LocalModelCatalogTests.testPurposeSearchIsCaseInsensitiveAndTrimsWhitespace' passed (0.0 seconds)
+Test Case 'LocalModelCatalogTests.testSizeOrderAndStorageRAMBoundaries' started at 2026-11-14 11:51:09.061
+Test Case 'LocalModelCatalogTests.testSizeOrderAndStorageRAMBoundaries' passed (0.0 seconds)
+Test Suite 'LocalModelCatalogTests' passed at 2026-11-14 11:51:09.062
+	 Executed 4 tests, with 0 failures (0 unexpected) in 0.001 (0.001) seconds
+Test Suite 'LocalModelInstallationPlanTests' started at 2026-11-14 11:51:09.062
+Test Case 'LocalModelInstallationPlanTests.testCanonicalUnicodeAliasCannotTakeAnotherModelsFile' started at 2026-11-14 11:51:09.062
+Test Case 'LocalModelInstallationPlanTests.testCanonicalUnicodeAliasCannotTakeAnotherModelsFile' passed (0.0 seconds)
+Test Case 'LocalModelInstallationPlanTests.testCaseOnlyAliasCannotTakeAnotherModelsFile' started at 2026-11-14 11:51:09.062
+Test Case 'LocalModelInstallationPlanTests.testCaseOnlyAliasCannotTakeAnotherModelsFile' passed (0.0 seconds)
+Test Case 'LocalModelInstallationPlanTests.testDifferentIDCannotTakeOwnershipOfExistingModelFile' started at 2026-11-14 11:51:09.062
+Test Case 'LocalModelInstallationPlanTests.testDifferentIDCannotTakeOwnershipOfExistingModelFile' passed (0.0 seconds)
+Test Case 'LocalModelInstallationPlanTests.testNewModelPreservesExistingEntries' started at 2026-11-14 11:51:09.062
+Test Case 'LocalModelInstallationPlanTests.testNewModelPreservesExistingEntries' passed (0.002 seconds)
+Test Case 'LocalModelInstallationPlanTests.testRejectedOwnershipCollisionPreservesPublishedBytesAndManifest' started at 2026-11-14 11:51:09.064
+Test Case 'LocalModelInstallationPlanTests.testRejectedOwnershipCollisionPreservesPublishedBytesAndManifest' passed (0.001 seconds)
+Test Case 'LocalModelInstallationPlanTests.testReplacingSameOwnerPreservesOtherEntries' started at 2026-11-14 11:51:09.064
+Test Case 'LocalModelInstallationPlanTests.testReplacingSameOwnerPreservesOtherEntries' passed (0.0 seconds)
+Test Case 'LocalModelInstallationPlanTests.testSameIDFilenameChangeRetainsManifestReplacementSemantics' started at 2026-11-14 11:51:09.065
+Test Case 'LocalModelInstallationPlanTests.testSameIDFilenameChangeRetainsManifestReplacementSemantics' passed (0.0 seconds)
+Test Suite 'LocalModelInstallationPlanTests' passed at 2026-11-14 11:51:09.065
+	 Executed 7 tests, with 0 failures (0 unexpected) in 0.003 (0.003) seconds
+Test Suite 'LocalModelRemovalPlanTests' started at 2026-11-14 11:51:09.065
+Test Case 'LocalModelRemovalPlanTests.testAbsentIDCannotAuthorizeFileRemoval' started at 2026-11-14 11:51:09.065
+Test Case 'LocalModelRemovalPlanTests.testAbsentIDCannotAuthorizeFileRemoval' passed (0.0 seconds)
+Test Case 'LocalModelRemovalPlanTests.testCanonicalUnicodeAliasBlocksRemovalOfSharedFile' started at 2026-11-14 11:51:09.065
+Test Case 'LocalModelRemovalPlanTests.testCanonicalUnicodeAliasBlocksRemovalOfSharedFile' passed (0.0 seconds)
+Test Case 'LocalModelRemovalPlanTests.testCaseOnlyAliasBlocksRemovalOfSharedFile' started at 2026-11-14 11:51:09.065
+Test Case 'LocalModelRemovalPlanTests.testCaseOnlyAliasBlocksRemovalOfSharedFile' passed (0.0 seconds)
+Test Case 'LocalModelRemovalPlanTests.testDuplicateIDIsAmbiguousEvenWhenDescriptorsAreIdentical' started at 2026-11-14 11:51:09.066
+Test Case 'LocalModelRemovalPlanTests.testDuplicateIDIsAmbiguousEvenWhenDescriptorsAreIdentical' passed (0.0 seconds)
+Test Case 'LocalModelRemovalPlanTests.testErrorsDoNotIncludeDescriptorOrPathData' started at 2026-11-14 11:51:09.066
+Test Case 'LocalModelRemovalPlanTests.testErrorsDoNotIncludeDescriptorOrPathData' passed (0.0 seconds)
+Test Case 'LocalModelRemovalPlanTests.testEveryChangedDescriptorFieldIsStale' started at 2026-11-14 11:51:09.066
+Test Case 'LocalModelRemovalPlanTests.testEveryChangedDescriptorFieldIsStale' passed (0.0 seconds)
+Test Case 'LocalModelRemovalPlanTests.testExactSelectionRemovesOnlySelectedAndPreservesOrderAndInput' started at 2026-11-14 11:51:09.066
+Test Case 'LocalModelRemovalPlanTests.testExactSelectionRemovesOnlySelectedAndPreservesOrderAndInput' passed (0.0 seconds)
+Test Case 'LocalModelRemovalPlanTests.testSharedFilenameAcrossIDsCannotDeleteAnotherModelsFile' started at 2026-11-14 11:51:09.066
+Test Case 'LocalModelRemovalPlanTests.testSharedFilenameAcrossIDsCannotDeleteAnotherModelsFile' passed (0.0 seconds)
+Test Suite 'LocalModelRemovalPlanTests' passed at 2026-11-14 11:51:09.067
+	 Executed 8 tests, with 0 failures (0 unexpected) in 0.002 (0.002) seconds
+Test Suite 'LocalPromptHistoryTests' started at 2026-11-14 11:51:09.067
+Test Case 'LocalPromptHistoryTests.testAssistantOnlyInputStillFailsInsteadOfCreatingQuestion' started at 2026-11-14 11:51:09.067
+Test Case 'LocalPromptHistoryTests.testAssistantOnlyInputStillFailsInsteadOfCreatingQuestion' passed (0.001 seconds)
+Test Case 'LocalPromptHistoryTests.testFailedFirstUserCannotLeaveAnswerAttachedToCurrentQuestion' started at 2026-11-14 11:51:09.068
+Test Case 'LocalPromptHistoryTests.testFailedFirstUserCannotLeaveAnswerAttachedToCurrentQuestion' passed (0.0 seconds)
+Test Case 'LocalPromptHistoryTests.testFittingRestoredHistoryDropsOrphanAnswerBeforeCountingTokens' started at 2026-11-14 11:51:09.068
+Test Case 'LocalPromptHistoryTests.testFittingRestoredHistoryDropsOrphanAnswerBeforeCountingTokens' passed (0.0 seconds)
+Test Case 'LocalPromptHistoryTests.testOrphanRemovalDoesNotAllowOversizedCurrentQuestionToBeCut' started at 2026-11-14 11:51:09.069
+Test Case 'LocalPromptHistoryTests.testOrphanRemovalDoesNotAllowOversizedCurrentQuestionToBeCut' passed (0.0 seconds)
+Test Case 'LocalPromptHistoryTests.testOrphanRemovalPreservesSystemMessagesAndCompleteFollowingTurns' started at 2026-11-14 11:51:09.069
+Test Case 'LocalPromptHistoryTests.testOrphanRemovalPreservesSystemMessagesAndCompleteFollowingTurns' passed (0.0 seconds)
+Test Case 'LocalPromptHistoryTests.testTrimmingPastQuestionDropsAnswerSeparatedBySystemEntry' started at 2026-11-14 11:51:09.069
+Test Case 'LocalPromptHistoryTests.testTrimmingPastQuestionDropsAnswerSeparatedBySystemEntry' passed (0.0 seconds)
+Test Case 'LocalPromptHistoryTests.testValidHistoryIsUnchangedWhenItFits' started at 2026-11-14 11:51:09.069
+Test Case 'LocalPromptHistoryTests.testValidHistoryIsUnchangedWhenItFits' passed (0.0 seconds)
+Test Suite 'LocalPromptHistoryTests' passed at 2026-11-14 11:51:09.069
+	 Executed 7 tests, with 0 failures (0 unexpected) in 0.002 (0.002) seconds
+Test Suite 'LocalReminderTests' started at 2026-11-14 11:51:09.069
+Test Case 'LocalReminderTests.testDateValidationIncludesFiveSecondsAnd365DaysBoundaries' started at 2026-11-14 11:51:09.069
+Test Case 'LocalReminderTests.testDateValidationIncludesFiveSecondsAnd365DaysBoundaries' passed (0.0 seconds)
+Test Case 'LocalReminderTests.testFractionalDatesUseNextWholeSecondAndSurviveUnixRoundtrip' started at 2026-11-14 11:51:09.069
+Test Case 'LocalReminderTests.testFractionalDatesUseNextWholeSecondAndSurviveUnixRoundtrip' passed (0.0 seconds)
+Test Case 'LocalReminderTests.testNotesLimitUsesUTF8BytesNotCharacters' started at 2026-11-14 11:51:09.070
+Test Case 'LocalReminderTests.testNotesLimitUsesUTF8BytesNotCharacters' passed (0.0 seconds)
+Test Case 'LocalReminderTests.testNullCharactersCannotSilentlyTruncateNotificationText' started at 2026-11-14 11:51:09.070
+Test Case 'LocalReminderTests.testNullCharactersCannotSilentlyTruncateNotificationText' passed (0.001 seconds)
+Test Case 'LocalReminderTests.testPathologicalSingleGraphemeTitleStillHasByteLimit' started at 2026-11-14 11:51:09.071
+Test Case 'LocalReminderTests.testPathologicalSingleGraphemeTitleStillHasByteLimit' passed (0.0 seconds)
+Test Case 'LocalReminderTests.testRoundedTriggerMustStillRespectMaximumDelay' started at 2026-11-14 11:51:09.071
+Test Case 'LocalReminderTests.testRoundedTriggerMustStillRespectMaximumDelay' passed (0.0 seconds)
+Test Case 'LocalReminderTests.testValidationRejectsEmptyAndOversizedTitles' started at 2026-11-14 11:51:09.071
+Test Case 'LocalReminderTests.testValidationRejectsEmptyAndOversizedTitles' passed (0.0 seconds)
+Test Case 'LocalReminderTests.testValidationTrimsTitleButPreservesNotes' started at 2026-11-14 11:51:09.071
+Test Case 'LocalReminderTests.testValidationTrimsTitleButPreservesNotes' passed (0.0 seconds)
+Test Suite 'LocalReminderTests' passed at 2026-11-14 11:51:09.072
+	 Executed 8 tests, with 0 failures (0 unexpected) in 0.002 (0.002) seconds
+Test Suite 'LocalSearchExcerptTests' started at 2026-11-14 11:51:09.072
+Test Case 'LocalSearchExcerptTests.testCallerCannotExpandHardByteCap' started at 2026-11-14 11:51:09.072
+Test Case 'LocalSearchExcerptTests.testCallerCannotExpandHardByteCap' passed (0.0 seconds)
+Test Case 'LocalSearchExcerptTests.testControlCharactersAreNotSilentlyReplaced' started at 2026-11-14 11:51:09.072
+Test Case 'LocalSearchExcerptTests.testControlCharactersAreNotSilentlyReplaced' passed (0.0 seconds)
+Test Case 'LocalSearchExcerptTests.testFoldedMatchPreservesOriginalAccentsAndCase' started at 2026-11-14 11:51:09.072
+Test Case 'LocalSearchExcerptTests.testFoldedMatchPreservesOriginalAccentsAndCase' passed (0.001 seconds)
+Test Case 'LocalSearchExcerptTests.testLateMatchReturnsMatchingPassage' started at 2026-11-14 11:51:09.073
+Test Case 'LocalSearchExcerptTests.testLateMatchReturnsMatchingPassage' passed (0.008 seconds)
+Test Case 'LocalSearchExcerptTests.testLongMatchStartsAtMatchAndTruncates' started at 2026-11-14 11:51:09.082
+Test Case 'LocalSearchExcerptTests.testLongMatchStartsAtMatchAndTruncates' passed (0.0 seconds)
+Test Case 'LocalSearchExcerptTests.testMultibyteScalarSafetyAndTinyBudgets' started at 2026-11-14 11:51:09.082
+Test Case 'LocalSearchExcerptTests.testMultibyteScalarSafetyAndTinyBudgets' passed (0.0 seconds)
+Test Case 'LocalSearchExcerptTests.testTextThatFitsIsReturnedWholeEvenWhenMatchIsAtEnd' started at 2026-11-14 11:51:09.082
+Test Case 'LocalSearchExcerptTests.testTextThatFitsIsReturnedWholeEvenWhenMatchIsAtEnd' passed (0.0 seconds)
+Test Case 'LocalSearchExcerptTests.testUnknownOrEmptyQueryFallsBackToPrefix' started at 2026-11-14 11:51:09.083
+Test Case 'LocalSearchExcerptTests.testUnknownOrEmptyQueryFallsBackToPrefix' passed (0.0 seconds)
+Test Suite 'LocalSearchExcerptTests' passed at 2026-11-14 11:51:09.083
+	 Executed 8 tests, with 0 failures (0 unexpected) in 0.011 (0.011) seconds
+Test Suite 'LocalToolResultBudgetTests' started at 2026-11-14 11:51:09.083
+Test Case 'LocalToolResultBudgetTests.testInvalidBudgetOrUnboundedMetadataFailsClosed' started at 2026-11-14 11:51:09.083
+Test Case 'LocalToolResultBudgetTests.testInvalidBudgetOrUnboundedMetadataFailsClosed' passed (0.001 seconds)
+Test Case 'LocalToolResultBudgetTests.testOversizedEscapedResultsKeepWholePrefixAndExplicitOmissionCount' started at 2026-11-14 11:51:09.083
+Test Case 'LocalToolResultBudgetTests.testOversizedEscapedResultsKeepWholePrefixAndExplicitOmissionCount' passed (0.001 seconds)
+Test Case 'LocalToolResultBudgetTests.testSmallResultBytesRemainUnchanged' started at 2026-11-14 11:51:09.085
+Test Case 'LocalToolResultBudgetTests.testSmallResultBytesRemainUnchanged' passed (0.0 seconds)
+Test Case 'LocalToolResultBudgetTests.testUnfitSingleItemBecomesExplicitEmptyResultNotInvalidJSON' started at 2026-11-14 11:51:09.085
+Test Case 'LocalToolResultBudgetTests.testUnfitSingleItemBecomesExplicitEmptyResultNotInvalidJSON' passed (0.0 seconds)
+Test Suite 'LocalToolResultBudgetTests' passed at 2026-11-14 11:51:09.085
+	 Executed 4 tests, with 0 failures (0 unexpected) in 0.002 (0.002) seconds
+Test Suite 'MCPClientTests' started at 2026-11-14 11:51:09.085
+Test Case 'MCPClientTests.testArgumentByteLimitRejectsBeforeTransport' started at 2026-11-14 11:51:09.085
+Test Case 'MCPClientTests.testArgumentByteLimitRejectsBeforeTransport' passed (0.003 seconds)
+Test Case 'MCPClientTests.testBusyOperationRejectsSecondCallAndCancellationRejectsLateSuccess' started at 2026-11-14 11:51:09.088
+Test Case 'MCPClientTests.testBusyOperationRejectsSecondCallAndCancellationRejectsLateSuccess' passed (0.001 seconds)
+Test Case 'MCPClientTests.testCloseDeletesKnownSessionOnceAndPreventsFurtherCallsEvenWhenDeleteUnsupported' started at 2026-11-14 11:51:09.090
+Test Case 'MCPClientTests.testCloseDeletesKnownSessionOnceAndPreventsFurtherCallsEvenWhenDeleteUnsupported' passed (0.001 seconds)
+Test Case 'MCPClientTests.testDeepJSONAndMalformedSSEFailExplicitlyAfterCallWithoutRetry' started at 2026-11-14 11:51:09.091
+Test Case 'MCPClientTests.testDeepJSONAndMalformedSSEFailExplicitlyAfterCallWithoutRetry' passed (0.002 seconds)
+Test Case 'MCPClientTests.testDuplicateNamesAndRepeatedCursorsCannotCreateUsablePartialCatalog' started at 2026-11-14 11:51:09.093
+Test Case 'MCPClientTests.testDuplicateNamesAndRepeatedCursorsCannotCreateUsablePartialCatalog' passed (0.002 seconds)
+Test Case 'MCPClientTests.testEndpointAllowsExplicitHTTPSHostAndValidCustomPort' started at 2026-11-14 11:51:09.095
+Test Case 'MCPClientTests.testEndpointAllowsExplicitHTTPSHostAndValidCustomPort' passed (0.0 seconds)
+Test Case 'MCPClientTests.testEndpointRejectsCredentialsQueryFragmentUnsafeSchemesAndControlCharacters' started at 2026-11-14 11:51:09.095
+Test Case 'MCPClientTests.testEndpointRejectsCredentialsQueryFragmentUnsafeSchemesAndControlCharacters' passed (0.0 seconds)
+Test Case 'MCPClientTests.testExcessiveToolCountFailsInsteadOfSilentlyTruncatingCatalog' started at 2026-11-14 11:51:09.096
+Test Case 'MCPClientTests.testExcessiveToolCountFailsInsteadOfSilentlyTruncatingCatalog' passed (0.004 seconds)
+Test Case 'MCPClientTests.testExpiredSessionInvalidatesToolsWithoutReplayingCall' started at 2026-11-14 11:51:09.100
+Test Case 'MCPClientTests.testExpiredSessionInvalidatesToolsWithoutReplayingCall' passed (0.001 seconds)
+Test Case 'MCPClientTests.testFiniteSSEPostParsesCommentsNotificationsAndCRLF' started at 2026-11-14 11:51:09.101
+Test Case 'MCPClientTests.testFiniteSSEPostParsesCommentsNotificationsAndCRLF' passed (0.001 seconds)
+Test Case 'MCPClientTests.testHTTPAuthenticationErrorNeverEchoesTokenOrResponseBody' started at 2026-11-14 11:51:09.102
+Test Case 'MCPClientTests.testHTTPAuthenticationErrorNeverEchoesTokenOrResponseBody' passed (0.001 seconds)
+Test Case 'MCPClientTests.testHandshakeDiscoveryAndCallProduceExactWireRequests' started at 2026-11-14 11:51:09.102
+Test Case 'MCPClientTests.testHandshakeDiscoveryAndCallProduceExactWireRequests' passed (0.001 seconds)
+Test Case 'MCPClientTests.testInitializationRejectsInvalidSessionIDOrConflictingVersionHeader' started at 2026-11-14 11:51:09.103
+Test Case 'MCPClientTests.testInitializationRejectsInvalidSessionIDOrConflictingVersionHeader' passed (0.001 seconds)
+Test Case 'MCPClientTests.testInvalidStructuredOutputReportsUncertainResponseNotUnsentArguments' started at 2026-11-14 11:51:09.104
+Test Case 'MCPClientTests.testInvalidStructuredOutputReportsUncertainResponseNotUnsentArguments' passed (0.001 seconds)
+Test Case 'MCPClientTests.testJSONRPCErrorIsNotToolSuccessAndDoesNotEchoRemoteSecrets' started at 2026-11-14 11:51:09.105
+Test Case 'MCPClientTests.testJSONRPCErrorIsNotToolSuccessAndDoesNotEchoRemoteSecrets' passed (0.001 seconds)
+Test Case 'MCPClientTests.testMalformedBearerCannotInjectHeadersAndErrorDoesNotEchoIt' started at 2026-11-14 11:51:09.106
+Test Case 'MCPClientTests.testMalformedBearerCannotInjectHeadersAndErrorDoesNotEchoIt' passed (0.0 seconds)
+Test Case 'MCPClientTests.testNetworkFailureAfterCallIsUncertainAndNeverRetried' started at 2026-11-14 11:51:09.107
+Test Case 'MCPClientTests.testNetworkFailureAfterCallIsUncertainAndNeverRetried' passed (0.001 seconds)
+Test Case 'MCPClientTests.testNonfiniteAndUnsafeIntegersCannotPassArgumentValidation' started at 2026-11-14 11:51:09.108
+Test Case 'MCPClientTests.testNonfiniteAndUnsafeIntegersCannotPassArgumentValidation' passed (0.0 seconds)
+Test Case 'MCPClientTests.testNotificationAcknowledgmentMustBe202WithEmptyBody' started at 2026-11-14 11:51:09.108
+Test Case 'MCPClientTests.testNotificationAcknowledgmentMustBe202WithEmptyBody' passed (0.001 seconds)
+Test Case 'MCPClientTests.testPaginationCannotContinueBeyondEightPages' started at 2026-11-14 11:51:09.109
+Test Case 'MCPClientTests.testPaginationCannotContinueBeyondEightPages' passed (0.001 seconds)
+Test Case 'MCPClientTests.testPaginationCollectsUniqueToolsAndPassesOpaqueCursorUnchanged' started at 2026-11-14 11:51:09.110
+Test Case 'MCPClientTests.testPaginationCollectsUniqueToolsAndPassesOpaqueCursorUnchanged' passed (0.001 seconds)
+Test Case 'MCPClientTests.testRedirectStatusOrChangedFinalURLNeverGetsAnotherRequest' started at 2026-11-14 11:51:09.111
+Test Case 'MCPClientTests.testRedirectStatusOrChangedFinalURLNeverGetsAnotherRequest' passed (0.001 seconds)
+Test Case 'MCPClientTests.testSchemaNumericRangesEnumsAndArraysAreActuallyEnforced' started at 2026-11-14 11:51:09.112
+Test Case 'MCPClientTests.testSchemaNumericRangesEnumsAndArraysAreActuallyEnforced' passed (0.0 seconds)
+Test Case 'MCPClientTests.testSchemaRecursionAndTypeConfusionAreRejected' started at 2026-11-14 11:51:09.112
+Test Case 'MCPClientTests.testSchemaRecursionAndTypeConfusionAreRejected' passed (0.0 seconds)
+Test Case 'MCPClientTests.testSchemaRejectsUnsupportedAssertionsInsteadOfPretendingTheyWereChecked' started at 2026-11-14 11:51:09.112
+Test Case 'MCPClientTests.testSchemaRejectsUnsupportedAssertionsInsteadOfPretendingTheyWereChecked' passed (0.0 seconds)
+Test Case 'MCPClientTests.testSchemaStringLengthUsesUnicodeScalarsNotGraphemeClusters' started at 2026-11-14 11:51:09.113
+Test Case 'MCPClientTests.testSchemaStringLengthUsesUnicodeScalarsNotGraphemeClusters' passed (0.0 seconds)
+Test Case 'MCPClientTests.testSchemaValidatesPropertiesRequiredAndAdditionalFieldsWithoutEditingArguments' started at 2026-11-14 11:51:09.113
+Test Case 'MCPClientTests.testSchemaValidatesPropertiesRequiredAndAdditionalFieldsWithoutEditingArguments' passed (0.0 seconds)
+Test Case 'MCPClientTests.testStatelessServerNeedsNoSessionEchoAndStillReceivesProtocolHeader' started at 2026-11-14 11:51:09.113
+Test Case 'MCPClientTests.testStatelessServerNeedsNoSessionEchoAndStillReceivesProtocolHeader' passed (0.001 seconds)
+Test Case 'MCPClientTests.testTextImageAndStructuredResultsRemainInertValues' started at 2026-11-14 11:51:09.114
+Test Case 'MCPClientTests.testTextImageAndStructuredResultsRemainInertValues' passed (0.001 seconds)
+Test Case 'MCPClientTests.testToolListChangedDuringDiscoveryCannotPublishStaleDefinitions' started at 2026-11-14 11:51:09.115
+Test Case 'MCPClientTests.testToolListChangedDuringDiscoveryCannotPublishStaleDefinitions' passed (0.001 seconds)
+Test Case 'MCPClientTests.testToolReportedFailureIsDifferentFromProtocolFailure' started at 2026-11-14 11:51:09.116
+Test Case 'MCPClientTests.testToolReportedFailureIsDifferentFromProtocolFailure' passed (0.005 seconds)
+Test Case 'MCPClientTests.testUnknownToolOrSchemaInvalidArgumentsSendNothingEvenWithReadOnlyHint' started at 2026-11-14 11:51:09.122
+Test Case 'MCPClientTests.testUnknownToolOrSchemaInvalidArgumentsSendNothingEvenWithReadOnlyHint' passed (0.001 seconds)
+Test Case 'MCPClientTests.testUnsupportedSSEServerRequestDoesNotExecuteOrOpenAnotherEndpoint' started at 2026-11-14 11:51:09.122
+Test Case 'MCPClientTests.testUnsupportedSSEServerRequestDoesNotExecuteOrOpenAnotherEndpoint' passed (0.001 seconds)
+Test Case 'MCPClientTests.testUnsupportedVersionNeverSendsInitializedOrTools' started at 2026-11-14 11:51:09.123
+Test Case 'MCPClientTests.testUnsupportedVersionNeverSendsInitializedOrTools' passed (0.001 seconds)
+Test Case 'MCPClientTests.testWrongResponseContentTypeOrOversizedBodyFailsWithoutRetry' started at 2026-11-14 11:51:09.124
+Test Case 'MCPClientTests.testWrongResponseContentTypeOrOversizedBodyFailsWithoutRetry' passed (0.103 seconds)
+Test Case 'MCPClientTests.testWrongResponseIDAndInvalidJSONRPCAreRejected' started at 2026-11-14 11:51:09.227
+Test Case 'MCPClientTests.testWrongResponseIDAndInvalidJSONRPCAreRejected' passed (0.001 seconds)
+Test Suite 'MCPClientTests' passed at 2026-11-14 11:51:09.228
+	 Executed 36 tests, with 0 failures (0 unexpected) in 0.142 (0.142) seconds
+Test Suite 'MCPNumberIntegrityTests' started at 2026-11-14 11:51:09.228
+Test Case 'MCPNumberIntegrityTests.testActualZeroAndRepresentableTinyFractionsRemainSupported' started at 2026-11-14 11:51:09.228
+Test Case 'MCPNumberIntegrityTests.testActualZeroAndRepresentableTinyFractionsRemainSupported' passed (0.0 seconds)
+Test Case 'MCPNumberIntegrityTests.testExponentAndFractionNotationCannotBypassSafeIntegralBound' started at 2026-11-14 11:51:09.228
+Test Case 'MCPNumberIntegrityTests.testExponentAndFractionNotationCannotBypassSafeIntegralBound' passed (0.0 seconds)
+Test Case 'MCPNumberIntegrityTests.testNonzeroUnderflowIsRejectedInsteadOfTurningIntoZero' started at 2026-11-14 11:51:09.228
+Test Case 'MCPNumberIntegrityTests.testNonzeroUnderflowIsRejectedInsteadOfTurningIntoZero' passed (0.0 seconds)
+Test Case 'MCPNumberIntegrityTests.testSafeIntegralExponentRoundTripsWithoutChangingValue' started at 2026-11-14 11:51:09.229
+Test Case 'MCPNumberIntegrityTests.testSafeIntegralExponentRoundTripsWithoutChangingValue' passed (0.0 seconds)
+Test Case 'MCPNumberIntegrityTests.testTinyNegativeCannotPassNonnegativeIntegerSchema' started at 2026-11-14 11:51:09.229
+Test Case 'MCPNumberIntegrityTests.testTinyNegativeCannotPassNonnegativeIntegerSchema' passed (0.0 seconds)
+Test Suite 'MCPNumberIntegrityTests' passed at 2026-11-14 11:51:09.229
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.001 (0.001) seconds
+Test Suite 'MCPURLSessionTransportTests' started at 2026-11-14 11:51:09.229
+Test Case 'MCPURLSessionTransportTests.testRealAdapterAggregatesBoundedResponseChunks' started at 2026-11-14 11:51:09.229
+Test Case 'MCPURLSessionTransportTests.testRealAdapterAggregatesBoundedResponseChunks' passed (0.004 seconds)
+Test Case 'MCPURLSessionTransportTests.testRealAdapterCancellationStopsOwnedRequest' started at 2026-11-14 11:51:09.233
+Test Case 'MCPURLSessionTransportTests.testRealAdapterCancellationStopsOwnedRequest' passed (0.006 seconds)
+Test Case 'MCPURLSessionTransportTests.testRealAdapterRejectsChunkedResponseCrossingByteLimit' started at 2026-11-14 11:51:09.239
+Test Case 'MCPURLSessionTransportTests.testRealAdapterRejectsChunkedResponseCrossingByteLimit' passed (0.001 seconds)
+Test Case 'MCPURLSessionTransportTests.testRealAdapterRejectsOversizedAdvertisedResponseBeforeAggregation' started at 2026-11-14 11:51:09.240
+Test Case 'MCPURLSessionTransportTests.testRealAdapterRejectsOversizedAdvertisedResponseBeforeAggregation' passed (0.001 seconds)
+Test Suite 'MCPURLSessionTransportTests' passed at 2026-11-14 11:51:09.241
+	 Executed 4 tests, with 0 failures (0 unexpected) in 0.012 (0.012) seconds
+Test Suite 'MCPUnicodeSchemaTests' started at 2026-11-14 11:51:09.241
+Test Case 'MCPUnicodeSchemaTests.testAdditionalPropertyPolicyDoesNotNormalizeKeys' started at 2026-11-14 11:51:09.241
+Test Case 'MCPUnicodeSchemaTests.testAdditionalPropertyPolicyDoesNotNormalizeKeys' passed (0.0 seconds)
+Test Case 'MCPUnicodeSchemaTests.testAllowedAdditionalPropertyRetainsOriginalKeyAndValueBytes' started at 2026-11-14 11:51:09.241
+Test Case 'MCPUnicodeSchemaTests.testAllowedAdditionalPropertyRetainsOriginalKeyAndValueBytes' passed (0.0 seconds)
+Test Case 'MCPUnicodeSchemaTests.testRequiredPropertyMustHaveExactKeyBytes' started at 2026-11-14 11:51:09.242
+Test Case 'MCPUnicodeSchemaTests.testRequiredPropertyMustHaveExactKeyBytes' passed (0.0 seconds)
+Test Case 'MCPUnicodeSchemaTests.testRequiredSchemaNameMustExactlyMatchDeclaredProperty' started at 2026-11-14 11:51:09.242
+Test Case 'MCPUnicodeSchemaTests.testRequiredSchemaNameMustExactlyMatchDeclaredProperty' passed (0.0 seconds)
+Test Case 'MCPUnicodeSchemaTests.testStringEnumRequiresExactCodepointsNotCanonicalEquivalence' started at 2026-11-14 11:51:09.242
+Test Case 'MCPUnicodeSchemaTests.testStringEnumRequiresExactCodepointsNotCanonicalEquivalence' passed (0.0 seconds)
+Test Suite 'MCPUnicodeSchemaTests' passed at 2026-11-14 11:51:09.242
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.001 (0.001) seconds
+Test Suite 'MarkdownDocumentTests' started at 2026-11-14 11:51:09.242
+Test Case 'MarkdownDocumentTests.testDeepNestingIsBoundedAndFallbackPreservesContent' started at 2026-11-14 11:51:09.242
+Test Case 'MarkdownDocumentTests.testDeepNestingIsBoundedAndFallbackPreservesContent' passed (0.001 seconds)
+Test Case 'MarkdownDocumentTests.testDenseHighlightingFallsBackWithoutCreatingUnboundedStyledRuns' started at 2026-11-14 11:51:09.243
+Test Case 'MarkdownDocumentTests.testDenseHighlightingFallsBackWithoutCreatingUnboundedStyledRuns' passed (0.011 seconds)
+Test Case 'MarkdownDocumentTests.testDisplayMathDelimitersAndStreamingState' started at 2026-11-14 11:51:09.254
+Test Case 'MarkdownDocumentTests.testDisplayMathDelimitersAndStreamingState' passed (0.0 seconds)
+Test Case 'MarkdownDocumentTests.testEmptyListItemsStillConsumeTheSharedItemBudget' started at 2026-11-14 11:51:09.255
+Test Case 'MarkdownDocumentTests.testEmptyListItemsStillConsumeTheSharedItemBudget' passed (0.004 seconds)
+Test Case 'MarkdownDocumentTests.testFenceMustMatchCharacterLengthAndHaveNoTrailingContent' started at 2026-11-14 11:51:09.259
+Test Case 'MarkdownDocumentTests.testFenceMustMatchCharacterLengthAndHaveNoTrailingContent' passed (0.0 seconds)
+Test Case 'MarkdownDocumentTests.testHeadingsRequireWhitespaceAndPreserveUnicode' started at 2026-11-14 11:51:09.259
+Test Case 'MarkdownDocumentTests.testHeadingsRequireWhitespaceAndPreserveUnicode' passed (0.0 seconds)
+Test Case 'MarkdownDocumentTests.testHighlightRunBoundaryRetainsEveryCharacter' started at 2026-11-14 11:51:09.260
+Test Case 'MarkdownDocumentTests.testHighlightRunBoundaryRetainsEveryCharacter' passed (0.01 seconds)
+Test Case 'MarkdownDocumentTests.testHighlighterDoesNotClaimUnknownLanguagesAndBoundsWork' started at 2026-11-14 11:51:09.269
+Test Case 'MarkdownDocumentTests.testHighlighterDoesNotClaimUnknownLanguagesAndBoundsWork' passed (0.001 seconds)
+Test Case 'MarkdownDocumentTests.testHighlighterKeepsEveryCharacterAndDoesNotHighlightInsideStringsOrComments' started at 2026-11-14 11:51:09.270
+Test Case 'MarkdownDocumentTests.testHighlighterKeepsEveryCharacterAndDoesNotHighlightInsideStringsOrComments' passed (0.0 seconds)
+Test Case 'MarkdownDocumentTests.testHighlighterTreatsUnterminatedStringAsStreamingString' started at 2026-11-14 11:51:09.270
+Test Case 'MarkdownDocumentTests.testHighlighterTreatsUnterminatedStringAsStreamingString' passed (0.0 seconds)
+Test Case 'MarkdownDocumentTests.testInvalidTableDelimiterRemainsReadableParagraph' started at 2026-11-14 11:51:09.271
+Test Case 'MarkdownDocumentTests.testInvalidTableDelimiterRemainsReadableParagraph' passed (0.0 seconds)
+Test Case 'MarkdownDocumentTests.testLineBudgetCatchesManyBlankLinesAndKeepsExactOriginalSource' started at 2026-11-14 11:51:09.271
+Test Case 'MarkdownDocumentTests.testLineBudgetCatchesManyBlankLinesAndKeepsExactOriginalSource' passed (0.015 seconds)
+Test Case 'MarkdownDocumentTests.testLinkPolicyRejectsExecutableLocalAndCredentialURLs' started at 2026-11-14 11:51:09.286
+Test Case 'MarkdownDocumentTests.testLinkPolicyRejectsExecutableLocalAndCredentialURLs' passed (0.0 seconds)
+Test Case 'MarkdownDocumentTests.testManyTableRowsFallBackWithoutDroppingTailOrChangingOriginalNewlines' started at 2026-11-14 11:51:09.286
+Test Case 'MarkdownDocumentTests.testManyTableRowsFallBackWithoutDroppingTailOrChangingOriginalNewlines' passed (0.116 seconds)
+Test Case 'MarkdownDocumentTests.testManyTinyBlocksFallBackBeforeCreatingThousandsOfViews' started at 2026-11-14 11:51:09.402
+Test Case 'MarkdownDocumentTests.testManyTinyBlocksFallBackBeforeCreatingThousandsOfViews' passed (0.01 seconds)
+Test Case 'MarkdownDocumentTests.testMathViewBudgetAvoidsOneWebViewPerTinyExpression' started at 2026-11-14 11:51:09.412
+Test Case 'MarkdownDocumentTests.testMathViewBudgetAvoidsOneWebViewPerTinyExpression' passed (0.001 seconds)
+Test Case 'MarkdownDocumentTests.testNestedBranchesShareOneBlockBudget' started at 2026-11-14 11:51:09.413
+Test Case 'MarkdownDocumentTests.testNestedBranchesShareOneBlockBudget' passed (0.002 seconds)
+Test Case 'MarkdownDocumentTests.testOrderedListKeepsStartAndNestedList' started at 2026-11-14 11:51:09.415
+Test Case 'MarkdownDocumentTests.testOrderedListKeepsStartAndNestedList' passed (0.0 seconds)
+Test Case 'MarkdownDocumentTests.testOrdinaryTableStillRendersAtRowBudgetBoundary' started at 2026-11-14 11:51:09.415
+Test Case 'MarkdownDocumentTests.testOrdinaryTableStillRendersAtRowBudgetBoundary' passed (0.001 seconds)
+Test Case 'MarkdownDocumentTests.testOversizedMarkdownUsesVisibleLiteralFallback' started at 2026-11-14 11:51:09.417
+Test Case 'MarkdownDocumentTests.testOversizedMarkdownUsesVisibleLiteralFallback' passed (0.001 seconds)
+Test Case 'MarkdownDocumentTests.testParagraphSoftBreaksAndCRLFAreRetained' started at 2026-11-14 11:51:09.418
+Test Case 'MarkdownDocumentTests.testParagraphSoftBreaksAndCRLFAreRetained' passed (0.0 seconds)
+Test Case 'MarkdownDocumentTests.testQuoteRecursivelyContainsHeadingAndCode' started at 2026-11-14 11:51:09.418
+Test Case 'MarkdownDocumentTests.testQuoteRecursivelyContainsHeadingAndCode' passed (0.0 seconds)
+Test Case 'MarkdownDocumentTests.testRawHTMLIsContentAndCannotBecomeAnExecutableBlock' started at 2026-11-14 11:51:09.418
+Test Case 'MarkdownDocumentTests.testRawHTMLIsContentAndCannotBecomeAnExecutableBlock' passed (0.0 seconds)
+Test Case 'MarkdownDocumentTests.testRepresentativeLargeAndAdversarialParsingHasCoarseTimeBudget' started at 2026-11-14 11:51:09.419
+Test Case 'MarkdownDocumentTests.testRepresentativeLargeAndAdversarialParsingHasCoarseTimeBudget' passed (0.112 seconds)
+Test Case 'MarkdownDocumentTests.testSetextHeadingsAndThematicBreakAreDistinct' started at 2026-11-14 11:51:09.531
+Test Case 'MarkdownDocumentTests.testSetextHeadingsAndThematicBreakAreDistinct' passed (0.0 seconds)
+Test Case 'MarkdownDocumentTests.testShortTableRowsArePaddedButExtraCellsAreNeverDiscarded' started at 2026-11-14 11:51:09.531
+Test Case 'MarkdownDocumentTests.testShortTableRowsArePaddedButExtraCellsAreNeverDiscarded' passed (0.0 seconds)
+Test Case 'MarkdownDocumentTests.testStreamingPrefixesNeverLoseUnicodeOrCrash' started at 2026-11-14 11:51:09.531
+Test Case 'MarkdownDocumentTests.testStreamingPrefixesNeverLoseUnicodeOrCrash' passed (0.001 seconds)
+Test Case 'MarkdownDocumentTests.testTablesRespectEscapedPipesCodePipesAndAlignment' started at 2026-11-14 11:51:09.532
+Test Case 'MarkdownDocumentTests.testTablesRespectEscapedPipesCodePipesAndAlignment' passed (0.0 seconds)
+Test Case 'MarkdownDocumentTests.testTaskListStateIsContentNotAnInteractiveControl' started at 2026-11-14 11:51:09.532
+Test Case 'MarkdownDocumentTests.testTaskListStateIsContentNotAnInteractiveControl' passed (0.0 seconds)
+Test Case 'MarkdownDocumentTests.testTildeFenceEmptyFenceAndOpeningIndent' started at 2026-11-14 11:51:09.533
+Test Case 'MarkdownDocumentTests.testTildeFenceEmptyFenceAndOpeningIndent' passed (0.0 seconds)
+Test Case 'MarkdownDocumentTests.testTotalCellBudgetIncludesHeadersAndAllTables' started at 2026-11-14 11:51:09.533
+Test Case 'MarkdownDocumentTests.testTotalCellBudgetIncludesHeadersAndAllTables' passed (0.011 seconds)
+Test Case 'MarkdownDocumentTests.testTotalRowBudgetAppliesAcrossSmallTables' started at 2026-11-14 11:51:09.544
+Test Case 'MarkdownDocumentTests.testTotalRowBudgetAppliesAcrossSmallTables' passed (0.002 seconds)
+Test Case 'MarkdownDocumentTests.testUnclosedFenceRetainsStreamingTextAndDoesNotParseMarkdown' started at 2026-11-14 11:51:09.546
+Test Case 'MarkdownDocumentTests.testUnclosedFenceRetainsStreamingTextAndDoesNotParseMarkdown' passed (0.0 seconds)
+Test Case 'MarkdownDocumentTests.testUnmatchedCodeTickDoesNotSwallowTableColumns' started at 2026-11-14 11:51:09.546
+Test Case 'MarkdownDocumentTests.testUnmatchedCodeTickDoesNotSwallowTableColumns' passed (0.0 seconds)
+Test Case 'MarkdownDocumentTests.testWideTableFallsBackInsteadOfAllocatingUnboundedCells' started at 2026-11-14 11:51:09.546
+Test Case 'MarkdownDocumentTests.testWideTableFallsBackInsteadOfAllocatingUnboundedCells' passed (0.014 seconds)
+Test Suite 'MarkdownDocumentTests' passed at 2026-11-14 11:51:09.561
+	 Executed 35 tests, with 0 failures (0 unexpected) in 0.318 (0.318) seconds
+Test Suite 'MemoryContextBuilderTests' started at 2026-11-14 11:51:09.561
+Test Case 'MemoryContextBuilderTests.testASCIIExcerptFillsExactByteBudgetWithoutOverflow' started at 2026-11-14 11:51:09.561
+Test Case 'MemoryContextBuilderTests.testASCIIExcerptFillsExactByteBudgetWithoutOverflow' passed (0.002 seconds)
+Test Case 'MemoryContextBuilderTests.testBudgetIncludesDisclaimerAndDelimiters' started at 2026-11-14 11:51:09.563
+Test Case 'MemoryContextBuilderTests.testBudgetIncludesDisclaimerAndDelimiters' passed (0.029 seconds)
+Test Case 'MemoryContextBuilderTests.testEmptyInputProducesNoDisclaimer' started at 2026-11-14 11:51:09.591
+Test Case 'MemoryContextBuilderTests.testEmptyInputProducesNoDisclaimer' passed (0.001 seconds)
+Test Case 'MemoryContextBuilderTests.testFallbackUsesRecencyAndStableInputOrderForTies' started at 2026-11-14 11:51:09.592
+Test Case 'MemoryContextBuilderTests.testFallbackUsesRecencyAndStableInputOrderForTies' passed (0.001 seconds)
+Test Case 'MemoryContextBuilderTests.testHugeCallerLimitsCannotExpandBuiltInCaps' started at 2026-11-14 11:51:09.593
+Test Case 'MemoryContextBuilderTests.testHugeCallerLimitsCannotExpandBuiltInCaps' passed (0.036 seconds)
+Test Case 'MemoryContextBuilderTests.testMultibyteContentRemainsValidUTF8WithinBudget' started at 2026-11-14 11:51:09.628
+Test Case 'MemoryContextBuilderTests.testMultibyteContentRemainsValidUTF8WithinBudget' passed (0.104 seconds)
+Test Case 'MemoryContextBuilderTests.testOlderLexicalMatchWinsOverRecentUnrelatedNote' started at 2026-11-14 11:51:09.733
+Test Case 'MemoryContextBuilderTests.testOlderLexicalMatchWinsOverRecentUnrelatedNote' passed (0.115 seconds)
+Test Case 'MemoryContextBuilderTests.testRelevantPassageNearEndSurvivesExcerptBudget' started at 2026-11-14 11:51:09.850
+Test Case 'MemoryContextBuilderTests.testRelevantPassageNearEndSurvivesExcerptBudget' passed (0.019 seconds)
+Test Case 'MemoryContextBuilderTests.testScanAndQueryCapsAreDisclosed' started at 2026-11-14 11:51:09.869
+Test Case 'MemoryContextBuilderTests.testScanAndQueryCapsAreDisclosed' passed (0.13 seconds)
+Test Case 'MemoryContextBuilderTests.testSelectionNeverMutatesSavedNotes' started at 2026-11-14 11:51:09.999
+Test Case 'MemoryContextBuilderTests.testSelectionNeverMutatesSavedNotes' passed (0.005 seconds)
+Test Case 'MemoryContextBuilderTests.testUnicodeMatchingPassagePreservesOriginalScalarsAndWholeWordRelevance' started at 2026-11-14 11:51:10.004
+Test Case 'MemoryContextBuilderTests.testUnicodeMatchingPassagePreservesOriginalScalarsAndWholeWordRelevance' passed (0.01 seconds)
+Test Suite 'MemoryContextBuilderTests' passed at 2026-11-14 11:51:10.015
+	 Executed 11 tests, with 0 failures (0 unexpected) in 0.451 (0.451) seconds
+Test Suite 'MemoryNoteTests' started at 2026-11-14 11:51:10.015
+Test Case 'MemoryNoteTests.testExistingStoredMemorySchemaDecodesWithoutMigration' started at 2026-11-14 11:51:10.015
+Test Case 'MemoryNoteTests.testExistingStoredMemorySchemaDecodesWithoutMigration' passed (0.005 seconds)
+Test Case 'MemoryNoteTests.testUnicodeAndControlTextRoundTripsUnchanged' started at 2026-11-14 11:51:10.020
+Test Case 'MemoryNoteTests.testUnicodeAndControlTextRoundTripsUnchanged' passed (0.0 seconds)
+Test Suite 'MemoryNoteTests' passed at 2026-11-14 11:51:10.020
+	 Executed 2 tests, with 0 failures (0 unexpected) in 0.005 (0.005) seconds
+Test Suite 'MemorySearchTests' started at 2026-11-14 11:51:10.020
+Test Case 'MemorySearchTests.testLiteralSearchPreservesIDsOrderAndRequiresEveryTerm' started at 2026-11-14 11:51:10.020
+Test Case 'MemorySearchTests.testLiteralSearchPreservesIDsOrderAndRequiresEveryTerm' passed (0.003 seconds)
+Test Suite 'MemorySearchTests' passed at 2026-11-14 11:51:10.023
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.003 (0.003) seconds
+Test Suite 'ModelInstallTransactionTests' started at 2026-11-14 11:51:10.023
+Test Case 'ModelInstallTransactionTests.testAbsentModelDeletionFailurePreservesAbsenceAndOldManifest' started at 2026-11-14 11:51:10.023
+Test Case 'ModelInstallTransactionTests.testAbsentModelDeletionFailurePreservesAbsenceAndOldManifest' passed (0.006 seconds)
+Test Case 'ModelInstallTransactionTests.testDeletingAlreadyAbsentModelStillUpdatesManifest' started at 2026-11-14 11:51:10.030
+Test Case 'ModelInstallTransactionTests.testDeletingAlreadyAbsentModelStillUpdatesManifest' passed (0.001 seconds)
+Test Case 'ModelInstallTransactionTests.testDeletionCommitsBytesAndManifestTogether' started at 2026-11-14 11:51:10.031
+Test Case 'ModelInstallTransactionTests.testDeletionCommitsBytesAndManifestTogether' passed (0.001 seconds)
+Test Case 'ModelInstallTransactionTests.testDeletionFailureAfterEitherPublicationRestoresOriginalBytes' started at 2026-11-14 11:51:10.031
+Test Case 'ModelInstallTransactionTests.testDeletionFailureAfterEitherPublicationRestoresOriginalBytes' passed (0.002 seconds)
+Test Case 'ModelInstallTransactionTests.testDeletionPreparationFailureLeavesOriginalBytesAndMetadata' started at 2026-11-14 11:51:10.033
+Test Case 'ModelInstallTransactionTests.testDeletionPreparationFailureLeavesOriginalBytesAndMetadata' passed (0.001 seconds)
+Test Case 'ModelInstallTransactionTests.testDeletionRetainsOriginalInodeWithoutCopyingLargeModelWhenLinksSupported' started at 2026-11-14 11:51:10.034
+Test Case 'ModelInstallTransactionTests.testDeletionRetainsOriginalInodeWithoutCopyingLargeModelWhenLinksSupported' passed (0.002 seconds)
+Test Case 'ModelInstallTransactionTests.testEachPublicationFailureRestoresBothOldFiles' started at 2026-11-14 11:51:10.036
+Test Case 'ModelInstallTransactionTests.testEachPublicationFailureRestoresBothOldFiles' passed (0.003 seconds)
+Test Case 'ModelInstallTransactionTests.testFailedFirstInstallLeavesNoModelOrManifest' started at 2026-11-14 11:51:10.039
+Test Case 'ModelInstallTransactionTests.testFailedFirstInstallLeavesNoModelOrManifest' passed (0.002 seconds)
+Test Case 'ModelInstallTransactionTests.testMissingRecoveryBackupFailsClosedWithoutChangingTargets' started at 2026-11-14 11:51:10.041
+Test Case 'ModelInstallTransactionTests.testMissingRecoveryBackupFailsClosedWithoutChangingTargets' passed (0.001 seconds)
+Test Case 'ModelInstallTransactionTests.testPartialRollbackRetainsBackupsAndRetryRestoresBoth' started at 2026-11-14 11:51:10.042
+Test Case 'ModelInstallTransactionTests.testPartialRollbackRetainsBackupsAndRetryRestoresBoth' passed (0.002 seconds)
+Test Case 'ModelInstallTransactionTests.testPreparationFailureCannotChangeExistingFiles' started at 2026-11-14 11:51:10.044
+Test Case 'ModelInstallTransactionTests.testPreparationFailureCannotChangeExistingFiles' passed (0.003 seconds)
+Test Case 'ModelInstallTransactionTests.testRestartAfterInterruptedDeletionRestoresModelAndManifest' started at 2026-11-14 11:51:10.048
+Test Case 'ModelInstallTransactionTests.testRestartAfterInterruptedDeletionRestoresModelAndManifest' passed (0.001 seconds)
+Test Case 'ModelInstallTransactionTests.testRestartRecoversInterruptedPublicationAndIsIdempotent' started at 2026-11-14 11:51:10.049
+Test Case 'ModelInstallTransactionTests.testRestartRecoversInterruptedPublicationAndIsIdempotent' passed (0.001 seconds)
+Test Case 'ModelInstallTransactionTests.testSuccessfulCommitPublishesBothFiles' started at 2026-11-14 11:51:10.050
+Test Case 'ModelInstallTransactionTests.testSuccessfulCommitPublishesBothFiles' passed (0.002 seconds)
+Test Case 'ModelInstallTransactionTests.testTraversalAndSymlinkTargetsAreRejected' started at 2026-11-14 11:51:10.052
+Test Case 'ModelInstallTransactionTests.testTraversalAndSymlinkTargetsAreRejected' passed (0.002 seconds)
+Test Case 'ModelInstallTransactionTests.testUnpreparedOrCommittedStagingCleanupNeverTouchesLiveFiles' started at 2026-11-14 11:51:10.054
+Test Case 'ModelInstallTransactionTests.testUnpreparedOrCommittedStagingCleanupNeverTouchesLiveFiles' passed (0.001 seconds)
+Test Suite 'ModelInstallTransactionTests' passed at 2026-11-14 11:51:10.055
+	 Executed 16 tests, with 0 failures (0 unexpected) in 0.032 (0.032) seconds
+Test Suite 'NativeToolDraftsTests' started at 2026-11-14 11:51:10.055
+Test Case 'NativeToolDraftsTests.testBrowserLimitUsesUTF8BytesWithoutTruncation' started at 2026-11-14 11:51:10.055
+Test Case 'NativeToolDraftsTests.testBrowserLimitUsesUTF8BytesWithoutTruncation' passed (0.001 seconds)
+Test Case 'NativeToolDraftsTests.testBrowserPreservesExplicitHTTPSPathQueryAndFragment' started at 2026-11-14 11:51:10.057
+Test Case 'NativeToolDraftsTests.testBrowserPreservesExplicitHTTPSPathQueryAndFragment' passed (0.001 seconds)
+Test Case 'NativeToolDraftsTests.testBrowserRejectsEmbeddedCredentialsIncludingEncodedUsernames' started at 2026-11-14 11:51:10.057
+Test Case 'NativeToolDraftsTests.testBrowserRejectsEmbeddedCredentialsIncludingEncodedUsernames' passed (0.0 seconds)
+Test Case 'NativeToolDraftsTests.testBrowserRejectsNonHTTPSAndMissingHosts' started at 2026-11-14 11:51:10.058
+Test Case 'NativeToolDraftsTests.testBrowserRejectsNonHTTPSAndMissingHosts' passed (0.0 seconds)
+Test Case 'NativeToolDraftsTests.testBrowserRejectsNonstandardOrInvalidPorts' started at 2026-11-14 11:51:10.058
+Test Case 'NativeToolDraftsTests.testBrowserRejectsNonstandardOrInvalidPorts' passed (0.0 seconds)
+Test Case 'NativeToolDraftsTests.testBrowserRejectsRawWhitespaceAndControlCharactersInsteadOfRepairingThem' started at 2026-11-14 11:51:10.058
+Test Case 'NativeToolDraftsTests.testBrowserRejectsRawWhitespaceAndControlCharactersInsteadOfRepairingThem' passed (0.001 seconds)
+Test Case 'NativeToolDraftsTests.testCalendarEndMustFollowStartButPastDatesAreAllowedForExplicitReview' started at 2026-11-14 11:51:10.059
+Test Case 'NativeToolDraftsTests.testCalendarEndMustFollowStartButPastDatesAreAllowedForExplicitReview' passed (0.001 seconds)
+Test Case 'NativeToolDraftsTests.testCalendarNotesLimitUsesUTF8BytesWithoutTruncation' started at 2026-11-14 11:51:10.060
+Test Case 'NativeToolDraftsTests.testCalendarNotesLimitUsesUTF8BytesWithoutTruncation' passed (0.001 seconds)
+Test Case 'NativeToolDraftsTests.testCalendarRejectsBlankTitles' started at 2026-11-14 11:51:10.060
+Test Case 'NativeToolDraftsTests.testCalendarRejectsBlankTitles' passed (0.0 seconds)
+Test Case 'NativeToolDraftsTests.testCalendarRejectsNonfiniteStartOrEnd' started at 2026-11-14 11:51:10.061
+Test Case 'NativeToolDraftsTests.testCalendarRejectsNonfiniteStartOrEnd' passed (0.0 seconds)
+Test Case 'NativeToolDraftsTests.testCalendarRejectsNullCharactersInTitleOrNotes' started at 2026-11-14 11:51:10.061
+Test Case 'NativeToolDraftsTests.testCalendarRejectsNullCharactersInTitleOrNotes' passed (0.0 seconds)
+Test Case 'NativeToolDraftsTests.testCalendarSpanAllows366DaysButRejectsLonger' started at 2026-11-14 11:51:10.061
+Test Case 'NativeToolDraftsTests.testCalendarSpanAllows366DaysButRejectsLonger' passed (0.0 seconds)
+Test Case 'NativeToolDraftsTests.testCalendarTitleAllows120EmojiButNot121Characters' started at 2026-11-14 11:51:10.061
+Test Case 'NativeToolDraftsTests.testCalendarTitleAllows120EmojiButNot121Characters' passed (0.0 seconds)
+Test Case 'NativeToolDraftsTests.testCalendarTitleRejectsPathologicalSingleGraphemeAboveByteLimit' started at 2026-11-14 11:51:10.062
+Test Case 'NativeToolDraftsTests.testCalendarTitleRejectsPathologicalSingleGraphemeAboveByteLimit' passed (0.0 seconds)
+Test Case 'NativeToolDraftsTests.testCalendarValidationTrimsTitlePreservesNotesAndFractionalDates' started at 2026-11-14 11:51:10.062
+Test Case 'NativeToolDraftsTests.testCalendarValidationTrimsTitlePreservesNotesAndFractionalDates' passed (0.0 seconds)
+Test Case 'NativeToolDraftsTests.testEmptyMailFieldsRemainAvailableForCompletionInSystemEditor' started at 2026-11-14 11:51:10.062
+Test Case 'NativeToolDraftsTests.testEmptyMailFieldsRemainAvailableForCompletionInSystemEditor' passed (0.0 seconds)
+Test Case 'NativeToolDraftsTests.testMailBodyLimitUsesUTF8BytesWithoutTruncation' started at 2026-11-14 11:51:10.063
+Test Case 'NativeToolDraftsTests.testMailBodyLimitUsesUTF8BytesWithoutTruncation' passed (0.001 seconds)
+Test Case 'NativeToolDraftsTests.testMailRecipientLengthIsBoundedWithoutTruncation' started at 2026-11-14 11:51:10.064
+Test Case 'NativeToolDraftsTests.testMailRecipientLengthIsBoundedWithoutTruncation' passed (0.001 seconds)
+Test Case 'NativeToolDraftsTests.testMailRejectsNullCharactersInEveryField' started at 2026-11-14 11:51:10.065
+Test Case 'NativeToolDraftsTests.testMailRejectsNullCharactersInEveryField' passed (0.001 seconds)
+Test Case 'NativeToolDraftsTests.testMailRejectsRecipientNewlinesBeforeTrimming' started at 2026-11-14 11:51:10.066
+Test Case 'NativeToolDraftsTests.testMailRejectsRecipientNewlinesBeforeTrimming' passed (0.0 seconds)
+Test Case 'NativeToolDraftsTests.testMailSubjectLimitUsesUTF8BytesWithoutTruncation' started at 2026-11-14 11:51:10.066
+Test Case 'NativeToolDraftsTests.testMailSubjectLimitUsesUTF8BytesWithoutTruncation' passed (0.001 seconds)
+Test Case 'NativeToolDraftsTests.testMailValidationTrimsRecipientWithoutChangingSubjectOrBody' started at 2026-11-14 11:51:10.067
+Test Case 'NativeToolDraftsTests.testMailValidationTrimsRecipientWithoutChangingSubjectOrBody' passed (0.101 seconds)
+Test Suite 'NativeToolDraftsTests' passed at 2026-11-14 11:51:10.168
+	 Executed 22 tests, with 0 failures (0 unexpected) in 0.112 (0.112) seconds
+Test Suite 'NativeToolSuggestionTests' started at 2026-11-14 11:51:10.168
+Test Case 'NativeToolSuggestionTests.testCalculatorDiscussionAndQuotedTextDoNotOfferReview' started at 2026-11-14 11:51:10.168
+Test Case 'NativeToolSuggestionTests.testCalculatorDiscussionAndQuotedTextDoNotOfferReview' passed (0.001 seconds)
+Test Case 'NativeToolSuggestionTests.testDirectArithmeticOffersCalculatorReview' started at 2026-11-14 11:51:10.169
+Test Case 'NativeToolSuggestionTests.testDirectArithmeticOffersCalculatorReview' passed (0.0 seconds)
+Test Case 'NativeToolSuggestionTests.testDirectBrowserRequestsOfferBrowserReviewWithoutExtractingDestination' started at 2026-11-14 11:51:10.169
+Test Case 'NativeToolSuggestionTests.testDirectBrowserRequestsOfferBrowserReviewWithoutExtractingDestination' passed (0.0 seconds)
+Test Case 'NativeToolSuggestionTests.testDirectCalendarRequestsOfferEventReview' started at 2026-11-14 11:51:10.169
+Test Case 'NativeToolSuggestionTests.testDirectCalendarRequestsOfferEventReview' passed (0.0 seconds)
+Test Case 'NativeToolSuggestionTests.testDirectEmailRequestsOfferEmailReview' started at 2026-11-14 11:51:10.170
+Test Case 'NativeToolSuggestionTests.testDirectEmailRequestsOfferEmailReview' passed (0.0 seconds)
+Test Case 'NativeToolSuggestionTests.testDirectLocationRequestsOfferOneTimeLocationScreen' started at 2026-11-14 11:51:10.170
+Test Case 'NativeToolSuggestionTests.testDirectLocationRequestsOfferOneTimeLocationScreen' passed (0.0 seconds)
+Test Case 'NativeToolSuggestionTests.testDirectReminderRequestsOfferReminderReview' started at 2026-11-14 11:51:10.170
+Test Case 'NativeToolSuggestionTests.testDirectReminderRequestsOfferReminderReview' passed (0.001 seconds)
+Test Case 'NativeToolSuggestionTests.testDirectSourceRequestsOfferReviewWithoutStartingRepositoryAccess' started at 2026-11-14 11:51:10.171
+Test Case 'NativeToolSuggestionTests.testDirectSourceRequestsOfferReviewWithoutStartingRepositoryAccess' passed (0.0 seconds)
+Test Case 'NativeToolSuggestionTests.testDiscussionQuestionsNegationsAndEmbeddedRequestsDoNotMatch' started at 2026-11-14 11:51:10.171
+Test Case 'NativeToolSuggestionTests.testDiscussionQuestionsNegationsAndEmbeddedRequestsDoNotMatch' passed (0.001 seconds)
+Test Case 'NativeToolSuggestionTests.testMatchingUsesWholeWordsRatherThanPrefixes' started at 2026-11-14 11:51:10.172
+Test Case 'NativeToolSuggestionTests.testMatchingUsesWholeWordsRatherThanPrefixes' passed (0.0 seconds)
+Test Case 'NativeToolSuggestionTests.testOnlyTheAnchoredIntentIsSuggestedForMixedText' started at 2026-11-14 11:51:10.172
+Test Case 'NativeToolSuggestionTests.testOnlyTheAnchoredIntentIsSuggestedForMixedText' passed (0.0 seconds)
+Test Case 'NativeToolSuggestionTests.testOversizedOrNullContainingRequestDoesNotOfferAction' started at 2026-11-14 11:51:10.172
+Test Case 'NativeToolSuggestionTests.testOversizedOrNullContainingRequestDoesNotOfferAction' passed (0.0 seconds)
+Test Case 'NativeToolSuggestionTests.testQuotedCodeAndBlockquotedInstructionsNeverOfferAction' started at 2026-11-14 11:51:10.173
+Test Case 'NativeToolSuggestionTests.testQuotedCodeAndBlockquotedInstructionsNeverOfferAction' passed (0.001 seconds)
+Test Case 'NativeToolSuggestionTests.testSourceDiscussionAndUnrelatedRepositoriesDoNotOfferAccess' started at 2026-11-14 11:51:10.173
+Test Case 'NativeToolSuggestionTests.testSourceDiscussionAndUnrelatedRepositoriesDoNotOfferAccess' passed (0.0 seconds)
+Test Case 'NativeToolSuggestionTests.testSuggestionContainsOnlyStableScreenIdentityAndLabel' started at 2026-11-14 11:51:10.174
+Test Case 'NativeToolSuggestionTests.testSuggestionContainsOnlyStableScreenIdentityAndLabel' passed (0.0 seconds)
+Test Suite 'NativeToolSuggestionTests' passed at 2026-11-14 11:51:10.174
+	 Executed 15 tests, with 0 failures (0 unexpected) in 0.006 (0.006) seconds
+Test Suite 'PluginConnectionRemovalTests' started at 2026-11-14 11:51:10.174
+Test Case 'PluginConnectionRemovalTests.testDeleteFailureDoesNotSaveMetadata' started at 2026-11-14 11:51:10.174
+Test Case 'PluginConnectionRemovalTests.testDeleteFailureDoesNotSaveMetadata' passed (0.0 seconds)
+Test Case 'PluginConnectionRemovalTests.testMetadataFailureRestoresAbsentCredentialWithoutInventingOne' started at 2026-11-14 11:51:10.174
+Test Case 'PluginConnectionRemovalTests.testMetadataFailureRestoresAbsentCredentialWithoutInventingOne' passed (0.003 seconds)
+Test Case 'PluginConnectionRemovalTests.testMetadataFailureRestoresPriorTokenAndRethrowsOriginalError' started at 2026-11-14 11:51:10.177
+Test Case 'PluginConnectionRemovalTests.testMetadataFailureRestoresPriorTokenAndRethrowsOriginalError' passed (0.0 seconds)
+Test Case 'PluginConnectionRemovalTests.testReadFailureDoesNotDeleteOrSaveMetadata' started at 2026-11-14 11:51:10.177
+Test Case 'PluginConnectionRemovalTests.testReadFailureDoesNotDeleteOrSaveMetadata' passed (0.0 seconds)
+Test Case 'PluginConnectionRemovalTests.testRollbackFailureRequiresRecoveryWithoutLeakingUnderlyingError' started at 2026-11-14 11:51:10.177
+Test Case 'PluginConnectionRemovalTests.testRollbackFailureRequiresRecoveryWithoutLeakingUnderlyingError' passed (0.0 seconds)
+Test Case 'PluginConnectionRemovalTests.testSuccessDeletesBeforeSavingMetadata' started at 2026-11-14 11:51:10.178
+Test Case 'PluginConnectionRemovalTests.testSuccessDeletesBeforeSavingMetadata' passed (0.0 seconds)
+Test Suite 'PluginConnectionRemovalTests' passed at 2026-11-14 11:51:10.178
+	 Executed 6 tests, with 0 failures (0 unexpected) in 0.004 (0.004) seconds
+Test Suite 'PluginExecutionTests' started at 2026-11-14 11:51:10.178
+Test Case 'PluginExecutionTests.testChangingConnectionOrCatalogCannotReuseApproval' started at 2026-11-14 11:51:10.178
+Test Case 'PluginExecutionTests.testChangingConnectionOrCatalogCannotReuseApproval' passed (0.0 seconds)
+Test Case 'PluginExecutionTests.testExactFiveMinuteBoundaryIsAcceptedButClockReversalIsNot' started at 2026-11-14 11:51:10.178
+Test Case 'PluginExecutionTests.testExactFiveMinuteBoundaryIsAcceptedButClockReversalIsNot' passed (0.0 seconds)
+Test Case 'PluginExecutionTests.testExplicitInvalidationAndExpiryNeverReturnApproval' started at 2026-11-14 11:51:10.178
+Test Case 'PluginExecutionTests.testExplicitInvalidationAndExpiryNeverReturnApproval' passed (0.001 seconds)
+Test Case 'PluginExecutionTests.testNewReviewInvalidatesOldEvenWhenArgumentsAreLaterRestored' started at 2026-11-14 11:51:10.179
+Test Case 'PluginExecutionTests.testNewReviewInvalidatesOldEvenWhenArgumentsAreLaterRestored' passed (0.0 seconds)
+Test Case 'PluginExecutionTests.testOversizedArgumentsAndUnsafeNamesAreRejectedWithoutReview' started at 2026-11-14 11:51:10.180
+Test Case 'PluginExecutionTests.testOversizedArgumentsAndUnsafeNamesAreRejectedWithoutReview' passed (0.0 seconds)
+Test Case 'PluginExecutionTests.testReviewCopiesExactArgumentsAndCanBeConsumedOnlyOnce' started at 2026-11-14 11:51:10.180
+Test Case 'PluginExecutionTests.testReviewCopiesExactArgumentsAndCanBeConsumedOnlyOnce' passed (0.0 seconds)
+Test Suite 'PluginExecutionTests' passed at 2026-11-14 11:51:10.180
+	 Executed 6 tests, with 0 failures (0 unexpected) in 0.003 (0.003) seconds
+Test Suite 'ProviderAttachmentContextTests' started at 2026-11-14 11:51:10.180
+Test Case 'ProviderAttachmentContextTests.testAttachmentOnlyImportedMessageIsKeptWithoutChangingSource' started at 2026-11-14 11:51:10.180
+Test Case 'ProviderAttachmentContextTests.testAttachmentOnlyImportedMessageIsKeptWithoutChangingSource' passed (0.101 seconds)
+Test Case 'ProviderAttachmentContextTests.testEmptyImagesPreserveOCRBoundaryAndUnavailableNotice' started at 2026-11-14 11:51:10.282
+Test Case 'ProviderAttachmentContextTests.testEmptyImagesPreserveOCRBoundaryAndUnavailableNotice' passed (0.0 seconds)
+Test Case 'ProviderAttachmentContextTests.testOlderMessagesAreDroppedWholeAndFailedMessagesExcluded' started at 2026-11-14 11:51:10.282
+Test Case 'ProviderAttachmentContextTests.testOlderMessagesAreDroppedWholeAndFailedMessagesExcluded' passed (0.0 seconds)
+Test Case 'ProviderAttachmentContextTests.testTruncationDisclosedAndSourceRemainsIntact' started at 2026-11-14 11:51:10.283
+Test Case 'ProviderAttachmentContextTests.testTruncationDisclosedAndSourceRemainsIntact' passed (3.352 seconds)
+Test Case 'ProviderAttachmentContextTests.testUnavailableDocumentsAreExplicitForNilEmptyAndWhitespace' started at 2026-11-14 11:51:13.634
+Test Case 'ProviderAttachmentContextTests.testUnavailableDocumentsAreExplicitForNilEmptyAndWhitespace' passed (0.0 seconds)
+Test Case 'ProviderAttachmentContextTests.testWholeNewestAttachmentMessageFailsClosedWhenBudgetTooSmall' started at 2026-11-14 11:51:13.635
+Test Case 'ProviderAttachmentContextTests.testWholeNewestAttachmentMessageFailsClosedWhenBudgetTooSmall' passed (0.0 seconds)
+Test Suite 'ProviderAttachmentContextTests' passed at 2026-11-14 11:51:13.635
+	 Executed 6 tests, with 0 failures (0 unexpected) in 3.454 (3.454) seconds
+Test Suite 'ProviderTests' started at 2026-11-14 11:51:13.635
+Test Case 'ProviderTests.testContentAfterStopAndDataAfterDoneAreRejected' started at 2026-11-14 11:51:13.635
+Test Case 'ProviderTests.testContentAfterStopAndDataAfterDoneAreRejected' passed (0.001 seconds)
+Test Case 'ProviderTests.testDoneWithoutSupportedStopIsNotCompletion' started at 2026-11-14 11:51:13.636
+Test Case 'ProviderTests.testDoneWithoutSupportedStopIsNotCompletion' passed (0.0 seconds)
+Test Case 'ProviderTests.testIncompleteOrUnsupportedProviderFinishDoesNotBecomeSuccess' started at 2026-11-14 11:51:13.636
+Test Case 'ProviderTests.testIncompleteOrUnsupportedProviderFinishDoesNotBecomeSuccess' passed (0.001 seconds)
+Test Case 'ProviderTests.testMalformedChoiceIndexIsRejected' started at 2026-11-14 11:51:13.637
+Test Case 'ProviderTests.testMalformedChoiceIndexIsRejected' passed (0.0 seconds)
+Test Case 'ProviderTests.testMalformedSSEAndProviderErrorAreNotSuccess' started at 2026-11-14 11:51:13.637
+Test Case 'ProviderTests.testMalformedSSEAndProviderErrorAreNotSuccess' passed (0.0 seconds)
+Test Case 'ProviderTests.testMissingOrEmptyRemoteModelIsRejected' started at 2026-11-14 11:51:13.637
+Test Case 'ProviderTests.testMissingOrEmptyRemoteModelIsRejected' passed (0.0 seconds)
+Test Case 'ProviderTests.testMultipleChoicesAreRejectedBeforeAnyContentIsEmitted' started at 2026-11-14 11:51:13.637
+Test Case 'ProviderTests.testMultipleChoicesAreRejectedBeforeAnyContentIsEmitted' passed (0.0 seconds)
+Test Case 'ProviderTests.testNormalStopAllowsFinalContentAndDone' started at 2026-11-14 11:51:13.638
+Test Case 'ProviderTests.testNormalStopAllowsFinalContentAndDone' passed (0.0 seconds)
+Test Case 'ProviderTests.testRemoteEndpointRequiresHTTPSAndRejectsEmbeddedCredentials' started at 2026-11-14 11:51:13.638
+Test Case 'ProviderTests.testRemoteEndpointRequiresHTTPSAndRejectsEmbeddedCredentials' passed (0.0 seconds)
+Test Case 'ProviderTests.testSSEByteDecoderHandlesFragmentedUTF8' started at 2026-11-14 11:51:13.638
+Test Case 'ProviderTests.testSSEByteDecoderHandlesFragmentedUTF8' passed (0.0 seconds)
+Test Case 'ProviderTests.testSSEByteDecoderLineLimitDoesNotCountCRLFDelimiters' started at 2026-11-14 11:51:13.638
+Test Case 'ProviderTests.testSSEByteDecoderLineLimitDoesNotCountCRLFDelimiters' passed (0.0 seconds)
+Test Case 'ProviderTests.testSSEByteDecoderRejectsOversizedLineBeforeNewline' started at 2026-11-14 11:51:13.639
+Test Case 'ProviderTests.testSSEByteDecoderRejectsOversizedLineBeforeNewline' passed (0.0 seconds)
+Test Case 'ProviderTests.testSSEByteDecoderSupportsAllStandardLineEndings' started at 2026-11-14 11:51:13.639
+Test Case 'ProviderTests.testSSEByteDecoderSupportsAllStandardLineEndings' passed (0.0 seconds)
+Test Case 'ProviderTests.testSSECommentsAndMetadataBetweenDataLinesDoNotAlterPayload' started at 2026-11-14 11:51:13.639
+Test Case 'ProviderTests.testSSECommentsAndMetadataBetweenDataLinesDoNotAlterPayload' passed (0.0 seconds)
+Test Case 'ProviderTests.testSSECommentsAndMetadataDoNotBecomeTokens' started at 2026-11-14 11:51:13.639
+Test Case 'ProviderTests.testSSECommentsAndMetadataDoNotBecomeTokens' passed (0.0 seconds)
+Test Case 'ProviderTests.testSSEDoneIsNotAcceptedUntilItsEventTerminator' started at 2026-11-14 11:51:13.639
+Test Case 'ProviderTests.testSSEDoneIsNotAcceptedUntilItsEventTerminator' passed (0.0 seconds)
+Test Case 'ProviderTests.testSSEEventBudgetIncludesInsertedNewlinesAcrossShortLines' started at 2026-11-14 11:51:13.640
+Test Case 'ProviderTests.testSSEEventBudgetIncludesInsertedNewlinesAcrossShortLines' passed (0.0 seconds)
+Test Case 'ProviderTests.testSSEInitialUTF8BOMDoesNotDiscardFirstToken' started at 2026-11-14 11:51:13.640
+Test Case 'ProviderTests.testSSEInitialUTF8BOMDoesNotDiscardFirstToken' passed (0.0 seconds)
+Test Case 'ProviderTests.testSSEInvalidUTF8IsRejectedBeforeDispatch' started at 2026-11-14 11:51:13.640
+Test Case 'ProviderTests.testSSEInvalidUTF8IsRejectedBeforeDispatch' passed (0.0 seconds)
+Test Case 'ProviderTests.testSSEMultilineJSONDispatchesOnlyAtBlankLine' started at 2026-11-14 11:51:13.640
+Test Case 'ProviderTests.testSSEMultilineJSONDispatchesOnlyAtBlankLine' passed (0.0 seconds)
+Test Case 'ProviderTests.testSSEParsesChunksAndDone' started at 2026-11-14 11:51:13.640
+Test Case 'ProviderTests.testSSEParsesChunksAndDone' passed (0.0 seconds)
+Test Case 'ProviderTests.testSingleIndexedChoiceCompletesNormally' started at 2026-11-14 11:51:13.641
+Test Case 'ProviderTests.testSingleIndexedChoiceCompletesNormally' passed (0.0 seconds)
+Test Case 'ProviderTests.testUnexpectedChoiceCannotSupplyTextOrCompleteAnotherAnswer' started at 2026-11-14 11:51:13.641
+Test Case 'ProviderTests.testUnexpectedChoiceCannotSupplyTextOrCompleteAnotherAnswer' passed (0.0 seconds)
+Test Case 'ProviderTests.testUnsupportedToolDeltaIsRejectedBeforeContentCanBeSpoken' started at 2026-11-14 11:51:13.641
+Test Case 'ProviderTests.testUnsupportedToolDeltaIsRejectedBeforeContentCanBeSpoken' passed (0.0 seconds)
+Test Case 'ProviderTests.testUsageAfterStopIsAllowedButDuplicateStopAndRefusalAreRejected' started at 2026-11-14 11:51:13.641
+Test Case 'ProviderTests.testUsageAfterStopIsAllowedButDuplicateStopAndRefusalAreRejected' passed (0.0 seconds)
+Test Suite 'ProviderTests' passed at 2026-11-14 11:51:13.641
+	 Executed 25 tests, with 0 failures (0 unexpected) in 0.006 (0.006) seconds
+Test Suite 'RemoteCredentialIntentTests' started at 2026-11-14 11:51:13.641
+Test Case 'RemoteCredentialIntentTests.testCanonicalUnicodeEqualityDoesNotCrossKeychainByteAccounts' started at 2026-11-14 11:51:13.641
+Test Case 'RemoteCredentialIntentTests.testCanonicalUnicodeEqualityDoesNotCrossKeychainByteAccounts' passed (0.0 seconds)
+Test Case 'RemoteCredentialIntentTests.testClearedDraftForSameEndpointKeepsExistingRatherThanDeletes' started at 2026-11-14 11:51:13.642
+Test Case 'RemoteCredentialIntentTests.testClearedDraftForSameEndpointKeepsExistingRatherThanDeletes' passed (0.0 seconds)
+Test Case 'RemoteCredentialIntentTests.testExplicitRemovalWritesEmptyOnlyToSelectedTarget' started at 2026-11-14 11:51:13.642
+Test Case 'RemoteCredentialIntentTests.testExplicitRemovalWritesEmptyOnlyToSelectedTarget' passed (0.0 seconds)
+Test Case 'RemoteCredentialIntentTests.testExplicitRemoveWinsAndTypedReplacementIsExplicit' started at 2026-11-14 11:51:13.642
+Test Case 'RemoteCredentialIntentTests.testExplicitRemoveWinsAndTypedReplacementIsExplicit' passed (0.0 seconds)
+Test Case 'RemoteCredentialIntentTests.testKeepCannotTransferBetweenEndpointsOrUseEmptyEndpoint' started at 2026-11-14 11:51:13.642
+Test Case 'RemoteCredentialIntentTests.testKeepCannotTransferBetweenEndpointsOrUseEmptyEndpoint' passed (0.0 seconds)
+Test Case 'RemoteCredentialIntentTests.testKeepMatchingNormalizedEndpointDoesNotWrite' started at 2026-11-14 11:51:13.642
+Test Case 'RemoteCredentialIntentTests.testKeepMatchingNormalizedEndpointDoesNotWrite' passed (0.0 seconds)
+Test Case 'RemoteCredentialIntentTests.testNewEndpointEmptyDraftDoesNotReuseHistoricalSecret' started at 2026-11-14 11:51:13.642
+Test Case 'RemoteCredentialIntentTests.testNewEndpointEmptyDraftDoesNotReuseHistoricalSecret' passed (0.0 seconds)
+Test Case 'RemoteCredentialIntentTests.testReplacePreservesExactNonemptySecretAndRejectsInvalidDraft' started at 2026-11-14 11:51:13.642
+Test Case 'RemoteCredentialIntentTests.testReplacePreservesExactNonemptySecretAndRejectsInvalidDraft' passed (0.001 seconds)
+Test Suite 'RemoteCredentialIntentTests' passed at 2026-11-14 11:51:13.643
+	 Executed 8 tests, with 0 failures (0 unexpected) in 0.002 (0.002) seconds
+Test Suite 'RepositorySourceDiagnosticsTests' started at 2026-11-14 11:51:13.643
+Test Case 'RepositorySourceDiagnosticsTests.testHintsAreBoundedAndDoNotClaimCompilationOrBugProof' started at 2026-11-14 11:51:13.643
+Test Case 'RepositorySourceDiagnosticsTests.testHintsAreBoundedAndDoNotClaimCompilationOrBugProof' passed (0.003 seconds)
+Test Suite 'RepositorySourceDiagnosticsTests' passed at 2026-11-14 11:51:13.646
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.003 (0.003) seconds
+Test Suite 'SelfKnowledgePromptTests' started at 2026-11-14 11:51:13.646
+Test Case 'SelfKnowledgePromptTests.testMissingMetadataDoesNotAdvertiseConditionalTools' started at 2026-11-14 11:51:13.646
+Test Case 'SelfKnowledgePromptTests.testMissingMetadataDoesNotAdvertiseConditionalTools' passed (0.0 seconds)
+Test Case 'SelfKnowledgePromptTests.testPromptDistinguishesReviewedSourceInspectionFromChatSelfRepair' started at 2026-11-14 11:51:13.646
+Test Case 'SelfKnowledgePromptTests.testPromptDistinguishesReviewedSourceInspectionFromChatSelfRepair' passed (0.0 seconds)
+Test Suite 'SelfKnowledgePromptTests' passed at 2026-11-14 11:51:13.647
+	 Executed 2 tests, with 0 failures (0 unexpected) in 0.001 (0.001) seconds
+Test Suite 'SourceRepairReviewBindingTests' started at 2026-11-14 11:51:13.647
+Test Case 'SourceRepairReviewBindingTests.testEditingSourceOrSummaryInvalidatesReview' started at 2026-11-14 11:51:13.647
+Test Case 'SourceRepairReviewBindingTests.testEditingSourceOrSummaryInvalidatesReview' passed (0.0 seconds)
+Test Case 'SourceRepairReviewBindingTests.testEquivalentUnicodeIsNotEquivalentSourceBytes' started at 2026-11-14 11:51:13.647
+Test Case 'SourceRepairReviewBindingTests.testEquivalentUnicodeIsNotEquivalentSourceBytes' passed (0.0 seconds)
+Test Case 'SourceRepairReviewBindingTests.testExactReviewedBytesRemainEligible' started at 2026-11-14 11:51:13.647
+Test Case 'SourceRepairReviewBindingTests.testExactReviewedBytesRemainEligible' passed (0.0 seconds)
+Test Case 'SourceRepairReviewBindingTests.testLineEndingAndFinalNewlineChangesRequireNewReview' started at 2026-11-14 11:51:13.647
+Test Case 'SourceRepairReviewBindingTests.testLineEndingAndFinalNewlineChangesRequireNewReview' passed (0.0 seconds)
+Test Suite 'SourceRepairReviewBindingTests' passed at 2026-11-14 11:51:13.647
+	 Executed 4 tests, with 0 failures (0 unexpected) in 0.001 (0.001) seconds
+Test Suite 'UTF8TokenAccumulatorTests' started at 2026-11-14 11:51:13.647
+Test Case 'UTF8TokenAccumulatorTests.testASCIIBeforeIncompleteScalarIsEmittedImmediately' started at 2026-11-14 11:51:13.647
+Test Case 'UTF8TokenAccumulatorTests.testASCIIBeforeIncompleteScalarIsEmittedImmediately' passed (0.0 seconds)
+Test Case 'UTF8TokenAccumulatorTests.testByteByByteValidUnicodeDoesNotInsertReplacement' started at 2026-11-14 11:51:13.648
+Test Case 'UTF8TokenAccumulatorTests.testByteByByteValidUnicodeDoesNotInsertReplacement' passed (0.0 seconds)
+Test Case 'UTF8TokenAccumulatorTests.testEmptyAppendKeepsIncompletePrefixAndFinishFlushesOnce' started at 2026-11-14 11:51:13.648
+Test Case 'UTF8TokenAccumulatorTests.testEmptyAppendKeepsIncompletePrefixAndFinishFlushesOnce' passed (0.0 seconds)
+Test Case 'UTF8TokenAccumulatorTests.testEverySplitOfValidUnicodePreservesScalars' started at 2026-11-14 11:51:13.648
+Test Case 'UTF8TokenAccumulatorTests.testEverySplitOfValidUnicodePreservesScalars' passed (0.0 seconds)
+Test Case 'UTF8TokenAccumulatorTests.testInvalidByteDoesNotWithholdFollowingValidText' started at 2026-11-14 11:51:13.648
+Test Case 'UTF8TokenAccumulatorTests.testInvalidByteDoesNotWithholdFollowingValidText' passed (0.0 seconds)
+Test Case 'UTF8TokenAccumulatorTests.testInvalidEncodingsUseStandardReplacementAcrossEverySplit' started at 2026-11-14 11:51:13.648
+Test Case 'UTF8TokenAccumulatorTests.testInvalidEncodingsUseStandardReplacementAcrossEverySplit' passed (0.0 seconds)
+Test Case 'UTF8TokenAccumulatorTests.testKnownInvalidPrefixEmitsWhileValidIncompleteTailIsRetained' started at 2026-11-14 11:51:13.649
+Test Case 'UTF8TokenAccumulatorTests.testKnownInvalidPrefixEmitsWhileValidIncompleteTailIsRetained' passed (0.0 seconds)
+Test Case 'UTF8TokenAccumulatorTests.testRepeatedInvalidBytesNeverAccumulate' started at 2026-11-14 11:51:13.649
+Test Case 'UTF8TokenAccumulatorTests.testRepeatedInvalidBytesNeverAccumulate' passed (0.001 seconds)
+Test Suite 'UTF8TokenAccumulatorTests' passed at 2026-11-14 11:51:13.650
+	 Executed 8 tests, with 0 failures (0 unexpected) in 0.003 (0.003) seconds
+Test Suite 'Selected tests' passed at 2026-11-14 11:51:13.650
+	 Executed 400 tests, with 0 failures (0 unexpected) in 4.894 (4.894) seconds
+◇ Test run started.
+↳ Testing Library Version: 6.1.3 (1d1f7e489c9c606)
+↳ Target Platform: x86_64-unknown-linux-gnu
+✔ Test run with 0 tests passed after 0.001 seconds.
+Linux exclusion: custom URLProtocol redirect fixture unsupported; Apple redirect test remains required.
+
+Foundation-only Swift test exit: 0 ; iOS build/device validation NOT performed.

@@ -1,0 +1,40 @@
+{
+  "model": {
+    "path": "/workspace/scratch/8352eb8fe69c/orivyn-q4-comparison/Qwen3-1.7B-Q4_K_M.gguf",
+    "bytes": 1282439264,
+    "sha256": "d2387ca2dbfee2ffabce7120d3770dadca0b293052bc2f0e138fdc940d9bc7b5"
+  },
+  "additionalModels": [],
+  "libraries": [
+    {
+      "path": "/workspace/scratch/8352eb8fe69c/orivyn-real-llama-recovery/build/bin/libggml-base.so.0.11.0",
+      "bytes": 817736,
+      "sha256": "e9c78a551e029bfbfcb122f69607ef0d6a5f33c283b734be3aba5d1657a3954e"
+    },
+    {
+      "path": "/workspace/scratch/8352eb8fe69c/orivyn-real-llama-recovery/build/bin/libggml-cpu.so.0.11.0",
+      "bytes": 1127008,
+      "sha256": "a2d6643e1f4660da5f9b6bf36ef7b37bbac16476849a626d36710767c10c42c3"
+    },
+    {
+      "path": "/workspace/scratch/8352eb8fe69c/orivyn-real-llama-recovery/build/bin/libggml.so.0.11.0",
+      "bytes": 55768,
+      "sha256": "c54d6efd88395e1bfb92203cb5a5142ec739a8c08d05bb60dd52ad9619d48841"
+    },
+    {
+      "path": "/workspace/scratch/8352eb8fe69c/orivyn-real-llama-recovery/build/bin/libllama-common.so.0.0.0",
+      "bytes": 5558352,
+      "sha256": "5774881db16a3e8744da17c672a17d23d8467b9bbf5b746564f5aeeb2159fbee"
+    },
+    {
+      "path": "/workspace/scratch/8352eb8fe69c/orivyn-real-llama-recovery/build/bin/libllama.so.0.0.0",
+      "bytes": 3502120,
+      "sha256": "dc053983fa3c4715ff3976f85f86c21f81f9e5a8ad0aced3f164bebbdb43dfd5"
+    },
+    {
+      "path": "/workspace/scratch/8352eb8fe69c/orivyn-real-llama-recovery/build/bin/libmtmd.so.0.0.0",
+      "bytes": 1206968,
+      "sha256": "ceb17bb4328876be0b9257a125404a71f95725bd7c484d752d3e8e807147c221"
+    }
+  ]
+}

@@ -3,7 +3,7 @@ import XCTest
 
 @MainActor
 final class VisionWorkerTests: XCTestCase {
-    private var image: OwnedRGB { OwnedRGB(width: 1, height: 1, bytes: Data([255, 0, 0])) }
+    private var image: OwnedRGB { OwnedRGB(width: 2, height: 1, bytes: Data([255, 0, 0, 255, 255, 255])) }
     func testMissingModelStatusAndReleasePreserved() async throws {
         let worker = try VisionWorker()
         let result = await worker.run(image: image, question: "Describe this image.", model: "/nonexistent/model", projector: "/nonexistent/projector")

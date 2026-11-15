@@ -1,0 +1,2 @@
+Synthetic reused development cases; original frozen scoring preserved. Verbose stdout/stderr/compile logs retained in the independent evaluator workspace; hashes retained here. 4B bypasses production model-store admission and remains above the app size limit. Revised Q4 source and exact one-file diff recorded before generation. This evidence is not new independent generalization or Apple/device verification.
+Evaluator commits: da11b237477628486973a9bc9c4d9d748f3158a9 and 943bf56738abe83f03268028df1442f1f2333888.

@@ -1,0 +1,47 @@
+[
+  {
+    "path": "/workspace/scratch/8352eb8fe69c/orivyn-independent-4b-results-resume/MANIFEST.json",
+    "bytes": 3676,
+    "sha256": "e490a2f71ea0c268cd4f1be81aaa7c21f5a8e6d37b5f0127573084563a00809e"
+  },
+  {
+    "path": "/workspace/scratch/8352eb8fe69c/orivyn-independent-4b-results-resume/RESULTS.json",
+    "bytes": 524,
+    "sha256": "d2fde6eadd2ecc6de26630a2f8f48625f860eee4362cf5575ba0a772ba2ce9d4"
+  },
+  {
+    "path": "/workspace/scratch/8352eb8fe69c/orivyn-independent-4b-results-resume/h06/APPROVAL.json",
+    "bytes": 80,
+    "sha256": "f6a12be5bfdd3fac14e15c9339b017a02c562f3adeea35e67c6e6d6fd3e9b87f"
+  },
+  {
+    "path": "/workspace/scratch/8352eb8fe69c/orivyn-independent-4b-results-resume/h06/proposal-prompt.txt",
+    "bytes": 541,
+    "sha256": "96c80dadd4c66b03c6b90df24cacc846b88e1fd11d0b5b9a1e7703a6fe6cd33f"
+  },
+  {
+    "path": "/workspace/scratch/8352eb8fe69c/orivyn-independent-4b-results-resume/h06/proposal-raw.json",
+    "bytes": 77,
+    "sha256": "78648f4ee7c44f89d0485df3b09be21e3c27a3bfb30e161f0eba4a3eb5f80efd"
+  },
+  {
+    "path": "/workspace/scratch/8352eb8fe69c/orivyn-independent-4b-results-resume/h06/proposal-request.json",
+    "bytes": 188,
+    "sha256": "dd14c5b2d29aaaae5c9b9b8f0006e351f31df06084e7c53bfc1a0f040e4f3db2"
+  },
+  {
+    "path": "/workspace/scratch/8352eb8fe69c/orivyn-independent-4b-results-resume/h06.memory.json",
+    "bytes": 6968,
+    "sha256": "6ea0627cf697d751ba1d04d235b6d6871b934f05ced3a490c1efc6e0c35015b3"
+  },
+  {
+    "path": "/workspace/scratch/8352eb8fe69c/orivyn-independent-4b-results-resume/h06.stderr",
+    "bytes": 47486,
+    "sha256": "20bb4753a4ce0f4fa931dd152d385b38c7c2986b8fa77db4928fdd87a4c823a6"
+  },
+  {
+    "path": "/workspace/scratch/8352eb8fe69c/orivyn-independent-4b-results-resume/h06.stdout",
+    "bytes": 75,
+    "sha256": "c2190510f1048a72cedfd3e9242d8731296dc41ff171039a1908ad75818c9716"
+  }
+]

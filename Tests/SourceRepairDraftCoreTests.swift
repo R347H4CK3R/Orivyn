@@ -14,6 +14,12 @@ final class SourceRepairDraftCoreTests: XCTestCase {
         XCTAssertEqual(draft.blobSHA, sha)
         XCTAssertTrue(draft.diff.contains("-let value = 1"))
         XCTAssertTrue(draft.diff.contains("+let value = 2"))
+        XCTAssertTrue(draft.patch.hasSuffix(draft.diff))
+        XCTAssertTrue(draft.patch.contains("# Base blob: " + sha))
+        XCTAssertTrue(draft.patch.contains("# Base commit: " + file.commitSHA))
+        XCTAssertTrue(draft.patch.contains("not applied or tested"))
+        XCTAssertTrue(draft.exportFilename.hasSuffix(".patch"))
+        XCTAssertLessThanOrEqual(draft.patch.utf8.count, 310_000)
         let wrong = RepositoryInspectionFile(path: file.path, commitSHA: file.commitSHA, blobSHA: String(repeating: "b", count: 40), text: text)
         XCTAssertThrowsError(try SourceRepairDraftCore().create(file: wrong, replacement: "changed\n", summary: "Proposed edit"))
     }

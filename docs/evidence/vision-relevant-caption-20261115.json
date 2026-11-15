@@ -1,0 +1,199 @@
+{
+  "schema": 1,
+  "scope": "Diagnostic caption stage only; not production, iOS, or full-pipeline acceptance",
+  "binarySHA256": "52c9c4c2961450674e128825513c8f22dbc74111fe70e6afd5f05d8b8d566db5",
+  "modelPair": "production pinned SmolVLM2-2.2B-Instruct Q4 pair",
+  "cases": [
+    {
+      "id": "case01",
+      "status": 0,
+      "output": " The blue circle is to the left of the orange square.",
+      "report": {
+        "status": 0,
+        "phase": 5,
+        "tokens": 12,
+        "positions": 139,
+        "image_chunks": 1,
+        "callback_count": 7288,
+        "live_resources": 0
+      },
+      "closeAcknowledged": true,
+      "rgbSHA256": "a7747e45a7ec97a95cfb02bcad4ddfd7277c8d22b2c45396f52c2443ed60089e",
+      "question": "In one short sentence, describe visible evidence needed for this question: Where is the blue circle relative to the orange square? Answer with one word: left, right, above, or below. Do not infer hidden details.",
+      "originalQuestion": "Where is the blue circle relative to the orange square? Answer with one word: left, right, above, or below.",
+      "seconds": 13.85
+    },
+    {
+      "id": "case02",
+      "status": 0,
+      "output": " The blue circle is above the orange square.",
+      "report": {
+        "status": 0,
+        "phase": 5,
+        "tokens": 9,
+        "positions": 139,
+        "image_chunks": 1,
+        "callback_count": 6046,
+        "live_resources": 0
+      },
+      "closeAcknowledged": true,
+      "rgbSHA256": "41b273ed0e2df5d34bf7c5aecb1b04f4e1b82f84ef01a7167b507cc6e416fd94",
+      "question": "In one short sentence, describe visible evidence needed for this question: Where is the blue circle relative to the orange square? Answer with one word: left, right, above, or below. Do not infer hidden details.",
+      "originalQuestion": "Where is the blue circle relative to the orange square? Answer with one word: left, right, above, or below.",
+      "seconds": 15.38
+    },
+    {
+      "id": "case03",
+      "status": 0,
+      "output": " The blue circle is above the orange square.",
+      "report": {
+        "status": 0,
+        "phase": 5,
+        "tokens": 9,
+        "positions": 139,
+        "image_chunks": 1,
+        "callback_count": 6046,
+        "live_resources": 0
+      },
+      "closeAcknowledged": true,
+      "rgbSHA256": "a610b3f017ecdce7bb6afdc81ae5062e1a4ac481ea41f55443c127d45c35b217",
+      "question": "In one short sentence, describe visible evidence needed for this question: Where is the blue circle relative to the orange square? Answer with one word: left, right, above, or below. Do not infer hidden details.",
+      "originalQuestion": "Where is the blue circle relative to the orange square? Answer with one word: left, right, above, or below.",
+      "seconds": 16.69
+    },
+    {
+      "id": "case04",
+      "status": 0,
+      "output": " The blue circle is below the orange square.",
+      "report": {
+        "status": 0,
+        "phase": 5,
+        "tokens": 9,
+        "positions": 139,
+        "image_chunks": 1,
+        "callback_count": 6046,
+        "live_resources": 0
+      },
+      "closeAcknowledged": true,
+      "rgbSHA256": "095e6fc19b8a28536216def1f623d5c3f4a7b738fae822a8768ce3b52cbbdbef",
+      "question": "In one short sentence, describe visible evidence needed for this question: Where is the blue circle relative to the orange square? Answer with one word: left, right, above, or below. Do not infer hidden details.",
+      "originalQuestion": "Where is the blue circle relative to the orange square? Answer with one word: left, right, above, or below.",
+      "seconds": 16.95
+    },
+    {
+      "id": "case05",
+      "status": 0,
+      "output": " 0",
+      "report": {
+        "status": 0,
+        "phase": 5,
+        "tokens": 2,
+        "positions": 125,
+        "image_chunks": 1,
+        "callback_count": 3148,
+        "live_resources": 0
+      },
+      "closeAcknowledged": true,
+      "rgbSHA256": "65e1fe416a16e7555d901aaddc14a981a6dabb73703dae18b10c84a7b3ab626a",
+      "question": "In one short sentence, describe visible evidence needed for this question: How many circles are visible? Return only the number. Do not infer hidden details.",
+      "originalQuestion": "How many circles are visible? Return only the number.",
+      "seconds": 12.49
+    },
+    {
+      "id": "case06",
+      "status": 0,
+      "output": " 1",
+      "report": {
+        "status": 0,
+        "phase": 5,
+        "tokens": 2,
+        "positions": 125,
+        "image_chunks": 1,
+        "callback_count": 3148,
+        "live_resources": 0
+      },
+      "closeAcknowledged": true,
+      "rgbSHA256": "4a01f0c17f90746a56ee97372c228b6ae76d1fe61007addbfaa1073848809427",
+      "question": "In one short sentence, describe visible evidence needed for this question: How many circles are visible? Return only the number. Do not infer hidden details.",
+      "originalQuestion": "How many circles are visible? Return only the number.",
+      "seconds": 10.65
+    },
+    {
+      "id": "case07",
+      "status": 0,
+      "output": " 2",
+      "report": {
+        "status": 0,
+        "phase": 5,
+        "tokens": 2,
+        "positions": 125,
+        "image_chunks": 1,
+        "callback_count": 3148,
+        "live_resources": 0
+      },
+      "closeAcknowledged": true,
+      "rgbSHA256": "23364317a6674cc30802b9d5d535cc473adf8b5847f153890a66c45f94a706b6",
+      "question": "In one short sentence, describe visible evidence needed for this question: How many circles are visible? Return only the number. Do not infer hidden details.",
+      "originalQuestion": "How many circles are visible? Return only the number.",
+      "seconds": 13.3
+    },
+    {
+      "id": "case08",
+      "status": 0,
+      "output": " 5",
+      "report": {
+        "status": 0,
+        "phase": 5,
+        "tokens": 2,
+        "positions": 125,
+        "image_chunks": 1,
+        "callback_count": 3148,
+        "live_resources": 0
+      },
+      "closeAcknowledged": true,
+      "rgbSHA256": "9722e72cbcc84c577facf360cbaa3047c28140c00d4a675409da140854d55744",
+      "question": "In one short sentence, describe visible evidence needed for this question: How many circles are visible? Return only the number. Do not infer hidden details.",
+      "originalQuestion": "How many circles are visible? Return only the number.",
+      "seconds": 10.16
+    },
+    {
+      "id": "case09",
+      "status": 0,
+      "output": " MAPLE 47",
+      "report": {
+        "status": 0,
+        "phase": 5,
+        "tokens": 5,
+        "positions": 127,
+        "image_chunks": 1,
+        "callback_count": 4390,
+        "live_resources": 0
+      },
+      "closeAcknowledged": true,
+      "rgbSHA256": "655132665db9e033f0efa6941b4e00ae8592cc7eb9c78bc3a32a3f86492d7979",
+      "question": "In one short sentence, describe visible evidence needed for this question: Transcribe all text in the image. Return only the text. Do not infer hidden details.",
+      "originalQuestion": "Transcribe all text in the image. Return only the text.",
+      "seconds": 11.04
+    },
+    {
+      "id": "case10",
+      "status": 0,
+      "output": " CEDAR 82",
+      "report": {
+        "status": 0,
+        "phase": 5,
+        "tokens": 6,
+        "positions": 127,
+        "image_chunks": 1,
+        "callback_count": 4804,
+        "live_resources": 0
+      },
+      "closeAcknowledged": true,
+      "rgbSHA256": "b0fb97b76cca7282c2916858e27b68f522d39e2cf9d7fc6f4d616bfa794807b0",
+      "question": "In one short sentence, describe visible evidence needed for this question: Transcribe all text in the image. Return only the text. Do not infer hidden details.",
+      "originalQuestion": "Transcribe all text in the image. Return only the text.",
+      "seconds": 13.34
+    }
+  ],
+  "decision": "Rejected before text-model stage: case02 asserts above instead of right and case08 asserts five instead of four. A text-only reasoner cannot recover missing correct visual evidence. Frozen questions, input hashes, and original answers were not changed."
+}

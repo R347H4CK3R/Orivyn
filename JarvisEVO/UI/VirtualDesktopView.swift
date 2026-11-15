@@ -94,6 +94,7 @@ struct VirtualDesktopView: View {
             ToolbarItemGroup(placement: .keyboard) {
                 Spacer()
                 Button("Hide keyboard") { inputFocused = false }
+                    .disabled(!inputFocused)
                     .accessibilityIdentifier("desktop.keyboard.hide")
             }
             ToolbarItem(placement: .topBarTrailing) {

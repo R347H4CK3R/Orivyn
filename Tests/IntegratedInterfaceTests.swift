@@ -159,7 +159,9 @@ final class IntegratedInterfaceTests: XCTestCase {
         XCTAssertTrue(window.windowScene === scene)
         XCTAssertTrue(controller.view.window === window)
         XCTAssertTrue(window.isKeyWindow)
-        let deadline = ContinuousClock.now + .seconds(10)
+        // Hosted cold WebKit/GPU process launch was measured at 22.55 seconds.
+        // Retain all loaded-page, security, geometry and pixel assertions.
+        let deadline = ContinuousClock.now + .seconds(30)
         var mathView: WKWebView?
         var timeline: [String] = []
         var observed: [ObjectIdentifier: MathNavigationDiagnostics] = [:]

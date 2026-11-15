@@ -1,0 +1,8 @@
+{
+  "type": "tool",
+  "name": "search_conversations",
+  "arguments": {
+    "query": "Maple journal",
+    "limit": 1
+  }
+}

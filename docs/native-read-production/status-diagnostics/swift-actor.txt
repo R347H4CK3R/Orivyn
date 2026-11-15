@@ -1,0 +1,5 @@
+PASS shared engine admission
+PASS actual production actor native proposal {"state":"reserved_not_executed","reserved_reads":[{"name":"get_app_info","arguments":{},"session_sequence":1},{"name":"list_models","arguments":{},"session_sequence":2}]}
+PASS native cancellation and unload join
+PASS native reload after unload
+PASS normal chat after native generation: Hello! How can I assist you today?

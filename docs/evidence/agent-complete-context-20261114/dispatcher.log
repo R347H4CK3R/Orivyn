@@ -1,0 +1,2 @@
+PASS actual LocalReadTools search -> authorized page; denied absent provenance, tiny budget and deleted conversation
+PASS actual Swift search/page payloads through durable reducer and recovery
