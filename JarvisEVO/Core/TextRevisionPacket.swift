@@ -69,7 +69,9 @@ struct UnverifiedTextRevisionPacket: Sendable {
         guard (1...maximumHeaderBytes).contains(headerCount), headerCount <= bytes.count - 4 else {
             throw ConversationError.invalidBackup
         }
-        let headerBytes = bytes.subdata(in: 4..<(4 + headerCount))
+        // Data slices retain their original startIndex. Wire offsets are relative
+        // to this packet, not absolute indices in the backing receive buffer.
+        let headerBytes = Data(bytes.dropFirst(4).prefix(headerCount))
         let header = try JSONDecoder().decode(Header.self, from: headerBytes)
         guard try canonical(header) == headerBytes else { throw ConversationError.invalidBackup }
         let payload = Data(bytes.dropFirst(4 + headerCount))

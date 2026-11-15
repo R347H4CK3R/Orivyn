@@ -31,6 +31,34 @@ final class TextRevisionPacketTests: XCTestCase {
         XCTAssertEqual(decoded.declaredSHA256, original.declaredSHA256); XCTAssertEqual(decoded.kind, .request)
         XCTAssertEqual(decoded.data, original.data)
     }
+    func testDecodeAcceptsNonZeroIndexedDataSlices() throws {
+        let original = try packet()
+        for padding in [1, 4, 1024] {
+            let framed = Data(repeating: 0xff, count: padding) + original.data
+            let slice = framed.dropFirst(padding)
+            XCTAssertEqual(slice.startIndex, padding)
+            let decoded = try UnverifiedTextRevisionPacket.decode(slice)
+            XCTAssertEqual(decoded.data, original.data)
+            XCTAssertEqual(decoded.identity, original.identity)
+        }
+    }
+
+    func testSlicedReceiptAndBusyPacketsRetainValidation() throws {
+        let id = identity(), digest = Data(repeating: 4, count: 32)
+        let summary = TextRevisionReceiveSummary(records: [.init(sourceID: UUID(), localID: UUID(), disposition: .inserted, preservedLocalID: nil)])
+        for original in [try UnverifiedTextRevisionPacket.receipt(identity: id, requestSHA256: digest, summary: summary),
+                         try UnverifiedTextRevisionPacket.busy(identity: id, requestSHA256: digest)] {
+            let slice = (Data(repeating: 0xff, count: 1024) + original.data).dropFirst(1024)
+            let decoded = try UnverifiedTextRevisionPacket.decode(slice)
+            XCTAssertEqual(decoded.data, original.data)
+            XCTAssertEqual(decoded.kind, original.kind)
+            XCTAssertEqual(decoded.identity, id)
+            XCTAssertThrowsError(try UnverifiedTextRevisionPacket.decode(slice.dropLast()))
+        }
+        let invalid = try replaceHeader(packet().data) { $0["payloadBytes"] = -1 }
+        XCTAssertThrowsError(try UnverifiedTextRevisionPacket.decode((Data([0xff]) + invalid).dropFirst()))
+    }
+
     func testReceiptRoundTripBindsExactRequestDigestAndSummary() throws {
         let id = identity()
         let summary = TextRevisionReceiveSummary(records: [.init(sourceID: UUID(), localID: UUID(), disposition: .inserted, preservedLocalID: nil)])
