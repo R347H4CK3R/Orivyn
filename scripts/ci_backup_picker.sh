@@ -22,7 +22,7 @@ choices.sort(key=lambda d:(d['name']!='iPhone 16 Plus',d['name']))
 print(choices[0]['udid'])
 PY
 )
-python3 scripts/boot_ci_simulator.py --simulator "$SIMULATOR_ID" --evidence "$ARTIFACTS/simulator-boot.json"
+python3 scripts/boot_ci_simulator.py --simulator "$SIMULATOR_ID" --evidence "$ARTIFACTS/simulator-boot.json" --timeout 300
 set +e
 xcodebuild -project JarvisEVO.xcodeproj -scheme JarvisEVO \
  -destination "platform=iOS Simulator,id=$SIMULATOR_ID" -destination-timeout 120 \

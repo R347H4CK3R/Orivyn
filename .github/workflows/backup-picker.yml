@@ -1,7 +1,7 @@
 name: Verify isolated backup picker lifecycle
 on:
   push:
-    branches: [ci/backup-picker-intel-20261115]
+    branches: [ci/backup-picker-longboot-20261115]
     paths: ['JarvisEVO/**', 'Tests/**', 'UITests/**', 'scripts/ci_backup_picker.sh', '.github/workflows/backup-picker.yml']
 permissions:
   contents: read
