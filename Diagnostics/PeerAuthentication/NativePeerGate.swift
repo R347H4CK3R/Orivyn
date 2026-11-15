@@ -84,6 +84,7 @@ struct NativePeerGate {
         }
         try NativeChannelChecks.run(root: root, password: password, output: output.deletingLastPathComponent().appendingPathComponent("channel-results.json"))
         try await NativeTextExchangeChecks.run(root: root, password: password, output: output.deletingLastPathComponent().appendingPathComponent("text-exchange-results.json"))
+        try await NativeAutomaticSyncChecks.run(root: root, password: password, output: output.deletingLastPathComponent().appendingPathComponent("automatic-sync-results.json"))
         guard results.allSatisfy(\.passed) else { throw GateError.failed("Native pairing acceptance failed; probe must remain disabled.") }
     }
 }

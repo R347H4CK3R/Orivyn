@@ -2,9 +2,11 @@ name: Verify native peer authentication
 on:
   workflow_dispatch:
   push:
-    branches: [codex/complete-capabilities-20261114, codex/native-peer-auth-tests-20261114, codex/authenticated-channel-20261115]
+    branches: [codex/complete-capabilities-20261114, codex/native-peer-auth-tests-20261114, codex/authenticated-channel-20261115, codex/foreground-sync-scheduler-20261115]
     paths:
       - 'Diagnostics/PeerAuthentication/**'
+      - 'JarvisEVO/Services/PeerAutomaticSyncController.swift'
+      - 'JarvisEVO/Core/ForegroundSyncCoordinator.swift'
       - 'JarvisEVO/Services/PeerTLSProbe.swift'
       - 'JarvisEVO/Services/PeerTextRevisionExchange.swift'
       - 'JarvisEVO/Core/PeerSyncControlFrame.swift'

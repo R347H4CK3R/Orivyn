@@ -50,7 +50,7 @@ done
 mkdir -p "$build_root/gate/Sources/NativePeerGate"
 cp Diagnostics/PeerAuthentication/Package.swift "$build_root/gate/Package.swift"
 cp JarvisEVO/Core/PeerSyncControlFrame.swift JarvisEVO/Services/PeerTLSProbe.swift Diagnostics/PeerAuthentication/NativePeerGate.swift Diagnostics/PeerAuthentication/NativeChannelChecks.swift "$build_root/gate/Sources/NativePeerGate/"
-cp Diagnostics/PeerAuthentication/NativeTextExchangeChecks.swift "$build_root/gate/Sources/NativePeerGate/"
+cp Diagnostics/PeerAuthentication/NativeTextExchangeChecks.swift Diagnostics/PeerAuthentication/NativeAutomaticSyncChecks.swift JarvisEVO/Core/ForegroundSyncCoordinator.swift JarvisEVO/Services/PeerAutomaticSyncController.swift "$build_root/gate/Sources/NativePeerGate/"
 if [[ -f JarvisEVO/Services/PeerTextRevisionExchange.swift ]]; then
   cp JarvisEVO/Services/PeerTextRevisionExchange.swift "$build_root/gate/Sources/NativePeerGate/"
 fi
