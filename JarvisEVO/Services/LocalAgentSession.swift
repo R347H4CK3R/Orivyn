@@ -174,7 +174,7 @@ final class LocalAgentSession {
                         let policy=try LocalReadWorkflowPolicy.derive(plan:plan,history:item.history,conversations:model.conversations)
                         let legacy=GenerationRequest.reviewedAgent(prompt:prompt,policy:policy)
                         #if ORIVYN_NATIVE_TRANSCRIPT
-                        if let local=provider as? LocalAIProvider,local.model.sha256.lowercased()==NativeToolTranscript.modelSHA256,
+                        if provider.model.sha256.lowercased()==NativeToolTranscript.modelSHA256,
                            let native=try GenerationRequest.reviewedNative(stateJSON:value) {
                             request=native;nativeFallback=legacy
                         } else { request=legacy }

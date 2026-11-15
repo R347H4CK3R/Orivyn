@@ -100,3 +100,39 @@ snapshot sealing and checks that no partial decision or owned directory survives
 The main production generic-task failure remains separate: this narrow approved
 workflow does not fix or establish general autonomy. Apple full-app compilation,
 native-route UI approval checks and physical-device validation are not implied.
+
+## Verified reviewed gate and user flow
+
+Source 460bfe1b6e80a9b0e066178c893ec9b854de6941 passed run 43682252962:
+8 Swift tests plus exact-template goldens and mutation checks; 6 actual-engine
+probes (including source replacement, cancellation and cleanup); 9/9 real Q4
+reviewed-policy workflows. Every workflow performed its required message read
+before returning the freshly generated code, with no broadened read accepted.
+Artifact 14148987073 has ZIP SHA256
+c93b418f600c1280d95f26756e3c28c29ba5c3d358317d96da339ef585db898f.
+The SHA-checked synthetic evidence is preserved in
+docs/evidence/native-reviewed-460bfe.json. Earlier failures remain beside it.
+
+This is actual Linux LlamaEngine inference with unchanged reviewed reducer policy
+and a synthetic SQLite executor. Actual production search/read/source-policy
+functions are additionally covered by the Swift tests. It is not an exercised
+iOS LocalAgentSession/UI flow. The follow-up source only removes a redundant
+same-type provider cast and adds evidence/docs; engine and model-test source
+remain unchanged from the tested commit.
+
+Once the application build explicitly enables ORIVYN_NATIVE_TRANSCRIPT and passes
+its Apple/UI gates, the existing user-facing path is:
+1. In Models, manually install/select Qwen 3 · 1.7B · Q4_K_M (catalog ID
+   qwen3-1.7b-q4_k_m, 1,282,439,264 bytes). The catalog already ships this entry.
+2. Open Local tasks, choose Read messages, and enter an exact quoted conversation
+   title and one message number, for example Read message 2 of "Project notes".
+3. Draft plan, check that Search and Conversation title are identical and that
+   the requested message number is correct, then Approve and create task.
+4. Tap Run. Approval alone does not start a read.
+
+This uses the selected installed LocalAIProvider and existing LocalModelStore,
+not a separate tool-model installation. No model is downloaded automatically by
+this route. Other models and unsupported plans retain the existing reviewed path.
+Allow approximately 1.3 GB additional temporary disk space for the private model
+snapshot; release and ordinary failure/cancellation cleanup were tested. Physical
+device memory/storage behavior and crash-orphan cleanup remain unverified.
