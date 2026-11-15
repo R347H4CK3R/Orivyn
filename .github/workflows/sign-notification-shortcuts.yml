@@ -1,0 +1,54 @@
+name: Sign notification shortcuts
+on:
+  push:
+    branches: [codex/notification-shortcuts-sign-20261115]
+    paths: [.github/workflows/sign-notification-shortcuts.yml]
+permissions:
+  contents: read
+jobs:
+  sign:
+    runs-on: macos-15
+    timeout-minutes: 10
+    steps:
+      - name: Generate single-action shortcuts
+        shell: bash
+        run: |
+          mkdir -p unsigned signed
+          python3 - <<'PY'
+          import plistlib, pathlib
+          for name, enabled in [('Notifications On', True), ('Notifications Off', False)]:
+              document = {
+                  'WFWorkflowName': name,
+                  'WFWorkflowActions': [{
+                      'WFWorkflowActionIdentifier': 'is.workflow.actions.announcenotifications.set',
+                      'WFWorkflowActionParameters': {'operation': 'Turn', 'OnValue': enabled, 'ShowWhenRun': False}
+                  }],
+                  'WFWorkflowClientVersion': '2600',
+                  'WFWorkflowMinimumClientVersion': 900,
+                  'WFWorkflowMinimumClientVersionString': '900',
+                  'WFWorkflowIcon': {'WFWorkflowIconStartColor': 4282601983, 'WFWorkflowIconGlyphNumber': 59511},
+                  'WFWorkflowTypes': [],
+                  'WFWorkflowInputContentItemClasses': [],
+                  'WFWorkflowImportQuestions': []
+              }
+              p = pathlib.Path('unsigned') / (name + '.shortcut')
+              p.write_bytes(plistlib.dumps(document))
+              decoded = plistlib.loads(p.read_bytes())
+              assert len(decoded['WFWorkflowActions']) == 1
+              assert decoded['WFWorkflowActions'][0]['WFWorkflowActionParameters']['OnValue'] is enabled
+          PY
+      - name: Sign with Apple Shortcuts
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in "Notifications On" "Notifications Off"; do
+            /usr/bin/shortcuts sign --mode anyone --input "unsigned/$name.shortcut" --output "signed/$name.shortcut"
+            test -s "signed/$name.shortcut"
+          done
+          shasum -a 256 signed/*.shortcut | tee signed/SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: notification-shortcuts-signed
+          path: signed/
+          if-no-files-found: error
+          retention-days: 7
