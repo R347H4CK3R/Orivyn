@@ -3,6 +3,8 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 evidence=artifacts/peer-app
 mkdir -p "$evidence"
+# Never leave a previous successful result beside a later failed run.
+rm -f "$evidence/result.json" "$evidence/Package.resolved" "$evidence/build-iOS.log" "$evidence/build-iOS-Simulator.log"
 git rev-parse HEAD > "$evidence/source-commit.txt"
 printf '%s\n' 'Compile-only isolated iOS app integration with peer SPI. No listeners, pairing, automatic sync, package or release publication. Vision/tools feature flags are not enabled in this gate.' > "$evidence/SCOPE.txt"
 xcodebuild -version > "$evidence/xcode-version.txt"
@@ -13,6 +15,8 @@ xcodegen generate
 for platform in iOS 'iOS Simulator'; do
   suffix=${platform// /-}
   xcodebuild -project JarvisEVO.xcodeproj -scheme JarvisEVO -destination "generic/platform=$platform" -derivedDataPath "$RUNNER_TEMP/orivyn-peer-app-build" CODE_SIGNING_ALLOWED=NO ORIVYN_NATIVE_FEATURES=ORIVYN_PEER_TLS_SPIKE build > "$evidence/build-$suffix.log" 2>&1
+  if [[ "$platform" == "iOS" ]]; then sdk=iphoneos; else sdk=iphonesimulator; fi
+  cmp JarvisEVO/Resources/PeerAuthentication-NOTICES.txt "$RUNNER_TEMP/orivyn-peer-app-build/Build/Products/Debug-$sdk/JarvisEVO.app/PeerAuthentication-NOTICES.txt"
 done
 python3 - "$evidence" <<'PY'
 import pathlib,json,sys

@@ -27,5 +27,6 @@
 - [x] Establish current gap: app project contains no X509/SwiftASN1 dependency and never enables SPI.
 - [x] Add exact pinned package dependencies on an isolated branch; enable SPI only in the compile gate.
 - [x] Add a bounded build of generic iOS and iOS Simulator and resolved-pin assertions.
-- [ ] Run the native gate; repair demonstrated SDK/build failures only.
-- [ ] Preserve evidence and review before any main integration.
+- [x] Run the native gate: both SDK builds passed at a15e7ed in run 43669885158.
+- [x] Independently review exact diff: no blocking compile-gate issues; evidence-freshness minor addressed.
+- [ ] Rerun after bundling dependency notices and asserting exact notice bytes in both app products; then preserve evidence before main integration.
