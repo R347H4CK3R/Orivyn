@@ -68,6 +68,7 @@ final class ForegroundSyncCoordinator {
     private var task: Task<Void, Never>?
     private var activeAuthorization: Authorization?
     private var haltedAuthorization: Authorization?
+    private var haltedStatus: Status = .blocked
     private var cancelled = false
     private(set) var status: Status = .stopped
 
@@ -109,7 +110,10 @@ final class ForegroundSyncCoordinator {
             status = .stopped
             return
         }
-        guard haltedAuthorization != authorization else { return }
+        guard haltedAuthorization != authorization else {
+            status = haltedStatus
+            return
+        }
         activeAuthorization = authorization
         cancelled = false
         status = .running
@@ -132,7 +136,8 @@ final class ForegroundSyncCoordinator {
             case .retryableFailure:
                 guard failures < policy.retryNanoseconds.count else {
                     haltedAuthorization = authorization
-                    status = .retryLimitReached
+                    haltedStatus = .retryLimitReached
+                    status = haltedStatus
                     finish()
                     return
                 }
@@ -140,7 +145,8 @@ final class ForegroundSyncCoordinator {
                 failures += 1
             case .blocked:
                 haltedAuthorization = authorization
-                status = .blocked
+                haltedStatus = .blocked
+                status = haltedStatus
                 finish()
                 return
             }
@@ -150,7 +156,8 @@ final class ForegroundSyncCoordinator {
                 // An unexpected clock error must not produce a hot retry loop.
                 if !Task.isCancelled && !cancelled {
                     haltedAuthorization = authorization
-                    status = .blocked
+                    haltedStatus = .blocked
+                    status = haltedStatus
                 }
                 break
             }

@@ -121,7 +121,7 @@ struct Checks {
             expect(s.status == .retryLimitReached, "retry limit")
             var paused = state; paused.foreground = false
             s.update(paused); s.update(state); await settle()
-            expect(p.seen.count == 4, "lifecycle reset retry budget")
+            expect(p.seen.count == 4 && s.status == .retryLimitReached, "lifecycle reset retry budget/status")
             s.retry(); await settle()
             expect(p.seen.count == 5, "explicit retry absent")
             s.update(.init()); c.advance(); await settle()
