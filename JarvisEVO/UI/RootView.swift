@@ -1,3 +1,6 @@
+#if DEBUG
+import OSLog
+#endif
 import SwiftUI
 import UniformTypeIdentifiers
 import PhotosUI
@@ -261,7 +264,25 @@ struct RootView: View {
                     .buttonStyle(.plain).accessibilityLabel("Choose model").accessibilityIdentifier("model.choose")
                 }
                 ToolbarItemGroup(placement: .topBarTrailing) {
-                    Button { prepareNavigation(); Task { await model.newConversation() } } label: { Image(systemName: "square.and.pencil") }
+                    Button {
+                        #if DEBUG
+                        let diagnostic = Logger(subsystem: "app.jarvisevo.navigation-diagnostic", category: "toolbar")
+                        diagnostic.notice("new.tap")
+                        #endif
+                        prepareNavigation()
+                        #if DEBUG
+                        diagnostic.notice("new.prepared")
+                        #endif
+                        Task {
+                            #if DEBUG
+                            diagnostic.notice("new.task.begin")
+                            #endif
+                            let changed = await model.newConversation()
+                            #if DEBUG
+                            diagnostic.notice("new.task.end changed=\(changed)")
+                            #endif
+                        }
+                    } label: { Image(systemName: "square.and.pencil") }
                         .accessibilityLabel("New conversation").accessibilityIdentifier("conversation.new")
                     Menu {
                         Button("Voice conversation", systemImage: "waveform") { startVoiceConversation() }

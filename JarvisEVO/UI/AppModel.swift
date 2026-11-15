@@ -1,3 +1,6 @@
+#if DEBUG
+import OSLog
+#endif
 import Foundation
 import Observation
 
@@ -413,19 +416,45 @@ final class AppModel {
 
     @discardableResult
     func newConversation() async -> Bool {
-        guard beginHistoryChange() else { return false }
+        #if DEBUG
+        let diagnostic = Logger(subsystem: "app.jarvisevo.navigation-diagnostic", category: "model")
+        diagnostic.notice("new.enter loading=\(self.isLoading) resourceBlocked=\(self.isLocalResourceAdmissionBlocked) changing=\(self.isChangingHistory) imageSave=\(self.isSavingGeneratedImageRecord)")
+        #endif
+        guard beginHistoryChange() else {
+            #if DEBUG
+            diagnostic.notice("new.rejected")
+            #endif
+            return false
+        }
+        #if DEBUG
+        diagnostic.notice("new.admitted")
+        #endif
         defer { finishHistoryChange() }
         cancelActiveVoiceTurn()
         cancelAttachmentImports()
         do {
             let conversation = Conversation(id: UUID(), title: "New conversation", createdAt: Date(), updatedAt: Date(), isArchived: false, messages: [])
+            #if DEBUG
+            diagnostic.notice("new.save.begin")
+            #endif
             try await saveConversation(conversation)
+            #if DEBUG
+            diagnostic.notice("new.save.end")
+            #endif
             conversations.insert(conversation, at: 0)
             selectConversation(conversation.id)
             showArchived = false
             searchText = ""
+            #if DEBUG
+            diagnostic.notice("new.selected matches=\(self.selectedConversationID == conversation.id) messageCount=\(conversation.messages.count)")
+            #endif
             return true
-        } catch { report(error); return false }
+        } catch {
+            #if DEBUG
+            diagnostic.notice("new.save.failed")
+            #endif
+            report(error); return false
+        }
     }
 
     /// Safe preflight: does not create a chat or change the composer. The UI may
