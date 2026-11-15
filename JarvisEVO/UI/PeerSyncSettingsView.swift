@@ -38,18 +38,21 @@ private struct PeerSyncSetupView: View {
             Section {
                 Text("Development candidate: nearby text only. Both apps must be open and unlocked. Device testing is incomplete.")
                 Text("No cloud account or automatic discovery. Pairing and each direction need explicit approval. Trust is not restored after restarting the app.")
+                Text("Orivyn uses your local network when you connect to a plugin server or enable approved nearby text sync. Nearby sync automatically exchanges only selected, complete, attachment-free conversations with your verified device while Orivyn is open and unlocked.")
             }
             if session.approval == nil {
                 Section("Prepare this device") {
                     Picker("Direction", selection: $direction) {
                         ForEach(PeerSyncSession.Direction.allCases, id: \.self) { Text($0.rawValue).tag($0) }
-                    }
+                    }.disabled(session.pendingOffer != nil)
+                    if direction == .send {
                     ForEach(model.conversations) { conversation in
                         Toggle(conversation.title, isOn: Binding(get: { selected.contains(conversation.id) },
                             set: { value in
                                 if value { selected.insert(conversation.id) }
                                 else { selected.remove(conversation.id) }
-                            }))
+                            })).disabled(session.pendingOffer != nil)
+                    }
                     }
                     Text("Only selected titles and identifiers are included in your pairing document. Conversation contents are not included.")
                         .font(.caption)
@@ -70,21 +73,29 @@ private struct PeerSyncSetupView: View {
                     }
                 }
                 Section("Review the other device") {
-                    Text("The first device creates a document. On the second device, paste and review it, then create and share an updated document back before approving. Compare fingerprints on the devices themselves.")
+                    Text("The first device creates and shares a document. The second imports it, then creates and shares an updated document back. After both devices have imported each other’s documents, verify fingerprints and approve the selected direction. Enable the receiving device first.")
                         .font(.caption)
                     TextEditor(text: $pastedOffer).frame(minHeight: 100)
                         .accessibilityLabel("Other device’s pairing document")
+                        .disabled(session.pendingOffer != nil)
                     if direction == .send {
                         TextField("Other device’s local address", text: $host)
                             .textInputAutocapitalization(.never).autocorrectionDisabled()
+                            .disabled(session.pendingOffer != nil)
                     }
-                    TextField("Port", text: $port).keyboardType(.numberPad)
-                    Button("Review pairing and scope") {
+                    TextField("Port", text: $port).keyboardType(.numberPad).disabled(session.pendingOffer != nil)
+                    Button("Import pairing document") {
                         do {
                             try session.review(text: pastedOffer, direction: direction, host: host, port: port)
-                            reviewPresented = true; failure = nil
+                            failure = nil
                         } catch { failure = "Unable to review this pairing document or address. Create this device’s document first and check the other device’s details." }
-                    }.disabled(working || session.localFingerprint.isEmpty)
+                    }.disabled(working || session.localFingerprint.isEmpty || session.pendingOffer != nil)
+                    if session.pendingOffer != nil {
+                        Text("Document imported. If you are the second device, create and share the updated reply above before approving.")
+                            .font(.caption)
+                        Button("Verify fingerprint and approve") { reviewPresented = true }
+                        Button("Cancel pending review") { session.cancelReview() }
+                    }
 
                 }
             } else {
@@ -126,11 +137,6 @@ private struct PeerSyncSetupView: View {
                             approve: { fingerprint, ids in
                                 try await session.approve(fingerprint: fingerprint, sourceIDs: ids)
                             }, cancel: { session.cancelReview() })
-                    }
-                    .toolbar {
-                        ToolbarItem(placement: .bottomBar) {
-                            Button("Prepare reply first") { reviewPresented = false }
-                        }
                     }
                 }
             }
