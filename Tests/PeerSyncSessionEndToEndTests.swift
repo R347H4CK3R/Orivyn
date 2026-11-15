@@ -65,7 +65,12 @@ final class PeerSyncSessionEndToEndTests: XCTestCase {
     private func unusedPort() async throws -> UInt16 {
         let listener = try NWListener(using: .tcp, on: .any)
         let events = AsyncStream<PortEvent>.makeStream()
-        defer { listener.cancel(); events.continuation.finish() }
+        let deadline = Task {
+            do { try await Task.sleep(nanoseconds: 5_000_000_000) }
+            catch { return }
+            events.continuation.yield(.failed)
+        }
+        defer { deadline.cancel(); listener.cancel(); events.continuation.finish() }
         listener.stateUpdateHandler = { state in
             switch state {
             case .ready:
