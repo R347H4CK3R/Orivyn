@@ -1134,6 +1134,9 @@ final class AppModel {
         if let transferError { throw transferError }
     }
 
+    var needsPeerHistoryRecovery: Bool { peerHistoryNeedsReload }
+    var isRecoveringPeerHistory: Bool { peerHistoryRecoveryInProgress }
+
     /// A failed post-receive read retains the existing mutation lock. Only a
     /// complete reload releases it; concurrent recoveries cannot unlock early.
     func recoverPeerHistoryReceive() async throws {

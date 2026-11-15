@@ -35,6 +35,7 @@ private struct PeerSyncSetupView: View {
 
     var body: some View {
         Form {
+            PeerHistoryRecoverySection(model: model)
             Section {
                 Text("Development candidate: nearby text only. Both apps must be open and unlocked. Device testing is incomplete.")
                 Text("No cloud account or automatic discovery. Pairing and each direction need explicit approval. Trust is not restored after restarting the app.")

@@ -17,6 +17,7 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             Form {
+                PeerHistoryRecoverySection(model: model)
                 Section {
                     HStack(spacing: 14) {
                         EvoMark(size: 44)
