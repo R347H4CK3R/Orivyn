@@ -2,7 +2,7 @@ name: Verify portable development
 on:
   workflow_dispatch:
   push:
-    branches: [codex/complete-capabilities-20261114]
+    branches: [codex/sync-wire-20261115]
     paths:
       - 'JarvisEVO/**'
       - 'Tests/**'
