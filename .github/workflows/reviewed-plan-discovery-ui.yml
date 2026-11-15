@@ -1,7 +1,7 @@
 name: Reviewed plan discovery UI regression
 on:
   push:
-    branches: [ci/reviewed-plan-discovery-ui-20261115]
+    branches: [ci/reviewed-discovery-accessibility-20261115]
     paths: ['.github/workflows/reviewed-plan-discovery-ui.yml']
 permissions:
   contents: read

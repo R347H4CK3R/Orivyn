@@ -28,13 +28,16 @@ struct LocalAgentView: View {
                     .buttonStyle(.borderedProminent)
                     .accessibilityIdentifier("agent.plan.draft")
                 Text("Review the proposed scope, approve it, then tap Run. Required approved reads must finish before an answer is accepted; the answer's accuracy still needs your review.").font(.caption)
-                DisclosureGroup("Other local tasks · experimental") {
+                DisclosureGroup {
                     Text("For app information, model lists, memory searches or arithmetic. This mode has no approved completion checklist: it can answer after a search without reading the message you asked about. For saved-message questions, use the reviewed plan above.").font(.caption).foregroundStyle(.orange)
                     Text("For arithmetic, use Calculate followed by the expression. Numbers, signs and parentheses must match; word-problem translations are not verified.").font(.caption)
                     Button("Create experimental task") { session?.create(goal: goal) }
                         .disabled(session?.canManageSavedTasks != true || session?.proposedReadPlan != nil || goal.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || goal.utf8.count > 512)
                         .accessibilityIdentifier("agent.create")
-                }.accessibilityIdentifier("agent.experimental.options")
+                } label: {
+                    Text("Other local tasks · experimental")
+                        .accessibilityIdentifier("agent.experimental.options")
+                }
             }
             if let setupError { Section { Text(setupError).foregroundStyle(.orange) } }
             if let session {

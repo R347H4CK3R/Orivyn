@@ -8,14 +8,20 @@ class ReviewedPlanDiscoveryTests(unittest.TestCase):
         self.assertIn('Section("Recommended: reviewed conversation task")',ui)
         self.assertIn('Button("Draft plan for review") { session?.prepareReadPlan(goal: goal, kind: planKind) }',ui)
         self.assertIn('.buttonStyle(.borderedProminent)',ui)
-        self.assertLess(ui.index('agent.plan.draft'),ui.index('DisclosureGroup("Other local tasks · experimental")'))
+        self.assertLess(ui.index('agent.plan.draft'),ui.index('DisclosureGroup {'))
     def test_generic_creation_is_explicit_not_silent_routing(self):
         ui=(ROOT/'JarvisEVO/UI/LocalAgentView.swift').read_text()
-        group=ui[ui.index('DisclosureGroup("Other local tasks · experimental")'):ui.index('if let setupError')]
+        group=ui[ui.index('DisclosureGroup {'):ui.index('if let setupError')]
         self.assertIn('session?.create(goal: goal)',group)
         self.assertIn('answer after a search without reading the message',group)
         self.assertIn('agent.create',group)
         self.assertNotIn('prepareReadPlan',group)
+    def test_disclosure_identifier_is_on_label_not_ancestor(self):
+        ui=(ROOT/'JarvisEVO/UI/LocalAgentView.swift').read_text()
+        self.assertNotIn('}.accessibilityIdentifier("agent.experimental.options")',ui)
+        self.assertIn('} label: {\n                    Text("Other local tasks · experimental")\n                        .accessibilityIdentifier("agent.experimental.options")',ui)
+        test=(ROOT/'UITests/LocalAgentIntegrationUITests.swift').read_text()
+        self.assertLess(test.index('XCTAttachment(string: app.debugDescription)'),test.index('let create ='))
     def test_saved_generic_records_keep_visible_limitation(self):
         ui=(ROOT/'JarvisEVO/UI/LocalAgentView.swift').read_text()
         warning=ui.index('This experimental task has no approved completion checklist.')

@@ -26,6 +26,14 @@ final class LocalAgentIntegrationUITests: XCTestCase {
         let experimental = app.descendants(matching: .any).matching(identifier: "agent.experimental.options").firstMatch
         reveal(experimental, in: form)
         experimental.tap()
+        let hierarchy = XCTAttachment(string: app.debugDescription)
+        hierarchy.name = "Expanded experimental task accessibility hierarchy"
+        hierarchy.lifetime = .keepAlways
+        add(hierarchy)
+        let expanded = XCTAttachment(screenshot: app.screenshot())
+        expanded.name = "Expanded experimental task controls"
+        expanded.lifetime = .keepAlways
+        add(expanded)
         let create = app.buttons["agent.create"]
         reveal(create, in: form)
         XCTAssertTrue(create.isEnabled)
