@@ -62,6 +62,18 @@ final class TextRevisionPacketTests: XCTestCase {
         XCTAssertThrowsError(try UnverifiedTextRevisionPacket.decode(replaceHeader(bytes) { $0["format"] = "future" }))
         XCTAssertThrowsError(try UnverifiedTextRevisionPacket.decode(replaceHeader(bytes) { $0["kind"] = "delete" }))
     }
+    func testDuplicateAndNoncanonicalHeadersAreRejected() throws {
+        let original = try packet().data
+        let size = original.prefix(4).reduce(0) { ($0 << 8) | Int($1) }
+        let header = original.subdata(in: 4..<(4+size))
+        for prefix in ["{ ", "{\"format\":\"orivyn.text.transfer.v1\","] {
+            let changed = Data(prefix.utf8) + header.dropFirst()
+            var size = UInt32(changed.count).bigEndian
+            var bytes = withUnsafeBytes(of: &size) { Data($0) }
+            bytes.append(changed); bytes.append(original.dropFirst(4+header.count))
+            XCTAssertThrowsError(try UnverifiedTextRevisionPacket.decode(bytes))
+        }
+    }
     func testFalsePayloadLengthAndWrongPayloadTypeAreRejected() throws {
         let bytes = try packet().data
         XCTAssertThrowsError(try UnverifiedTextRevisionPacket.decode(replaceHeader(bytes) { $0["payloadBytes"] = -1 }))
