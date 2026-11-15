@@ -10,10 +10,8 @@ struct LocalAgentView: View {
     @Environment(\.scenePhase) private var phase
     var body: some View {
         Form {
-            Section("Local read-only tasks") {
+            Section("Recommended: reviewed conversation task") {
                 Text("Jarvis can choose tools to read app information, installed model names, matching conversations, bounded pages of their saved messages, and saved memory notes, or calculate bounded arithmetic. All reasoning stays on your iPhone. This does not send messages, edit files, access websites or repair the app.").font(.caption)
-                Text("Experimental: small local models can skip needed tools or misread results. Inspect the recorded evidence; an answer is not verified just because the task finished.").font(.caption).foregroundStyle(.orange)
-                Text("For arithmetic, use Calculate followed by the expression. Numbers, signs and parentheses must match; word-problem translations are not verified.").font(.caption)
                 Text("Uses your selected installed local model. Saved task records stay in Orivyn; no external actions are available.").font(.caption)
                 TextEditor(text: $goal).frame(minHeight: 80).accessibilityIdentifier("agent.goal")
                     .disabled(session?.isPreparingReadPlan == true || session?.proposedReadPlan != nil)
@@ -25,12 +23,18 @@ struct LocalAgentView: View {
                 }.pickerStyle(.segmented).accessibilityIdentifier("agent.plan.kind")
                     .disabled(session?.isRunning == true || session?.proposedReadPlan != nil)
                 Text("For Read messages, put the exact conversation title in quotation marks and include the message numbers. Example: Read message 2 of \"Project notes\".").font(.caption)
-                Button("Draft plan") { session?.prepareReadPlan(goal: goal, kind: planKind) }
+                Button("Draft plan for review") { session?.prepareReadPlan(goal: goal, kind: planKind) }
                     .disabled(session?.canManageSavedTasks != true || session?.proposedReadPlan != nil || goal.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || goal.utf8.count > 512)
+                    .buttonStyle(.borderedProminent)
                     .accessibilityIdentifier("agent.plan.draft")
-                Button("Create experimental task") { session?.create(goal: goal) }
-                    .disabled(session?.canManageSavedTasks != true || session?.proposedReadPlan != nil || goal.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || goal.utf8.count > 512)
-                    .accessibilityIdentifier("agent.create")
+                Text("Review the proposed scope, approve it, then tap Run. Required approved reads must finish before an answer is accepted; the answer's accuracy still needs your review.").font(.caption)
+                DisclosureGroup("Other local tasks · experimental") {
+                    Text("For app information, model lists, memory searches or arithmetic. This mode has no approved completion checklist: it can answer after a search without reading the message you asked about. For saved-message questions, use the reviewed plan above.").font(.caption).foregroundStyle(.orange)
+                    Text("For arithmetic, use Calculate followed by the expression. Numbers, signs and parentheses must match; word-problem translations are not verified.").font(.caption)
+                    Button("Create experimental task") { session?.create(goal: goal) }
+                        .disabled(session?.canManageSavedTasks != true || session?.proposedReadPlan != nil || goal.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || goal.utf8.count > 512)
+                        .accessibilityIdentifier("agent.create")
+                }.accessibilityIdentifier("agent.experimental.options")
             }
             if let setupError { Section { Text(setupError).foregroundStyle(.orange) } }
             if let session {
@@ -63,6 +67,10 @@ struct LocalAgentView: View {
                                  ? "Approved steps recorded. The model answer still needs your review."
                                  : "The task can answer only after its approved steps are complete. Missing, ambiguous or changed evidence stops the task.")
                                 .font(.caption).foregroundStyle(.secondary)
+                        } else {
+                            Text("This experimental task has no approved completion checklist. An answer does not prove that every requested read happened. Draft a new reviewed plan above for saved-message questions; this record is preserved.")
+                                .font(.caption).foregroundStyle(.orange)
+                                .accessibilityIdentifier("agent.unreviewedWarning")
                         }
                         LabeledContent("State", value: task.status)
                         LabeledContent("Read-only tool steps", value: "\(task.steps)/6")
