@@ -1,0 +1,38 @@
+name: Verify release backup integration without boot
+on:
+  push:
+    branches: [ci/backup-release-integration-20261115]
+    paths: ['JarvisEVO/**', 'Tests/**', 'UITests/**', 'scripts/prepare_backup_host_tests.py', 'scripts/run_persistence_tests.py', 'scripts/ci_backup_without_boot.sh', '.github/workflows/backup-without-boot.yml']
+permissions:
+  contents: read
+concurrency:
+  group: backup-without-boot-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  simulator:
+    # Public-repository standard runner only. Never use private allowance or paid larger runners.
+    if: github.event.repository.private == false
+    runs-on: macos-15-intel
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Select Xcode 26
+        run: |
+          XCODE=$(find /Applications -maxdepth 1 -name 'Xcode_26*.app' | sort -V | tail -1)
+          test -n "$XCODE" || { echo 'Xcode 26 is required'; exit 1; }
+          sudo xcode-select -s "$XCODE/Contents/Developer"
+      - name: Run macOS components and compile iOS tests without boot
+        run: bash scripts/ci_backup_without_boot.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backup-without-boot-evidence-${{ github.sha }}
+          path: |
+            artifacts/backup-without-boot/*.txt
+            artifacts/backup-without-boot/*.log
+            artifacts/backup-without-boot/host/SOURCE-MANIFEST.json
+            artifacts/backup-without-boot/host/SCOPE.txt
+          retention-days: 3
+          if-no-files-found: warn

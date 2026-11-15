@@ -104,6 +104,8 @@ private struct HistoryImportView: View {
     @Bindable var model: AppModel
     @State private var importPolicy: BackupImportPolicy = .preserveLocal
     @State private var importingHistory = false
+    @State private var confirmation = BackupImportConfirmation()
+    @State private var replacementAccessURL: URL?
 
     var body: some View {
         Form {
@@ -115,28 +117,70 @@ private struct HistoryImportView: View {
                 }
                 .pickerStyle(.inline)
                 .accessibilityIdentifier("history.import-policy")
-                .disabled(importingHistory)
+                .disabled(importingHistory || confirmation.pending != nil)
             }
             Section {
-                Button("Choose backup file…") { importingHistory = true }
+                Button("Choose backup file…") {
+                    guard confirmation.beginSelection(policy: importPolicy) != nil else { return }
+                    importingHistory = true
+                }
                     .accessibilityIdentifier("history.import-file")
-                    .disabled(model.isGenerating || importingHistory)
+                    .disabled(model.isGenerating || importingHistory || confirmation.pending != nil)
             } footer: {
                 Text("Add missing only keeps all matching local records unchanged. Keep both versions skips identical matching records and imports changed matches as separate copies, preserving the local originals. Repeating a conflicting import creates more copies. With replacement import, matching conversation and memory identifiers are replaced, not combined. An older backup can remove newer messages. Export your current backup first. Original attachment files are not transferred. This is manual import, not automatic synchronization.")
+            }
+            if let pending = confirmation.pending {
+                Section("Confirm replacement") {
+                    Text(pending.url.lastPathComponent)
+                    Text("Matching conversations and memories will be overwritten. An older backup can remove newer messages. Export your current backup first. Cancel leaves your history unchanged.")
+                    Button("Replace matching records", role: .destructive) {
+                        guard !model.isGenerating, let request = confirmation.confirm() else { return }
+                        // Transfer the access lease into the import task. Navigation
+                        // cancellation must not revoke access while it is reading.
+                        let accessURL = replacementAccessURL
+                        replacementAccessURL = nil
+                        Task {
+                            defer { accessURL?.stopAccessingSecurityScopedResource() }
+                            await model.importHistory(from: request.url, policy: request.policy)
+                        }
+                    }
+                    .disabled(model.isGenerating)
+                    .accessibilityIdentifier("history.confirm-replacement")
+                    Button("Cancel replacement", role: .cancel) { cancelReplacement() }
+                        .accessibilityIdentifier("history.cancel-replacement")
+                }
+                .accessibilityIdentifier("history.replacement-review")
             }
         }
         .navigationTitle("Import backup")
         .navigationBarTitleDisplayMode(.inline)
-        .fileImporter(isPresented: $importingHistory, allowedContentTypes: [.json], allowsMultipleSelection: false) { result in
+        .fileImporter(isPresented: $importingHistory, allowedContentTypes: [.json], allowsMultipleSelection: false) { [selectionID = confirmation.selectionID] result in
+            guard let selectionID, let policy = confirmation.finishSelection(selectionID) else { return }
             switch result {
             case .success(let urls):
                 if let url = urls.first {
-                    let policy = importPolicy
-                    Task { await model.importHistory(from: url, policy: policy) }
+                    guard confirmation.pending == nil else { return }
+                    if let request = confirmation.select(url, policy: policy) {
+                        Task { await model.importHistory(from: request.url, policy: request.policy) }
+                    } else if url.startAccessingSecurityScopedResource() {
+                        replacementAccessURL = url
+                    }
                 }
             case .failure(let error): model.report(error)
             }
         }
+        .onAppear { confirmation.activate() }
+        .onDisappear {
+            confirmation.invalidate()
+            importingHistory = false
+            cancelReplacement()
+        }
+    }
+
+    private func cancelReplacement() {
+        confirmation.cancel()
+        replacementAccessURL?.stopAccessingSecurityScopedResource()
+        replacementAccessURL = nil
     }
 }
 
