@@ -23,14 +23,7 @@ for variant in baseline candidate; do
 done
 cmp "$BASE/UITests/JarvisEVOUITests.swift" "$CAND/UITests/JarvisEVOUITests.swift"
 xcrun simctl list devices available -j > "$OUT/simulators.json"
-SIMULATOR_ID=$(python3 - "$OUT/simulators.json" <<'PY'
-import json,sys
-ds=json.load(open(sys.argv[1]))['devices']
-choices=[d for r,values in ds.items() if 'iOS-26' in r for d in values if d.get('isAvailable') and d['name']=='iPhone 16 Plus']
-assert len(choices)==1, 'Require one exact iPhone16Plus/iOS26 simulator'
-print(choices[0]['udid'])
-PY
-)
+SIMULATOR_ID=$(python3 "$ROOT/scripts/select_picker_runtime.py" "$OUT/simulators.json")
 python3 "$ROOT/scripts/boot_ci_simulator.py" --simulator "$SIMULATOR_ID" --timeout 300 --evidence "$OUT/boot.json"
 run_variant() {
     local variant=$1 label=$2 dir="$ROOT/comparison-$1"
