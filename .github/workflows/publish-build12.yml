@@ -1,0 +1,89 @@
+name: Publish verified Orivyn build 12 preview
+on:
+  push:
+    branches: [codex/publish-build12-20261115]
+    paths: ['.github/workflows/publish-build12.yml']
+permissions:
+  contents: write
+  actions: read
+jobs:
+  publish:
+    if: github.event.repository.private == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 3cc225959b9f78865a21aef18adfb7a603ab6932
+          persist-credentials: false
+      - name: Require exact successful package and host checks
+        run: |
+          gh api repos/$GH_REPO/actions/runs/43729015018 > package-run.json
+          gh api repos/$GH_REPO/actions/runs/43729015018/jobs > package-jobs.json
+          python3 - <<'PYGATE'
+          import json
+          r=json.load(open('package-run.json'))
+          assert r['head_sha']=='3cc225959b9f78865a21aef18adfb7a603ab6932' and r['conclusion']=='success'
+          jobs=json.load(open('package-jobs.json'))['jobs']
+          assert len(jobs)==1 and jobs[0]['name']=='candidate' and jobs[0]['conclusion']=='success'
+          for expected in ['Verify Darwin snapshot files and process termination','Build and verify combined native runtime','Portable package and graph regressions','Release device build and actual IPA resource validation']:
+              steps=[s for s in jobs[0]['steps'] if s['name']==expected]
+              assert len(steps)==1 and steps[0]['conclusion']=='success'
+          PYGATE
+      - name: Retrieve and verify exact package
+        run: |
+          gh run download 43729015018 --name Orivyn-build12-package-evidence --dir candidate
+          python3 - <<'PY'
+          import pathlib,subprocess,json
+          paths=list(pathlib.Path('candidate').rglob('*.ipa'))
+          assert len(paths)==1,paths
+          subprocess.run(['python3','scripts/verify_ipa.py',str(paths[0]),'--output','verified-ipa.json'],check=True)
+          v=json.load(open('verified-ipa.json'))
+          assert v['build']=='12' and v['version']=='0.1.1' and v['bundle_identifier']=='app.jarvisevo.ios'
+          assert v['sha256']=='9e873964337b24b03c5018158d1518f20b7d6eda892324f20aaad7c3b4f62352' and v['size']==37168551
+          expected=json.load(open(paths[0].parent/'ipa-verification.json'))
+          assert v==expected
+          scope=json.load(open(paths[0].parent/'SCOPE.json'))
+          assert scope['source_commit']=='3cc225959b9f78865a21aef18adfb7a603ab6932'
+          assert scope['device_build']=='passed' and scope['ipa_structure_check']=='passed'
+          assert scope['native_features']==['ORIVYN_NATIVE_VISION','ORIVYN_NATIVE_TOOLS','ORIVYN_NATIVE_TRANSCRIPT']
+          assert not (paths[0].parent/'source-status-before.txt').read_text().strip()
+          assert (paths[0].parent/'SHA256SUMS').read_text().strip()==v['sha256']+'  '+paths[0].name
+          pathlib.Path('ipa-path.txt').write_text(str(paths[0]))
+          PY
+      - name: Publish labeled unfinished preview
+        run: |
+          set -euo pipefail
+          IPA="$(cat ipa-path.txt)"
+          sha256sum "$IPA" | sed 's|  .*/|  |' > SHA256SUMS
+          cat > release-notes.md <<'NOTES'
+          Orivyn 0.1.1 build 12 — unfinished unsigned iOS 26+ preview.
+
+          Adds conservative recovery of orphaned private model snapshots on the next native model load that creates a new private snapshot. A process-lifetime lease protects active snapshots, and the loader keeps that lease until native context/model teardown. Cleanup only touches recognized app-owned versioned directories with matching ownership metadata and expected files. Installed model downloads, unmarked legacy directories, active copies, symlinks, hardlinks and directories with unexpected contents are preserved. Cleanup is bounded to 128 candidates per pass with a rotating cursor; directory enumeration itself is not bounded.
+
+          The earlier backup-replacement confirmation change is retained. Preserve-local remains the default. Existing native tools, experimental vision and transcript features remain enabled.
+
+          Verification scope: 10 host-native filesystem tests passed with zero failures or skips; synthetic process-lifetime checks passed; Release iOS device compilation and unsigned IPA structure/resource verification. These are not actual iPhone inference, memory-mapped model lifetime or device acceptance tests. A synthetic host subprocess test checks that another cleanup process preserves a live lease and can recover its owned test copy after that subprocess is killed. It does not run the inference engine. Physical-iPhone behavior, selected-file confirmation UI and external file-provider grants remain unverified.
+
+          Known limits: general autonomous requests can still answer before completing requested reads. Vision is experimental with an earlier mixed-shape counting failure. Automatic live sync remains disabled. Models download separately; no weights are bundled. Optional remote providers may charge. Existing unmarked orphan snapshots are intentionally not deleted. This is not completed 1.0.0 and is not an OpenAI product.
+
+          SideStore or another compatible installer must sign this unsigned IPA. Preserve existing app data and signing identity when updating. Required third-party notices and model license terms remain bundled.
+
+          Exact package source: 3cc225959b9f78865a21aef18adfb7a603ab6932
+          Successful gate: https://github.com/R347H4CK3R/Orivyn/actions/runs/43729015018
+          File: Orivyn-0.1.1-build12-unsigned.ipa
+          Size: 37168551 bytes
+          SHA-256: 9e873964337b24b03c5018158d1518f20b7d6eda892324f20aaad7c3b4f62352
+          NOTES
+          # Create an exact lightweight tag atomically; fail if another tag already exists.
+          gh api --method POST repos/$GH_REPO/git/refs -f ref=refs/tags/orivyn-v0.1.1-build12 -f sha=3cc225959b9f78865a21aef18adfb7a603ab6932 > created-tag.json
+          python3 - <<'PYTAG'
+          import json
+          tag=json.load(open('created-tag.json'))
+          assert tag['ref']=='refs/tags/orivyn-v0.1.1-build12'
+          assert tag['object']['type']=='commit' and tag['object']['sha']=='3cc225959b9f78865a21aef18adfb7a603ab6932'
+          PYTAG
+          gh release create orivyn-v0.1.1-build12 --verify-tag "$IPA" SHA256SUMS verified-ipa.json --target 3cc225959b9f78865a21aef18adfb7a603ab6932 --title "Orivyn 0.1.1 build 12 — unfinished preview" --notes-file release-notes.md --prerelease
