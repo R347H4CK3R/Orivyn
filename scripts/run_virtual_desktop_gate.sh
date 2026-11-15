@@ -13,7 +13,7 @@ node --test scripts/agent-tests/*.test.cjs
 python3 -m unittest discover -s scripts/tests -v 2>&1 | tee "$OUT/portable-tests.log"
 bash scripts/bootstrap_llama.sh
 python3 scripts/download_test_model.py > "$OUT/test-model-path.txt"
-xcodegen generate
+python3 scripts/generate_project.py
 xcrun simctl list devices available -j > "$OUT/simulators.json"
 SIMULATOR_ID=$(python3 - "$OUT/simulators.json" <<'PY'
 import json,sys

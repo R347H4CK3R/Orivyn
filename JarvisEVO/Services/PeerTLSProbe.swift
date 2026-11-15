@@ -42,7 +42,7 @@ struct PeerTLSProbePair {
 /// same authenticated connection; no API here authorizes database mutations.
 /// All mutable state and Security/Network callbacks use this one private queue.
 final class PeerTLSProbe: @unchecked Sendable {
-    enum Failure: Error { case invalidPair, invalidIdentity, randomFailure, invalidPeer, invalidControl, timeout, canceled, alreadyStarted, invalidPayload }
+    enum Failure: Error { case invalidPair, invalidIdentity, randomFailure, invalidPeer, invalidControl, timeout, idleTimeout, canceled, alreadyStarted, invalidPayload }
     struct Result: Sendable {
         let pairingGeneration: UUID
         let peerCertificateSHA256: Data
@@ -51,6 +51,7 @@ final class PeerTLSProbe: @unchecked Sendable {
     }
     private let queue = DispatchQueue(label: "Orivyn.PeerTLSProbe")
     private let pair: PeerTLSProbePair
+    private let timeoutSeconds: TimeInterval
     private var connection: NWConnection?
     private var listener: NWListener?
     private var started = false
@@ -62,7 +63,12 @@ final class PeerTLSProbe: @unchecked Sendable {
     private var transferCompletion: (@Sendable (Swift.Result<AuthenticatedChannel, Error>) -> Void)?
     private weak var transferredChannel: AuthenticatedChannel?
 
-    init(pair: PeerTLSProbePair) { self.pair = pair }
+    /// A shorter deadline supports diagnostics; callers cannot extend the
+    /// production 30-second bound. Non-finite values use the production default.
+    init(pair: PeerTLSProbePair, timeoutSeconds: TimeInterval = 30) {
+        self.pair = pair
+        self.timeoutSeconds = timeoutSeconds.isFinite ? min(max(timeoutSeconds, 0.1), 30) : 30
+    }
 
     /// Caller must explicitly select a paired endpoint. No discovery or auto-start.
     func connect(to endpoint: NWEndpoint, completion: @escaping @Sendable (Swift.Result<Result, Error>) -> Void) {
@@ -139,9 +145,12 @@ final class PeerTLSProbe: @unchecked Sendable {
         localNonce = Data(count: 32)
         let status = localNonce.withUnsafeMutableBytes { SecRandomCopyBytes(kSecRandomDefault, 32, $0.baseAddress!) }
         guard status == errSecSuccess else { throw Failure.randomFailure }
-        queue.asyncAfter(deadline: .now() + 30) { [weak self] in
+        queue.asyncAfter(deadline: .now() + timeoutSeconds) { [weak self] in
             guard let self, self.active else { return }
-            self.finish(.failure(Failure.timeout))
+            // Only a listener that accepted no connection is ordinary idle.
+            // Accepted-but-incomplete TLS/challenge handshakes remain failures.
+            let idle = self.listener != nil && self.connection == nil
+            self.finish(.failure(idle ? Failure.idleTimeout : Failure.timeout))
         }
         return true
     }

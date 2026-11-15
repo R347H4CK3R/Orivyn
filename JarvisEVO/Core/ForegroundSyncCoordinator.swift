@@ -35,6 +35,9 @@ final class ForegroundSyncCoordinator {
 
     enum Outcome: Sendable {
         case success
+        /// Expected idle/local ownership wait, not a successful transfer. Retain
+        /// consecutive transport failures and retry after a bounded short delay.
+        case deferred
         /// Only transport availability failures belong here. Authentication,
         /// revocation, conflict and invalid receipt failures must be blocked.
         case retryableFailure
@@ -48,9 +51,12 @@ final class ForegroundSyncCoordinator {
     struct Policy {
         let intervalNanoseconds: UInt64
         let retryNanoseconds: [UInt64]
+        let deferralNanoseconds: UInt64
         init(intervalNanoseconds: UInt64 = 30_000_000_000,
-             retryNanoseconds: [UInt64] = [2_000_000_000, 5_000_000_000, 15_000_000_000]) {
+             retryNanoseconds: [UInt64] = [2_000_000_000, 5_000_000_000, 15_000_000_000],
+             deferralNanoseconds: UInt64 = 1_000_000_000) {
             // Avoid busy loops, unbounded retry lists and arithmetic overflow.
+            self.deferralNanoseconds = min(max(deferralNanoseconds, 1_000_000), 60_000_000_000)
             self.intervalNanoseconds = min(max(intervalNanoseconds, 1_000_000), 3_600_000_000_000)
             self.retryNanoseconds = Array(retryNanoseconds.prefix(3)).map {
                 min(max($0, 1_000_000), 60_000_000_000)
@@ -153,6 +159,8 @@ final class ForegroundSyncCoordinator {
             case .success:
                 consecutiveFailures = 0
                 pendingDelay = policy.intervalNanoseconds
+            case .deferred:
+                pendingDelay = policy.deferralNanoseconds
             case .retryableFailure:
                 guard consecutiveFailures < policy.retryNanoseconds.count else {
                     haltedAuthorization = authorization

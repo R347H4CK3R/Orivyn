@@ -17,15 +17,6 @@ settings:
     Debug:
       SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) DEBUG $(ORIVYN_NATIVE_FEATURES)"
 packages:
-  PeerCertificates:
-    url: https://github.com/apple/swift-certificates.git
-    revision: 8789d7e78f996d56272836c8bf3590c5bd9c9754
-  PeerASN1:
-    url: https://github.com/apple/swift-asn1.git
-    revision: 12b0abc19498e562a8d97eebb67a11e9e6a255dd
-  PeerCrypto:
-    url: https://github.com/apple/swift-crypto.git
-    revision: 9f96b82711cc4ce5816343c02eccd5ad907972d3
   LlamaRuntime:
     path: Packages/LlamaRuntime
 targets:
@@ -47,10 +38,6 @@ targets:
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         GENERATE_INFOPLIST_FILE: YES
     dependencies:
-      - package: PeerCertificates
-        product: X509
-      - package: PeerASN1
-        product: SwiftASN1
       - sdk: libsqlite3.tbd
       - sdk: JavaScriptCore.framework
       - package: LlamaRuntime

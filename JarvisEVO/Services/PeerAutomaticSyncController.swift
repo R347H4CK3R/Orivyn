@@ -29,9 +29,16 @@ final class PeerAutomaticSyncController {
     private let listenerReady: @Sendable (NWEndpoint.Port) -> Void
     private var lastSentAuthorization: Authorization?
     private var lastSentConversations: [Conversation]?
-    private lazy var scheduler = ForegroundSyncCoordinator { [weak self] authorization in
+    private lazy var scheduler = ForegroundSyncCoordinator(policy: schedulerPolicy) { [weak self] authorization in
         guard let self else { return .blocked }
         return await self.exchange(authorization)
+    }
+
+    private var schedulerPolicy: ForegroundSyncCoordinator.Policy {
+        switch route {
+        case .send: return .init()
+        case .receive: return .init(intervalNanoseconds: 1_000_000_000)
+        }
     }
 
     init(store: SQLiteConversationStore, route: Route,
@@ -107,10 +114,28 @@ final class PeerAutomaticSyncController {
                 probe.cancel()
             }
         } catch {
-            // Transport timeout is the only automatically retried failure.
-            // Unknown network/security errors fail closed instead of guessing.
-            if !Task.isCancelled, let error = error as? PeerTLSProbe.Failure,
-               case .timeout = error { return .retryableFailure }
+            guard !Task.isCancelled else { return .blocked }
+            // The owner is temporarily generating/importing. This does not
+            // acknowledge a transfer or reset consecutive transport failures.
+            if let failure = error as? TextSnapshotError, case .busy = failure { return .deferred }
+            if let failure = error as? PeerTLSProbe.Failure {
+                switch failure {
+                case .idleTimeout:
+                    if case .receive = route { return .deferred }
+                    return .blocked
+                case .timeout: return .retryableFailure
+                default: return .blocked
+                }
+            }
+            // Explicit availability failures only. TLS, DNS, malformed frames,
+            // invalid receipts and unknown errors never enter an automatic retry.
+            if let failure = error as? NWError, case .posix(let code) = failure {
+                switch code {
+                case .ECONNREFUSED, .ENETUNREACH, .EHOSTUNREACH, .ETIMEDOUT:
+                    return .retryableFailure
+                default: break
+                }
+            }
             return .blocked
         }
     }

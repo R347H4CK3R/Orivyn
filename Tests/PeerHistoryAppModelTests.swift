@@ -201,6 +201,12 @@ final class PeerHistoryAppModelTests: XCTestCase {
     func testFailedReloadBlocksMutationsUntilRecovered() async throws {
         let (model, store) = try await fixture()
         let incoming = Conversation(title: "Recoverable")
+        model.draft = "Keep my unsent draft"
+        let pending = ChatAttachment(name: "pending.txt", relativePath: "pending.txt",
+            mediaType: "text/plain", byteCount: 4)
+        model.pendingAttachments = [pending]
+        XCTAssertFalse(model.needsPeerHistoryRecovery)
+        XCTAssertFalse(model.isRecoveringPeerHistory)
         do {
             try await model.performPeerHistoryReceive {
                 try await store.save(incoming)
@@ -212,14 +218,24 @@ final class PeerHistoryAppModelTests: XCTestCase {
             }
             XCTFail("Reload failure must propagate")
         } catch {}
+        XCTAssertTrue(model.needsPeerHistoryRecovery, "Settings must expose recovery after a failed reload")
+        XCTAssertFalse(model.isRecoveringPeerHistory)
         let blocked = await model.newConversation()
         XCTAssertFalse(blocked, "Unreadable post-receive history must block mutations")
         do { try await model.recoverPeerHistoryReceive(); XCTFail("Unreadable history must not recover") } catch {}
+        XCTAssertTrue(model.needsPeerHistoryRecovery, "A failed recovery must keep the action available")
+        XCTAssertFalse(model.isRecoveringPeerHistory, "A failed attempt must permit an explicit retry")
+        XCTAssertEqual(model.draft, "Keep my unsent draft")
+        XCTAssertEqual(model.pendingAttachments, [pending])
         let stillBlocked = await model.newConversation()
         XCTAssertFalse(stillBlocked, "Failed recovery must retain mutation exclusion")
         try await store.save(incoming)
         try await model.recoverPeerHistoryReceive()
         XCTAssertEqual(model.conversations.map(\.id), [incoming.id])
+        XCTAssertFalse(model.needsPeerHistoryRecovery, "Only successful reload removes the recovery action")
+        XCTAssertFalse(model.isRecoveringPeerHistory)
+        XCTAssertEqual(model.draft, "Keep my unsent draft")
+        XCTAssertEqual(model.pendingAttachments, [pending])
         let created = await model.newConversation()
         XCTAssertTrue(created)
     }
