@@ -1,7 +1,7 @@
 name: Evaluate actual Swift native transcript workflow
 on:
   push:
-    branches: [codex/swift-native-workflow-20261115]
+    branches: [codex/bounded-native-workflow-20261115]
 permissions:
   contents: read
 jobs:
@@ -22,6 +22,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - run: python3 -m pip install jinja2==3.1.6
+      - name: Strict adapter regressions and golden mutation tests
+        run: python3 scripts/test_native_transcript.py --output "$RUNNER_TEMP/native-transcript"
       - name: Build actual Swift adapter CLI
         run: |
           echo "EVIDENCE_DIR=$RUNNER_TEMP/swift-native-evaluation" >> "$GITHUB_ENV"
@@ -55,5 +58,7 @@ jobs:
         if: always()
         with:
           name: swift-native-evaluation-${{ github.sha }}
-          path: ${{ runner.temp }}/swift-native-evaluation
+          path: |
+            ${{ runner.temp }}/swift-native-evaluation
+            ${{ runner.temp }}/native-transcript
           retention-days: 7

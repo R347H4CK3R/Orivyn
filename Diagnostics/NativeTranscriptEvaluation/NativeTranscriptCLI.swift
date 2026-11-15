@@ -12,10 +12,16 @@ import Foundation
               let templateHash=fields["templateSHA256"]?.stringValue,
               let modelHash=fields["modelSHA256"]?.stringValue,
               modelHash==NativeToolTranscript.modelSHA256 else { throw NativeToolTranscript.Failure.invalidInput }
-        guard Set(fields.keys)==(mode=="render" ? Set(["mode","state","templateSHA256","modelSHA256"]) : Set(["mode","state","templateSHA256","modelSHA256","response"])) else { throw NativeToolTranscript.Failure.invalidInput }
+        guard Set(fields.keys).subtracting(["scope"])==(mode=="render" ? Set(["mode","state","templateSHA256","modelSHA256"]) : Set(["mode","state","templateSHA256","modelSHA256","response"])) else { throw NativeToolTranscript.Failure.invalidInput }
         _=try MCPJSONValue.parse(Data(rawState.utf8),maximumBytes:32768)
         let state=try JSONDecoder().decode(LocalAgentSnapshot.self,from:Data(rawState.utf8))
-        let transcript=try NativeToolTranscript.build(state,templateSHA256:templateHash)
+        var scope:NativeToolTranscript.ReadScope?
+        if let value=fields["scope"] {
+            guard let a=value.objectValue,Set(a.keys)==["query","messageIndex"],
+                  let query=a["query"]?.stringValue,case .integer(let index)?=a["messageIndex"] else { throw NativeToolTranscript.Failure.invalidInput }
+            scope = .init(query:query,messageIndex:index)
+        }
+        let transcript=try NativeToolTranscript.build(state,templateSHA256:templateHash,readScope:scope)
         let result:MCPJSONValue
         switch mode {
         case "render":

@@ -17,7 +17,7 @@ enum NativeToolResponseAdapter {
             let call=try MCPJSONValue.parse(Data(body.utf8),maximumBytes:4096)
             guard let fields=call.objectValue,Set(fields.keys)==["name","arguments"],
                   let name=fields["name"]?.stringValue,let arguments=fields["arguments"] else { throw NativeToolTranscript.Failure.invalidInput }
-            try NativeToolTranscript.validateCall(name,arguments,allowedIDs:transcript.allowedIDs)
+            try transcript.validateNext(name,arguments)
             value = .object(["type":.string("tool"),"name":.string(name),"arguments":arguments])
         } else {
             guard transcript.canAnswer else { throw NativeToolTranscript.Failure.invalidInput }
