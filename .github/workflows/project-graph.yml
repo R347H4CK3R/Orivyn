@@ -28,6 +28,7 @@ jobs:
           xcodebuild -version > artifacts/project-graph/xcode-version.txt
           python3 -B -m unittest discover -s scripts/tests -p test_generate_project.py -v
           bash scripts/bootstrap_llama.sh
+          python3 scripts/download_test_model.py > artifacts/project-graph/test-model-path.txt
           python3 scripts/materialize_guest.py Fixtures/maintained.img.gz JarvisEVO/Resources/VMAssets/maintained.img
           command -v xcodegen >/dev/null || brew install xcodegen
           python3 scripts/generate_project.py --peer
