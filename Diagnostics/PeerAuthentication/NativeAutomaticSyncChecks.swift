@@ -115,6 +115,48 @@ enum NativeAutomaticSyncChecks {
             try encoder.encode(results).write(to: output, options: .atomic)
             print("automatic \(mode): \(passed ? "PASS" : "FAIL")")
         }
+        let handshakeFailure = try await acceptedButIncomplete(a: a, b: b)
+        results.append(.init(name: "accepted-incomplete-is-failure", passed: handshakeFailure,
+            sourceCount: 0, receivedCount: 0, reusedPendingTransfer: true))
+        let finalEncoder = JSONEncoder(); finalEncoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        try finalEncoder.encode(results).write(to: output, options: .atomic)
         guard results.allSatisfy(\.passed) else { throw GateError.failed("Automatic sync adapter failed") }
+    }
+    /// A TCP peer that never starts TLS must consume a failure, not receive the
+    /// ordinary no-connection idle exemption.
+    private static func acceptedButIncomplete(a: FixtureIdentity, b: FixtureIdentity) async throws -> Bool {
+        let probe = PeerTLSProbe(pair: try .init(identity: a.identity,
+            scannedPeerSHA256: b.pin, peerCertificateDER: b.der, generation: UUID()),
+            timeoutSeconds: 2)
+        let raw = IncompletePeerConnection()
+        let events = AsyncStream<Bool>.makeStream()
+        defer { probe.cancel(); raw.cancel(); events.continuation.finish() }
+        probe.listenForTransfer(on: .any, ready: { raw.connect($0) }, completion: { result in
+            if case .failure(let error) = result,
+               let failure = error as? PeerTLSProbe.Failure, case .timeout = failure {
+                events.continuation.yield(true)
+            } else {
+                if case .success(let channel) = result { channel.cancel() }
+                events.continuation.yield(false)
+            }
+        })
+        var iterator = events.stream.makeAsyncIterator()
+        return await iterator.next() == true
+    }
+
+}
+
+
+private final class IncompletePeerConnection: @unchecked Sendable {
+    private let lock = NSLock()
+    private var connection: NWConnection?
+    func connect(_ port: NWEndpoint.Port) {
+        let connection = NWConnection(host: "127.0.0.1", port: port, using: .tcp)
+        lock.lock(); self.connection = connection; lock.unlock()
+        connection.start(queue: DispatchQueue(label: "Orivyn.IncompletePeerFixture"))
+    }
+    func cancel() {
+        lock.lock(); let connection = self.connection; self.connection = nil; lock.unlock()
+        connection?.cancel()
     }
 }
