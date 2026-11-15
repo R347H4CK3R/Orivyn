@@ -1,4 +1,4 @@
-name: Pairing approval policy
+name: Portable pairing approval policy
 on:
   push:
     branches: [codex/peer-pairing-approval-20261115]
@@ -8,14 +8,17 @@ permissions:
 jobs:
   policy:
     if: github.event.repository.private == false
-    runs-on: macos-15-intel
-    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    container: swift:6.2-bookworm
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
       - name: Execute standalone policy tests
+        shell: bash
         run: |
+          swift --version
           mkdir -p "$RUNNER_TEMP/pairing/Sources/PairingPolicy" "$RUNNER_TEMP/pairing/Tests/PairingPolicyTests"
           cp JarvisEVO/Core/PeerPairingApproval.swift "$RUNNER_TEMP/pairing/Sources/PairingPolicy/"
           cp Tests/PeerPairingApprovalTests.swift "$RUNNER_TEMP/pairing/Tests/PairingPolicyTests/"
