@@ -23,7 +23,7 @@ final class PeerSyncSession {
     private(set) var direction: Direction = .send
     private(set) var endpointDescription = ""
     private let store: SQLiteConversationStore
-    private let provisioner = PeerIdentityProvisioner()
+    private let provisioner: PeerIdentityProvisioner
     private let snapshot: PeerAutomaticSyncController.Snapshot
     private let receive: PeerAutomaticSyncController.Receive
     private var identity: ProvisionedPeerIdentity?
@@ -35,9 +35,14 @@ final class PeerSyncSession {
     private var protectedDataAvailable = false
     private var revokedApproval: ApprovedPeerPairing?
 
-    init(store: SQLiteConversationStore, snapshot: @escaping PeerAutomaticSyncController.Snapshot,
+    /// Internal injection isolates Keychain namespaces in native tests. The app
+    /// creates one session and retains this default provisioner for its lifetime.
+    init(store: SQLiteConversationStore,
+         provisioner: PeerIdentityProvisioner = PeerIdentityProvisioner(),
+         snapshot: @escaping PeerAutomaticSyncController.Snapshot,
          receive: @escaping PeerAutomaticSyncController.Receive) {
-        self.store = store; self.snapshot = snapshot; self.receive = receive
+        self.store = store; self.provisioner = provisioner
+        self.snapshot = snapshot; self.receive = receive
     }
 
     var status: String {
