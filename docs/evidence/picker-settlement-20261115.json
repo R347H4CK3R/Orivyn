@@ -1,0 +1,143 @@
+{
+  "run": 43672111119,
+  "source": "782c41dc6c197e3589bd7a87732c4d26988000e5",
+  "artifact": 14145381705,
+  "summaries": {
+    "boundary-repeat/attempt-1/test-summary.json": {
+      "devicesAndConfigurations": [
+        {
+          "device": {
+            "architecture": "arm64",
+            "deviceId": "54E17A43-0D26-4F2A-A8A3-1F1F13CE79A9",
+            "deviceName": "iPhone 16 Plus",
+            "modelName": "iPhone 16 Plus",
+            "osBuildNumber": "23A8464",
+            "osVersion": "26.0.1",
+            "platform": "iOS Simulator"
+          },
+          "expectedFailures": 0,
+          "failedTests": 1,
+          "passedTests": 0,
+          "skippedTests": 0,
+          "testPlanConfiguration": {
+            "configurationId": "1",
+            "configurationName": "Test Scheme Action"
+          }
+        }
+      ],
+      "environmentDescription": "JarvisEVO · Built with macOS 15.8.2",
+      "expectedFailures": 0,
+      "failedTests": 1,
+      "finishTime": 1794713504.463,
+      "passedTests": 0,
+      "result": "Failed",
+      "skippedTests": 0,
+      "startTime": 1794713250.356,
+      "statistics": [],
+      "testFailures": [
+        {
+          "failureText": "XCTAssertEqual failed: (\"XCTWaiterResult(rawValue: 2)\") is not equal to (\"XCTWaiterResult(rawValue: 1)\") - Native Cancel must be stable and hittable",
+          "targetName": "JarvisEVOUITests",
+          "testIdentifier": 1,
+          "testIdentifierString": "JarvisEVOAttachmentUITests/testPhotosCancellationKeepsDraftAndAllowsFilesAfterwards()",
+          "testIdentifierURL": "test://com.apple.xcode/JarvisEVO/JarvisEVOUITests/JarvisEVOAttachmentUITests/testPhotosCancellationKeepsDraftAndAllowsFilesAfterwards",
+          "testName": "testPhotosCancellationKeepsDraftAndAllowsFilesAfterwards()"
+        }
+      ],
+      "title": "Test - JarvisEVO",
+      "topInsights": [],
+      "totalTestCount": 1
+    },
+    "boundary-repeat/attempt-2/test-summary.json": {
+      "devicesAndConfigurations": [
+        {
+          "device": {
+            "architecture": "arm64",
+            "deviceId": "54E17A43-0D26-4F2A-A8A3-1F1F13CE79A9",
+            "deviceName": "iPhone 16 Plus",
+            "modelName": "iPhone 16 Plus",
+            "osBuildNumber": "23A8464",
+            "osVersion": "26.0.1",
+            "platform": "iOS Simulator"
+          },
+          "expectedFailures": 0,
+          "failedTests": 1,
+          "passedTests": 0,
+          "skippedTests": 0,
+          "testPlanConfiguration": {
+            "configurationId": "1",
+            "configurationName": "Test Scheme Action"
+          }
+        }
+      ],
+      "environmentDescription": "JarvisEVO · Built with macOS 15.8.2",
+      "expectedFailures": 0,
+      "failedTests": 1,
+      "finishTime": 1794713660.46,
+      "passedTests": 0,
+      "result": "Failed",
+      "skippedTests": 0,
+      "startTime": 1794713562.801,
+      "statistics": [],
+      "testFailures": [
+        {
+          "failureText": "XCTAssertEqual failed: (\"XCTWaiterResult(rawValue: 2)\") is not equal to (\"XCTWaiterResult(rawValue: 1)\") - Native Cancel must be stable and hittable",
+          "targetName": "JarvisEVOUITests",
+          "testIdentifier": 1,
+          "testIdentifierString": "JarvisEVOAttachmentUITests/testPhotosCancellationKeepsDraftAndAllowsFilesAfterwards()",
+          "testIdentifierURL": "test://com.apple.xcode/JarvisEVO/JarvisEVOUITests/JarvisEVOAttachmentUITests/testPhotosCancellationKeepsDraftAndAllowsFilesAfterwards",
+          "testName": "testPhotosCancellationKeepsDraftAndAllowsFilesAfterwards()"
+        }
+      ],
+      "title": "Test - JarvisEVO",
+      "topInsights": [],
+      "totalTestCount": 1
+    },
+    "boundary-repeat/attempt-3/test-summary.json": {
+      "devicesAndConfigurations": [
+        {
+          "device": {
+            "architecture": "arm64",
+            "deviceId": "54E17A43-0D26-4F2A-A8A3-1F1F13CE79A9",
+            "deviceName": "iPhone 16 Plus",
+            "modelName": "iPhone 16 Plus",
+            "osBuildNumber": "23A8464",
+            "osVersion": "26.0.1",
+            "platform": "iOS Simulator"
+          },
+          "expectedFailures": 0,
+          "failedTests": 1,
+          "passedTests": 0,
+          "skippedTests": 0,
+          "testPlanConfiguration": {
+            "configurationId": "1",
+            "configurationName": "Test Scheme Action"
+          }
+        }
+      ],
+      "environmentDescription": "JarvisEVO · Built with macOS 15.8.2",
+      "expectedFailures": 0,
+      "failedTests": 1,
+      "finishTime": 1794713754.231,
+      "passedTests": 0,
+      "result": "Failed",
+      "skippedTests": 0,
+      "startTime": 1794713676.221,
+      "statistics": [],
+      "testFailures": [
+        {
+          "failureText": "XCTAssertEqual failed: (\"XCTWaiterResult(rawValue: 2)\") is not equal to (\"XCTWaiterResult(rawValue: 1)\") - Native Cancel must be stable and hittable",
+          "targetName": "JarvisEVOUITests",
+          "testIdentifier": 1,
+          "testIdentifierString": "JarvisEVOAttachmentUITests/testPhotosCancellationKeepsDraftAndAllowsFilesAfterwards()",
+          "testIdentifierURL": "test://com.apple.xcode/JarvisEVO/JarvisEVOUITests/JarvisEVOAttachmentUITests/testPhotosCancellationKeepsDraftAndAllowsFilesAfterwards",
+          "testName": "testPhotosCancellationKeepsDraftAndAllowsFilesAfterwards()"
+        }
+      ],
+      "title": "Test - JarvisEVO",
+      "topInsights": [],
+      "totalTestCount": 1
+    }
+  },
+  "conclusion": "Rejected: all three fail before any Cancel tap. AX shows transient PUPickerUnavailableView replaced by Photos. No production fix established."
+}
