@@ -1,5 +1,5 @@
 """Fast guard tests; load only pure diagnostic helpers, never start evaluation."""
-import ast,pathlib,unittest,uuid,subprocess
+import ast,pathlib,unittest,uuid,subprocess,hashlib,json
 from unittest.mock import patch
 source=pathlib.Path(__file__).with_name('evaluate_generic.py').read_text()
 ns={'uuid':uuid}
@@ -7,6 +7,37 @@ for node in ast.parse(source).body:
  if isinstance(node,ast.FunctionDef) and node.name in ('requested_read','exact_no_match'):
   exec(compile(ast.Module(body=[node],type_ignores=[]),'generic-oracles','exec'),ns)
 class Oracles(unittest.TestCase):
+ def test_engine_request_json_schema(self):
+  tree=ast.parse(source)
+  node=next(n for n in ast.walk(tree) if isinstance(n,ast.Assign) and any(isinstance(t,ast.Name) and t.id=='request' for t in n.targets))
+  for baseline in [True,False]:
+   local=dict(state='{}',title='Fixture',index=2,prompt='User task',ids=[],baseline=baseline,s={'history':[]})
+   exec(compile(ast.Module(body=[node],type_ignores=[]),'request','exec'),local)
+   value=json.loads(json.dumps(local['request']))
+   self.assertEqual(value['state'],'{}')
+   self.assertEqual(value['scope'],{'query':'Fixture','messageIndex':2})
+   self.assertEqual(value['genericPrompt'],'User task')
+   self.assertIs(type(value['requiresTool']),bool)
+   self.assertEqual(value['conversationIDs'],[])
+   self.assertTrue(value['baseline'])
+   self.assertEqual(value['genericNative'],not baseline)
+ def test_exact_grammar_is_copied_and_manifested(self):
+  root=pathlib.Path(__file__).resolve().parents[2]
+  builder=pathlib.Path(__file__).with_name('build_engine.py').read_text()
+  nodes=ast.parse(builder).body
+  start=next(i for i,n in enumerate(nodes) if isinstance(n,ast.Assign) and any(isinstance(t,ast.Name) and t.id=='resource' for t in n.targets))
+  class Sink:
+   def __init__(self):self.name=None;self.files={}
+   def __truediv__(self,name):self.name=name;return self
+   def write_bytes(self,value):self.files[self.name]=value
+  sink=Sink();manifest=[]
+  local=dict(root=root,out=sink,manifest=manifest,hashlib=hashlib)
+  exec(compile(ast.Module(body=nodes[start:start+4],type_ignores=[]),'resource-copy','exec'),local)
+  expected=(root/'JarvisEVO/Resources/LocalAgentDecision.gbnf').read_bytes()
+  self.assertLessEqual(len(expected),8192)
+  self.assertTrue(expected.startswith(b'root ::= tool | read-result | answer\n'))
+  self.assertEqual(sink.files['LocalAgentDecision.gbnf'],expected)
+  self.assertEqual(manifest,[{'source':'JarvisEVO/Resources/LocalAgentDecision.gbnf','sha256':hashlib.sha256(expected).hexdigest()}])
  def test_summary_and_final_status_share_score_key(self):
   tree=ast.parse(source)
   summary=next(n for n in tree.body if isinstance(n,ast.Assign) and any(isinstance(t,ast.Name) and t.id=='summary' for t in n.targets))

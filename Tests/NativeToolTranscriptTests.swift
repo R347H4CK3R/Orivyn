@@ -8,7 +8,7 @@ final class NativeToolTranscriptTests: XCTestCase {
         XCTAssertEqual(request.maxTokens,384)
         XCTAssertEqual(request.temperature,0)
         XCTAssertTrue(request.messages.contains { $0.role == .user && !$0.content.trimmingCharacters(in:.whitespacesAndNewlines).isEmpty })
-        XCTAssertTrue(request.systemPrompt.utf8.count + request.messages.reduce(0) { $0 + $1.content.utf8.count } <= 1_000_000)
+        XCTAssertTrue(request.systemPrompt.utf8.count + request.messages.reduce(0, { $0 + $1.content.utf8.count }) <= 1_000_000)
         try request.validateInternalModes()
         let input=try XCTUnwrap(request.nativeTranscriptInput)
         XCTAssertTrue(input.unscoped)
