@@ -43,6 +43,7 @@ final class LocalCompletionUITests: XCTestCase {
         capture(app,"Exact review")
         let approve=app.buttons["completion.approve"];reveal(approve,in:app.collectionViews.firstMatch);approve.tap()
         XCTAssertFalse(app.buttons["completion.approve"].exists)
+        capture(app,"Post approval state identifiers")
         ready(app);capture(app,"Approved ready without execution")
         app.terminate()
     }
@@ -112,9 +113,9 @@ final class LocalCompletionUITests: XCTestCase {
     }
     private func ready(_ app:XCUIApplication) {
         let run=app.buttons["agent.run"];reveal(run,in:app.collectionViews.firstMatch);XCTAssertTrue(run.isEnabled)
-        let state=app.cells.containing(.staticText,identifier:"State").staticTexts["ready"]
+        let state=app.staticTexts["agent.state.value"]
         inspect(state,in:app,towardEnd:false);XCTAssertEqual(state.label,"ready")
-        let steps=app.staticTexts["0/6"];inspect(steps,in:app,towardEnd:true);XCTAssertEqual(steps.label,"0/6")
+        let steps=app.staticTexts["agent.steps.value"];inspect(steps,in:app,towardEnd:true);XCTAssertEqual(steps.label,"0/6")
         XCTAssertFalse(app.staticTexts["agent.answer"].exists)
         let statusText=app.staticTexts["agent.status"];inspect(statusText,in:app,towardEnd:true)
         let status=statusText.label

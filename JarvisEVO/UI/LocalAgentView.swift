@@ -110,8 +110,8 @@ struct LocalAgentView: View {
                                 .font(.caption).foregroundStyle(.orange)
                                 .accessibilityIdentifier("agent.unreviewedWarning")
                         }
-                        LabeledContent("State", value: task.status)
-                        LabeledContent("Read-only tool steps", value: "\(task.steps)/6")
+                        LabeledContent("State") { Text(task.status).accessibilityIdentifier("agent.state.value") }
+                        LabeledContent("Read-only tool steps") { Text("\(task.steps)/6").accessibilityIdentifier("agent.steps.value") }
                         Text(session.status).font(.caption).accessibilityIdentifier("agent.status")
                         HStack {
                             Button(task.status == "interrupted" ? "Resume" : "Run") { session.run() }

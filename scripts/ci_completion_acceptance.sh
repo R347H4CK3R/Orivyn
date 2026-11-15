@@ -59,6 +59,7 @@ export ORIVYN_PRODUCTION_MODEL_ID=qwen3-1.7b-q4_k_m
 export ORIVYN_NATIVE_TOOLS_MODEL_DIR="$MODEL_DIR"
 export NATIVE_TOOLS_GATE_KIND=completion
 bash Diagnostics/NativeTools/run_production_simulator.sh
+python3 scripts/verify_completion_model_evidence.py "$NATIVE_TOOLS_EVIDENCE_DIR"
 }
 
 source scripts/completion_acceptance_phases.sh

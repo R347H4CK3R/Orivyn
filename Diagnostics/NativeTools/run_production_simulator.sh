@@ -15,26 +15,30 @@ SCHEME="$ROOT/JarvisEVO.xcodeproj/xcshareddata/xcschemes/JarvisEVO.xcscheme"
 [[ -f "$SCHEME" ]] || { echo 'Generate the main project with the combined runtime first.' >&2; exit 2; }
 mkdir "$NATIVE_TOOLS_EVIDENCE_DIR"
 cp "$SCHEME" "$NATIVE_TOOLS_EVIDENCE_DIR/original.xcscheme"
+GATE_COMPLETED=0
 cleanup() {
-  local status=$?
+  local status="$1"
+  # Bash versions can report zero for some fatal expansion exits. A gate
+  # cannot succeed until all required evidence checks reached the end.
+  if [[ "$status" == 0 && "$GATE_COMPLETED" != 1 ]]; then status=1; fi
   vm_stat > "$NATIVE_TOOLS_EVIDENCE_DIR/host-vm-after.txt" || true
   cp "$NATIVE_TOOLS_EVIDENCE_DIR/original.xcscheme" "$SCHEME" || status=1
   trap - EXIT
   exit "$status"
 }
-trap cleanup EXIT
+trap 'cleanup "$?"' EXIT
 # TestAction environment is explicit; shell variables alone do not establish
 # simulator test-host propagation. Restore the generated scheme on every exit.
 MODEL_ID="${ORIVYN_PRODUCTION_MODEL_ID:-qwen3-1.7b-q8_0}"
 GATE_KIND="${NATIVE_TOOLS_GATE_KIND:-native-tools}"
-TRANSCRIPT_ARGS=()
+set --
 if [[ "${ORIVYN_REQUIRE_NATIVE_TRANSCRIPT_ROUTE:-0}" == 1 ]]; then
  [[ "$GATE_KIND" == reviewed-plan && " $ORIVYN_NATIVE_FEATURES " == *' ORIVYN_NATIVE_TRANSCRIPT '* ]] || { echo 'Native transcript proof needs reviewed-plan and its build flag.' >&2; exit 2; }
- TRANSCRIPT_ARGS+=(--require-native-transcript)
+ set -- --require-native-transcript
 fi
 python3 "$ROOT/Diagnostics/NativeTools/simulator_gate.py" --scheme "$SCHEME" \
  --models "$ORIVYN_NATIVE_TOOLS_MODEL_DIR" --destination "$NATIVE_TOOLS_DESTINATION" \
- --model-id "$MODEL_ID" --gate "$GATE_KIND" "${TRANSCRIPT_ARGS[@]}" > "$NATIVE_TOOLS_EVIDENCE_DIR/gate-config.json"
+ --model-id "$MODEL_ID" --gate "$GATE_KIND" "$@" > "$NATIVE_TOOLS_EVIDENCE_DIR/gate-config.json"
 case "$GATE_KIND" in
  completion) SELECTOR='JarvisEVOTests/ProductionCompletionContractTests/testRequiredApprovedCallsBeforeGroundedAnswer'; DEFAULT_ALLOWANCE=840; MAX_ALLOWANCE=840 ;;
  native-tools) SELECTOR='JarvisEVOTests/ProductionNativeToolsRuntimeTests/testRequiredProductionSuggestionAndReload'; DEFAULT_ALLOWANCE=300; MAX_ALLOWANCE=600 ;;
@@ -70,3 +74,4 @@ VERIFY_STATUS=$?
 set -e
 printf 'xcodebuild=%s\nlog=%s\nattachments=%s\nsummary=%s\nverifier=%s\n' "$BUILD_STATUS" "$LOG_STATUS" "$ATTACHMENT_STATUS" "$SUMMARY_STATUS" "$VERIFY_STATUS" > "$NATIVE_TOOLS_EVIDENCE_DIR/outcomes.txt"
 [[ "$BUILD_STATUS" == 0 && "$LOG_STATUS" == 0 && "$ATTACHMENT_STATUS" == 0 && "$SUMMARY_STATUS" == 0 && "$VERIFY_STATUS" == 0 ]]
+GATE_COMPLETED=1
