@@ -32,16 +32,20 @@ struct PeerPairingReviewView: View {
             }
             Section {
                 ForEach(conversations) { conversation in
-                    Toggle(isOn: Binding(get: { selected.contains(conversation.id) },
-                        set: { enabled in
-                            if enabled { selected.insert(conversation.id) }
-                            else { selected.remove(conversation.id) }
-                        })) {
-                        VStack(alignment: .leading) {
-                            Text(conversation.title)
-                            Text(conversation.id.uuidString).font(.caption2.monospaced())
+                    Button {
+                        if selected.contains(conversation.id) { selected.remove(conversation.id) }
+                        else { selected.insert(conversation.id) }
+                    } label: {
+                        HStack {
+                            VStack(alignment: .leading) {
+                                Text(conversation.title)
+                                Text(conversation.id.uuidString).font(.caption2.monospaced())
+                            }
+                            Spacer()
+                            Image(systemName: selected.contains(conversation.id) ? "checkmark.circle.fill" : "circle")
                         }
                     }
+                    .accessibilityValue(selected.contains(conversation.id) ? "Selected" : "Not selected")
                 }
             } header: { Text("Approve conversations") }
               footer: {

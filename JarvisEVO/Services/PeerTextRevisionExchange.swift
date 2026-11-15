@@ -5,7 +5,7 @@ import Foundation
 import CryptoKit
 
 enum PeerTextRevisionExchange {
-    enum Failure: Error { case invalidScope, invalidRequest, invalidReceipt, missingTransfer }
+    enum Failure: Error { case invalidScope, invalidRequest, invalidReceipt, missingTransfer, peerBusy }
 
     static func send(transferID: UUID, store: SQLiteConversationStore,
                      over channel: PeerTLSProbe.AuthenticatedChannel) async throws -> TextRevisionReceiveSummary {
@@ -24,8 +24,10 @@ enum PeerTextRevisionExchange {
             try Task.checkCancellation()
             try await write(request.data, channel: channel)
             let receipt = try UnverifiedTextRevisionPacket.decode(await read(channel))
-            guard receipt.kind == .receipt, receipt.identity == identity,
+            guard receipt.identity == identity,
                   receipt.declaredSHA256 == digest else { throw Failure.invalidReceipt }
+            if receipt.kind == .busy { throw Failure.peerBusy }
+            guard receipt.kind == .receipt else { throw Failure.invalidReceipt }
             let summary = try receipt.receiptSummary()
             try Task.checkCancellation()
             // The database rechecks revocation and staged ancestry atomically.
@@ -68,6 +70,44 @@ enum PeerTextRevisionExchange {
             // A lost receipt leaves the sender pending. Retry uses the durable
             // receiver receipt; it must never manufacture a new import.
             return summary
+        } onCancel: {
+            channel.cancel()
+        }
+    }
+
+    /// Called only when the app's history owner declined the incoming operation
+    /// as temporarily busy. Validate the complete request before responding, but
+    /// do not import, acknowledge delivery, or alter any revision metadata.
+    static func deferBusy(approvedSourceIDs: Set<UUID>, expectedEpoch: UUID,
+                          store: SQLiteConversationStore,
+                          over channel: PeerTLSProbe.AuthenticatedChannel) async throws {
+        try await withTaskCancellationHandler {
+            defer { channel.cancel() }
+            try Task.checkCancellation()
+            guard (1...100).contains(approvedSourceIDs.count) else { throw Failure.invalidScope }
+            let request = try UnverifiedTextRevisionPacket.decode(await read(channel))
+            let identity = request.identity
+            guard request.kind == .request,
+                  identity.senderCertificateSHA256 == channel.peerCertificateSHA256,
+                  identity.receiverCertificateSHA256 == channel.localCertificateSHA256,
+                  identity.pairingGeneration == channel.pairingGeneration,
+                  identity.receiverEpoch == expectedEpoch,
+                  Data(SHA256.hash(data: request.payload)) == request.declaredSHA256 else {
+                throw Failure.invalidRequest
+            }
+            let envelope = try TextRevisionEnvelope.decodeCanonical(request.payload)
+            guard Set(envelope.records.map { $0.incoming.id }).isSubset(of: approvedSourceIDs) else {
+                throw Failure.invalidScope
+            }
+            guard try await store.textReceiveEpoch() == expectedEpoch,
+                  try await !store.isTextPeerRevoked(peerCertificateSHA256: channel.peerCertificateSHA256,
+                                                     pairingGeneration: channel.pairingGeneration) else {
+                throw Failure.invalidScope
+            }
+            try Task.checkCancellation()
+            let response = try UnverifiedTextRevisionPacket.busy(identity: identity,
+                requestSHA256: request.declaredSHA256)
+            try await write(response.data, channel: channel)
         } onCancel: {
             channel.cancel()
         }

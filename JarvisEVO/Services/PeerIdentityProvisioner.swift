@@ -72,9 +72,11 @@ actor PeerIdentityProvisioner {
         var serializer = DER.Serializer()
         try serializer.serialize(certificate)
         let der = Data(serializer.serializedBytes)
-        guard let secCertificate = SecCertificateCreateWithData(nil, der as CFData) else { throw Failure.invalidIdentity }
+        guard SecCertificateCreateWithData(nil, der as CFData) != nil else { throw Failure.invalidIdentity }
         let add: [CFString: Any] = [
-            kSecClass: kSecClassCertificate, kSecValueRef: secCertificate,
+            // Add DER rather than a transient certificate reference so the supplied
+            // searchable label is part of the stored item on both Keychain backends.
+            kSecClass: kSecClassCertificate, kSecValueData: der,
             kSecAttrLabel: label, kSecAttrAccessible: kSecAttrAccessibleWhenUnlockedThisDeviceOnly,
             kSecAttrSynchronizable: false
         ]

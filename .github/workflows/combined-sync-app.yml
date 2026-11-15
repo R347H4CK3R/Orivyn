@@ -21,11 +21,29 @@ jobs:
           sudo xcode-select -s "$XCODE/Contents/Developer"
       - name: Compile actual device and simulator app with sync enabled
         run: bash scripts/ci_peer_app.sh
-      - name: Run nineteen actual history and session checks
+      - name: Run twenty-two signed simulator history and session checks
         run: bash scripts/ci_combined_peer_history.sh
       - name: Verify authenticated exchange including idle and busy scheduling
         if: always()
-        run: bash Diagnostics/PeerAuthentication/run.sh
+        run: |
+          bash Diagnostics/PeerAuthentication/run.sh artifacts/peer-authentication
+          python3 scripts/validate_peer_native_evidence.py artifacts/peer-authentication
+      - name: Verify real Keychain storage and provisioned TLS identities
+        if: always()
+        run: |
+          bash Diagnostics/PeerProvisioning/run.sh
+          python3 - <<'PY'
+          import os,pathlib,re
+          text=pathlib.Path(os.environ['RUNNER_TEMP'],'peer-provisioning-tests.log').read_text()
+          assert re.search(r'Executed 4 tests, with 0 failures',text),text[-4000:]
+          PY
+      - name: Preserve provisioning diagnostics
+        if: always()
+        run: |
+          mkdir -p artifacts/peer-provisioning
+          for log in "$RUNNER_TEMP"/peer-provisioning-*.log; do
+            if [[ -f "$log" ]]; then cp "$log" artifacts/peer-provisioning/; fi
+          done
       - uses: actions/upload-artifact@v4
         if: always()
         with:

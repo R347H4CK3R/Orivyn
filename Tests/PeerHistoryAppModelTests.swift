@@ -119,6 +119,46 @@ final class PeerHistoryAppModelTests: XCTestCase {
         }
     }
 
+    func testAdmissionBusyDefersWithoutEnteringReceiveOrReleasingOtherOwner() async throws {
+        let (model, _) = try await fixture()
+        var deferred = false
+        try await model.performPeerHistoryReceive {
+            do {
+                try await model.performPeerHistoryReceive({
+                    XCTFail("An owned history must not enter the receive operation")
+                }, onAdmissionBusy: {
+                    deferred = true
+                    let created = await model.newConversation()
+                    XCTAssertFalse(created, "Deferring cannot release the other history owner")
+                })
+                XCTFail("A returned deferral must still report busy")
+            } catch TextSnapshotError.busy {} catch { XCTFail("Unexpected: \(error)") }
+            let stillBlocked = await model.newConversation()
+            XCTAssertFalse(stillBlocked)
+        }
+        XCTAssertTrue(deferred)
+        let created = await model.newConversation()
+        XCTAssertTrue(created)
+    }
+
+    func testBusyInsideReceiveNeverDefersAgainAndReconcilesCommittedHistory() async throws {
+        let (model, store) = try await fixture()
+        let incoming = Conversation(title: "Committed before operation reported busy")
+        do {
+            try await model.performPeerHistoryReceive({
+                try await store.save(incoming)
+                throw TextSnapshotError.busy
+            }, onAdmissionBusy: {
+                XCTFail("A consumed receive must never read the channel again to send busy")
+            })
+            XCTFail("The receive error must propagate")
+        } catch TextSnapshotError.busy {} catch { XCTFail("Unexpected: \(error)") }
+        XCTAssertEqual(model.conversations.map(\.id), [incoming.id])
+        XCTAssertFalse(model.needsPeerHistoryRecovery)
+        let created = await model.newConversation()
+        XCTAssertTrue(created, "Reconciled receive must release its owner")
+    }
+
     private func fixture() async throws -> (AppModel, SQLiteConversationStore) {
         let store = try SQLiteConversationStore(url: root.appendingPathComponent("history.sqlite"))
         let model = AppModel(store: store,

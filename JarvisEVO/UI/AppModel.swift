@@ -1137,6 +1137,23 @@ final class AppModel {
     var needsPeerHistoryRecovery: Bool { peerHistoryNeedsReload }
     var isRecoveringPeerHistory: Bool { peerHistoryRecoveryInProgress }
 
+    /// Defer only an admission rejection, before the receive operation can
+    /// consume the authenticated request. A busy error from inside the operation
+    /// still reconciles history and must never trigger a second channel read.
+    func performPeerHistoryReceive(_ operation: @MainActor () async throws -> Void,
+                                   onAdmissionBusy: @MainActor () async throws -> Void) async throws {
+        var enteredOperation = false
+        do {
+            try await performPeerHistoryReceive {
+                enteredOperation = true
+                try await operation()
+            }
+        } catch TextSnapshotError.busy where !enteredOperation {
+            try await onAdmissionBusy()
+            throw TextSnapshotError.busy
+        }
+    }
+
     /// A failed post-receive read retains the existing mutation lock. Only a
     /// complete reload releases it; concurrent recoveries cannot unlock early.
     func recoverPeerHistoryReceive() async throws {
@@ -1162,10 +1179,15 @@ final class AppModel {
     func receivePeerTextRevisions(approvedSourceIDs: Set<UUID>, expectedEpoch: UUID,
                                   over channel: PeerTLSProbe.AuthenticatedChannel) async throws {
         defer { channel.cancel() }
-        try await performPeerHistoryReceive {
+        try await performPeerHistoryReceive({
             _ = try await PeerTextRevisionExchange.receive(approvedSourceIDs: approvedSourceIDs,
                 expectedEpoch: expectedEpoch, store: self.store, over: channel)
-        }
+        }, onAdmissionBusy: {
+            // This is a validated non-acknowledgement, never an import/receipt.
+            try await PeerTextRevisionExchange.deferBusy(approvedSourceIDs: approvedSourceIDs,
+                expectedEpoch: expectedEpoch, store: self.store, over: channel)
+            throw PeerTextRevisionExchange.Failure.peerBusy
+        })
     }
     #endif
 
