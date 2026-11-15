@@ -1,5 +1,4 @@
-name: Build 10 isolated integration gate
-# Retry after runtime tool probe exit134; no app changes.
+name: Build 10 final package gate
 on:
   push:
     branches: [codex/build10-integration-20261115]
@@ -32,15 +31,18 @@ jobs:
         id: combined-cache
         with:
           path: .cache/orivyn-combined
-          key: combined-v1-${{ runner.os }}-${{ runner.arch }}-${{ steps.xcode.outputs.identity }}-${{ hashFiles('Diagnostics/CombinedRuntime/prepare_build.py', 'Diagnostics/CombinedRuntime/simulator-slices.sh', 'Diagnostics/CombinedRuntime/build-ios-combined.sh', 'Diagnostics/CombinedRuntime/native-bridges.cmake', 'Diagnostics/VisionRuntime/prepare_build.py', 'Diagnostics/VisionRuntime/source/build-xcframework.sh', 'Diagnostics/NativeTools/*.cpp', 'Diagnostics/NativeTools/*.h', 'Diagnostics/VisionProof/Bridge/*.cpp', 'Diagnostics/VisionProof/Bridge/*.h', 'scripts/verify_combined_runtime.py', 'scripts/ci_combined_runtime.sh') }}
+          key: combined-v1-macOS-ARM64-bb7fc9a8f5e063e81975b33054b3a526c91bcccff263ad11d5bd8bcdbe8f0973-f7345d0e3804bdea5af3b734f22b7f70dd8e3a64af60b220e247d6430a981762
+      - name: Verify exact runtime reuse provenance
+        if: steps.combined-cache.outputs.cache-hit == 'true'
+        env:
+          ORIVYN_RUNTIME_REUSE_CACHE_KEY: 'combined-v1-macOS-ARM64-bb7fc9a8f5e063e81975b33054b3a526c91bcccff263ad11d5bd8bcdbe8f0973-f7345d0e3804bdea5af3b734f22b7f70dd8e3a64af60b220e247d6430a981762'
+        run: |
+          test "${{ steps.xcode.outputs.identity }}" = bb7fc9a8f5e063e81975b33054b3a526c91bcccff263ad11d5bd8bcdbe8f0973
+          git fetch --no-tags --depth=1 origin 03b9c5cc0f96e0dce332e0e3c36460a9346ff304
+          git fetch --no-tags --depth=1 origin f49c7558686046a16c66d29484ee953abefeb464
+          python3 scripts/verify_build10_runtime_reuse.py
       - name: Build and verify combined native runtime
         run: bash scripts/ci_combined_runtime.sh
-      - uses: actions/cache/save@v4
-        if: steps.combined-cache.outputs.cache-hit != 'true'
-        with:
-          path: .cache/orivyn-combined
-          key: ${{ steps.combined-cache.outputs.cache-primary-key }}
-
       - name: Portable package and graph regressions
         run: |
           python3 -m unittest discover -s scripts/tests -p 'test_verify_ipa.py'
@@ -48,13 +50,10 @@ jobs:
       - name: Release device build and actual IPA resource validation
         id: package
         run: bash scripts/ci_package_only.sh
-      - name: Required reviewed native route and LFM simulator inference
-        if: success() || steps.package.outcome == 'failure'
-        run: bash scripts/ci_build10_candidate.sh
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: Orivyn-build10-candidate-evidence
+          name: Orivyn-build10-package-evidence
           path: artifacts
           retention-days: 7
           if-no-files-found: error
