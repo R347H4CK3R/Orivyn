@@ -6,12 +6,18 @@ import Foundation
 @MainActor
 final class ForegroundSyncCoordinator {
     struct Authorization: Equatable, Sendable {
-        let peerID: UUID
+        let peerCertificateSHA256: Data
+        let localCertificateSHA256: Data
+        let consentRevision: UUID
         let pairingGeneration: UUID
         let receiverEpoch: UUID
         let approvedSourceIDs: Set<UUID>
 
-        var isValid: Bool { (1...100).contains(approvedSourceIDs.count) }
+        var isValid: Bool {
+            peerCertificateSHA256.count == 32 && localCertificateSHA256.count == 32 &&
+            peerCertificateSHA256 != localCertificateSHA256 &&
+            (1...100).contains(approvedSourceIDs.count)
+        }
     }
 
     struct Conditions: Equatable, Sendable {
