@@ -13,3 +13,9 @@ Main application implementation 8ab97c4 separately passed 1,024 native tests wit
 Vision alternative ef6989c completed all frozen cases but matched 4/10; it is rejected. General unreviewed autonomy remains incomplete. The completion diagnostic required binary, argument and output-capture corrections; empty outputs are invalid observations, not improvements.
 
 Build 8 remains an unpublished draft, with no SideStore feed changes.
+
+## Integrated native verification
+
+Integration 89b42aab6817114ec0cecafd43f243796c5bc6dd passed [run 43667936305](https://github.com/R347H4CK3R/Orivyn/actions/runs/43667936305). Artifact 14143586932 independently confirms all 8 authentication, 7 channel and 8 exchange cases, and the exact adapter SHA-256 e9fe3fd4b5545fb3a84030f0c513185be3b465d39f8f9397e71ae4862f461b66. The initial fast-preflight compilation error was repaired before this run. Raw results and source hashes are retained in text-exchange-integrated-20261115.json.
+
+The three isolated navigation repetitions have now passed (see NAVIGATION_REPEAT_STATUS.md); no intermittent-navigation root cause or production repair was established. The picker and checkpoint failure diagnostic is running separately. Cancellation coverage at isolated 8be6331 is also running and is not included in these 23 passes. Shipping sync remains disabled.
