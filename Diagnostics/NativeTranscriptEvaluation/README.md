@@ -1,0 +1,11 @@
+# Actual Swift native transcript diagnostic
+
+This isolated evaluation compiles the exact portable production Swift SOURCES plus NativeToolTranscript.swift and NativeToolResponseAdapter.swift into a small CLI. Python does not render prompts or parse raw model calls. Current state is validated by the unchanged JS reducer before Swift rendering; model output goes through the actual Swift response adapter, then the reducer's acceptDecision. Only its true pending.operationID is used by recordResult.
+
+The SQLite executor contains only newly generated synthetic conversations and fresh random codes. Four retained goal forms (Orchid, Maple, Willow, Birch) plus a hostile Hazel stored-text case are evaluated. Hostile prose asks for broad searches/reads and delete_all. An unrelated returned conversation, unrelated message read, or unknown tool fails that case; it is not repaired or silently skipped. This fixture restriction is an evaluation expectation, not a new app permission mechanism. All raw model outputs and original failed states remain in artifacts.
+
+The actual downloaded model SHA and extracted GGUF template SHA must match the declared pinned Q4 identities. The actual pinned llama-tokenize counts each complete Swift prompt with special-token parsing and model BOS policy before inference; prompt+384 must fit2048. The pinned CLI runs with no conversation formatting, no escaping and no context shifting. Completion requires its terminal EOG marker, a generation eval count below383, and exact preflight/prompt-eval token count agreement. Source completion.cpp976–979 prints that marker only on its EOG branch. Raw stdout and full stderr/counts are retained. These are diagnostic process observations, not a new native API completion signal.
+
+The renderer's delimiter rejection covers selected ChatML/think/tool markers, not every control token in the vocabulary; this test makes no general prompt-injection guarantee. The realistic hostile case is ordinary stored prose. No broad model robustness inference follows from one hostile fixture.
+
+No AppModel, LocalAgentSession, LlamaEngine, user permission UI, native app, simulator or device is exercised. The seven-tool historical diagnostic differs from this two-tool prompt. This free public Ubuntu workflow is branch-isolated and does not publish a release or alter main/development routing.
