@@ -55,27 +55,38 @@ class ExplicitModelTests(unittest.TestCase):
             self.assertIn(required,agent)
 
 class PipelineTests(unittest.TestCase):
-    def run_pipeline(self, statuses):
+    def run_pipeline(self, statuses, generation_status=0):
         with tempfile.TemporaryDirectory() as tmp:
             root=pathlib.Path(tmp);bin=root/'bin';bin.mkdir();(root/'scripts').mkdir()
             def put(name,text,executable=False):
                 p=root/name;p.parent.mkdir(parents=True,exist_ok=True);p.write_text(text)
                 if executable:p.chmod(0o755)
             put('scripts/ci_native_inference.sh',(ROOT/'scripts/ci_native_inference.sh').read_text())
+            put('scripts/generate_project.py',(ROOT/'scripts/generate_project.py').read_text())
             for name in ['materialize_guest.py','download_test_model.py','boot_ci_simulator.py']:put('scripts/'+name,'pass\n')
             put('scripts/bootstrap_llama.sh','exit 0\n')
-            for name in ['xcodegen','git','xcodebuild']:put('bin/'+name,'#!/bin/sh\necho mock\n',True)
+            for name in ['git','xcodebuild']:put('bin/'+name,'#!/bin/sh\necho mock\n',True)
+            put('bin/xcodegen','#!/bin/sh\nprintf "%s\n" "$*" > "$GENERATION_ARGS"\nexit "$GENERATION_EXIT"\n',True)
             put('bin/xcrun','#!/bin/sh\necho \'{"devices":{"iOS-26":[{"name":"iPhone 16 Plus","udid":"12345678-1234-1234-1234-123456789abc","isAvailable":true}]}}\'\n',True)
             put('Diagnostics/VisionProof/prepare_production_pair.py','pass\n')
             put('Diagnostics/NativeTools/download.py','pass\n')
             put('Diagnostics/VisionProof/run_production_simulator.sh','echo vision >> "$TRACE"\nexit "$VISION_EXIT"\n')
             put('Diagnostics/NativeTools/run_production_simulator.sh','echo "$ORIVYN_PRODUCTION_MODEL_ID $NATIVE_TOOLS_GATE_KIND $ORIVYN_NATIVE_TOOLS_MODEL_DIR" >> "$TRACE"\nif [[ "$NATIVE_TOOLS_GATE_KIND" == reviewed-plan ]]; then exit "$REVIEWED_EXIT"; elif [[ "$NATIVE_TOOLS_GATE_KIND" == local-agent ]]; then exit "$AGENT_EXIT"; elif [[ "$ORIVYN_PRODUCTION_MODEL_ID" == qwen3-1.7b-q8_0 ]]; then exit "$Q8_EXIT"; else exit "$Q4_EXIT"; fi\n')
-            env=dict(os.environ,PATH=str(bin)+os.pathsep+os.environ['PATH'],RUNNER_TEMP=str(root/'temp'),ORIVYN_COMBINED_RUNTIME_ARCHIVE='fixture',ORIVYN_NATIVE_FEATURES='ORIVYN_NATIVE_TOOLS ORIVYN_NATIVE_VISION',TRACE=str(root/'trace'),**dict(zip(['VISION_EXIT','Q8_EXIT','Q4_EXIT','AGENT_EXIT','REVIEWED_EXIT'],map(str,statuses))))
+            env=dict(os.environ,PATH=str(bin)+os.pathsep+os.environ['PATH'],RUNNER_TEMP=str(root/'temp'),ORIVYN_COMBINED_RUNTIME_ARCHIVE='fixture',ORIVYN_NATIVE_FEATURES='ORIVYN_NATIVE_TOOLS ORIVYN_NATIVE_VISION',TRACE=str(root/'trace'),GENERATION_ARGS=str(root/'generation-args'),GENERATION_EXIT=str(generation_status),**dict(zip(['VISION_EXIT','Q8_EXIT','Q4_EXIT','AGENT_EXIT','REVIEWED_EXIT'],map(str,statuses))))
             result=subprocess.run(['bash',str(root/'scripts/ci_native_inference.sh')],env=env,capture_output=True,text=True,timeout=15)
+            self.assertEqual((root/'generation-args').read_text().strip(),'generate --spec project.yml')
+            if generation_status:
+                self.assertNotEqual(result.returncode,0,result.stderr)
+                self.assertFalse((root/'trace').exists(),'No acceptance gate may run after project generation fails')
+                self.assertFalse((root/'artifacts/production-inference/outcomes.txt').exists())
+                return
             self.assertEqual(result.returncode==0,not any(statuses),result.stderr)
             self.assertEqual((root/'artifacts/production-inference/outcomes.txt').read_text(),f'vision={statuses[0]}\nnative_tools_q8={statuses[1]}\nnative_tools_q4={statuses[2]}\nlocal_agent_q4={statuses[3]}\nreviewed_plan_q4={statuses[4]}\n')
             trace=(root/'trace').read_text().splitlines();self.assertEqual(len(trace),5)
             self.assertEqual(trace[0],'vision');self.assertIn('qwen3-1.7b-q8_0 native-tools',trace[1]);self.assertIn('qwen3-1.7b-q4_k_m native-tools',trace[2]);self.assertIn('qwen3-1.7b-q4_k_m local-agent',trace[3]);self.assertIn('qwen3-1.7b-q4_k_m reviewed-plan',trace[4]);self.assertEqual(trace[3].split()[-1],trace[4].split()[-1]);self.assertEqual(trace[2].split()[-1],trace[3].split()[-1]);self.assertNotEqual(trace[1].split()[-1],trace[2].split()[-1])
+    def test_project_generation_failure_stops_before_acceptance_gates(self):
+        self.run_pipeline([0,0,0,0,0],generation_status=23)
+
     def test_all_success(self):self.run_pipeline([0,0,0,0,0])
     def test_independent_failures_preserved(self):self.run_pipeline([7,8,0,9,10])
 

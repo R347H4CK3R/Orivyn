@@ -128,12 +128,18 @@ final class JarvisEVOUITests: XCTestCase {
         let importButton = app.buttons["Import conversation backup"]
         reveal(importButton, in: app.collectionViews.firstMatch)
         importButton.tap()
+        let importNavigation = app.navigationBars["Import backup"]
+        XCTAssertTrue(importNavigation.waitForExistence(timeout: 5))
         let keepLocal = app.buttons["Add missing only (keep local)"]
         XCTAssertTrue(keepLocal.waitForExistence(timeout: 5))
         keepLocal.tap()
+        // Policy selection now lives in a stable destination. Opening Files is
+        // a separate action, not a confirmation-dialog dismissal side effect.
+        let chooseFile = app.buttons["history.import-file"]
+        XCTAssertTrue(chooseFile.waitForExistence(timeout: 5))
+        XCTAssertTrue(chooseFile.isHittable)
+        chooseFile.tap()
         let absent = NSPredicate(format: "exists == false")
-        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: absent, object: keepLocal)], timeout: 5), .completed,
-                       "The import policy confirmation must dismiss before interacting with Files.")
         // A dialog's Cancel is not evidence that the document picker opened.
         // iOS 26 Files uses this document-manager identifier; Recents is a child
         // title, not the navigation bar identifier (verified in CI #14 AX evidence).
@@ -153,6 +159,11 @@ final class JarvisEVOUITests: XCTestCase {
         XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: absent, object: pickerNavigation)], timeout: 5), .completed,
                        "Cancelling must dismiss the Files picker.")
         XCTAssertFalse(browsingTabs.exists)
+        XCTAssertTrue(importNavigation.waitForExistence(timeout: 5))
+        XCTAssertTrue(chooseFile.isEnabled, "Cancellation must allow choosing a file again.")
+        let back = importNavigation.buttons["Settings"]
+        XCTAssertTrue(back.waitForExistence(timeout: 5))
+        back.tap()
         XCTAssertTrue(app.buttons["settings.done"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["settings.done"].isHittable)
         XCTAssertFalse(app.alerts["Backup exported"].exists)

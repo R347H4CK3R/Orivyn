@@ -15,10 +15,17 @@ class BackupImportPolicyContract(unittest.TestCase):
   self.assertIn('for note in incomingMemories',method)
  def test_ui_offers_non_destructive_transfer(self):
   s=(ROOT/'JarvisEVO/UI/SettingsView.swift').read_text()
-  self.assertIn('Button("Add missing only (keep local)")',s)
-  self.assertIn('importPolicy = .preserveLocal',s)
-  self.assertIn('let policy = importPolicy',s)
-  self.assertIn('policy: policy',s)
+  self.assertIn('NavigationLink { HistoryImportView(model: model) }',s)
+  view=s[s.index('private struct HistoryImportView: View {'):s.index('struct HistoryDocument: FileDocument')]
+  self.assertIn('private var importPolicy: BackupImportPolicy = .preserveLocal',view)
+  self.assertIn('Picker("Matching records", selection: $importPolicy)',view)
+  self.assertIn('Text("Add missing only (keep local)").tag(BackupImportPolicy.preserveLocal)',view)
+  self.assertIn('Text("Keep both versions (copy conflicts)").tag(BackupImportPolicy.keepBoth)',view)
+  self.assertIn('Button("Choose backup file…") { importingHistory = true }',view)
+  self.assertIn('.disabled(model.isGenerating || importingHistory)',view)
+  self.assertIn('.fileImporter(isPresented: $importingHistory',view)
+  self.assertIn('let policy = importPolicy',view)
+  self.assertIn('Task { await model.importHistory(from: url, policy: policy) }',view)
  def test_import_cancellation_checks_precede_commit_not_follow_it(self):
   s=(ROOT/'JarvisEVO/Persistence/SQLiteConversationStore.swift').read_text()
   method=s[s.index('private func importData('):s.index('private func textReceiveReceipt(')]

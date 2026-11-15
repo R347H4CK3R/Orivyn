@@ -30,7 +30,8 @@ class PersistenceIntegrity(unittest.TestCase):
         self.assertIn('statusMessage = maintenanceWarning', model)
     def test_import_ui_discloses_matching_record_replacement(self):
         source = (ROOT/'JarvisEVO/UI/SettingsView.swift').read_text()
-        self.assertIn('confirmingImport = true', source)
+        source = source[source.index('private struct HistoryImportView: View {'):source.index('struct HistoryDocument: FileDocument')]
         self.assertIn('matching conversation and memory identifiers are replaced', source)
-        self.assertIn('Button("Replace matching records…", role: .destructive)', source)
+        self.assertIn('Text("Replace matching records…").tag(BackupImportPolicy.replaceMatching)', source)
+        self.assertIn('An older backup can remove newer messages. Export your current backup first.', source)
 if __name__ == '__main__': unittest.main()
