@@ -2,7 +2,7 @@ name: Compile peer exchange in iOS app
 on:
   workflow_dispatch:
   push:
-    branches: [codex/peer-app-integration-20261115]
+    branches: [codex/peer-history-sdk-20261115]
     paths: ['project.yml', 'JarvisEVO/**', 'scripts/ci_peer_app.sh', '.github/workflows/peer-app.yml']
 permissions:
   contents: read
