@@ -1,0 +1,90 @@
+[
+  {
+    "duplicateCallbacks" : false,
+    "events" : {
+      "clientBinding" : true,
+      "receiptReceived" : true,
+      "receiptSent" : true,
+      "requestReceived" : true,
+      "requestSent" : true,
+      "serverBinding" : true
+    },
+    "name" : "authenticated-request-receipt",
+    "passed" : true,
+    "timedOut" : false
+  },
+  {
+    "duplicateCallbacks" : false,
+    "events" : {
+      "clientBinding" : true,
+      "receiptReceived" : true,
+      "receiptSent" : true,
+      "requestReceived" : true,
+      "requestSent" : true,
+      "serverBinding" : true
+    },
+    "name" : "fragmented-request-receipt",
+    "passed" : true,
+    "timedOut" : false
+  },
+  {
+    "duplicateCallbacks" : false,
+    "events" : {
+      "clientBinding" : true,
+      "receiptReceived" : true,
+      "receiptSent" : true,
+      "requestReceived" : true,
+      "requestSent" : true,
+      "serverBinding" : true
+    },
+    "name" : "maximum-request-receipt",
+    "passed" : true,
+    "timedOut" : false
+  },
+  {
+    "duplicateCallbacks" : false,
+    "events" : {
+      "clientAuthenticated" : true,
+      "receiveRejected" : true,
+      "sendRejected" : true,
+      "serverAuthenticated" : true
+    },
+    "name" : "empty-payload-denied",
+    "passed" : true,
+    "timedOut" : false
+  },
+  {
+    "duplicateCallbacks" : false,
+    "events" : {
+      "clientAuthenticated" : true,
+      "receiveRejected" : true,
+      "sendRejected" : true,
+      "serverAuthenticated" : true
+    },
+    "name" : "oversized-payload-denied",
+    "passed" : true,
+    "timedOut" : false
+  },
+  {
+    "duplicateCallbacks" : false,
+    "events" : {
+      "clientAuthenticated" : true,
+      "receiveRejected" : true,
+      "sendRejected" : true,
+      "serverAuthenticated" : true
+    },
+    "name" : "canceled-channel-denied",
+    "passed" : true,
+    "timedOut" : false
+  },
+  {
+    "duplicateCallbacks" : false,
+    "events" : {
+      "clientDenied" : true,
+      "serverDenied" : true
+    },
+    "name" : "unpaired-no-channel",
+    "passed" : true,
+    "timedOut" : false
+  }
+]

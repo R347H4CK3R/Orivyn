@@ -15,6 +15,7 @@ import SwiftASN1
 struct PeerTLSProbePair {
     fileprivate let identity: SecIdentity
     fileprivate let peerCertificate: SecCertificate
+    fileprivate let localPin: Data
     fileprivate let peerPin: Data
     fileprivate let generation: UUID
 
@@ -30,17 +31,18 @@ struct PeerTLSProbePair {
               let local, SecCertificateCopyData(local) as Data != peerCertificateDER else {
             throw PeerTLSProbe.Failure.invalidPair
         }
+        self.localPin = Data(SHA256.hash(data: SecCertificateCopyData(local) as Data))
         self.identity = identity; self.peerCertificate = certificate
         self.peerPin = scannedPeerSHA256; self.generation = generation
     }
 }
 
-/// A genuine Network.framework mutual-TLS control probe, not an authorization
-/// token for data transfer. It can exchange only OS-random challenges and echoes,
-/// closes after success, and cannot invoke persistence or send conversation bytes.
+/// Experimental mutual-TLS authentication and one-shot bounded transport.
+/// Probe results are not transfer authority. Only the transfer API retains the
+/// same authenticated connection; no API here authorizes database mutations.
 /// All mutable state and Security/Network callbacks use this one private queue.
 final class PeerTLSProbe: @unchecked Sendable {
-    enum Failure: Error { case invalidPair, invalidIdentity, randomFailure, invalidPeer, invalidControl, timeout, canceled, alreadyStarted }
+    enum Failure: Error { case invalidPair, invalidIdentity, randomFailure, invalidPeer, invalidControl, timeout, canceled, alreadyStarted, invalidPayload }
     struct Result: Sendable {
         let pairingGeneration: UUID
         let peerCertificateSHA256: Data
@@ -57,13 +59,25 @@ final class PeerTLSProbe: @unchecked Sendable {
     private var localNonce = Data()
     private var completion: (@Sendable (Swift.Result<Result, Error>) -> Void)?
 
+    private var transferCompletion: (@Sendable (Swift.Result<AuthenticatedChannel, Error>) -> Void)?
+    private weak var transferredChannel: AuthenticatedChannel?
+
     init(pair: PeerTLSProbePair) { self.pair = pair }
 
     /// Caller must explicitly select a paired endpoint. No discovery or auto-start.
     func connect(to endpoint: NWEndpoint, completion: @escaping @Sendable (Swift.Result<Result, Error>) -> Void) {
+        connect(to: endpoint, completion: completion, transfer: nil)
+    }
+
+    func connectForTransfer(to endpoint: NWEndpoint, completion: @escaping @Sendable (Swift.Result<AuthenticatedChannel, Error>) -> Void) {
+        connect(to: endpoint, completion: { _ in }, transfer: completion)
+    }
+
+    private func connect(to endpoint: NWEndpoint, completion: @escaping @Sendable (Swift.Result<Result, Error>) -> Void,
+                         transfer: (@Sendable (Swift.Result<AuthenticatedChannel, Error>) -> Void)?) {
         queue.async {
             do {
-                guard try self.begin(completion) else { return }
+                guard try self.begin(completion, transfer: transfer) else { return }
                 let connection = NWConnection(to: endpoint, using: try self.parameters(peerIsServer: true))
                 self.attach(connection)
             } catch { self.finish(.failure(error)) }
@@ -74,9 +88,20 @@ final class PeerTLSProbe: @unchecked Sendable {
     /// caller must retain the probe and cancel on lock/background/pair revocation.
     func listen(on port: NWEndpoint.Port, ready: @escaping @Sendable (NWEndpoint.Port) -> Void,
                 completion: @escaping @Sendable (Swift.Result<Result, Error>) -> Void) {
+        listen(on: port, ready: ready, completion: completion, transfer: nil)
+    }
+
+    func listenForTransfer(on port: NWEndpoint.Port, ready: @escaping @Sendable (NWEndpoint.Port) -> Void,
+                           completion: @escaping @Sendable (Swift.Result<AuthenticatedChannel, Error>) -> Void) {
+        listen(on: port, ready: ready, completion: { _ in }, transfer: completion)
+    }
+
+    private func listen(on port: NWEndpoint.Port, ready: @escaping @Sendable (NWEndpoint.Port) -> Void,
+                        completion: @escaping @Sendable (Swift.Result<Result, Error>) -> Void,
+                        transfer: (@Sendable (Swift.Result<AuthenticatedChannel, Error>) -> Void)?) {
         queue.async {
             do {
-                guard try self.begin(completion) else { return }
+                guard try self.begin(completion, transfer: transfer) else { return }
                 let listener = try NWListener(using: self.parameters(peerIsServer: false), on: port)
                 self.listener = listener
                 listener.stateUpdateHandler = { [weak self] state in
@@ -98,11 +123,19 @@ final class PeerTLSProbe: @unchecked Sendable {
         }
     }
 
-    func cancel() { queue.async { self.finish(.failure(Failure.canceled)) } }
+    func cancel() { queue.async {
+        self.transferredChannel?.cancel()
+        self.finish(.failure(Failure.canceled))
+    } }
 
-    private func begin(_ completion: @escaping @Sendable (Swift.Result<Result, Error>) -> Void) throws -> Bool {
-        guard !started else { completion(.failure(Failure.alreadyStarted)); return false }
-        started = true; active = true; self.completion = completion
+    private func begin(_ completion: @escaping @Sendable (Swift.Result<Result, Error>) -> Void,
+                       transfer: (@Sendable (Swift.Result<AuthenticatedChannel, Error>) -> Void)?) throws -> Bool {
+        guard !started else {
+            if let transfer { transfer(.failure(Failure.alreadyStarted)) }
+            else { completion(.failure(Failure.alreadyStarted)) }
+            return false
+        }
+        started = true; active = true; self.completion = completion; self.transferCompletion = transfer
         localNonce = Data(count: 32)
         let status = localNonce.withUnsafeMutableBytes { SecRandomCopyBytes(kSecRandomDefault, 32, $0.baseAddress!) }
         guard status == errSecSuccess else { throw Failure.randomFailure }
@@ -261,10 +294,146 @@ final class PeerTLSProbe: @unchecked Sendable {
     private func finish(_ result: Swift.Result<Result, Error>) {
         guard active else { return }
         active = false
-        connection?.stateUpdateHandler = nil; connection?.cancel(); connection = nil
+        let callback = completion, transfer = transferCompletion
+        completion = nil; transferCompletion = nil; localNonce = Data()
         listener?.stateUpdateHandler = nil; listener?.newConnectionHandler = nil; listener?.cancel(); listener = nil
-        let callback = completion; completion = nil; localNonce = Data()
-        callback?(result)
+        let owned = connection; connection = nil
+        owned?.stateUpdateHandler = nil
+        if let transfer {
+            switch result {
+            case .success:
+                guard let owned else { transfer(.failure(Failure.canceled)); return }
+                let channel = AuthenticatedChannel(connection: owned, queue: queue, pair: pair)
+                transferredChannel = channel
+                transfer(.success(channel))
+            case .failure(let error):
+                owned?.cancel(); transfer(.failure(error))
+            }
+        } else {
+            owned?.cancel(); callback?(result)
+        }
+    }
+
+    /// One bounded message in each direction, bound to the exact TLS connection.
+    /// The caller must retain this channel and cancel it on pair revocation,
+    /// backgrounding or lock. It is not a durable lease or database capability.
+    final class AuthenticatedChannel: @unchecked Sendable {
+        let localCertificateSHA256: Data
+        let peerCertificateSHA256: Data
+        let pairingGeneration: UUID
+        private let connection: NWConnection
+        private let queue: DispatchQueue
+        private static let magic = Data("ORIVDAT1".utf8)
+        private static let maximumBytes = 5_001_024
+        private static let chunkBytes = 65_536
+        private var closed = false
+        private var sendStarted = false
+        private var receiveStarted = false
+        private var sendCompletion: (@Sendable (Swift.Result<Void, Error>) -> Void)?
+        private var receiveCompletion: (@Sendable (Swift.Result<Data, Error>) -> Void)?
+        private var incoming = Data()
+        private var outgoing = Data()
+
+        fileprivate init(connection: NWConnection, queue: DispatchQueue, pair: PeerTLSProbePair) {
+            self.connection = connection; self.queue = queue
+            localCertificateSHA256 = pair.localPin
+            peerCertificateSHA256 = pair.peerPin
+            pairingGeneration = pair.generation
+            connection.stateUpdateHandler = { [weak self] state in
+                guard let self else { return }
+                switch state {
+                case .failed(let error): self.close(error)
+                case .cancelled: self.close(Failure.canceled)
+                default: break
+                }
+            }
+            queue.asyncAfter(deadline: .now() + 30) { [weak self] in self?.close(Failure.timeout) }
+        }
+
+        deinit { connection.cancel() }
+
+        func cancel() { queue.async { self.close(Failure.canceled) } }
+
+        func send(_ payload: Data, completion: @escaping @Sendable (Swift.Result<Void, Error>) -> Void) {
+            queue.async {
+                guard !self.closed else { completion(.failure(Failure.canceled)); return }
+                guard !self.sendStarted else { completion(.failure(Failure.alreadyStarted)); return }
+                self.sendStarted = true
+                guard !payload.isEmpty, payload.count <= Self.maximumBytes else {
+                    self.close(Failure.invalidPayload); completion(.failure(Failure.invalidPayload)); return
+                }
+                self.sendCompletion = completion
+                var count = UInt32(payload.count).bigEndian
+                self.outgoing = Self.magic
+                withUnsafeBytes(of: &count) { self.outgoing.append(contentsOf: $0) }
+                self.outgoing.append(payload)
+                self.sendChunk(offset: 0)
+            }
+        }
+
+        private func sendChunk(offset: Int) {
+            guard !closed else { return }
+            if offset == outgoing.count {
+                outgoing = Data()
+                let callback = sendCompletion; sendCompletion = nil
+                callback?(.success(())); return
+            }
+            let end = min(offset + Self.chunkBytes, outgoing.count)
+            let chunk = outgoing.subdata(in: offset..<end)
+            connection.send(content: chunk, completion: .contentProcessed { [weak self] error in
+                guard let self, !self.closed else { return }
+                if let error { self.close(error) } else { self.sendChunk(offset: end) }
+            })
+        }
+
+        func receive(completion: @escaping @Sendable (Swift.Result<Data, Error>) -> Void) {
+            queue.async {
+                guard !self.closed else { completion(.failure(Failure.canceled)); return }
+                guard !self.receiveStarted else { completion(.failure(Failure.alreadyStarted)); return }
+                self.receiveStarted = true; self.receiveCompletion = completion
+                self.readChunk(count: 12) { header in
+                    guard header.prefix(8) == Self.magic else { self.close(Failure.invalidPayload); return }
+                    let length = header.suffix(4).reduce(0) { ($0 << 8) | Int($1) }
+                    guard length > 0, length <= Self.maximumBytes else { self.close(Failure.invalidPayload); return }
+                    self.incoming.reserveCapacity(length)
+                    self.readBody(remaining: length)
+                }
+            }
+        }
+
+        private func readBody(remaining: Int) {
+            guard !closed else { return }
+            guard remaining > 0 else {
+                let bytes = incoming; incoming = Data()
+                let callback = receiveCompletion; receiveCompletion = nil
+                callback?(.success(bytes)); return
+            }
+            let count = min(remaining, Self.chunkBytes)
+            readChunk(count: count) { bytes in
+                self.incoming.append(bytes)
+                self.readBody(remaining: remaining - bytes.count)
+            }
+        }
+
+        private func readChunk(count: Int, completion: @escaping @Sendable (Data) -> Void) {
+            guard !closed else { return }
+            connection.receive(minimumIncompleteLength: count, maximumLength: count) { [weak self] bytes, _, _, error in
+                guard let self, !self.closed else { return }
+                if let error { self.close(error); return }
+                guard let bytes, bytes.count == count else { self.close(Failure.invalidPayload); return }
+                completion(bytes)
+            }
+        }
+
+        private func close(_ error: Error) {
+            guard !closed else { return }
+            closed = true
+            connection.stateUpdateHandler = nil; connection.cancel()
+            incoming = Data(); outgoing = Data()
+            let sent = sendCompletion, received = receiveCompletion
+            sendCompletion = nil; receiveCompletion = nil
+            sent?(.failure(error)); received?(.failure(error))
+        }
     }
 }
 #endif
