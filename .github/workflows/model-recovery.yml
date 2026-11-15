@@ -1,0 +1,42 @@
+name: Verify conservative model transaction recovery
+on:
+  push:
+    branches: [ci/model-recovery-20261115]
+    paths: ['.github/workflows/model-recovery.yml']
+permissions:
+  contents: read
+jobs:
+  recovery:
+    if: github.event.repository.private == false
+    runs-on: macos-15
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Run exact production recovery filesystem tests on Darwin
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          python3 - <<'PY'
+          import pathlib,hashlib,json
+          root=pathlib.Path('artifacts/host'); manifest=[]
+          for source,destination in [('JarvisEVO/Providers/Local/ModelInstallTransaction.swift','Sources/JarvisEVO'),('Tests/ModelInstallTransactionTests.swift','Tests/JarvisEVOTests')]:
+              data=pathlib.Path(source).read_bytes(); out=root/destination;out.mkdir(parents=True,exist_ok=True)
+              (out/pathlib.Path(source).name).write_bytes(data)
+              manifest.append({'source':source,'sha256':hashlib.sha256(data).hexdigest()})
+          (root/'SOURCE-MANIFEST.json').write_text(json.dumps(manifest,indent=2))
+          (root/'Package.swift').write_text('// swift-tools-version: 6.0\nimport PackageDescription\nlet package = Package(name:"RecoveryProof",targets:[.target(name:"JarvisEVO"),.testTarget(name:"JarvisEVOTests",dependencies:["JarvisEVO"])])\n')
+          PY
+          swift --version | tee artifacts/swift-version.txt
+          swift test --package-path artifacts/host 2>&1 | tee artifacts/tests.log
+          grep -Eq 'Executed 19 tests, with 0 failures' artifacts/tests.log
+          ! grep -Eiq 'skipped|failed' artifacts/tests.log
+          echo 'Actual Darwin Foundation filesystem tests with synthetic local files; not iOS application/device runtime, concurrent-writer security or power-loss durability.' > artifacts/SCOPE.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Orivyn-model-recovery-evidence
+          path: artifacts
+          retention-days: 7
+          if-no-files-found: error

@@ -89,16 +89,17 @@ enum ModelInstallTransaction {
             throw original
         }
         // If cleanup fails, next recovery sees no prepared marker and removes only staging.
-        try? fm.removeItem(at: directory)
+        try? cleanup(directory)
     }
 
     static func recover(root: URL) throws {
         let directory = root.appendingPathComponent(folder, isDirectory: true)
         guard let attributes = try attributesIfPresent(directory) else { return }
         guard attributes[.type] as? FileAttributeType == .typeDirectory else { throw Failure.invalidState }
+        _ = try validatedEntryNames(directory)
         let marker = directory.appendingPathComponent("prepared.json")
         guard try regularFileExists(marker) else {
-            try fm.removeItem(at: directory)
+            try cleanup(directory)
             return
         }
         let markerAttributes = try fm.attributesOfItem(atPath: marker.path)
@@ -114,7 +115,35 @@ enum ModelInstallTransaction {
         try restore(hadOriginal: journal.hadModel, backup: directory.appendingPathComponent("old-model"), target: target, scratch: directory.appendingPathComponent("restore-model"))
         try restore(hadOriginal: journal.hadManifest, backup: directory.appendingPathComponent("old-manifest"), target: manifest, scratch: directory.appendingPathComponent("restore-manifest"))
         try fm.removeItem(at: marker)
-        try? fm.removeItem(at: directory)
+        try? cleanup(directory)
+    }
+
+    private static let stagingNames: Set<String> = ["prepared.json", "new-model", "new-manifest", "old-model", "old-manifest", "restore-model", "restore-manifest"]
+
+    private static func validatedEntryNames(_ directory: URL) throws -> [String] {
+        let names = try fm.contentsOfDirectory(atPath: directory.path)
+        guard Set(names).isSubset(of: stagingNames) else { throw Failure.invalidState }
+        return names
+    }
+
+    /// Single-owner cleanup is deliberately nonrecursive. An unfamiliar atomic-write
+    /// temporary file blocks recovery for inspection instead of being silently lost.
+    private static func cleanup(_ directory: URL) throws {
+        let names = try validatedEntryNames(directory)
+        guard !names.contains("prepared.json") else { throw Failure.invalidState }
+        // Validate every entry before the first unlink. Hard-linked rollback copies
+        // are valid: unlink removes only this staging name, never the live link.
+        for name in names {
+            guard try regularFileExists(directory.appendingPathComponent(name)) else { throw Failure.invalidState }
+        }
+        for name in names {
+            let result = directory.appendingPathComponent(name).withUnsafeFileSystemRepresentation { path in
+                path.map { unlink($0) } ?? -1
+            }
+            guard result == 0 else { throw Failure.recoveryRequired }
+        }
+        let result = directory.withUnsafeFileSystemRepresentation { path in path.map { rmdir($0) } ?? -1 }
+        guard result == 0 else { throw Failure.recoveryRequired }
     }
 
     private static func restore(hadOriginal: Bool, backup: URL, target: URL, scratch: URL) throws {

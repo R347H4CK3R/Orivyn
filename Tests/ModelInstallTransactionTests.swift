@@ -14,6 +14,60 @@ final class ModelInstallTransactionTests: XCTestCase {
     private func read(_ name: String, _ root: URL) throws -> String {
         try String(contentsOf: root.appendingPathComponent(name), encoding: .utf8)
     }
+    func testUnpreparedRecoveryPreservesUnexpectedFilesAndBlocks() throws {
+        let root = try fixture(); defer { try? FileManager.default.removeItem(at: root) }
+        let directory = root.appendingPathComponent(".model-install-transaction")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        try write("only copy", "unrecognized-backup", directory)
+        try write("live", "model.gguf", root)
+        XCTAssertThrowsError(try ModelInstallTransaction.recover(root: root))
+        XCTAssertEqual(try read("unrecognized-backup", directory), "only copy")
+        XCTAssertEqual(try read("model.gguf", root), "live")
+    }
+
+    func testUnknownFilesAndDirectoriesBlockPreparedAndUnpreparedRecovery() throws {
+        for prepared in [false, true] {
+            for nested in [false, true] {
+                let root = try fixture(); defer { try? FileManager.default.removeItem(at: root) }
+                let directory = root.appendingPathComponent(".model-install-transaction")
+                try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+                try write("old", "old-model", directory)
+                try write("old manifest", "old-manifest", directory)
+                try write("live", "model.gguf", root)
+                try write("live manifest", "installed-models.json", root)
+                if prepared { try write(#"{"targetName":"model.gguf","hadModel":true,"hadManifest":true,"version":1}"#, "prepared.json", directory) }
+                let unexpected = directory.appendingPathComponent("unexpected")
+                if nested {
+                    try FileManager.default.createDirectory(at: unexpected, withIntermediateDirectories: false)
+                    try write("only copy", "nested", unexpected)
+                } else { try write("only copy", "unexpected", directory) }
+                XCTAssertThrowsError(try ModelInstallTransaction.recover(root: root))
+                XCTAssertEqual(try read(nested ? "nested" : "unexpected", nested ? unexpected : directory), "only copy")
+                XCTAssertEqual(try read("old-model", directory), "old")
+                XCTAssertEqual(try read("model.gguf", root), "live")
+                XCTAssertEqual(try read("installed-models.json", root), "live manifest")
+                XCTAssertEqual(FileManager.default.fileExists(atPath: directory.appendingPathComponent("prepared.json").path), prepared)
+            }
+        }
+    }
+
+    func testNonregularKnownCleanupEntryPreservesAllStagingFiles() throws {
+        for symlink in [false, true] {
+            let root = try fixture(); defer { try? FileManager.default.removeItem(at: root) }
+            let directory = root.appendingPathComponent(".model-install-transaction")
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            try write("retain", "old-model", directory)
+            try write("outside", "outside", root)
+            let invalid = directory.appendingPathComponent("new-model")
+            if symlink { try FileManager.default.createSymbolicLink(at: invalid, withDestinationURL: root.appendingPathComponent("outside")) }
+            else { try FileManager.default.createDirectory(at: invalid, withIntermediateDirectories: false); try write("nested", "keep", invalid) }
+            XCTAssertThrowsError(try ModelInstallTransaction.recover(root: root))
+            XCTAssertEqual(try read("old-model", directory), "retain")
+            XCTAssertEqual(try read("outside", root), "outside")
+            if !symlink { XCTAssertEqual(try read("keep", invalid), "nested") }
+        }
+    }
+
     func testSuccessfulCommitPublishesBothFiles() throws {
         let root = try fixture(); defer { try? FileManager.default.removeItem(at: root) }
         try write("old", "model.gguf", root); try write("old manifest", "installed-models.json", root)
