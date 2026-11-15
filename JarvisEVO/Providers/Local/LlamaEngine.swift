@@ -1,4 +1,11 @@
 import Foundation
+#if ORIVYN_NATIVE_TRANSCRIPT
+#if canImport(CryptoKit)
+import CryptoKit
+#else
+import Crypto
+#endif
+#endif
 import llama
 
 /// A single actor owns llama's mutable context. No runtime pointer leaves this file.
@@ -125,20 +132,36 @@ actor LlamaEngine: LocalResourceReleasing {
         guard let vocabulary = llama_model_get_vocab(model) else { throw LocalModelError.loadFailed }
         llama_memory_clear(llama_get_memory(context), true)
         defer { llama_memory_clear(llama_get_memory(context), true) }
-        // Capture the resource owner, not task-local raw-pointer aliases. The
-        // synchronous callback obtains its pointers within this actor's isolation.
-        try LocalPromptBuilder.validateSystemPrompt(request.systemPrompt, maxTokens: request.maxTokens, contextSize: Int(contextSize)) { [owned] text in
-            guard let promptVocabulary = llama_model_get_vocab(owned.model) else { throw LocalModelError.loadFailed }
-            return try tokenCount(text, vocabulary: promptVocabulary)
+        let nativeDecision:((String) throws -> String)?
+        let prompt:String
+        if let input=request.nativeTranscriptInput {
+            #if ORIVYN_NATIVE_TRANSCRIPT
+            guard request.maxTokens == 384,request.temperature == 0 else { throw LocalModelError.invalidRequest }
+            try verifyNativeModel(modelURL)
+            guard let template=llama_model_chat_template(model,nil) else { throw LocalModelError.missingChatTemplate }
+            let templateHash=SHA256.hash(data:Data(String(cString:template).utf8)).map { String(format:"%02x",$0) }.joined()
+            _=try MCPJSONValue.parse(Data(input.stateJSON.utf8),maximumBytes:32768)
+            let state=try JSONDecoder().decode(LocalAgentSnapshot.self,from:Data(input.stateJSON.utf8))
+            let transcript=try NativeToolTranscript.build(state,templateSHA256:templateHash,readScope:.init(query:input.query,messageIndex:input.messageIndex))
+            nativeDecision={ try NativeToolResponseAdapter.decision($0,transcript:transcript) };prompt=transcript.prompt
+            #else
+            throw LocalModelError.unsupportedChatTemplate
+            #endif
+        } else {
+            nativeDecision=nil
+            try LocalPromptBuilder.validateSystemPrompt(request.systemPrompt,maxTokens:request.maxTokens,contextSize:Int(contextSize)) { [owned] text in
+                guard let vocab=llama_model_get_vocab(owned.model) else { throw LocalModelError.loadFailed }
+                return try tokenCount(text,vocabulary:vocab)
+            }
+            let messages=try LocalPromptBuilder.prepareMessages(from:request.messages,maxTokens:request.maxTokens,contextSize:Int(contextSize)) { [owned] entries in
+                guard let vocab=llama_model_get_vocab(owned.model) else { throw LocalModelError.loadFailed }
+                return try tokenCount(format(entries,systemPrompt:request.systemPrompt,model:owned.model,conciseQwen3:request.conciseQwen3),vocabulary:vocab)
+            }
+            prompt=try format(messages,systemPrompt:request.systemPrompt,model:model,conciseQwen3:request.conciseQwen3)
         }
-        let messages = try LocalPromptBuilder.prepareMessages(from: request.messages, maxTokens: request.maxTokens, contextSize: Int(contextSize)) { [owned] entries in
-            guard let promptVocabulary = llama_model_get_vocab(owned.model) else { throw LocalModelError.loadFailed }
-            let rendered = try format(entries, systemPrompt: request.systemPrompt, model: owned.model, conciseQwen3: request.conciseQwen3)
-            return try tokenCount(rendered, vocabulary: promptVocabulary)
-        }
-        let prompt = try format(messages, systemPrompt: request.systemPrompt, model: model, conciseQwen3: request.conciseQwen3)
-        let tokens = try tokenize(prompt, vocabulary: vocabulary)
-        guard !tokens.isEmpty, tokens.count + request.maxTokens <= Int(contextSize) else { throw LocalModelError.promptTooLong }
+        // Complete native transcript is tokenized once, without history trimming.
+        let tokens=try tokenize(prompt,vocabulary:vocabulary)
+        guard !tokens.isEmpty,tokens.count+request.maxTokens<=Int(contextSize) else { throw LocalModelError.promptTooLong }
 
         guard let sampler = llama_sampler_chain_init(llama_sampler_chain_default_params()) else { throw LocalModelError.loadFailed }
         defer { llama_sampler_free(sampler) }
@@ -173,6 +196,7 @@ actor LlamaEngine: LocalResourceReleasing {
             await Task.yield()
         }
         var decoder = UTF8TokenAccumulator()
+        var nativeOutput=""
         var producedText = false
         var sawEndOfGeneration = false
         for _ in 0..<request.maxTokens {
@@ -182,7 +206,10 @@ actor LlamaEngine: LocalResourceReleasing {
             let bytes = try tokenBytes(token, vocabulary: vocabulary)
             if let text = decoder.append(bytes), !text.isEmpty {
                 producedText = true
-                if case .terminated = continuation.yield(text) { throw CancellationError() }
+                if nativeDecision != nil {
+                    guard nativeOutput.utf8.count+text.utf8.count<=32768 else { throw LocalAgentError.outputBound }
+                    nativeOutput += text
+                } else if case .terminated = continuation.yield(text) { throw CancellationError() }
             }
             let result = withUnsafeMutablePointer(to: &token) { pointer in
                 llama_decode(context, llama_batch_get_one(pointer, 1))
@@ -192,10 +219,40 @@ actor LlamaEngine: LocalResourceReleasing {
         }
         try Task.checkCancellation()
         let suffix = decoder.finish()
-        if !suffix.isEmpty { producedText = true; continuation.yield(suffix) }
+        if !suffix.isEmpty {
+            producedText=true
+            if nativeDecision != nil { nativeOutput += suffix }
+            else { continuation.yield(suffix) }
+        }
         guard sawEndOfGeneration else { throw LocalModelError.generationLimitReached }
         guard producedText else { throw LocalModelError.emptyGeneration }
+        if let nativeDecision {
+            let decision=try nativeDecision(nativeOutput)
+            try Task.checkCancellation()
+            if case .terminated=continuation.yield(decision) { throw CancellationError() }
+        }
     }
+
+    #if ORIVYN_NATIVE_TRANSCRIPT
+    /// Hash actual bytes after load and verify they still identify this resource
+    /// owner. No model hash from a caller, filename or model metadata is trusted.
+    private func verifyNativeModel(_ url:URL) throws {
+        guard let before=ModelFileIdentity.read(url),before==loadedIdentity,
+              before.size>0,before.size<=2_000_000_000 else { throw LocalModelError.integrityMismatch }
+        let file=try FileHandle(forReadingFrom:url)
+        defer { try? file.close() }
+        var hash=SHA256(),count:UInt64=0
+        while let chunk=try file.read(upToCount:1_048_576),!chunk.isEmpty {
+            try Task.checkCancellation()
+            count += UInt64(chunk.count)
+            guard count<=before.size else { throw LocalModelError.integrityMismatch }
+            hash.update(data:chunk)
+        }
+        guard count==before.size,ModelFileIdentity.read(url)==before,
+              hash.finalize().map({String(format:"%02x",$0)}).joined()==NativeToolTranscript.modelSHA256 else { throw LocalModelError.integrityMismatch }
+    }
+
+    #endif
 
     private func format(_ entries: [LocalPromptMessage], systemPrompt: String, model: OpaquePointer, conciseQwen3: Bool) throws -> String {
         guard let template = llama_model_chat_template(model, nil) else { throw LocalModelError.missingChatTemplate }

@@ -5,6 +5,8 @@ struct GenerationRequest: Sendable {
     let systemPrompt: String
     var maxTokens: Int = 512
     var temperature: Float = 0.7
+    /// Experimental internal route; no application/UI caller is enabled.
+    var nativeTranscriptInput: NativeTranscriptInput? = nil
     /// Internal local-agent mode only; nil preserves normal chat sampling.
     var localAgentRequiresTool: Bool? = nil
     var localReadPlanKind: String? = nil
@@ -25,8 +27,13 @@ struct GenerationRequest: Sendable {
              maxTokens: 384, temperature: 0, localAgentRequiresTool: requiresTool, localAgentConversationIDs: conversationIDs, conciseQwen3: true)
     }
     func validateInternalModes() throws {
-        let count = [localReadPlanProposal, localReadWorkflowPolicy != nil, localAgentRequiresTool != nil, nativeReadGoal != nil].filter { $0 }.count
+        let count = [nativeTranscriptInput != nil, localReadPlanProposal, localReadWorkflowPolicy != nil, localAgentRequiresTool != nil, nativeReadGoal != nil].filter { $0 }.count
         guard count <= 1, localReadPlanKind.map({ ["conversation_read","conversation_search"].contains($0) }) ?? true else { throw LocalAgentError.invalidState }
+    }
+    static func nativeTranscript(stateJSON:String,query:String,messageIndex:Int64) -> Self {
+        Self(messages:[ChatMessage(role:.user,content:"Internal bounded local read workflow")],
+             systemPrompt:"",maxTokens:384,temperature:0,
+             nativeTranscriptInput:.init(stateJSON:stateJSON,query:query,messageIndex:messageIndex))
     }
     static func readPlanProposal(goal: String, kind: String) throws -> Self {
         Self(messages:[ChatMessage(role:.user,content:try LocalReadPlan.proposalPrompt(goal:goal,kind:kind))],systemPrompt:"Return only a proposed JSON read plan for user review. Do not execute anything.",maxTokens:384,temperature:0,localReadPlanKind:kind,conciseQwen3:true)
@@ -44,4 +51,13 @@ protocol AIProvider: Sendable {
     var id: String { get }
     var displayName: String { get }
     func stream(_ request: GenerationRequest) async throws -> AsyncThrowingStream<String, Error>
+}
+
+/// Scope is supplied by a trusted caller, never inferred by this request.
+/// A production caller must bind this to a separately approved plan and retain
+/// reducer validation before dispatch. There is currently no production caller.
+struct NativeTranscriptInput: Sendable {
+    let stateJSON:String
+    let query:String
+    let messageIndex:Int64
 }
