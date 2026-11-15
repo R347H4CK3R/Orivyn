@@ -1,0 +1,7 @@
+# App peer receive ownership
+
+Receive can commit before a lost acknowledgement or cancellation, while AppModel retains a stale conversation list. Before exposing automatic receives, add an internal admission/reconciliation boundary: reject busy or unsaved/stale history; hold the existing history mutation lock across the admitted transfer; preserve composer text/attachments; reload after success or any potentially committed failure. If reload fails, retain mutation exclusion and permit explicit recovery. The authenticated exchange, peer consent and source/epoch checks remain mandatory at the eventual caller. No listener, scheduler, pairing or production SPI enablement is added by this step.
+
+Alternatives: leaving writes outside AppModel risks stale state; reloading only on success misses committed-but-unacknowledged imports. Chosen internal ownership boundary reuses app history exclusion and blocks until safe recovery. This choice follows the existing authorized sync work; it is not a claim of completed automatic sync.
+
+Red-stage tests use the actual AppModel and SQLite store. The receive operation is injected solely to place a real database commit and deterministic error at the boundary; it does not simulate TLS. Five checks cover committed reload/composer retention, lost acknowledgement, exclusive mutation ownership, stale snapshot rejection, and failed-reload recovery. Initial API deliberately rejects receive to establish failing required behavior. Do not integrate this red stage.

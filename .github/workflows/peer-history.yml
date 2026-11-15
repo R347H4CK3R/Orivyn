@@ -1,0 +1,29 @@
+name: Verify app peer receive ownership
+on:
+  push:
+    branches: [codex/peer-history-owner-20261115]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native:
+    if: github.event.repository.private == false
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Select Xcode 26
+        run: |
+          XCODE=$(find /Applications -maxdepth 1 -name 'Xcode_26*.app' | sort -V | tail -1)
+          test -n "$XCODE"
+          sudo xcode-select -s "$XCODE/Contents/Developer"
+      - name: Run five actual app and SQLite ownership regressions
+        run: bash scripts/ci_peer_history.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: peer-history-owner
+          path: artifacts
+          retention-days: 2

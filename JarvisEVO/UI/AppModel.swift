@@ -1043,6 +1043,15 @@ final class AppModel {
     }
 
 
+
+    // RED-stage admission API: remains unavailable until ownership/reconciliation tests pass.
+    func performPeerHistoryReceive(_ operation: @MainActor () async throws -> Void) async throws {
+        throw TextSnapshotError.busy
+    }
+    func recoverPeerHistoryReceive() async throws {
+        throw TextSnapshotError.busy
+    }
+
     func importHistory(from url: URL, policy: BackupImportPolicy = .preserveLocal) async {
         guard !isGenerating else { errorMessage = "Stop the current response before importing history."; return }
         guard beginHistoryChange() else { return }
