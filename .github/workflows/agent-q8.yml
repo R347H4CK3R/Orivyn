@@ -1,0 +1,45 @@
+name: Evaluate production decisions with existing Q8 text model
+on:
+  push:
+    branches: [codex/agent-q8-20261115]
+    paths: ['Diagnostics/AgentQ8/**', '.github/workflows/agent-q8.yml']
+permissions:
+  contents: read
+jobs:
+  evaluate:
+    if: github.event.repository.private == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Build pinned CPU inference CLI
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/agent-q8
+          git rev-parse HEAD > artifacts/agent-q8/app-source.txt
+          git init "$RUNNER_TEMP/llama"
+          git -C "$RUNNER_TEMP/llama" remote add origin https://github.com/ggml-org/llama.cpp.git
+          git -C "$RUNNER_TEMP/llama" fetch --depth 1 origin 2496f9c14965c39589f53eea31bdb6d762b1d360
+          git -C "$RUNNER_TEMP/llama" checkout --detach FETCH_HEAD
+          test "$(git -C "$RUNNER_TEMP/llama" rev-parse HEAD)" = 2496f9c14965c39589f53eea31bdb6d762b1d360
+          cmake -S "$RUNNER_TEMP/llama" -B "$RUNNER_TEMP/llama/build" -DCMAKE_BUILD_TYPE=Release -DLLAMA_CURL=OFF -DGGML_NATIVE=OFF -DGGML_BACKEND_DL=OFF -DLLAMA_BUILD_TESTS=OFF > artifacts/agent-q8/configure.log 2>&1
+          cmake --build "$RUNNER_TEMP/llama/build" --target llama-completion -j 2 > artifacts/agent-q8/build.log 2>&1
+          echo "DIAGNOSTIC_CLI=$RUNNER_TEMP/llama/build/bin/llama-completion" >> "$GITHUB_ENV"
+      - name: Download and verify existing pinned Q8 model
+        run: |
+          python3 Diagnostics/NativeTools/download.py --model-id qwen3-1.7b-q8_0 --output "$RUNNER_TEMP/Qwen3-1.7B-Q8_0.gguf"
+          echo "DIAGNOSTIC_MODEL=$RUNNER_TEMP/Qwen3-1.7B-Q8_0.gguf" >> "$GITHUB_ENV"
+      - name: Run four unchanged post-search decision fixtures
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -u Diagnostics/AgentQ8/compare.py 2>&1 | tee artifacts/agent-q8/run.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: agent-q8-${{ github.sha }}
+          path: artifacts/agent-q8
+          retention-days: 7
