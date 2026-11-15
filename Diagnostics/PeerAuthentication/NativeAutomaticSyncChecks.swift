@@ -16,7 +16,7 @@ enum NativeAutomaticSyncChecks {
         let a = try FixtureIdentity(root: root, name: "a", password: password)
         let b = try FixtureIdentity(root: root, name: "b", password: password)
         var results: [Result] = []
-        for mode in ["automatic-send", "pending-retry", "snapshot-outside-scope", "revoked-sender", "idle-then-edit", "local-busy"] {
+        for mode in ["automatic-send", "pending-retry", "snapshot-outside-scope", "revoked-sender", "idle-then-edit", "local-busy", "receiver-busy-once"] {
             let directory = root.appendingPathComponent("automatic-" + UUID().uuidString)
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
             defer { try? FileManager.default.removeItem(at: directory) }
@@ -34,19 +34,24 @@ enum NativeAutomaticSyncChecks {
                 localCertificateSHA256: a.pin, consentRevision: UUID(), pairingGeneration: generation,
                 receiverEpoch: epoch, approvedSourceIDs: [source.id])
             var pendingID: UUID?
-            if mode == "pending-retry" {
+            var pendingPayload: Data?
+            var receiverCalls = 0
+            var busyKeptPending = true
+            if mode == "pending-retry" || mode == "receiver-busy-once" {
                 let reviewed = try await sender.exportTextSnapshot(ids: [source.id])
                 let staged = try await sender.stageTextRevisionSend(reviewed,
                     senderCertificateSHA256: b.pin, peerCertificateSHA256: a.pin,
                     pairingGeneration: generation, receiverEpoch: epoch)
                 pendingID = staged.identity.transfer
+                pendingPayload = staged.payload
             }
             if mode == "revoked-sender" {
                 try await sender.revokeTextPeer(peerCertificateSHA256: a.pin, pairingGeneration: generation)
             }
             let ports = AsyncStream<NWEndpoint.Port>.makeStream()
             var listenerCreations = 0
-            let incoming = PeerAutomaticSyncController(store: receiver, route: .receive(.any),
+            let receivePort: NWEndpoint.Port = mode == "receiver-busy-once" ? try await unusedPort() : .any
+            let incoming = PeerAutomaticSyncController(store: receiver, route: .receive(receivePort),
                 currentAuthorization: { receiveAuth },
                 makeProbe: { _ in
                     listenerCreations += 1
@@ -56,6 +61,16 @@ enum NativeAutomaticSyncChecks {
                 },
                 snapshot: { _ in throw GateError.failed("receiver must not export") },
                 receive: { auth, channel in
+                    receiverCalls += 1
+                    if mode == "receiver-busy-once" && receiverCalls == 1 {
+                        try await PeerTextRevisionExchange.deferBusy(approvedSourceIDs: auth.approvedSourceIDs,
+                            expectedEpoch: auth.receiverEpoch, store: receiver, over: channel)
+                        if let pendingID {
+                            let pending = try await sender.textRevisionSend(id: pendingID)
+                            busyKeptPending = pending?.delivered == false && pending?.payload == pendingPayload
+                        }
+                        throw PeerTextRevisionExchange.Failure.peerBusy
+                    }
                     // This harness has no AppModel; production must inject its
                     // exclusive history ownership boundary instead.
                     _ = try await PeerTextRevisionExchange.receive(approvedSourceIDs: auth.approvedSourceIDs,
@@ -98,10 +113,14 @@ enum NativeAutomaticSyncChecks {
             let local = try await sender.list(includeArchived: true)
             let pending = try await sender.pendingTextRevisionSendIDs()
             let reused: Bool
-            if let pendingID { reused = try await sender.textRevisionSend(id: pendingID)?.delivered == true }
+            if let pendingID {
+                let stored = try await sender.textRevisionSend(id: pendingID)
+                reused = stored?.delivered == true && stored?.payload == pendingPayload
+            }
             else { reused = true }
-            let expectedSuccess = mode == "automatic-send" || mode == "pending-retry" || mode == "idle-then-edit" || mode == "local-busy"
-            let passed = local.count == 2 && (mode != "idle-then-edit" || listenerCreations >= 6) &&
+            let expectedSuccess = mode == "automatic-send" || mode == "pending-retry" || mode == "idle-then-edit" || mode == "local-busy" || mode == "receiver-busy-once"
+            let passed = local.count == 2 && busyKeptPending &&
+                (mode != "receiver-busy-once" || receiverCalls >= 2) && (mode != "idle-then-edit" || listenerCreations >= 6) &&
                 (mode != "local-busy" || snapshotCalls >= 2) && (expectedSuccess
                 ? outgoing.status == .waiting && received == [source] && pending.isEmpty && reused
                 : outgoing.status == .blocked && received.isEmpty && pending.isEmpty)
@@ -122,6 +141,33 @@ enum NativeAutomaticSyncChecks {
         try finalEncoder.encode(results).write(to: output, options: .atomic)
         guard results.allSatisfy(\.passed) else { throw GateError.failed("Automatic sync adapter failed") }
     }
+    private enum PortEvent: Sendable { case ready(NWEndpoint.Port), cancelled }
+    private static func unusedPort() async throws -> NWEndpoint.Port {
+        let listener = try NWListener(using: .tcp, on: .any)
+        let events = AsyncStream<PortEvent>.makeStream()
+        defer { listener.cancel(); events.continuation.finish() }
+        listener.stateUpdateHandler = { state in
+            switch state {
+            case .ready:
+                if let port = listener.port { events.continuation.yield(.ready(port)) }
+            case .cancelled: events.continuation.yield(.cancelled)
+            case .failed: events.continuation.finish()
+            default: break
+            }
+        }
+        listener.start(queue: DispatchQueue(label: "Orivyn.PortFixture"))
+        var selected: NWEndpoint.Port?
+        for await event in events.stream {
+            switch event {
+            case .ready(let port): selected = port; listener.cancel()
+            case .cancelled:
+                guard let selected else { throw GateError.failed("fixture port absent") }
+                return selected
+            }
+        }
+        throw GateError.failed("fixture listener failed")
+    }
+
     /// A TCP peer that never starts TLS must consume a failure, not receive the
     /// ordinary no-connection idle exemption.
     private static func acceptedButIncomplete(a: FixtureIdentity, b: FixtureIdentity) async throws -> Bool {

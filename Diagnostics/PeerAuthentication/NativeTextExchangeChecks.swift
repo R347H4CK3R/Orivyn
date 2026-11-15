@@ -121,6 +121,21 @@ enum NativeTextExchangeChecks {
                          receiverUnchanged: stored.isEmpty, senderDelivered: delivered)
         }
         async let received = outcome {
+            if mode.hasPrefix("false-busy") {
+                defer { incoming.cancel() }
+                let request = try UnverifiedTextRevisionPacket.decode(await rawReceive(incoming))
+                let id = request.identity
+                let identity = TextSendIdentity(receiverEpoch: mode == "false-busy-epoch" ? UUID() : id.receiverEpoch,
+                    transfer: mode == "false-busy-transfer" ? UUID() : id.transfer,
+                    senderCertificateSHA256: id.senderCertificateSHA256,
+                    receiverCertificateSHA256: id.receiverCertificateSHA256, pairingGeneration: id.pairingGeneration)
+                let response = try UnverifiedTextRevisionPacket.busy(identity: identity,
+                    requestSHA256: mode == "false-busy-digest" ? Data(repeating: 0, count: 32) : request.declaredSHA256)
+                var bytes = response.data
+                if mode == "false-busy-payload" { bytes = Data(bytes.dropLast(4)) + Data("BUSY".utf8) }
+                try await rawSend(bytes, channel: incoming)
+                return .init(records: [])
+            }
             if mode == "false-receipt-digest" || mode == "false-receipt-transfer" {
                 defer { incoming.cancel() }
                 let request = try UnverifiedTextRevisionPacket.decode(await rawReceive(incoming))
@@ -152,6 +167,15 @@ enum NativeTextExchangeChecks {
             if case .success(let a) = receiveResult, case .success(let b) = sendResult {
                 passed = a == b && stored == [source] && delivered
             } else { passed = false }
+        } else if mode.hasPrefix("false-busy") {
+            if case .failure(let error) = sendResult {
+                let acceptedBusy: Bool
+                if let failure = error as? PeerTextRevisionExchange.Failure, case .peerBusy = failure {
+                    acceptedBusy = true
+                } else { acceptedBusy = false }
+                let pending = try await sender.textRevisionSend(id: staged.identity.transfer)
+                passed = !acceptedBusy && stored.isEmpty && !delivered && pending?.payload == staged.payload
+            } else { passed = false }
         } else if mode.hasPrefix("false-receipt") {
             if case .failure = sendResult { passed = stored.isEmpty && !delivered } else { passed = false }
         } else {
@@ -164,7 +188,7 @@ enum NativeTextExchangeChecks {
         let a = try FixtureIdentity(root: root, name: "a", password: password)
         let b = try FixtureIdentity(root: root, name: "b", password: password)
         var rows: [NativeTextExchangeResult] = []
-        for mode in ["approved-request-receipt", "unapproved-source", "wrong-epoch", "revoked-receiver", "wrong-request-digest", "false-receipt-digest", "false-receipt-transfer", "lost-receipt-retry", "cancel-sender-after-request"] {
+        for mode in ["approved-request-receipt", "unapproved-source", "wrong-epoch", "revoked-receiver", "wrong-request-digest", "false-receipt-digest", "false-receipt-transfer", "lost-receipt-retry", "cancel-sender-after-request", "false-busy-digest", "false-busy-transfer", "false-busy-epoch", "false-busy-payload"] {
             let result = try await check(mode, a: a, b: b, root: root); rows.append(result)
             let encoder = JSONEncoder(); encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
             try encoder.encode(rows).write(to: output, options: .atomic)

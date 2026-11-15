@@ -117,6 +117,9 @@ final class PeerAutomaticSyncController {
             guard !Task.isCancelled else { return .blocked }
             // The owner is temporarily generating/importing. This does not
             // acknowledge a transfer or reset consecutive transport failures.
+            if let failure = error as? PeerTextRevisionExchange.Failure, case .peerBusy = failure {
+                return .deferred
+            }
             if let failure = error as? TextSnapshotError, case .busy = failure { return .deferred }
             if let failure = error as? PeerTLSProbe.Failure {
                 switch failure {

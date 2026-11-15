@@ -5,7 +5,7 @@ import Foundation
 /// adapter must verify every field against its actual authenticated channel and
 /// recompute SHA-256 before calling the database. No adapter is enabled yet.
 struct UnverifiedTextRevisionPacket: Sendable {
-    enum Kind: String, Codable, Sendable { case request, receipt }
+    enum Kind: String, Codable, Sendable { case request, receipt, busy }
     private struct Header: Codable, Sendable {
         let format: String
         let kind: Kind
@@ -40,6 +40,12 @@ struct UnverifiedTextRevisionPacket: Sendable {
     static func receipt(identity: TextSendIdentity, requestSHA256: Data, summary: TextRevisionReceiveSummary) throws -> Self {
         try validateSummary(summary)
         return try Self(kind: .receipt, identity: identity, payload: canonical(summary), digest: requestSHA256)
+    }
+
+    /// A bounded non-acknowledgement tied to the exact request. This never
+    /// advances delivery or revision ancestry.
+    static func busy(identity: TextSendIdentity, requestSHA256: Data) throws -> Self {
+        try Self(kind: .busy, identity: identity, payload: Data("busy".utf8), digest: requestSHA256)
     }
 
     private init(kind: Kind, identity: TextSendIdentity, payload: Data, digest: Data) throws {
@@ -92,6 +98,8 @@ struct UnverifiedTextRevisionPacket: Sendable {
         switch header.kind {
         case .request:
             _ = try TextRevisionEnvelope.decodeCanonical(payload)
+        case .busy:
+            guard payload == Data("busy".utf8) else { throw ConversationError.invalidBackup }
         case .receipt:
             guard payload.count <= maximumReceiptBytes else { throw TextSnapshotError.limit }
             let summary = try JSONDecoder().decode(TextRevisionReceiveSummary.self, from: payload)

@@ -100,4 +100,24 @@ final class TextRevisionPacketTests: XCTestCase {
         XCTAssertEqual(decoded.payload, original.payload)
         // This parser is not authentication, consent, or permission to write.
     }
+    func testBusyPacketIsExactRequestBoundNonAcknowledgement() throws {
+        let id = identity(), digest = Data(repeating: 7, count: 32)
+        let busy = try UnverifiedTextRevisionPacket.busy(identity: id, requestSHA256: digest)
+        let decoded = try UnverifiedTextRevisionPacket.decode(busy.data)
+        XCTAssertEqual(decoded.kind, .busy)
+        XCTAssertEqual(decoded.identity, id)
+        XCTAssertEqual(decoded.declaredSHA256, digest)
+        XCTAssertEqual(decoded.payload, Data("busy".utf8))
+        XCTAssertThrowsError(try decoded.receiptSummary())
+    }
+    func testBusyCannotContainSummaryArbitraryPayloadOrExtraFields() throws {
+        let busy = try UnverifiedTextRevisionPacket.busy(identity: identity(), requestSHA256: Data(repeating: 7, count: 32))
+        var malformed = Data(busy.data.dropLast(4)); malformed.append(Data("BUSY".utf8))
+        XCTAssertThrowsError(try UnverifiedTextRevisionPacket.decode(malformed))
+        XCTAssertThrowsError(try UnverifiedTextRevisionPacket.decode(busy.data + Data([0])))
+        XCTAssertThrowsError(try UnverifiedTextRevisionPacket.decode(replaceHeader(busy.data) { $0["extra"] = true }))
+        XCTAssertThrowsError(try UnverifiedTextRevisionPacket.decode(replaceHeader(busy.data) { $0["kind"] = "receipt" }))
+        XCTAssertThrowsError(try UnverifiedTextRevisionPacket.decode(replaceHeader(busy.data) { $0["kind"] = "request" }))
+    }
+
 }
