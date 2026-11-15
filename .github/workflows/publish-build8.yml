@@ -1,0 +1,50 @@
+name: Publish verified Orivyn build 8 prerelease
+on:
+  push:
+    branches: [codex/publish-build8-20261115]
+    paths: [.github/workflows/publish-build8.yml]
+permissions:
+  contents: read
+jobs:
+  publish:
+    if: github.repository == 'R347H4CK3R/Orivyn' && github.ref == 'refs/heads/codex/publish-build8-20261115'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: R347H4CK3R/Orivyn
+    steps:
+      - name: Reverify fixed IPA and publish existing prerelease
+        shell: python
+        run: |
+          import subprocess,json,pathlib,hashlib,zipfile,plistlib,os
+          repo="R347H4CK3R/Orivyn";release_id=445746248
+          source="a6c696a89a2e5a6224e220b6772b62614d30b4df"
+          tag="orivyn-v0.1.1-build8";name="Orivyn-0.1.1-build8-unsigned.ipa"
+          digest="04c2bd77eb6f807eb17c24bce6ff0a8cf88cae5d74e0e43955cba9230d01723d"
+          def gh(*args):return subprocess.check_output(["gh",*args],text=True)
+          release=json.loads(gh("api",f"repos/{repo}/releases/{release_id}"))
+          assert release["draft"] is True and release["prerelease"] is True
+          assert release["tag_name"]==tag and release["target_commitish"]==source
+          assert "Live automatic sync is not enabled" in release["body"]
+          assert "Physical-device" in release["body"] and "not completed 1.0.0" in release["body"]
+          assets=[a for a in release["assets"] if a["name"]==name]
+          assert len(assets)==1 and assets[0]["size"]==37072679 and assets[0]["digest"]=="sha256:"+digest
+          run=json.loads(gh("api",f"repos/{repo}/actions/runs/43660234783"))
+          assert run["head_sha"]==source and run["conclusion"]=="success"
+          root=pathlib.Path(os.environ["RUNNER_TEMP"])/"publish-build8";root.mkdir()
+          gh("release","download",tag,"--pattern",name,"--dir",str(root))
+          ipa=root/name;data=ipa.read_bytes()
+          assert len(data)==37072679 and hashlib.sha256(data).hexdigest()==digest
+          with zipfile.ZipFile(ipa) as z:
+              info=plistlib.loads(z.read("Payload/JarvisEVO.app/Info.plist"))
+              assert info["CFBundleIdentifier"]=="app.jarvisevo.ios" and info["CFBundleVersion"]=="8"
+              assert info["CFBundleShortVersionString"]=="0.1.1" and info["MinimumOSVersion"]=="26.0"
+              assert z.testzip() is None
+          change=root/"publish.json";change.write_text(json.dumps({"draft":False,"prerelease":True,"make_latest":"false"}))
+          result=json.loads(gh("api","--method","PATCH",f"repos/{repo}/releases/{release_id}","--input",str(change)))
+          assert result["draft"] is False and result["prerelease"] is True and result["tag_name"]==tag
+          print(json.dumps({"published":True,"url":result["html_url"],"source":source,"sha256":digest,"privacy":{k:v for k,v in info.items() if k.startswith("NS") and k.endswith("UsageDescription")}}))
