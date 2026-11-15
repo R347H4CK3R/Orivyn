@@ -5,7 +5,7 @@ cd "$(dirname "$0")/.."
 export ARTIFACTS=artifacts/boundary-repeat
 mkdir -p "$ARTIFACTS"
 git rev-parse HEAD > "$ARTIFACTS/source-commit.txt"
-printf '%s\n' 'Two independent repetitions of picker cancellation and checkpoint relaunch, with boundary diagnostics. Not full acceptance.' > "$ARTIFACTS/SCOPE.txt"
+printf '%s\n' 'Three independent picker cancellation repetitions with boundary diagnostics; checkpoint is not rerun. Not full acceptance.' > "$ARTIFACTS/SCOPE.txt"
 python3 scripts/materialize_guest.py Fixtures/maintained.img.gz JarvisEVO/Resources/VMAssets/maintained.img
 if ! command -v xcodebuild >/dev/null; then echo 'Xcode 26+ is required; native tests have not run.' >&2; exit 2; fi
 xcodebuild -version | tee "$ARTIFACTS/xcode-version.txt"
@@ -31,11 +31,11 @@ python3 scripts/boot_ci_simulator.py --simulator "$SIMULATOR_ID" --evidence "$AR
 xcrun simctl location "$SIMULATOR_ID" set 37.3349,-122.0090
 
 overall=0
-for attempt in 1 2; do
+for attempt in 1 2 3; do
   evidence="$ARTIFACTS/attempt-$attempt"
   mkdir -p "$evidence"
   set +e
-  bash scripts/run_native_tests.sh "$evidence" xcodebuild -project JarvisEVO.xcodeproj -scheme JarvisEVO -destination "platform=iOS Simulator,id=$SIMULATOR_ID" -destination-timeout 120 -parallel-testing-enabled NO -test-timeouts-enabled YES -default-test-execution-time-allowance 120 -maximum-test-execution-time-allowance 720 -only-testing:JarvisEVOUITests/JarvisEVOAttachmentUITests/testPhotosCancellationKeepsDraftAndAllowsFilesAfterwards -only-testing:JarvisEVOUITests/VirtualDesktopIntegrationUITests/testCheckpointSurvivesAppRelaunchAndFreshGuestRead -resultBundlePath "$evidence/Tests.xcresult" CODE_SIGNING_ALLOWED=NO "ORIVYN_NATIVE_FEATURES=${ORIVYN_NATIVE_FEATURES:-}" JARVIS_REQUIRE_REAL_INFERENCE=1 test
+  bash scripts/run_native_tests.sh "$evidence" xcodebuild -project JarvisEVO.xcodeproj -scheme JarvisEVO -destination "platform=iOS Simulator,id=$SIMULATOR_ID" -destination-timeout 120 -parallel-testing-enabled NO -test-timeouts-enabled YES -default-test-execution-time-allowance 120 -maximum-test-execution-time-allowance 720 -only-testing:JarvisEVOUITests/JarvisEVOAttachmentUITests/testPhotosCancellationKeepsDraftAndAllowsFilesAfterwards -resultBundlePath "$evidence/Tests.xcresult" CODE_SIGNING_ALLOWED=NO "ORIVYN_NATIVE_FEATURES=${ORIVYN_NATIVE_FEATURES:-}" JARVIS_REQUIRE_REAL_INFERENCE=1 test
   status=$?
   xcrun simctl spawn "$SIMULATOR_ID" log show --style json --last 1h --predicate 'subsystem == "app.jarvisevo.boundary-diagnostic"' > "$evidence/boundary-lifecycle.json" 2> "$evidence/navigation-log-export.txt"
   export_status=$?
@@ -48,7 +48,7 @@ for attempt in 1 2; do
     python3 - "$evidence/test-summary.json" <<'PY'
 import json,sys
 s=json.load(open(sys.argv[1]))
-assert s.get("totalTestCount")==2 and s.get("skippedTests",0)==0, "Expected two executed, unskipped tests"
+assert s.get("totalTestCount")==1 and s.get("skippedTests",0)==0, "Expected one executed, unskipped test"
 PY
   else
     overall=1

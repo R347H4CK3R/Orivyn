@@ -24,13 +24,35 @@ final class JarvisEVOAttachmentUITests: XCTestCase {
         app.buttons["composer.attach"].tap()
         app.buttons["attachment.photos"].tap()
         let cancel = app.buttons["Cancel"].firstMatch
-        XCTAssertTrue(cancel.waitForExistence(timeout: 10)); cancel.tap()
+        dismissNativePicker(cancel)
         XCTAssertEqual(input.value as? String, "Keep the selected idea")
         app.buttons["composer.attach"].tap()
-        app.buttons["attachment.files"].tap()
-        XCTAssertTrue(cancel.waitForExistence(timeout: 10)); cancel.tap()
+        let files = app.buttons["attachment.files"]
+        XCTAssertTrue(files.waitForExistence(timeout: 10))
+        files.tap()
+        dismissNativePicker(cancel)
         XCTAssertEqual(input.value as? String, "Keep the selected idea")
         XCTAssertTrue(app.buttons["composer.send"].isEnabled)
+    }
+
+    private func dismissNativePicker(_ cancel: XCUIElement, file: StaticString = #filePath, line: UInt = #line) {
+        // Existence alone can expose a moving native picker during presentation.
+        // Exercise the intended control only once its public geometry settles.
+        var priorFrame: CGRect?
+        var stableSince: Date?
+        let settled = NSPredicate { _, _ in
+            guard cancel.exists, cancel.isHittable else { priorFrame = nil; stableSince = nil; return false }
+            let frame = cancel.frame
+            guard !frame.isEmpty else { return false }
+            if priorFrame != frame { priorFrame = frame; stableSince = Date(); return false }
+            return Date().timeIntervalSince(stableSince ?? Date()) >= 0.3
+        }
+        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: settled, object: cancel)], timeout: 10),
+                       .completed, "Native Cancel must be stable and hittable", file: file, line: line)
+        cancel.tap()
+        let gone = NSPredicate(format: "exists == false")
+        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: gone, object: cancel)], timeout: 10),
+                       .completed, "Native picker must dismiss before the next app action", file: file, line: line)
     }
 
     func testRealPhotoImportShowsRecognizedTextAndSafeSharingChoices() {

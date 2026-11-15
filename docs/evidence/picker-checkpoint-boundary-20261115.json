@@ -1,0 +1,277 @@
+{
+  "boundary-repeat/attempt-1/boundary-lifecycle.json": [
+    {
+      "date": "2026-11-15 03:04:56.420443+0000",
+      "message": "photos.make"
+    },
+    {
+      "date": "2026-11-15 03:08:09.114155+0000",
+      "message": "checkpoint.enter restore=false view=true owner=true busy=false"
+    },
+    {
+      "date": "2026-11-15 03:08:09.114477+0000",
+      "message": "checkpoint.admitted restore=false"
+    },
+    {
+      "date": "2026-11-15 03:08:26.559602+0000",
+      "message": "checkpoint.callback ownerMatches=true viewMatches=true"
+    },
+    {
+      "date": "2026-11-15 03:10:50.378028+0000",
+      "message": "checkpoint.enter restore=true view=true owner=true busy=false"
+    },
+    {
+      "date": "2026-11-15 03:10:50.379082+0000",
+      "message": "checkpoint.admitted restore=true"
+    },
+    {
+      "date": "2026-11-15 03:11:04.520949+0000",
+      "message": "checkpoint.callback ownerMatches=true viewMatches=true"
+    }
+  ],
+  "boundary-repeat/attempt-1/screenshots/manifest.json": [
+    {
+      "configurationName": "Test Scheme Action",
+      "deviceId": "54E17A43-0D26-4F2A-A8A3-1F1F13CE79A9",
+      "deviceName": "iPhone 16 Plus",
+      "exportedFileName": "C8F1DDB9-AFF4-4E33-899B-2A8390EAF5F3.txt",
+      "isAssociatedWithFailure": false,
+      "suggestedHumanReadableName": "Picker diagnostic final state - accessibility hierarchy_0_041DCCB7-3BDF-43DF-891A-7EB6FCAEFF36.txt",
+      "timestamp": 1794711919.749
+    },
+    {
+      "configurationName": "Test Scheme Action",
+      "deviceId": "54E17A43-0D26-4F2A-A8A3-1F1F13CE79A9",
+      "deviceName": "iPhone 16 Plus",
+      "exportedFileName": "109B3D20-39EF-49E9-9478-0BBA871D0F41.png",
+      "isAssociatedWithFailure": false,
+      "suggestedHumanReadableName": "Picker diagnostic final state_0_D2BE2403-A127-4759-9DF3-6529CEAD4342.png",
+      "timestamp": 1794711918.887
+    }
+  ],
+  "boundary-repeat/attempt-1/screenshots/manifest.json/C8F1DDB9-AFF4-4E33-899B-2A8390EAF5F3.txt": [
+    "                                          Button, 0x1044b93e0, {{16.0, 604.0}, {250.0, 42.0}}, label: 'Sort by Recently Added'",
+    "                                          Button, 0x1044b9620, {{16.0, 646.0}, {250.0, 42.0}}, label: 'Sort by Date Captured', Selected",
+    "                                        Other, 0x1044b9860, {{40.0, 698.0}, {202.0, 1.0}}",
+    "                                          Button, 0x1044b9aa0, {{16.0, 709.0}, {250.0, 58.0}}, label: 'Filter, All Items'",
+    "                                          Button, 0x1044b9e00, {{16.0, 767.0}, {250.0, 42.0}}, label: 'View Options'",
+    "                                        Other, 0x1044ba040, {{40.0, 819.0}, {202.0, 1.0}}",
+    "                                          Button, 0x1044ba280, {{16.0, 830.0}, {250.0, 58.0}}, label: 'Options, Location Is Included'",
+    "                                        Other, 0x1044ba3a0, {{233.0, 624.0}, {30.0, 244.0}}, label: 'Vertical scroll bar, 1 page', value: 0%",
+    "                                          Other, 0x1044ba4c0, {{260.0, 627.0}, {3.0, 238.0}}",
+    "                                        Other, 0x1044ba5e0, {{71.0, 835.0}, {195.0, 30.0}}, label: 'Horizontal scroll bar, 1 page', value: 0%",
+    "                                          Other, 0x1044ba700, {{74.0, 862.0}, {189.0, 3.0}}",
+    "                                        Other, 0x1044ba820, {{233.0, 624.0}, {30.0, 244.0}}, label: 'Vertical scroll bar, 1 page', value: 0%",
+    "                                          Other, 0x1044ba940, {{260.0, 627.0}, {3.0, 238.0}}",
+    "                                        Other, 0x1044baa60, {{71.0, 835.0}, {195.0, 30.0}}, label: 'Horizontal scroll bar, 1 page', value: 0%",
+    "                                          Other, 0x1044bab80, {{74.0, 862.0}, {189.0, 3.0}}",
+    "                                    Other, 0x1044baca0, {{16.0, 594.0}, {250.0, 304.0}}",
+    "                                      Other, 0x1044badc0, {{16.0, 594.0}, {250.0, 304.0}}",
+    "                                        Other, 0x1044baee0, {{16.0, 594.0}, {250.0, 304.0}}",
+    "                                          Other, 0x1044bb000, {{16.0, 594.0}, {250.0, 304.0}}",
+    "                                            Other, 0x1044bb120, {{16.0, 594.0}, {250.0, 304.0}}",
+    "                                              Other, 0x1044bb240, {{16.0, 594.0}, {250.0, 304.0}}",
+    "                                          Other, 0x1044bb360, {{16.0, 594.0}, {250.0, 304.0}}",
+    "                                            Other, 0x1044bb480, {{16.0, 594.0}, {250.0, 304.0}}",
+    "      Other, 0x1044bb6c0, {{0.0, 0.0}, {430.0, 932.0}}",
+    "        Other, 0x1044bb7e0, {{0.0, 0.0}, {430.0, 932.0}}"
+  ],
+  "boundary-repeat/attempt-1/test-summary.json": {
+    "devicesAndConfigurations": [
+      {
+        "device": {
+          "architecture": "arm64",
+          "deviceId": "54E17A43-0D26-4F2A-A8A3-1F1F13CE79A9",
+          "deviceName": "iPhone 16 Plus",
+          "modelName": "iPhone 16 Plus",
+          "osBuildNumber": "23A8464",
+          "osVersion": "26.0.1",
+          "platform": "iOS Simulator"
+        },
+        "expectedFailures": 0,
+        "failedTests": 1,
+        "passedTests": 1,
+        "skippedTests": 0,
+        "testPlanConfiguration": {
+          "configurationId": "1",
+          "configurationName": "Test Scheme Action"
+        }
+      }
+    ],
+    "environmentDescription": "JarvisEVO · Built with macOS 15.8.2",
+    "expectedFailures": 0,
+    "failedTests": 1,
+    "finishTime": 1794712332.922,
+    "passedTests": 1,
+    "result": "Failed",
+    "skippedTests": 0,
+    "startTime": 1794711683.722,
+    "statistics": [],
+    "testFailures": [
+      {
+        "failureText": "Failed to tap \"attachment.files\" Button: No matches found for Elements matching predicate '\"attachment.files\" IN identifiers' from input {(\n    Button, label: 'Sort by Recently Added',\n    Button, label: 'Sort by Date Captured', Selected,\n    Button, label: 'Filter, All Items',\n    Button, label: 'View Options',\n    Button, label: 'Options, Location Is Included'\n)}\nPossibly caused by runtime issues:\nAutomation type mismatch: computed Button from legacy attributes vs PopUpButton from modern attribute. Input attributes and values: {\n    \"XC_kAXXCAttributeAutomationType\" = 14;\n    \"XC_kAXXCAttributeElementBaseType\" = UIResponder;\n    \"XC_kAXXCAttributeElementType\" = \"SwiftUI.AccessibilityNode\";\n    \"XC_kAXXCAttributeTraits\" = 1108101562369;\n}\nSee test report attachments for more detail.",
+        "targetName": "JarvisEVOUITests",
+        "testIdentifier": 1,
+        "testIdentifierString": "JarvisEVOAttachmentUITests/testPhotosCancellationKeepsDraftAndAllowsFilesAfterwards()",
+        "testIdentifierURL": "test://com.apple.xcode/JarvisEVO/JarvisEVOUITests/JarvisEVOAttachmentUITests/testPhotosCancellationKeepsDraftAndAllowsFilesAfterwards",
+        "testName": "testPhotosCancellationKeepsDraftAndAllowsFilesAfterwards()"
+      }
+    ],
+    "title": "Test - JarvisEVO",
+    "topInsights": [],
+    "totalTestCount": 2
+  },
+  "boundary-repeat/attempt-2/boundary-lifecycle.json": [
+    {
+      "date": "2026-11-15 03:04:56.420443+0000",
+      "message": "photos.make"
+    },
+    {
+      "date": "2026-11-15 03:08:09.114155+0000",
+      "message": "checkpoint.enter restore=false view=true owner=true busy=false"
+    },
+    {
+      "date": "2026-11-15 03:08:09.114477+0000",
+      "message": "checkpoint.admitted restore=false"
+    },
+    {
+      "date": "2026-11-15 03:08:26.559602+0000",
+      "message": "checkpoint.callback ownerMatches=true viewMatches=true"
+    },
+    {
+      "date": "2026-11-15 03:10:50.378028+0000",
+      "message": "checkpoint.enter restore=true view=true owner=true busy=false"
+    },
+    {
+      "date": "2026-11-15 03:10:50.379082+0000",
+      "message": "checkpoint.admitted restore=true"
+    },
+    {
+      "date": "2026-11-15 03:11:04.520949+0000",
+      "message": "checkpoint.callback ownerMatches=true viewMatches=true"
+    },
+    {
+      "date": "2026-11-15 03:13:26.501986+0000",
+      "message": "photos.make"
+    },
+    {
+      "date": "2026-11-15 03:13:31.864569+0000",
+      "message": "photos.complete empty=true"
+    },
+    {
+      "date": "2026-11-15 03:13:35.182307+0000",
+      "message": "files.make"
+    },
+    {
+      "date": "2026-11-15 03:13:46.587144+0000",
+      "message": "files.dismantle"
+    },
+    {
+      "date": "2026-11-15 03:16:30.312641+0000",
+      "message": "checkpoint.enter restore=false view=true owner=true busy=false"
+    },
+    {
+      "date": "2026-11-15 03:16:30.312768+0000",
+      "message": "checkpoint.admitted restore=false"
+    },
+    {
+      "date": "2026-11-15 03:16:39.372688+0000",
+      "message": "checkpoint.callback ownerMatches=true viewMatches=true"
+    },
+    {
+      "date": "2026-11-15 03:18:57.564130+0000",
+      "message": "checkpoint.enter restore=true view=true owner=true busy=false"
+    },
+    {
+      "date": "2026-11-15 03:18:57.564427+0000",
+      "message": "checkpoint.admitted restore=true"
+    },
+    {
+      "date": "2026-11-15 03:19:07.260022+0000",
+      "message": "checkpoint.callback ownerMatches=true viewMatches=true"
+    }
+  ],
+  "boundary-repeat/attempt-2/screenshots/manifest.json": [
+    {
+      "configurationName": "Test Scheme Action",
+      "deviceId": "54E17A43-0D26-4F2A-A8A3-1F1F13CE79A9",
+      "deviceName": "iPhone 16 Plus",
+      "exportedFileName": "276F9AC8-E293-4509-A156-A62A7A53CC25.txt",
+      "isAssociatedWithFailure": false,
+      "suggestedHumanReadableName": "Picker diagnostic final state - accessibility hierarchy_0_47294058-3DB1-4A11-8051-0A83519D5720.txt",
+      "timestamp": 1794712427.505
+    },
+    {
+      "configurationName": "Test Scheme Action",
+      "deviceId": "54E17A43-0D26-4F2A-A8A3-1F1F13CE79A9",
+      "deviceName": "iPhone 16 Plus",
+      "exportedFileName": "12548931-DC1A-42B8-9FCC-301BADB56D89.png",
+      "isAssociatedWithFailure": false,
+      "suggestedHumanReadableName": "Picker diagnostic final state_0_26FC184C-CD27-428B-96FF-DBCD13E12E4E.png",
+      "timestamp": 1794712427.105
+    }
+  ],
+  "boundary-repeat/attempt-2/screenshots/manifest.json/276F9AC8-E293-4509-A156-A62A7A53CC25.txt": [
+    "                      Button, 0x105b8b5e0, {{368.0, 63.0}, {38.0, 36.0}}, identifier: 'toolbar.more', label: 'More options'",
+    "                        Button, 0x105b8b700, {{368.0, 63.0}, {38.0, 36.0}}",
+    "                Other, 0x105b8ba60, {{0.0, 0.0}, {430.0, 932.0}}",
+    "                  Other, 0x105b8bb80, {{0.0, 0.0}, {430.0, 932.0}}",
+    "                    Other, 0x105b8bca0, {{0.0, 0.0}, {430.0, 932.0}}",
+    "                      Other, 0x105b8bdc0, {{0.0, 0.0}, {430.0, 932.0}}",
+    "                          Other, 0x105b8c000, {{0.0, 0.0}, {430.0, 167.8}}",
+    "                          Other, 0x105b8c120, {{0.0, 165.0}, {430.0, 659.0}}",
+    "                            Button, 0x105b8c360, {{71.0, 472.7}, {134.3, 42.0}}, identifier: 'suggestion.plan', label: 'Make a plan'",
+    "                            Button, 0x105b8c6c0, {{213.0, 472.7}, {146.3, 42.0}}, identifier: 'suggestion.write', label: 'Help me write'",
+    "                            Button, 0x105b8ca20, {{128.7, 524.7}, {172.7, 42.0}}, identifier: 'suggestion.explain', label: 'Explain something'",
+    "                          Other, 0x105b8cd80, {{397.0, 113.0}, {30.0, 711.0}}, label: 'Vertical scroll bar, 1 page', value: 0%",
+    "                            Other, 0x105b8cea0, {{424.0, 116.0}, {3.0, 705.0}}",
+    "                          Other, 0x105b8cfc0, {{397.0, 113.0}, {30.0, 711.0}}, label: 'Vertical scroll bar, 1 page', value: 0%",
+    "                            Other, 0x105b8d0e0, {{424.0, 116.0}, {3.0, 705.0}}",
+    "                        Button, 0x105b8d200, {{34.0, 840.0}, {44.0, 44.0}}, identifier: 'composer.attach', label: 'Attach files or photos'",
+    "                          Button, 0x105b8d320, {{34.0, 840.0}, {44.0, 44.0}}",
+    "                          Other, 0x105b8d680, {{275.0, 844.0}, {30.0, 40.0}}, label: 'Vertical scroll bar, 1 page', value: 0%",
+    "                            Other, 0x105b8d7a0, {{302.0, 847.0}, {3.0, 34.0}}",
+    "                        Button, 0x105b86e80, {{323.0, 851.7}, {14.0, 21.0}}, identifier: 'composer.dictate', label: 'Dictate message'",
+    "                        Button, 0x105b86fa0, {{358.0, 846.0}, {32.0, 32.0}}, identifier: 'composer.send', label: 'Send message'",
+    "                Other, 0x105b870c0, {{0.0, 0.0}, {430.0, 932.0}}",
+    "                  Other, 0x105b871e0, {{0.0, 0.0}, {430.0, 932.0}}",
+    "      Other, 0x105b87420, {{0.0, 0.0}, {430.0, 932.0}}",
+    "        Other, 0x105b87540, {{0.0, 0.0}, {430.0, 932.0}}"
+  ],
+  "boundary-repeat/attempt-2/test-summary.json": {
+    "devicesAndConfigurations": [
+      {
+        "device": {
+          "architecture": "arm64",
+          "deviceId": "54E17A43-0D26-4F2A-A8A3-1F1F13CE79A9",
+          "deviceName": "iPhone 16 Plus",
+          "modelName": "iPhone 16 Plus",
+          "osBuildNumber": "23A8464",
+          "osVersion": "26.0.1",
+          "platform": "iOS Simulator"
+        },
+        "expectedFailures": 0,
+        "failedTests": 0,
+        "passedTests": 2,
+        "skippedTests": 0,
+        "testPlanConfiguration": {
+          "configurationId": "1",
+          "configurationName": "Test Scheme Action"
+        }
+      }
+    ],
+    "environmentDescription": "JarvisEVO · Built with macOS 15.8.2",
+    "expectedFailures": 0,
+    "failedTests": 0,
+    "finishTime": 1794712788.415,
+    "passedTests": 2,
+    "result": "Passed",
+    "skippedTests": 0,
+    "startTime": 1794712354.734,
+    "statistics": [],
+    "testFailures": [],
+    "title": "Test - JarvisEVO",
+    "topInsights": [],
+    "totalTestCount": 2
+  }
+}
