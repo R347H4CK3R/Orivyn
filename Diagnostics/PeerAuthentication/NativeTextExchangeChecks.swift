@@ -65,6 +65,32 @@ enum NativeTextExchangeChecks {
         let staged = try await sender.stageTextRevisionSend(snapshot, senderCertificateSHA256: b.pin,
             peerCertificateSHA256: a.pin, pairingGeneration: generation, receiverEpoch: mode == "wrong-epoch" ? UUID() : epoch)
         if mode == "revoked-receiver" { try await receiver.revokeTextPeer(peerCertificateSHA256: b.pin, pairingGeneration: generation) }
+        if mode == "lost-receipt-retry" {
+            // Simulate connection loss after the receiver's durable commit but
+            // before its receipt reaches the sender. No transaction rollback.
+            let first = try pair(a: a, b: b, generation: generation)
+            let firstIncoming = first.incoming, firstOutgoing = first.outgoing
+            async let committed = outcome {
+                defer { firstIncoming.cancel() }
+                let request = try UnverifiedTextRevisionPacket.decode(await rawReceive(firstIncoming))
+                guard request.kind == .request, request.identity == staged.identity,
+                      Data(SHA256.hash(data: request.payload)) == request.declaredSHA256 else {
+                    throw GateError.failed("Invalid first request in lost-receipt test")
+                }
+                return try await receiver.receiveReviewedTextRevisions(request.payload, identity: request.identity.receiveIdentity)
+            }
+            async let unacknowledged = outcome {
+                try await PeerTextRevisionExchange.send(transferID: staged.identity.transfer, store: sender, over: firstOutgoing)
+            }
+            let (commitResult, firstSendResult) = await (committed, unacknowledged)
+            first.close()
+            let beforeRetry = try await receiver.list(includeArchived: true)
+            let pending = try await sender.textRevisionSend(id: staged.identity.transfer)
+            guard case .success = commitResult, case .failure = firstSendResult,
+                  beforeRetry == [source], pending?.delivered == false else {
+                throw GateError.failed("Lost receipt must preserve exactly one import and pending sender")
+            }
+        }
         let channels = try pair(a: a, b: b, generation: generation)
         defer { channels.close() }
         let approved: Set<UUID> = mode == "unapproved-source" ? [UUID()] : [source.id]
@@ -97,7 +123,7 @@ enum NativeTextExchangeChecks {
         let stored = try await receiver.list(includeArchived: true)
         let delivered = try await sender.textRevisionSend(id: staged.identity.transfer)?.delivered == true
         let passed: Bool
-        if mode == "approved-request-receipt" {
+        if mode == "approved-request-receipt" || mode == "lost-receipt-retry" {
             if case .success(let a) = receiveResult, case .success(let b) = sendResult {
                 passed = a == b && stored == [source] && delivered
             } else { passed = false }
@@ -113,7 +139,7 @@ enum NativeTextExchangeChecks {
         let a = try FixtureIdentity(root: root, name: "a", password: password)
         let b = try FixtureIdentity(root: root, name: "b", password: password)
         var rows: [NativeTextExchangeResult] = []
-        for mode in ["approved-request-receipt", "unapproved-source", "wrong-epoch", "revoked-receiver", "wrong-request-digest", "false-receipt-digest", "false-receipt-transfer"] {
+        for mode in ["approved-request-receipt", "unapproved-source", "wrong-epoch", "revoked-receiver", "wrong-request-digest", "false-receipt-digest", "false-receipt-transfer", "lost-receipt-retry"] {
             let result = try await check(mode, a: a, b: b, root: root); rows.append(result)
             let encoder = JSONEncoder(); encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
             try encoder.encode(rows).write(to: output, options: .atomic)
