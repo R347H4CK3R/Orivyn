@@ -1,0 +1,154 @@
+[
+  {
+    "expectedAuthentication": true,
+    "name": "valid-pair",
+    "passed": true,
+    "peers": [
+      {
+        "authenticated": true,
+        "scopeValid": true,
+        "side": "client"
+      },
+      {
+        "authenticated": true,
+        "scopeValid": true,
+        "side": "server"
+      }
+    ],
+    "seconds": 0.031794071197509766,
+    "timedOut": false
+  },
+  {
+    "expectedAuthentication": false,
+    "name": "unpaired-client",
+    "passed": true,
+    "peers": [
+      {
+        "authenticated": false,
+        "scopeValid": false,
+        "side": "client"
+      },
+      {
+        "authenticated": false,
+        "scopeValid": false,
+        "side": "server"
+      }
+    ],
+    "seconds": 0.013720989227294922,
+    "timedOut": false
+  },
+  {
+    "expectedAuthentication": false,
+    "name": "generation-mismatch",
+    "passed": true,
+    "peers": [
+      {
+        "authenticated": false,
+        "scopeValid": false,
+        "side": "client"
+      },
+      {
+        "authenticated": false,
+        "scopeValid": false,
+        "side": "server"
+      }
+    ],
+    "seconds": 0.009208083152770996,
+    "timedOut": false
+  },
+  {
+    "expectedAuthentication": false,
+    "name": "expired",
+    "passed": true,
+    "peers": [
+      {
+        "authenticated": false,
+        "scopeValid": false,
+        "side": "client"
+      },
+      {
+        "authenticated": false,
+        "scopeValid": false,
+        "side": "server"
+      }
+    ],
+    "seconds": 0.009232044219970703,
+    "timedOut": false
+  },
+  {
+    "expectedAuthentication": false,
+    "name": "future",
+    "passed": true,
+    "peers": [
+      {
+        "authenticated": false,
+        "scopeValid": false,
+        "side": "client"
+      },
+      {
+        "authenticated": false,
+        "scopeValid": false,
+        "side": "server"
+      }
+    ],
+    "seconds": 0.009615898132324219,
+    "timedOut": false
+  },
+  {
+    "expectedAuthentication": false,
+    "name": "wrong-usage",
+    "passed": true,
+    "peers": [
+      {
+        "authenticated": false,
+        "scopeValid": false,
+        "side": "client"
+      },
+      {
+        "authenticated": false,
+        "scopeValid": false,
+        "side": "server"
+      }
+    ],
+    "seconds": 0.009001970291137695,
+    "timedOut": false
+  },
+  {
+    "expectedAuthentication": false,
+    "name": "critical",
+    "passed": false,
+    "peers": [
+      {
+        "authenticated": true,
+        "scopeValid": true,
+        "side": "client"
+      },
+      {
+        "authenticated": true,
+        "scopeValid": true,
+        "side": "server"
+      }
+    ],
+    "seconds": 0.008359074592590332,
+    "timedOut": false
+  },
+  {
+    "expectedAuthentication": false,
+    "name": "bad-signature",
+    "passed": false,
+    "peers": [
+      {
+        "authenticated": true,
+        "scopeValid": true,
+        "side": "client"
+      },
+      {
+        "authenticated": true,
+        "scopeValid": true,
+        "side": "server"
+      }
+    ],
+    "seconds": 0.008720993995666504,
+    "timedOut": false
+  }
+]
