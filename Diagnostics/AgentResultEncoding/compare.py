@@ -25,7 +25,7 @@ for name in ['orchid','maple']:
   rendered='<|im_start|>system\n'+system+'<|im_end|>\n<|im_start|>user\n'+prompt+'<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n'
   start=time.monotonic()
   try:
-   p=subprocess.run([str(cli),'-m',str(model),'-t','2','-c','2048','-n','384','--temp','0','--no-conversation','--no-display-prompt','--log-disable','--no-show-timings','--grammar',g,'-p',rendered],capture_output=True,text=True,timeout=180)
+   p=subprocess.run([str(cli),'-m',str(model),'-t','2','-c','2048','-n','384','--temp','0','--no-conversation','--no-display-prompt','--log-disable','--no-escape','--simple-io','--grammar',g,'-p',rendered],capture_output=True,text=True,timeout=180)
    stdout,stderr,code=p.stdout,p.stderr,p.returncode
   except subprocess.TimeoutExpired as failure:
    def decoded(value):return value.decode(errors='replace') if isinstance(value,bytes) else (value or '')
