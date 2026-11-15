@@ -1,0 +1,13 @@
+# Experimental native transcript adapter
+
+This standalone portable adapter supports only generic ready tasks containing successful search_conversations/read_conversation history. It rejects pending, failed, reviewed-plan, unknown-tool and oversized states instead of omitting evidence. It preserves complete arguments and result strings; tool results remain explicitly untrusted. Read IDs come only from prior successful search results. One response may contain exactly one tool envelope or an answer; duplicate keys, extra fields and unknown calls fail closed. No tools execute here.
+
+The renderer implements the supported role subset of the extracted pinned Q4 template, SHA-256 87a2728cb8dc9fe424d624542f6060ec05a1d285ebbec578bb078900e33396b5, model SHA-256 d2387ca2dbfee2ffabce7120d3770dadca0b293052bc2f0e138fdc940d9bc7b5. Its hash argument is a declared future boundary contract, NOT proof that a loaded model was verified. A future engine caller must independently verify both exact model and actual template bytes, apply existing request validation, obtain a current reducer-validated ready snapshot, and count the complete formatted prompt with that model's tokenizer plus output reservation. No truncation/context shifting is permitted. Byte bounds are not token bounds.
+
+Returned adapter decisions are syntax suggestions, not permission. They MUST pass unchanged LocalAgentCore.acceptDecision against the current task before existing dispatch/approval logic. A stale transcript grants no rights. This code has no engine/session/AppModel callers and does not alter their behavior.
+
+This two-tool prompt differs from the seven-tool diagnostic that passed four workflows at source11af76f/run43674518501. Its golden tests establish equality with the exact extracted template for its own supported messages/tools, not equivalence to those model outputs. Fresh real-model, iOS and permission-path evaluations are required before any routing. Failed earlier multi-call diagnostic evidence is unchanged.
+
+Protocol-delimiter-looking text is rejected intact rather than stripped or repaired, a deliberate limitation that is not a general prompt-injection defense. Ordinary instruction-looking prose and Unicode are preserved as data. Unsupported tool histories and reviewed workflows require separate design, not silent fallback.
+
+Tests were committed first at637fc26 (run43675667819 failed because NativeToolTranscript.swift was absent). The isolated Ubuntu workflow uses pinned Swift6.1.3 setup, strict Swift tests, independent Jinja3.1.6 rendering against the exact extracted template, and unchanged production JS reducer acceptance. It downloads no model and launches no app.
