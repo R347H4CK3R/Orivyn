@@ -23,7 +23,7 @@ choices.sort(key=lambda d:(d['name']!='iPhone 16 Plus',d['name']))
 print(choices[0]['udid'])
 PY
 )
-xcrun simctl bootstatus "$SIMULATOR_ID" -b
+python3 scripts/boot_ci_simulator.py --simulator "$SIMULATOR_ID" --evidence "$ARTIFACTS/simulator-boot.json"
 # Compile the complete real app and native targets. No inference fixture/model substitution.
 # Select exactly five receive-ownership tests; evidence validation rejects skips and zero-test success.
 xcodebuild -project JarvisEVO.xcodeproj -scheme JarvisEVO \

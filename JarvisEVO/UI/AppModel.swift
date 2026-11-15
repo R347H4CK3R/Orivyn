@@ -1,6 +1,8 @@
 import Foundation
 import Observation
 
+enum PeerHistoryReceiveError: Error { case unsavedOrStaleHistory }
+
 struct ProviderOption: Identifiable {
     let id: String
     let title: String
@@ -122,6 +124,8 @@ final class AppModel {
     // history snapshot. Existing/saved files still require the reference-aware sweep.
     private var ownedAttachmentImports: [UUID: ChatAttachment] = [:]
     private var isChangingHistory = false
+    private var peerHistoryNeedsReload = false
+    private var peerHistoryRecoveryInProgress = false
     private var isSavingSubmittedTurn = false
     private(set) var generatedImageStager: GeneratedImageStaging?
     private var generatedImageTask: Task<Void, Never>?
@@ -1044,13 +1048,72 @@ final class AppModel {
 
 
 
-    // RED-stage admission API: remains unavailable until ownership/reconciliation tests pass.
+    /// Internal receive boundary. The caller supplies an authenticated, approved
+    /// transfer and owns cancellation; this method grants no network authority.
     func performPeerHistoryReceive(_ operation: @MainActor () async throws -> Void) async throws {
-        throw TextSnapshotError.busy
+        try Task.checkCancellation()
+        guard canBeginHeavyWork, attachmentHistoryIsLoaded, !peerHistoryNeedsReload,
+              beginHistoryChange() else { throw TextSnapshotError.busy }
+        var releaseHistory = true
+        defer { if releaseHistory { finishHistoryChange() } }
+        let persisted = try await store.list(includeArchived: true)
+        guard persisted.sorted(by: { $0.id.uuidString < $1.id.uuidString })
+                == conversations.sorted(by: { $0.id.uuidString < $1.id.uuidString }) else {
+            throw PeerHistoryReceiveError.unsavedOrStaleHistory
+        }
+        try Task.checkCancellation()
+        // A failed transfer can still have committed before losing its receipt.
+        // No attachment sweep may use the old snapshot after this point.
+        attachmentHistoryIsLoaded = false
+        var transferError: (any Error)?
+        do { try await operation() } catch { transferError = error }
+        do {
+            // Deliberately reconcile even when this task was canceled. list()
+            // performs a read and does not consult the task cancellation flag.
+            conversations = try await store.list(includeArchived: true)
+            conversationRevision = UUID()
+            attachmentHistoryIsLoaded = true
+            requestAttachmentCleanup()
+        } catch {
+            peerHistoryNeedsReload = true
+            releaseHistory = false
+            report(error)
+            throw error
+        }
+        if let transferError { throw transferError }
     }
+
+    /// A failed post-receive read retains the existing mutation lock. Only a
+    /// complete reload releases it; concurrent recoveries cannot unlock early.
     func recoverPeerHistoryReceive() async throws {
-        throw TextSnapshotError.busy
+        guard peerHistoryNeedsReload, !peerHistoryRecoveryInProgress else { throw TextSnapshotError.busy }
+        peerHistoryRecoveryInProgress = true
+        defer { peerHistoryRecoveryInProgress = false }
+        do {
+            conversations = try await store.list(includeArchived: true)
+            conversationRevision = UUID()
+            attachmentHistoryIsLoaded = true
+            peerHistoryNeedsReload = false
+            requestAttachmentCleanup()
+            finishHistoryChange()
+        } catch {
+            report(error)
+            throw error
+        }
     }
+
+    #if ORIVYN_PEER_TLS_SPIKE && canImport(Network) && canImport(Security) && canImport(CryptoKit)
+    /// Normal builds do not expose this transport. Pairing/scope consent remains
+    /// the caller's responsibility; the exchange revalidates pins and epoch.
+    func receivePeerTextRevisions(approvedSourceIDs: Set<UUID>, expectedEpoch: UUID,
+                                  over channel: PeerTLSProbe.AuthenticatedChannel) async throws {
+        defer { channel.cancel() }
+        try await performPeerHistoryReceive {
+            _ = try await PeerTextRevisionExchange.receive(approvedSourceIDs: approvedSourceIDs,
+                expectedEpoch: expectedEpoch, store: self.store, over: channel)
+        }
+    }
+    #endif
 
     func importHistory(from url: URL, policy: BackupImportPolicy = .preserveLocal) async {
         guard !isGenerating else { errorMessage = "Stop the current response before importing history."; return }
