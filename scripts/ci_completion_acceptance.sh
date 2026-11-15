@@ -22,6 +22,7 @@ DERIVED="$RUNNER_TEMP/orivyn-completion-acceptance-derived"
 MODEL_DIR="$RUNNER_TEMP/orivyn-completion-acceptance-model"
 MODEL="$MODEL_DIR/Qwen3-1.7B-Q4_K_M.gguf"
 python3 Diagnostics/NativeTools/download.py --model-id qwen3-1.7b-q4_k_m --output "$MODEL" > "$OUT/model-path.txt"
+run_ui() {
 xcodebuild build-for-testing -project JarvisEVO.xcodeproj -scheme JarvisEVO -derivedDataPath "$DERIVED" -destination "platform=iOS Simulator,id=$SIM" CODE_SIGNING_ALLOWED=NO > "$OUT/build.log" 2>&1
 xcrun simctl install "$SIM" "$DERIVED/Build/Products/Debug-iphonesimulator/JarvisEVO.app"
 xcrun simctl launch "$SIM" app.jarvisevo.ios --uitesting --reset-test-storage
@@ -48,6 +49,9 @@ for PHASE in approval relaunch; do
  cp "$CONTAINER/Library/Application Support/JarvisEVOUITests/LocalAgentTasks/"*.json "$OUT/$PHASE/tasks/"
 done
 python3 scripts/verify_completion_ui_state.py "$OUT/approval/tasks" "$OUT/relaunch/tasks" > "$OUT/verified-task.json"
+}
+
+run_real_model() {
 export NATIVE_TOOLS_DESTINATION="platform=iOS Simulator,id=$SIM"
 export NATIVE_TOOLS_DERIVED_DATA="$DERIVED"
 export NATIVE_TOOLS_EVIDENCE_DIR="$OUT/real-model"
@@ -55,3 +59,6 @@ export ORIVYN_PRODUCTION_MODEL_ID=qwen3-1.7b-q4_k_m
 export ORIVYN_NATIVE_TOOLS_MODEL_DIR="$MODEL_DIR"
 export NATIVE_TOOLS_GATE_KIND=completion
 bash Diagnostics/NativeTools/run_production_simulator.sh
+}
+
+source scripts/completion_acceptance_phases.sh

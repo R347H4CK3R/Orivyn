@@ -1,7 +1,7 @@
 name: Explicit completion UI and real model acceptance
 on:
   push:
-    branches: [ci/completion-acceptance-scope-20261115]
+    branches: [ci/completion-acceptance-visible-20261115]
     paths: ['.github/workflows/completion-acceptance.yml']
 permissions:
   contents: read
@@ -28,6 +28,7 @@ jobs:
         run: |
           python3 -m unittest discover -s scripts/tests -p test_reviewed_runtime.py
           python3 -m unittest discover -s scripts/tests -p 'test_completion_ui_*.py'
+          python3 -m unittest discover -s scripts/tests -p test_completion_phase_coordination.py
           python3 -m unittest discover -s scripts/tests -p test_boot_ci_simulator.py
       - name: Build and verify combined native runtime
         run: bash scripts/ci_combined_runtime.sh
