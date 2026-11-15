@@ -39,7 +39,7 @@ class ExplicitModelTests(unittest.TestCase):
                     self.assertEqual(env['ORIVYN_PRODUCTION_MODEL_ID'],model_id)
                     req,directory,selector,default,maximum=simulator_gate.GATES[gate]
                     self.assertEqual(env,{req:'1',directory:str(root),'ORIVYN_PRODUCTION_MODEL_ID':model_id})
-                    self.assertEqual(result['selector'],selector);self.assertEqual(result['maximumAllowance'],1200 if gate=='reviewed-plan' else (840 if gate=='local-agent' else 600))
+                    self.assertEqual(result['selector'],selector);self.assertEqual(result['maximumAllowance'],1200 if gate=='reviewed-plan' else (840 if gate in ('local-agent','completion') else 600))
             for destination in ['platform=iOS Simulator,name=iPhone','platform=iOS Simulator,id=booted']:
                 with self.assertRaises(ValueError):simulator_gate.prepare(scheme,root,destination)
             with self.assertRaises(ValueError):simulator_gate.prepare(scheme,root,'platform=iOS Simulator,id=12345678-1234-1234-1234-123456789abc','unknown')
@@ -125,3 +125,9 @@ class SimulatorRunnerTests(unittest.TestCase):
         self.assertEqual(self.run_gate(0,passed,'reviewed-plan'),0)
         self.assertNotEqual(self.run_gate(33,passed,'reviewed-plan'),0)
         self.assertNotEqual(self.run_gate(0,dict(totalTestCount=1,passedTests=0,failedTests=0,skippedTests=1),'reviewed-plan'),0)
+
+    def test_completion_success_failure_and_skip_remain_distinct(self):
+        passed=dict(totalTestCount=1,passedTests=1,failedTests=0,skippedTests=0)
+        self.assertEqual(self.run_gate(0,passed,'completion'),0)
+        self.assertNotEqual(self.run_gate(33,passed,'completion'),0)
+        self.assertNotEqual(self.run_gate(0,dict(totalTestCount=1,passedTests=0,failedTests=0,skippedTests=1),'completion'),0)

@@ -36,6 +36,7 @@ python3 "$ROOT/Diagnostics/NativeTools/simulator_gate.py" --scheme "$SCHEME" \
  --models "$ORIVYN_NATIVE_TOOLS_MODEL_DIR" --destination "$NATIVE_TOOLS_DESTINATION" \
  --model-id "$MODEL_ID" --gate "$GATE_KIND" "${TRANSCRIPT_ARGS[@]}" > "$NATIVE_TOOLS_EVIDENCE_DIR/gate-config.json"
 case "$GATE_KIND" in
+ completion) SELECTOR='JarvisEVOTests/ProductionCompletionContractTests/testRequiredApprovedCallsBeforeGroundedAnswer'; DEFAULT_ALLOWANCE=840; MAX_ALLOWANCE=840 ;;
  native-tools) SELECTOR='JarvisEVOTests/ProductionNativeToolsRuntimeTests/testRequiredProductionSuggestionAndReload'; DEFAULT_ALLOWANCE=300; MAX_ALLOWANCE=600 ;;
  reviewed-plan) SELECTOR='JarvisEVOTests/ProductionReviewedReadPlanTests/testRequiredModelProposalApprovalAndGroundedRead'; DEFAULT_ALLOWANCE=1200; MAX_ALLOWANCE=1200 ;;
  local-agent) SELECTOR='JarvisEVOTests/ProductionLocalAgentSessionTests/testRequiredSearchThenReadGroundedAnswer'; DEFAULT_ALLOWANCE=840; MAX_ALLOWANCE=840 ;;

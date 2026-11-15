@@ -1,0 +1,42 @@
+name: Explicit completion UI and real model acceptance
+on:
+  push:
+    branches: [ci/completion-acceptance-20261115]
+    paths: ['.github/workflows/completion-acceptance.yml']
+permissions:
+  contents: read
+concurrency:
+  group: completion-acceptance
+  cancel-in-progress: false
+jobs:
+  completion-acceptance:
+    if: github.event.repository.private == false
+    runs-on: macos-15
+    timeout-minutes: 90
+    env:
+      ORIVYN_NATIVE_FEATURES: 'ORIVYN_NATIVE_VISION ORIVYN_NATIVE_TOOLS ORIVYN_NATIVE_TRANSCRIPT'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Select pinned Xcode 26.1
+        run: |
+          test -d /Applications/Xcode_26.1.app
+          sudo xcode-select -s /Applications/Xcode_26.1.app/Contents/Developer
+          xcodebuild -version
+      - name: Validate test harness contracts
+        run: |
+          python3 -m unittest discover -s scripts/tests -p test_reviewed_runtime.py
+          python3 -m unittest discover -s scripts/tests -p 'test_completion_ui_*.py'
+          python3 -m unittest discover -s scripts/tests -p test_boot_ci_simulator.py
+      - name: Build and verify combined native runtime
+        run: bash scripts/ci_combined_runtime.sh
+      - name: Actual UI approval and separate real-model completion
+        run: bash scripts/ci_completion_acceptance.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Orivyn-completion-acceptance-evidence
+          path: artifacts
+          retention-days: 7
+          if-no-files-found: error

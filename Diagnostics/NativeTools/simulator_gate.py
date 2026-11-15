@@ -5,6 +5,7 @@ from pathlib import Path
 from download import DEFAULT_MODEL_ID, select
 
 GATES = {
+    'completion': ('ORIVYN_REQUIRE_PRODUCTION_COMPLETION', 'ORIVYN_COMPLETION_MODEL_DIR', 'JarvisEVOTests/ProductionCompletionContractTests/testRequiredApprovedCallsBeforeGroundedAnswer', 840, 840),
     'reviewed-plan': ('ORIVYN_REQUIRE_PRODUCTION_REVIEWED_PLAN', 'ORIVYN_REVIEWED_PLAN_MODEL_DIR', 'JarvisEVOTests/ProductionReviewedReadPlanTests/testRequiredModelProposalApprovalAndGroundedRead', 1200, 1200),
     'native-tools': ('ORIVYN_REQUIRE_PRODUCTION_NATIVE_TOOLS', 'ORIVYN_NATIVE_TOOLS_MODEL_DIR', 'JarvisEVOTests/ProductionNativeToolsRuntimeTests/testRequiredProductionSuggestionAndReload', 300, 600),
     'local-agent': ('ORIVYN_REQUIRE_PRODUCTION_LOCAL_AGENT', 'ORIVYN_LOCAL_AGENT_MODEL_DIR', 'JarvisEVOTests/ProductionLocalAgentSessionTests/testRequiredSearchThenReadGroundedAnswer', 840, 840),
