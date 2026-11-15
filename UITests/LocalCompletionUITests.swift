@@ -114,8 +114,8 @@ final class LocalCompletionUITests: XCTestCase {
     private func ready(_ app:XCUIApplication) {
         let run=app.buttons["agent.run"];reveal(run,in:app.collectionViews.firstMatch);XCTAssertTrue(run.isEnabled)
         let state=app.staticTexts["agent.state.value"]
-        inspect(state,in:app,towardEnd:false);XCTAssertEqual(state.label,"ready")
-        let steps=app.staticTexts["agent.steps.value"];inspect(steps,in:app,towardEnd:true);XCTAssertEqual(steps.label,"0/6")
+        inspect(state,in:app,towardEnd:false);XCTAssertEqual(state.label,"State, ready")
+        let steps=app.staticTexts["agent.steps.value"];inspect(steps,in:app,towardEnd:true);XCTAssertEqual(steps.label,"Read-only tool steps, 0/6")
         XCTAssertFalse(app.staticTexts["agent.answer"].exists)
         let statusText=app.staticTexts["agent.status"];inspect(statusText,in:app,towardEnd:true)
         let status=statusText.label
