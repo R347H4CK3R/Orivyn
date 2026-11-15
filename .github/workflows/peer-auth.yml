@@ -2,7 +2,7 @@ name: Verify native peer authentication
 on:
   workflow_dispatch:
   push:
-    branches: [codex/complete-capabilities-20261114, codex/native-peer-auth-tests-20261114]
+    branches: [codex/authenticated-channel-20261115]
     paths:
       - 'Diagnostics/PeerAuthentication/**'
       - 'JarvisEVO/Services/PeerTLSProbe.swift'
@@ -24,6 +24,8 @@ jobs:
           XCODE=$(find /Applications -maxdepth 1 -name 'Xcode_26*.app' | sort -V | tail -1)
           test -n "$XCODE"
           sudo xcode-select -s "$XCODE/Contents/Developer"
+      - name: Typecheck bounded channel API
+        run: xcrun swiftc -swift-version 6 -D ORIVYN_PEER_TLS_SPIKE -parse-as-library -typecheck -target x86_64-apple-macosx15.0 JarvisEVO/Core/PeerSyncControlFrame.swift JarvisEVO/Services/PeerTLSProbe.swift Diagnostics/PeerAuthentication/NativePeerGate.swift Diagnostics/PeerAuthentication/NativeChannelChecks.swift
       - name: Exercise actual platform mutual TLS
         run: bash Diagnostics/PeerAuthentication/run.sh "$RUNNER_TEMP/orivyn-peer-auth-evidence"
       - uses: actions/upload-artifact@v4

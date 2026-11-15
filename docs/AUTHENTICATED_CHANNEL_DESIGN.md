@@ -1,0 +1,7 @@
+# Authenticated channel experiment
+
+The existing successful probe closes its socket and produces metadata only; its result must never authorize a later connection. This isolated extension will hand off the same mutually authenticated socket through a non-publicly-constructible channel. It retains local/remote certificate pins and pairing generation. One bounded frame may be sent and one received, with a 5,001,024-byte ceiling, bounded chunks, a deadline, explicit cancellation and exactly-once completion callbacks. No reconnect, discovery, background execution or unbounded buffering is permitted.
+
+Existing eight authentication cases remain required. New native loopback tests must prove actual request/receipt bytes, fragmentation, the maximum payload, empty/oversized input rejection, cancellation and denial of an unpaired peer. First commit intentionally references the absent API to establish a failing gate. No application build flag is enabled.
+
+This transport is not sync consent, a database write capability, or a delivery receipt validator. Subsequent integration must validate a transfer's identity, receiver epoch, canonical text-only envelope, locally approved scope and current revocation state, then apply receipt and data transactions. Lock/background/erase/revocation must cancel the owned channel. The probe result alone cannot construct this channel. Automatic sync remains disabled until those protections and device acceptance are complete.

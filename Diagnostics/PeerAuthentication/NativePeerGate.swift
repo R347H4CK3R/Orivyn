@@ -82,6 +82,7 @@ struct NativePeerGate {
             let fixture=try FixtureIdentity(root:root,name:name,password:password)
             try record(run(name,server:a,expectedClient:fixture,presentedClient:fixture,wantSuccess:false))
         }
+        try NativeChannelChecks.run(root: root, password: password, output: output.deletingLastPathComponent().appendingPathComponent("channel-results.json"))
         guard results.allSatisfy(\.passed) else { throw GateError.failed("Native pairing acceptance failed; probe must remain disabled.") }
     }
 }
