@@ -87,10 +87,13 @@ class IPAValidationTests(unittest.TestCase):
         with self.assertRaises(ValueError): self.load().verify(path)
 
 
-    def candidate3_resources(self, path, *, missing=None, corrupt=None, runtime_notice=False):
+    def candidate3_resources(self, path, *, missing=None, corrupt=None, runtime_notice=False, vision_notice=None):
         resources = Path(__file__).resolve().parents[2] / 'JarvisEVO' / 'Resources'
         with zipfile.ZipFile(path, 'a') as archive:
-            for name in ('katex-0.19.1.min.js', 'KaTeX-0.19.1-LICENSE.txt') + (('llama.cpp-LICENSE.txt',) if runtime_notice else ()):
+            if vision_notice is None:
+                build = plistlib.loads(archive.read('Payload/JarvisEVO.app/Info.plist'))['CFBundleVersion']
+                vision_notice = int(build.split('.')[0]) >= 10
+            for name in ('katex-0.19.1.min.js', 'KaTeX-0.19.1-LICENSE.txt') + (('llama.cpp-LICENSE.txt',) if runtime_notice else ()) + (('LFM-Vision-LICENSE.txt',) if vision_notice else ()):
                 if name != missing:
                     data = (resources / name).read_bytes()
                     archive.writestr('Payload/JarvisEVO.app/' + name, data + (b'changed' if name == corrupt else b''))
@@ -200,3 +203,23 @@ class IPAValidationTests(unittest.TestCase):
             with self.subTest(build=build):
                 result = self.load().verify(self.candidate3_resources(self.make(build=build), runtime_notice=True))
                 self.assertIs(result['candidate3_resources_required'], True)
+
+    def test_build_nine_reverification_does_not_require_lfm_license(self):
+        result = self.load().verify(self.candidate3_resources(self.make(build='9'), runtime_notice=True))
+        self.assertFalse(result['candidate10_resources_required'])
+        self.assertNotIn('LFM-Vision-LICENSE.txt', result['bundled_resources'])
+
+    def test_build_ten_and_later_require_exact_lfm_license(self):
+        for build in ('10', '10.1', '11'):
+            with self.subTest(build=build):
+                missing = self.candidate3_resources(self.make(build=build), runtime_notice=True, vision_notice=False)
+                with self.assertRaisesRegex(ValueError, 'Missing required bundled resource: LFM-Vision-LICENSE.txt'):
+                    self.load().verify(missing)
+                corrupt = self.candidate3_resources(self.make(build=build), runtime_notice=True, corrupt='LFM-Vision-LICENSE.txt')
+                with self.assertRaisesRegex(ValueError, 'Bundled resource SHA-256 mismatch: LFM-Vision-LICENSE.txt'):
+                    self.load().verify(corrupt)
+                valid = self.candidate3_resources(self.make(build=build), runtime_notice=True)
+                result = self.load().verify(valid)
+                self.assertTrue(result['candidate10_resources_required'])
+                self.assertEqual(result['bundled_resources']['LFM-Vision-LICENSE.txt'],
+                                 '61d7e939a05911c765b7e98ffaa1ab5ca6c0174a65350766c25cb10197d19fc8')
