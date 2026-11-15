@@ -70,6 +70,8 @@ final class ForegroundSyncCoordinator {
     private var haltedAuthorization: Authorization?
     private var haltedStatus: Status = .blocked
     private var cancelled = false
+    private var consecutiveFailures = 0
+    private var pendingDelay: UInt64?
     private(set) var status: Status = .stopped
 
     init(policy: Policy = Policy(),
@@ -87,6 +89,8 @@ final class ForegroundSyncCoordinator {
     func update(_ newConditions: Conditions) {
         if conditions.authorization != newConditions.authorization {
             haltedAuthorization = nil
+            consecutiveFailures = 0
+            pendingDelay = nil
         }
         conditions = newConditions
         if task != nil, activeAuthorization != conditions.eligible {
@@ -101,6 +105,8 @@ final class ForegroundSyncCoordinator {
     func retry() {
         guard task == nil, conditions.eligible != nil else { return }
         haltedAuthorization = nil
+        consecutiveFailures = 0
+        pendingDelay = nil
         reconcile()
     }
 
@@ -123,43 +129,46 @@ final class ForegroundSyncCoordinator {
     }
 
     private func run(_ authorization: Authorization) async {
-        var failures = 0
         while !Task.isCancelled && !cancelled && conditions.eligible == authorization {
+            // Retain the full pending delay across lifecycle cancellation. A
+            // resume may postpone a retry, but can never accelerate it.
+            if let delay = pendingDelay {
+                status = .waiting
+                do { try await sleep(delay) }
+                catch {
+                    if !Task.isCancelled && !cancelled {
+                        haltedAuthorization = authorization
+                        haltedStatus = .blocked
+                        status = haltedStatus
+                    }
+                    break
+                }
+                guard !Task.isCancelled, !cancelled, conditions.eligible == authorization else { break }
+                pendingDelay = nil
+            }
             status = .running
             let outcome = await operation(authorization)
             guard !Task.isCancelled, !cancelled, conditions.eligible == authorization else { break }
-            let delay: UInt64
             switch outcome {
             case .success:
-                failures = 0
-                delay = policy.intervalNanoseconds
+                consecutiveFailures = 0
+                pendingDelay = policy.intervalNanoseconds
             case .retryableFailure:
-                guard failures < policy.retryNanoseconds.count else {
+                guard consecutiveFailures < policy.retryNanoseconds.count else {
                     haltedAuthorization = authorization
                     haltedStatus = .retryLimitReached
                     status = haltedStatus
                     finish()
                     return
                 }
-                delay = policy.retryNanoseconds[failures]
-                failures += 1
+                pendingDelay = policy.retryNanoseconds[consecutiveFailures]
+                consecutiveFailures += 1
             case .blocked:
                 haltedAuthorization = authorization
                 haltedStatus = .blocked
                 status = haltedStatus
                 finish()
                 return
-            }
-            status = .waiting
-            do { try await sleep(delay) }
-            catch {
-                // An unexpected clock error must not produce a hot retry loop.
-                if !Task.isCancelled && !cancelled {
-                    haltedAuthorization = authorization
-                    haltedStatus = .blocked
-                    status = haltedStatus
-                }
-                break
             }
         }
         finish()

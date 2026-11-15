@@ -127,6 +127,26 @@ struct Checks {
             s.update(.init()); c.advance(); await settle()
             checks += 1
         }
+        // Cancelling a pending backoff preserves both its delay and budget.
+        do {
+            let p = OperationProbe(), c = ManualClock()
+            p.immediate = .retryableFailure
+            let s = ForegroundSyncCoordinator(sleep: { try await c.sleep($0) }, operation: { await p.run($0) })
+            let state = enabled(auth())
+            s.update(state); await settle()
+            for expected in [2_000_000_000 as UInt64, 5_000_000_000, 15_000_000_000] {
+                var paused = state; paused.foreground = false
+                s.update(paused); s.update(state)
+                c.advance(); await settle()
+                expect(c.delays.last == expected && s.status == .waiting, "resume bypassed backoff")
+                let attempts = p.seen.count
+                await settle()
+                expect(p.seen.count == attempts, "resume launched early retry")
+                c.advance(); await settle()
+            }
+            expect(p.seen.count == 4 && s.status == .retryLimitReached, "mid-backoff reset retry budget")
+            checks += 1
+        }
         // Security/conflict failures and broken clocks never retry implicitly.
         for clockFailure in [false, true] {
             let p = OperationProbe(), c = ManualClock()
