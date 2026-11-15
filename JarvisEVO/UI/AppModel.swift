@@ -1056,6 +1056,9 @@ final class AppModel {
               beginHistoryChange() else { throw TextSnapshotError.busy }
         var releaseHistory = true
         defer { if releaseHistory { finishHistoryChange() } }
+        // Invalidate cleanup authority before any read that can reveal stale or
+        // unreadable history; failure must never sweep files from the old view.
+        attachmentHistoryIsLoaded = false
         let persisted = try await store.list(includeArchived: true)
         guard persisted.sorted(by: { $0.id.uuidString < $1.id.uuidString })
                 == conversations.sorted(by: { $0.id.uuidString < $1.id.uuidString }) else {
