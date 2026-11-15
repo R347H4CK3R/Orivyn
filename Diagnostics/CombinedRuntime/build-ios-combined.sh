@@ -70,7 +70,10 @@ echo "Checking for required tools..."
 check_required_tool "cmake" "Please install CMake 3.28.0 or later (brew install cmake)"
 check_required_tool "xcrun" "Please install Xcode and Xcode Command Line Tools (xcode-select --install)"
 
-XCODE_VERSION=$(xcrun xcodebuild -version 2>/dev/null | head -n1 | awk '{ print $2 }')
+# Consume all output: head can close the pipe while xcodebuild still writes.
+XCODE_VERSION_OUTPUT=$(xcrun xcodebuild -version)
+printf '%s\n' "$XCODE_VERSION_OUTPUT"
+XCODE_VERSION=$(printf '%s\n' "$XCODE_VERSION_OUTPUT" | awk 'NR == 1 { print $2 }')
 MAJOR_VERSION=$(echo $XCODE_VERSION | cut -d. -f1)
 MINOR_VERSION=$(echo $XCODE_VERSION | cut -d. -f2)
 echo "Detected Xcode version: $XCODE_VERSION"

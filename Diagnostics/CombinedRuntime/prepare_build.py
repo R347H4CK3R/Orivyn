@@ -41,6 +41,9 @@ def transform(source):
     result = result[:start] + (ROOT / 'CombinedRuntime/simulator-slices.sh').read_text() + result[end:]
     result = result.replace('setup_framework_structure "build-ios-sim" ${IOS_MIN_OS_VERSION} "ios"\n', '', 1)
     result = result.replace('combine_static_libraries "build-ios-sim" "Release-iphonesimulator" "ios" "true"\n', '', 1)
+    old_version_probe = "XCODE_VERSION=$(xcrun xcodebuild -version 2>/dev/null | head -n1 | awk '{ print $2 }')"
+    assert result.count(old_version_probe) == 1, "Pinned version probe changed"
+    result = result.replace(old_version_probe, "# Consume all output: head can close the pipe while xcodebuild still writes.\nXCODE_VERSION_OUTPUT=$(xcrun xcodebuild -version)\nprintf '%s\\n' \"$XCODE_VERSION_OUTPUT\"\nXCODE_VERSION=$(printf '%s\\n' \"$XCODE_VERSION_OUTPUT\" | awk 'NR == 1 { print $2 }')", 1)
     return result
 
 if __name__ == '__main__':

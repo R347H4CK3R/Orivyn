@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     branches: [codex/navigation-repeat-20261115]
-    paths: ['JarvisEVO/UI/AppModel.swift', 'JarvisEVO/UI/RootView.swift', 'scripts/ci_navigation_repeat.sh', '.github/workflows/navigation-repeat.yml']
+    paths: ['JarvisEVO/UI/AppModel.swift', 'JarvisEVO/UI/RootView.swift', 'scripts/ci_navigation_repeat.sh', 'Diagnostics/CombinedRuntime/**', '.github/workflows/navigation-repeat.yml']
 permissions:
   contents: read
 concurrency:
@@ -35,7 +35,9 @@ jobs:
           path: .cache/orivyn-combined
           key: combined-v1-${{ runner.os }}-${{ runner.arch }}-${{ steps.xcode.outputs.identity }}-${{ hashFiles('Diagnostics/CombinedRuntime/prepare_build.py', 'Diagnostics/CombinedRuntime/simulator-slices.sh', 'Diagnostics/CombinedRuntime/build-ios-combined.sh', 'Diagnostics/CombinedRuntime/native-bridges.cmake', 'Diagnostics/VisionRuntime/prepare_build.py', 'Diagnostics/VisionRuntime/source/build-xcframework.sh', 'Diagnostics/NativeTools/*.cpp', 'Diagnostics/NativeTools/*.h', 'Diagnostics/VisionProof/Bridge/*.cpp', 'Diagnostics/VisionProof/Bridge/*.h', 'scripts/verify_combined_runtime.py', 'scripts/ci_combined_runtime.sh') }}
       - name: Build and verify combined native runtime
-        run: bash scripts/ci_combined_runtime.sh
+        run: |
+          python3 Diagnostics/CombinedRuntime/test_version_capture.py
+          bash scripts/ci_combined_runtime.sh
       - uses: actions/cache/save@v4
         if: steps.combined-cache.outputs.cache-hit != 'true'
         with:
