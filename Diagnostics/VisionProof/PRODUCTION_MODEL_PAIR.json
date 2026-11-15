@@ -1,7 +1,7 @@
 {
   "repository": "LiquidAI/LFM2.5-VL-1.6B-GGUF",
   "revision": "36fc16bc95133424921bcc3da009e83b2f23ffb5",
-  "scope": "Isolated noncommercial Linux evaluation only; not app catalog or distribution approval",
+  "scope": "Pinned candidate app vision pair. User setup is explicit; platform and release verification are recorded separately.",
   "license": "lfm1.0",
   "artifacts": [
     {
