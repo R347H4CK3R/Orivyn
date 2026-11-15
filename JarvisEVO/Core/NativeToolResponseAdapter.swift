@@ -21,8 +21,16 @@ enum NativeToolResponseAdapter {
             value = .object(["type":.string("tool"),"name":.string(name),"arguments":arguments])
         } else {
             guard transcript.canAnswer else { throw NativeToolTranscript.Failure.invalidInput }
-            try NativeToolTranscript.checkText(text,maximum:4096,allowEmpty:false)
-            value = .object(["type":.string("answer"),"text":.string(text)])
+            if transcript.readScope?.searchLimit != nil {
+                let decoded=try MCPJSONValue.parse(Data(text.utf8),maximumBytes:8192)
+                guard let fields=decoded.objectValue,Set(fields.keys)==["type","text"],
+                      fields["type"]?.stringValue=="answer",let answer=fields["text"]?.stringValue else { throw NativeToolTranscript.Failure.invalidInput }
+                try NativeToolTranscript.checkText(answer,maximum:4096,allowEmpty:false)
+                value = decoded
+            } else {
+                try NativeToolTranscript.checkText(text,maximum:4096,allowEmpty:false)
+                value = .object(["type":.string("answer"),"text":.string(text)])
+            }
         }
         return String(decoding:try value.encoded(maximumBytes:8192),as:UTF8.self)
     }

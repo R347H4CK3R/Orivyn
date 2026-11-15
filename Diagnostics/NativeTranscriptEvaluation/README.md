@@ -1,8 +1,10 @@
 # Native transcript and engine development evidence
 
 This is an experimental bounded local read workflow, not general autonomous tool use.
-No AppModel or LocalAgentSession caller uses this route. The production app does not
-define ORIVYN_NATIVE_TRANSCRIPT.
+The production app does not define ORIVYN_NATIVE_TRANSCRIPT. Behind that opt-in
+flag, LocalAgentSession now selects this route only for a supported explicitly
+approved contract and the pinned Q4 model; other plans/models retain the existing
+reviewed route. AppModel and the approval UI were not changed.
 
 ## Preserved baseline failures
 
@@ -65,3 +67,36 @@ and performance-count checks belong only to evaluate.py.
 No Apple compilation, simulator, iPhone behavior, permissions UI, app dispatch,
 cancellation under the new native mode or complete release acceptance is established
 by these Linux diagnostics. No model or user data is uploaded to a model provider.
+
+## Approved-contract route (follow-up gate)
+
+Run 43680786562 at 06580f68c52fa1e3db28172095a0ca9661c47f74 passed all six portable
+Swift tests plus golden/mutation checks, all five actual-engine boundary/snapshot
+probes, and all seven real Q4 synthetic workflows. Artifact 14148453564, ZIP SHA256
+677ff92b131657c99d1bbecc47e88d440dc0c71a81d64a442fa0688f3e32423c.
+This gate used caller-supplied diagnostic scope, not application approval UI.
+
+The follow-up derives scope only from an already-approved readPlan with
+approvalRevision=0, conversation_read, query equal to exact title, and one index.
+Its search limit is 10 to match the unchanged reviewed reducer. The original
+persisted state and approval metadata are never rewritten. The session first
+derives LocalReadWorkflowPolicy from actual current conversations, and retains
+reducer acceptance, durable pending-write-before-dispatch, and source policy
+validation before execution/answer persistence. Unsupported plans and other model
+descriptors use the existing reviewed route. A loaded-template mismatch falls back
+before any native output/tool dispatch; malformed native responses do not fall back.
+
+For this reviewed route, the final response is constrained to the existing answer
+decision JSON and then strictly parsed. Literal angle brackets in answer values
+remain representable; duplicate keys, protocol markers and text after the complete
+JSON root are still rejected. No expected answer enters the grammar.
+
+The next Linux gate uses createReviewed/decisionPolicy from the unchanged reducer,
+the actual engine, all seven previous cases plus untouched Pine first-message and
+hostile Rowan fifth-message holdouts. Pine exposes the code in search but still
+requires the approved actual read. A sixth actual-engine probe cancels after private
+snapshot sealing and checks that no partial decision or owned directory survives.
+
+The main production generic-task failure remains separate: this narrow approved
+workflow does not fix or establish general autonomy. Apple full-app compilation,
+native-route UI approval checks and physical-device validation are not implied.

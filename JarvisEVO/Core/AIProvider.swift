@@ -60,4 +60,5 @@ struct NativeTranscriptInput: Sendable {
     let stateJSON:String
     let query:String
     let messageIndex:Int64
+    var reviewed:Bool = false
 }

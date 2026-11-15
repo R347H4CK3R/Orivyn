@@ -14,7 +14,7 @@ def probe(name,request,path,expected=None):
  if expected:
   assert p.returncode!=0 and not p.stdout.strip() and expected in p.stderr,(name,p.returncode,p.stdout,p.stderr[-1000:])
  else:
-  assert p.returncode==0 and 'hello' in json.loads(p.stdout)['decision'].lower(),(name,p.stderr[-1000:])
+  assert p.returncode==0 and ('cancelled without a partial decision' if name=='cancel-after-sealing' else 'hello') in json.loads(p.stdout)['decision'].lower(),(name,p.stderr[-1000:])
  assert not list(scratch.glob('OrivynNativeModel-*')),name+' leaked an owned model copy'
  results.append({'name':name,'passed':True,'exit':p.returncode,'expected':expected})
 probe('conflicting-mode',{**body,'conflictingMode':True},model,'invalidState')
@@ -56,5 +56,6 @@ try:
 finally:
  if child is not None and child.poll() is None:child.kill();child.wait()
  replacement.unlink(missing_ok=True)
+probe('cancel-after-sealing',{**body,'cancelProbe':True},model)
 probe('regular-chat-preserved',{**body,'regularProbe':True},model)
 (out/'summary.json').write_text(json.dumps(results,indent=2));print(json.dumps(results))

@@ -155,7 +155,13 @@ actor LlamaEngine: LocalResourceReleasing {
             let templateHash=SHA256.hash(data:Data(String(cString:template).utf8)).map { String(format:"%02x",$0) }.joined()
             _=try MCPJSONValue.parse(Data(input.stateJSON.utf8),maximumBytes:32768)
             let state=try JSONDecoder().decode(LocalAgentSnapshot.self,from:Data(input.stateJSON.utf8))
-            let transcript=try NativeToolTranscript.build(state,templateSHA256:templateHash,readScope:.init(query:input.query,messageIndex:input.messageIndex))
+            let transcript:NativeToolTranscript
+            if input.reviewed {
+                guard let scope=NativeToolTranscript.reviewedScope(state),scope.query==input.query,scope.messageIndex==input.messageIndex else { throw LocalAgentError.invalidState }
+                transcript=try NativeToolTranscript.buildReviewed(state,templateSHA256:templateHash)
+            } else {
+                transcript=try NativeToolTranscript.build(state,templateSHA256:templateHash,readScope:.init(query:input.query,messageIndex:input.messageIndex))
+            }
             nativeGrammar=try transcript.responseGrammar()
             nativeDecision={ try NativeToolResponseAdapter.decision($0,transcript:transcript) };prompt=transcript.prompt
             #else

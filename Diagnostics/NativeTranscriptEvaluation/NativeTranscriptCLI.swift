@@ -21,7 +21,12 @@ import Foundation
                   let query=a["query"]?.stringValue,case .integer(let index)?=a["messageIndex"] else { throw NativeToolTranscript.Failure.invalidInput }
             scope = .init(query:query,messageIndex:index)
         }
-        let transcript=try NativeToolTranscript.build(state,templateSHA256:templateHash,readScope:scope)
+        let transcript:NativeToolTranscript
+        if state.readPlan != nil {
+            guard let approved=NativeToolTranscript.reviewedScope(state),
+                  scope?.query==approved.query,scope?.messageIndex==approved.messageIndex else { throw NativeToolTranscript.Failure.invalidInput }
+            transcript=try NativeToolTranscript.buildReviewed(state,templateSHA256:templateHash)
+        } else { transcript=try NativeToolTranscript.build(state,templateSHA256:templateHash,readScope:scope) }
         let result:MCPJSONValue
         switch mode {
         case "render":
