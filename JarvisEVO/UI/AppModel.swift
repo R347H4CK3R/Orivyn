@@ -230,6 +230,9 @@ final class AppModel {
 
     func setHeavyWorkForeground(_ foreground: Bool) {
         heavyWorkForeground = foreground
+        #if ORIVYN_PEER_TLS_SPIKE && canImport(Network) && canImport(Security) && canImport(CryptoKit) && canImport(X509) && os(iOS)
+        peerSyncSession?.setForeground(foreground)
+        #endif
         if !foreground { revokeHeavyWork() }
     }
 
@@ -1047,6 +1050,48 @@ final class AppModel {
     }
 
 
+
+
+    /// Outgoing automatic revisions must represent this exact persisted history.
+    /// Hold the existing history owner across both reads; preserve unsaved drafts.
+    func preparePeerTextSnapshot(ids: Set<UUID>) async throws -> ReviewedTextSnapshot {
+        try Task.checkCancellation()
+        guard canBeginHeavyWork, !peerHistoryNeedsReload, beginHistoryChange() else {
+            throw TextSnapshotError.busy
+        }
+        defer { finishHistoryChange() }
+        let persisted = try await store.list(includeArchived: true)
+        guard persisted.sorted(by: { $0.id.uuidString < $1.id.uuidString })
+                == conversations.sorted(by: { $0.id.uuidString < $1.id.uuidString }) else {
+            throw PeerHistoryReceiveError.unsavedOrStaleHistory
+        }
+        let snapshot = try await store.exportTextSnapshot(ids: ids)
+        guard snapshot.conversations.sorted(by: { $0.id.uuidString < $1.id.uuidString })
+                == persisted.filter({ ids.contains($0.id) }).sorted(by: { $0.id.uuidString < $1.id.uuidString }) else {
+            throw PeerHistoryReceiveError.unsavedOrStaleHistory
+        }
+        try Task.checkCancellation()
+        return snapshot
+    }
+
+    #if ORIVYN_PEER_TLS_SPIKE && canImport(Network) && canImport(Security) && canImport(CryptoKit) && canImport(X509) && os(iOS)
+    private(set) var peerSyncSession: PeerSyncSession?
+    /// Creating the controller performs no Keychain operation, pairing or transfer.
+    func preparePeerSyncSettings() {
+        if peerSyncSession == nil {
+            peerSyncSession = PeerSyncSession(store: store,
+                snapshot: { [weak self] ids in
+                    guard let self else { throw CancellationError() }
+                    return try await self.preparePeerTextSnapshot(ids: ids)
+                }, receive: { [weak self] authorization, channel in
+                    guard let self else { channel.cancel(); throw CancellationError() }
+                    try await self.receivePeerTextRevisions(approvedSourceIDs: authorization.approvedSourceIDs,
+                        expectedEpoch: authorization.receiverEpoch, over: channel)
+                })
+            peerSyncSession?.setForeground(heavyWorkForeground)
+        }
+    }
+    #endif
 
     /// Internal receive boundary. The caller supplies an authenticated, approved
     /// transfer and owns cancellation; this method grants no network authority.
