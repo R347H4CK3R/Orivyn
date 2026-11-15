@@ -68,7 +68,7 @@ actor LlamaEngine: LocalResourceReleasing {
         nativeSourcePath=nil;nativeSourceIdentity=nil
     }
 
-    private func load(_ url: URL,ownedDirectory:URL? = nil) throws -> LlamaResources {
+    private func load(_ url: URL,ownedSnapshot:NativeModelSnapshot? = nil) throws -> LlamaResources {
         // Transactions replace a model atomically at the same pathname. A path
         // match alone can otherwise keep using the old mmap after new bytes were verified.
         let identity = ModelFileIdentity.read(url)
@@ -107,7 +107,7 @@ actor LlamaEngine: LocalResourceReleasing {
             llama_model_free(model)
             throw LocalModelError.loadFailed
         }
-        let loaded = LlamaResources(model: model, context: context,ownedDirectory:ownedDirectory)
+        let loaded = LlamaResources(model: model, context: context,ownedSnapshot:ownedSnapshot)
         resources = loaded
         loadedPath = url.path
         loadedIdentity = identity
@@ -266,11 +266,10 @@ actor LlamaEngine: LocalResourceReleasing {
         resources=nil;loadedPath=nil;loadedIdentity=nil
         nativeSourcePath=nil;nativeSourceIdentity=nil
         let manager=FileManager.default
-        let directory=manager.temporaryDirectory.appendingPathComponent("OrivynNativeModel-"+UUID().uuidString,isDirectory:true)
-        try manager.createDirectory(at:directory,withIntermediateDirectories:false,attributes:[.posixPermissions:0o700])
-        var retained=false
-        defer { if !retained { try? manager.removeItem(at:directory) } }
-        let copy=directory.appendingPathComponent("model.gguf")
+        // The lease survives every model/context reference. A later invocation
+        // reclaims only validated inactive owned copies after process termination.
+        let snapshot=try NativeModelSnapshot.create(in:manager.temporaryDirectory)
+        let copy=snapshot.modelURL
         guard manager.createFile(atPath:copy.path,contents:nil,attributes:[.posixPermissions:0o600]) else { throw LocalModelError.integrityMismatch }
         let source=try FileHandle(forReadingFrom:url)
         defer { try? source.close() }
@@ -290,8 +289,7 @@ actor LlamaEngine: LocalResourceReleasing {
         try destination.close()
         try manager.setAttributes([.posixPermissions:0o400],ofItemAtPath:copy.path)
         try Task.checkCancellation()
-        let owned=try load(copy,ownedDirectory:directory)
-        retained=true
+        let owned=try load(copy,ownedSnapshot:snapshot)
         // Only a cache hint for the caller's source path. The loaded bytes remain
         // owned by the private snapshot even if that path changes.
         if ModelFileIdentity.read(url)==identity {
@@ -380,11 +378,13 @@ actor LlamaEngine: LocalResourceReleasing {
 private final class LlamaResources: @unchecked Sendable {
     let model: OpaquePointer
     let context: OpaquePointer
-    private let ownedDirectory:URL?
-    init(model: OpaquePointer, context: OpaquePointer,ownedDirectory:URL? = nil) { self.model=model;self.context=context;self.ownedDirectory=ownedDirectory }
+    private let ownedSnapshot:NativeModelSnapshot?
+    init(model: OpaquePointer, context: OpaquePointer,ownedSnapshot:NativeModelSnapshot? = nil) { self.model=model;self.context=context;self.ownedSnapshot=ownedSnapshot }
     deinit {
-        llama_free(context);llama_model_free(model)
-        if let ownedDirectory { try? FileManager.default.removeItem(at:ownedDirectory) }
+        withExtendedLifetime(ownedSnapshot) {
+            llama_free(context);llama_model_free(model)
+        }
+        // Stored snapshot lease is destroyed after the mmap owners above.
     }
 }
 
