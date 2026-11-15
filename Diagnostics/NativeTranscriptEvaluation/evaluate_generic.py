@@ -91,4 +91,4 @@ summary=dict(source=subprocess.check_output(['git','rev-parse','HEAD'],text=True
  nativePassed=sum(r['passed'] for r in results if r['mode']=='native'),perMode=6,
  scope='Actual Linux LlamaEngine generic JSON route; unchanged reducer; synthetic bounded executor. No AppModel/UI/iOS/device acceptance. Native tool-role representation adds no authorization or inferred required-read scope; strict adapter rejects malformed/multiple calls. Diagnostic only; no app caller. Required-read success requires marker inclusion, not exact-format equality. No-match holdout conservatively requires a complete unambiguous absence sentence; arbitrary truthful paraphrases may fail.')
 (OUT/'generic-summary.json').write_text(json.dumps(summary,indent=2));print(json.dumps(summary),flush=True)
-if summary['candidatePassed']!=6:raise SystemExit(1)
+if summary['nativePassed']!=6:raise SystemExit(1)
