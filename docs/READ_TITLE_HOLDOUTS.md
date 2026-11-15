@@ -1,0 +1,3 @@
+# Preregistered additive holdouts
+
+The unchanged proposal candidate passed orchid, maple, pagination and quoted-title in run 43657155662. Before integration, run two new additive cases: a quoted title containing the literal word Conversation and digits (Conversation about Q2), and an unquoted hyphenated title with digits (Moss-trail 27). Both use fresh random HOLDOUT-UUID answers stored only in message 2. Existing scope, search-before-read, complete evidence and durable reopen assertions remain unchanged. No prompt revision is included in this commit. The workflow also repeats all four original cases; no failure may be repaired or relabeled.
