@@ -45,7 +45,7 @@ struct AppSelfKnowledge: Decodable, Sendable {
         // context and reserve 1,024 output tokens. Do not inject every detail.
         return """
         \(identity)
-        Bundled capability knowledge schema \(value.schemaVersion). Repository: \(value.repository) (private).
+        Bundled capability knowledge schema \(value.schemaVersion). Repository: \(value.repository); visibility is not checked.
         Metadata is not permission or proof of actions. Settings > Inspect private source requires explicit authorization. Chat cannot inspect source or modify this executable. self-repair [notAvailable]: cannot build or publish fixes. Desk uses app panels; experimental VM remains unverified on iPhone. Chat has no visual understanding. Draft bug reports with redacted evidence; never claim a fix without tests.
         """
     }

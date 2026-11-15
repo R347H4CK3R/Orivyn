@@ -24,5 +24,14 @@ class SelfKnowledgeManifestTests(unittest.TestCase):
         capabilities = {c['id']: c for c in self.manifest()['capabilities']}
         for key in ['visual-understanding', 'virtual-machine', 'self-repair']:
             self.assertEqual(capabilities[key]['status'], 'notAvailable')
-        self.assertIn('private', self.manifest()['repositoryAccess'])
+        self.assertIn('visibility is not checked', self.manifest()['repositoryAccess'])
         self.assertIn('not source code', self.manifest()['repositoryAccess'])
+
+    def test_repository_access_describes_boundary_not_stale_visibility(self):
+        tools = (ROOT / 'JarvisEVO/Services/LocalReadTools.swift').read_text()
+        prompt = (ROOT / 'JarvisEVO/Core/AppSelfKnowledge.swift').read_text()
+        self.assertNotIn('Private. This tool', tools)
+        self.assertIn('This tool reads bundled metadata, not repository source', tools)
+        self.assertNotIn('(private).', prompt)
+        self.assertIn('visibility is not checked', prompt)
+        self.assertNotIn('repository is private', self.manifest()['repositoryAccess'])

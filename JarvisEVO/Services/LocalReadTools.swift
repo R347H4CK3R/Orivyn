@@ -25,7 +25,7 @@ enum LocalReadTools {
             let capabilities = AppSelfKnowledge.load()?.capabilities.prefix(24).map { MCPJSONValue.object(["id": .string($0.id), "status": .string($0.status.rawValue)]) } ?? []
             object = .object(["app": .string("Orivyn"), "assistant": .string("Jarvis"),
                 "repository": .string("https://github.com/R347H4CK3R/Orivyn"),
-                "repositoryAccess": .string("Private. This tool reads bundled metadata, not repository source."),
+                "repositoryAccess": .string("This tool reads bundled metadata, not repository source; visibility is not checked."),
                 "capabilities": .array(capabilities)])
         case "list_models":
             guard arguments.objectValue?.isEmpty == true else { throw LocalAgentError.invalidState }

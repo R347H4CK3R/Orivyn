@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "repository": "https://github.com/R347H4CK3R/Orivyn",
-  "repositoryAccess": "The repository is private. This manifest is product metadata, not source code or credentials. Knowing its address does not grant access.",
+  "repositoryAccess": "Repository visibility is not checked by this manifest. It is product metadata, not source code or credentials. Knowing its address does not grant access.",
   "capabilities": [
     {
       "id": "chat",
