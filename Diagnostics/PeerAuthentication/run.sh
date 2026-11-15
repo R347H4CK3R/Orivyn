@@ -50,6 +50,22 @@ done
 mkdir -p "$build_root/gate/Sources/NativePeerGate"
 cp Diagnostics/PeerAuthentication/Package.swift "$build_root/gate/Package.swift"
 cp JarvisEVO/Core/PeerSyncControlFrame.swift JarvisEVO/Services/PeerTLSProbe.swift Diagnostics/PeerAuthentication/NativePeerGate.swift Diagnostics/PeerAuthentication/NativeChannelChecks.swift "$build_root/gate/Sources/NativePeerGate/"
+cp Diagnostics/PeerAuthentication/NativeTextExchangeChecks.swift "$build_root/gate/Sources/NativePeerGate/"
+if [[ -f JarvisEVO/Services/PeerTextRevisionExchange.swift ]]; then
+  cp JarvisEVO/Services/PeerTextRevisionExchange.swift "$build_root/gate/Sources/NativePeerGate/"
+fi
+python3 - "$build_root/gate" "$evidence" <<'PY'
+import pathlib,runpy,shutil,sys,hashlib,json
+gate=pathlib.Path(sys.argv[1]);evidence=pathlib.Path(sys.argv[2])
+for source in runpy.run_path('scripts/run_persistence_tests.py')['SOURCES']:
+    shutil.copy2(source,gate/'Sources/NativePeerGate'/pathlib.Path(source).name)
+module=gate/'Sources/SQLite3';module.mkdir()
+(module/'shim.h').write_text('#include <sqlite3.h>\n')
+(module/'module.modulemap').write_text('module SQLite3 [system] { header "shim.h" link "sqlite3" export * }\n')
+manifest={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in (gate/'Sources/NativePeerGate').glob('*.swift')}
+(evidence/'source-manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
+PY
+git rev-parse HEAD > "$evidence/app-source-commit.txt"
 SWIFTCI_USE_LOCAL_DEPS=1 xcrun swift build --package-path "$build_root/gate" --jobs 2 \
   > "$evidence/compile.log" 2>&1
 "$build_root/gate/.build/debug/NativePeerGate" "$fixture_dir" "$evidence/results.json" > "$evidence/run.log" 2>&1

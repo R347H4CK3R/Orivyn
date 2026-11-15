@@ -63,7 +63,7 @@ struct NativePeerGate {
         let passed=completed && peers.count==2 && (wantSuccess ? peers.allSatisfy{$0.authenticated && $0.scopeValid} : peers.allSatisfy{!$0.authenticated})
         return .init(name:name,expectedAuthentication:wantSuccess,timedOut:!completed,peers:peers,passed:passed,seconds:Date().timeIntervalSince(start))
     }
-    static func main() throws {
+    static func main() async throws {
         guard CommandLine.arguments.count==3 else { throw GateError.failed("usage: gate FIXTURE_DIR RESULTS_JSON") }
         let root=URL(fileURLWithPath:CommandLine.arguments[1]),output=URL(fileURLWithPath:CommandLine.arguments[2])
         let password=try String(contentsOf:root.appendingPathComponent("passphrase.txt"),encoding:.utf8).trimmingCharacters(in:.whitespacesAndNewlines)
@@ -83,6 +83,7 @@ struct NativePeerGate {
             try record(run(name,server:a,expectedClient:fixture,presentedClient:fixture,wantSuccess:false))
         }
         try NativeChannelChecks.run(root: root, password: password, output: output.deletingLastPathComponent().appendingPathComponent("channel-results.json"))
+        try await NativeTextExchangeChecks.run(root: root, password: password, output: output.deletingLastPathComponent().appendingPathComponent("text-exchange-results.json"))
         guard results.allSatisfy(\.passed) else { throw GateError.failed("Native pairing acceptance failed; probe must remain disabled.") }
     }
 }
