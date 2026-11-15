@@ -1,0 +1,1970 @@
+{
+  "run": 43680221713,
+  "commit": "c51622587180f24f1c1ba96bc62ad85877abee3e",
+  "artifact": 14148277870,
+  "artifactSHA256": "07d25fb7e67a66eeaab6768bc74377600c041171b65d2a48879415ae688969a1",
+  "results": {
+    "HOLDOUT_CASES.json": {
+      "version": 1,
+      "status": "frozen before any model evaluation",
+      "width": 384,
+      "height": 384,
+      "rgbFormat": "top-to-bottom row-major packed RGB8, sRGB values, opaque white background",
+      "modelInput": "Only pixels plus the case question; never IDs, expected values, geometry or metadata.",
+      "cases": [
+        {
+          "id": "hold01",
+          "category": "spatial",
+          "question": "Where is the blue circle relative to the orange square? Answer with one word: left, right, above, or below.",
+          "acceptedNormalizedAnswers": [
+            "left"
+          ],
+          "referenceDrawing": [
+            [
+              "circle",
+              120,
+              160
+            ],
+            [
+              "square",
+              264,
+              160
+            ]
+          ],
+          "pngSHA256": "ea27d374712db5557486f04573b763916c0490085a2da0c5b58876ea769e5e3b",
+          "rgbSHA256": "909746b067cceacdf1dd34aa1ab5c9e0f30a749a55b4520765eba73d8b1b538f"
+        },
+        {
+          "id": "hold02",
+          "category": "spatial",
+          "question": "Where is the blue circle relative to the orange square? Answer with one word: left, right, above, or below.",
+          "acceptedNormalizedAnswers": [
+            "right"
+          ],
+          "referenceDrawing": [
+            [
+              "circle",
+              264,
+              224
+            ],
+            [
+              "square",
+              120,
+              224
+            ]
+          ],
+          "pngSHA256": "6a59e325b66e3f6db842a177643d8d00f0ae54156b2f4f9752e8835c5d092ac0",
+          "rgbSHA256": "4c6076e21a87e22266e7089e7f942fac4004e7291f694231e818905f64d08b58"
+        },
+        {
+          "id": "hold03",
+          "category": "spatial",
+          "question": "Where is the blue circle relative to the orange square? Answer with one word: left, right, above, or below.",
+          "acceptedNormalizedAnswers": [
+            "above"
+          ],
+          "referenceDrawing": [
+            [
+              "circle",
+              224,
+              120
+            ],
+            [
+              "square",
+              224,
+              264
+            ]
+          ],
+          "pngSHA256": "d70ef0ffe2e540fa8624e40a0bd728982c4330b03d425e2341a574236456c1b8",
+          "rgbSHA256": "df75db1d21a0f1e36c552d5fbeabd01394150bd1d819fa7b9887f3a02638052c"
+        },
+        {
+          "id": "hold04",
+          "category": "spatial",
+          "question": "Where is the blue circle relative to the orange square? Answer with one word: left, right, above, or below.",
+          "acceptedNormalizedAnswers": [
+            "below"
+          ],
+          "referenceDrawing": [
+            [
+              "circle",
+              160,
+              264
+            ],
+            [
+              "square",
+              160,
+              120
+            ]
+          ],
+          "pngSHA256": "0902ad8929af7b4e73b347a00b48e6c0a8538ea0bc73d6ec59f36e2ddd5e12a8",
+          "rgbSHA256": "fb499cfb0bbf033b0dac710805f5fc85c4ded01e786059898727a27c56b8ecf5"
+        },
+        {
+          "id": "hold05",
+          "category": "count",
+          "question": "How many circles are visible? Return only the number.",
+          "acceptedNormalizedAnswers": [
+            "0",
+            "zero",
+            "none",
+            "no circles",
+            "0 circles",
+            "zero circles"
+          ],
+          "referenceDrawing": [
+            [
+              "square",
+              160,
+              160
+            ]
+          ],
+          "pngSHA256": "edabab616e8a1651f176fb9531fa9cadd5419d4791779ebc00392798eed03ccb",
+          "rgbSHA256": "1303379d245f7ad36b367042cd155ac86737ccecc5b05cac88d27b62c105527a"
+        },
+        {
+          "id": "hold06",
+          "category": "count",
+          "question": "How many circles are visible? Return only the number.",
+          "acceptedNormalizedAnswers": [
+            "1",
+            "one",
+            "1 circle",
+            "one circle"
+          ],
+          "referenceDrawing": [
+            [
+              "circle",
+              250,
+              250
+            ]
+          ],
+          "pngSHA256": "a3756e3824eb8b8da062c2ea8ff8bb2b252f2a884018afffc077b9532732b3ad",
+          "rgbSHA256": "f9ac37139f46aac16b2c79ee240c5a29522f6f8b91b181f74a7b3bffe6430b23"
+        },
+        {
+          "id": "hold07",
+          "category": "count",
+          "question": "How many circles are visible? Return only the number.",
+          "acceptedNormalizedAnswers": [
+            "2",
+            "two",
+            "2 circles",
+            "two circles"
+          ],
+          "referenceDrawing": [
+            [
+              "circle",
+              120,
+              192
+            ],
+            [
+              "circle",
+              264,
+              192
+            ]
+          ],
+          "pngSHA256": "2cfef42809763cca6219cc88d5ae8ac76b5ef7e2d9865d3961717793dd21f0ac",
+          "rgbSHA256": "a623ec5537e672669c5c5fda8f8d5d7c919b51167aa6c0746ca5f369d054a66f"
+        },
+        {
+          "id": "hold08",
+          "category": "count",
+          "question": "How many circles are visible? Return only the number.",
+          "acceptedNormalizedAnswers": [
+            "3",
+            "three",
+            "3 circles",
+            "three circles"
+          ],
+          "referenceDrawing": [
+            [
+              "circle",
+              96,
+              120
+            ],
+            [
+              "circle",
+              192,
+              264
+            ],
+            [
+              "circle",
+              288,
+              120
+            ],
+            [
+              "square",
+              192,
+              120
+            ]
+          ],
+          "pngSHA256": "508365e3b6704aa9df30e80b756c8d9f152b188f206a0df5261c5985721b1e17",
+          "rgbSHA256": "6bc5301b4734750ab8fa7cdc609cb5539f204052ac29d069a519eb88fc34dbe8"
+        },
+        {
+          "id": "hold09",
+          "category": "count",
+          "question": "How many circles are visible? Return only the number.",
+          "acceptedNormalizedAnswers": [
+            "5",
+            "five",
+            "5 circles",
+            "five circles"
+          ],
+          "referenceDrawing": [
+            [
+              "circle",
+              96,
+              96
+            ],
+            [
+              "circle",
+              288,
+              96
+            ],
+            [
+              "circle",
+              192,
+              192
+            ],
+            [
+              "circle",
+              96,
+              288
+            ],
+            [
+              "circle",
+              288,
+              288
+            ]
+          ],
+          "pngSHA256": "4139aaec37249e260667022d7b1b12fd6829a7325d7a2abb9e6ea92cfe4a1dca",
+          "rgbSHA256": "6bc4830da1a081faf4e97fbbef4cd41512d85d237de42407e7e3ab6344b2e72f"
+        },
+        {
+          "id": "hold10",
+          "category": "count",
+          "question": "How many circles are visible? Return only the number.",
+          "acceptedNormalizedAnswers": [
+            "6",
+            "six",
+            "6 circles",
+            "six circles"
+          ],
+          "referenceDrawing": [
+            [
+              "circle",
+              96,
+              96
+            ],
+            [
+              "circle",
+              192,
+              96
+            ],
+            [
+              "circle",
+              288,
+              96
+            ],
+            [
+              "circle",
+              96,
+              288
+            ],
+            [
+              "circle",
+              192,
+              288
+            ],
+            [
+              "circle",
+              288,
+              288
+            ]
+          ],
+          "pngSHA256": "a4722af630314371225caeaa424dcbd59551c08a0f59e3fb20cc342fc4308400",
+          "rgbSHA256": "bcc662b848f31f3d2b7dbbd07149dded5128b9e5e735d20df9a16e8729353487"
+        },
+        {
+          "id": "absolute-left",
+          "category": "absolute",
+          "question": "Is the circle in the left or right half of the image? Return only left or right.",
+          "acceptedNormalizedAnswers": [
+            "left"
+          ],
+          "referenceDrawing": [
+            [
+              "circle",
+              96,
+              192
+            ]
+          ],
+          "pngSHA256": "8b9a4451b8082edca0983aef53fa4b83c66bdf79a98094534bb1db3ae6bc89e7",
+          "rgbSHA256": "b1a5e1bafc5e5b358fe13804fdfc3b71108f68a0dd6a001465b785d3708c3f72"
+        },
+        {
+          "id": "absolute-right",
+          "category": "absolute",
+          "question": "Is the circle in the left or right half of the image? Return only left or right.",
+          "acceptedNormalizedAnswers": [
+            "right"
+          ],
+          "referenceDrawing": [
+            [
+              "circle",
+              288,
+              192
+            ]
+          ],
+          "pngSHA256": "f08da458b58f1b65811a2de6f3293ac983909c3b43e842bc00d3af146b61fd43",
+          "rgbSHA256": "d6b04064ae8159f3bb0745027029e39c943b09eb2e3170e7b94fba278c8ea58d"
+        },
+        {
+          "id": "absolute-top",
+          "category": "absolute",
+          "question": "Is the circle in the top or bottom half of the image? Return only top or bottom.",
+          "acceptedNormalizedAnswers": [
+            "top"
+          ],
+          "referenceDrawing": [
+            [
+              "circle",
+              192,
+              96
+            ]
+          ],
+          "pngSHA256": "e3cb7246c4c4d00a33255b1354d3e84e1c893fae3858c2c834d20cb0dbbd7e54",
+          "rgbSHA256": "8d9cc30accd1c95186fc7a6659f19c968cb93dd20c61159f62641f1e7b76a258"
+        },
+        {
+          "id": "absolute-bottom",
+          "category": "absolute",
+          "question": "Is the circle in the top or bottom half of the image? Return only top or bottom.",
+          "acceptedNormalizedAnswers": [
+            "bottom"
+          ],
+          "referenceDrawing": [
+            [
+              "circle",
+              192,
+              288
+            ]
+          ],
+          "pngSHA256": "c2a653dce01af0cd24f545626fa9cf28972bcd07726fbfa626d7c3649fb2c6ed",
+          "rgbSHA256": "70f6bffaf9b00440cf1765a394eed31015ea0c1dc6d900f8f07204a965434f1f"
+        },
+        {
+          "id": "natural-landscape-full",
+          "category": "natural",
+          "question": "What is between the mountains? Return one word.",
+          "acceptedNormalizedAnswers": [
+            "water",
+            "river",
+            "lake",
+            "fjord"
+          ],
+          "referenceDrawing": [
+            "landscape",
+            false
+          ],
+          "pngSHA256": "87c7595014e65b60ed6a8ecc3edc8d3777c2ce3bbcf4fff299ffe5a6040be25c",
+          "rgbSHA256": "3b7c527b3ea2b1c4338a3f89eb2278f5df281041cb99e9d54e3bea5abe0c01a6"
+        },
+        {
+          "id": "natural-landscape-boxed",
+          "category": "natural",
+          "question": "What is between the mountains? Return one word.",
+          "acceptedNormalizedAnswers": [
+            "water",
+            "river",
+            "lake",
+            "fjord"
+          ],
+          "referenceDrawing": [
+            "landscape",
+            true
+          ],
+          "pngSHA256": "266e73c5559d8f6e2f6811af0bedaa237c5b1642de49e6899880e5c946efd0e0",
+          "rgbSHA256": "b24a45de13a038184c42d761a7f7d855f860372955123956fd94cf36523b23e5"
+        },
+        {
+          "id": "natural-flower-full",
+          "category": "natural",
+          "question": "What is the main object in the image? Return one word.",
+          "acceptedNormalizedAnswers": [
+            "flower",
+            "lotus",
+            "lily"
+          ],
+          "referenceDrawing": [
+            "flower",
+            false
+          ],
+          "pngSHA256": "aab0255b7e8e2361664b68104c8694ba4a104cdd2e83973b6e2dbbc0153e85ec",
+          "rgbSHA256": "00325b5584196bc0ccc782d1ee74e457ab55dae5d21a6f928c52d3802d03302f"
+        },
+        {
+          "id": "natural-flower-boxed",
+          "category": "natural",
+          "question": "What is the main object in the image? Return one word.",
+          "acceptedNormalizedAnswers": [
+            "flower",
+            "lotus",
+            "lily"
+          ],
+          "referenceDrawing": [
+            "flower",
+            true
+          ],
+          "pngSHA256": "4213a1620c6a439488caa9bf9d6d1ab1b4ad49f0f79cdfd8acf0e6c1485334e9",
+          "rgbSHA256": "7ba1f11b35835e60438b9972e62c5dc4bb1a5d87e5c903fa0eea420f2089ad83"
+        }
+      ]
+    },
+    "MODEL_PAIR.json": {
+      "repository": "ggml-org/SmolVLM2-2.2B-Instruct-GGUF",
+      "revision": "1bc3c9f74ceafd4c8d4411cc9cf188bba3798f91",
+      "license": "Apache-2.0",
+      "artifacts": [
+        {
+          "file": "SmolVLM2-2.2B-Instruct-Q4_K_M.gguf",
+          "size": 1112602656,
+          "sha": "0cf76814555b8665149075b74ab6b5c1d428ea1d3d01c1918c12012e8d7c9f58",
+          "actualSHA256": "0cf76814555b8665149075b74ab6b5c1d428ea1d3d01c1918c12012e8d7c9f58"
+        },
+        {
+          "file": "mmproj-SmolVLM2-2.2B-Instruct-f16.gguf",
+          "size": 872303680,
+          "sha": "db9a3a1648cab1ebc3af4a2b0c8145dd8faebf6f7dd7b16e7dc1842229f14ac4",
+          "actualSHA256": "db9a3a1648cab1ebc3af4a2b0c8145dd8faebf6f7dd7b16e7dc1842229f14ac4"
+        }
+      ]
+    },
+    "base-BorderHoldout.json": {
+      "scope": "Linux diagnostic only; binary-to-source provenance requires separate build evidence",
+      "librarySHA256": "79ca739081659037968483f0e25d773fadfe683a963e45a23b606136c5efdeec",
+      "modelManifest": {
+        "repository": "ggml-org/SmolVLM2-2.2B-Instruct-GGUF",
+        "revision": "1bc3c9f74ceafd4c8d4411cc9cf188bba3798f91",
+        "license": "Apache-2.0",
+        "artifacts": [
+          {
+            "file": "SmolVLM2-2.2B-Instruct-Q4_K_M.gguf",
+            "size": 1112602656,
+            "sha": "0cf76814555b8665149075b74ab6b5c1d428ea1d3d01c1918c12012e8d7c9f58",
+            "actualSHA256": "0cf76814555b8665149075b74ab6b5c1d428ea1d3d01c1918c12012e8d7c9f58"
+          },
+          {
+            "file": "mmproj-SmolVLM2-2.2B-Instruct-f16.gguf",
+            "size": 872303680,
+            "sha": "db9a3a1648cab1ebc3af4a2b0c8145dd8faebf6f7dd7b16e7dc1842229f14ac4",
+            "actualSHA256": "db9a3a1648cab1ebc3af4a2b0c8145dd8faebf6f7dd7b16e7dc1842229f14ac4"
+          }
+        ]
+      },
+      "cases": [
+        {
+          "id": "hold01",
+          "status": 0,
+          "output": " left",
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 1,
+            "positions": 120,
+            "image_chunks": 1,
+            "callback_count": 2734,
+            "live_resources": 0
+          },
+          "closeAcknowledged": true,
+          "rgbSHA256": "909746b067cceacdf1dd34aa1ab5c9e0f30a749a55b4520765eba73d8b1b538f",
+          "question": "Where is the blue circle relative to the orange square? Answer with one word: left, right, above, or below.",
+          "seconds": 9.05
+        },
+        {
+          "id": "hold02",
+          "status": 0,
+          "output": " above",
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 1,
+            "positions": 120,
+            "image_chunks": 1,
+            "callback_count": 2734,
+            "live_resources": 0
+          },
+          "closeAcknowledged": true,
+          "rgbSHA256": "4c6076e21a87e22266e7089e7f942fac4004e7291f694231e818905f64d08b58",
+          "question": "Where is the blue circle relative to the orange square? Answer with one word: left, right, above, or below.",
+          "seconds": 9.17
+        },
+        {
+          "id": "hold03",
+          "status": 0,
+          "output": " above",
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 1,
+            "positions": 120,
+            "image_chunks": 1,
+            "callback_count": 2734,
+            "live_resources": 0
+          },
+          "closeAcknowledged": true,
+          "rgbSHA256": "df75db1d21a0f1e36c552d5fbeabd01394150bd1d819fa7b9887f3a02638052c",
+          "question": "Where is the blue circle relative to the orange square? Answer with one word: left, right, above, or below.",
+          "seconds": 9.14
+        },
+        {
+          "id": "hold04",
+          "status": 0,
+          "output": " below",
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 1,
+            "positions": 120,
+            "image_chunks": 1,
+            "callback_count": 2734,
+            "live_resources": 0
+          },
+          "closeAcknowledged": true,
+          "rgbSHA256": "fb499cfb0bbf033b0dac710805f5fc85c4ded01e786059898727a27c56b8ecf5",
+          "question": "Where is the blue circle relative to the orange square? Answer with one word: left, right, above, or below.",
+          "seconds": 9.1
+        },
+        {
+          "id": "hold05",
+          "status": 0,
+          "output": " 1",
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 2,
+            "positions": 106,
+            "image_chunks": 1,
+            "callback_count": 3148,
+            "live_resources": 0
+          },
+          "closeAcknowledged": true,
+          "rgbSHA256": "1303379d245f7ad36b367042cd155ac86737ccecc5b05cac88d27b62c105527a",
+          "question": "How many circles are visible? Return only the number.",
+          "seconds": 8.83
+        },
+        {
+          "id": "hold06",
+          "status": 0,
+          "output": " 1",
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 2,
+            "positions": 106,
+            "image_chunks": 1,
+            "callback_count": 3148,
+            "live_resources": 0
+          },
+          "closeAcknowledged": true,
+          "rgbSHA256": "f9ac37139f46aac16b2c79ee240c5a29522f6f8b91b181f74a7b3bffe6430b23",
+          "question": "How many circles are visible? Return only the number.",
+          "seconds": 8.88
+        },
+        {
+          "id": "hold07",
+          "status": 0,
+          "output": " 2",
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 2,
+            "positions": 106,
+            "image_chunks": 1,
+            "callback_count": 3148,
+            "live_resources": 0
+          },
+          "closeAcknowledged": true,
+          "rgbSHA256": "a623ec5537e672669c5c5fda8f8d5d7c919b51167aa6c0746ca5f369d054a66f",
+          "question": "How many circles are visible? Return only the number.",
+          "seconds": 8.87
+        },
+        {
+          "id": "hold08",
+          "status": 0,
+          "output": " 4",
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 2,
+            "positions": 106,
+            "image_chunks": 1,
+            "callback_count": 3148,
+            "live_resources": 0
+          },
+          "closeAcknowledged": true,
+          "rgbSHA256": "6bc5301b4734750ab8fa7cdc609cb5539f204052ac29d069a519eb88fc34dbe8",
+          "question": "How many circles are visible? Return only the number.",
+          "seconds": 8.91
+        },
+        {
+          "id": "hold09",
+          "status": 0,
+          "output": " 5",
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 2,
+            "positions": 106,
+            "image_chunks": 1,
+            "callback_count": 3148,
+            "live_resources": 0
+          },
+          "closeAcknowledged": true,
+          "rgbSHA256": "6bc4830da1a081faf4e97fbbef4cd41512d85d237de42407e7e3ab6344b2e72f",
+          "question": "How many circles are visible? Return only the number.",
+          "seconds": 8.83
+        },
+        {
+          "id": "hold10",
+          "status": 0,
+          "output": " 6",
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 2,
+            "positions": 106,
+            "image_chunks": 1,
+            "callback_count": 3148,
+            "live_resources": 0
+          },
+          "closeAcknowledged": true,
+          "rgbSHA256": "bcc662b848f31f3d2b7dbbd07149dded5128b9e5e735d20df9a16e8729353487",
+          "question": "How many circles are visible? Return only the number.",
+          "seconds": 8.91
+        },
+        {
+          "id": "absolute-left",
+          "status": 0,
+          "output": " left",
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 1,
+            "positions": 114,
+            "image_chunks": 1,
+            "callback_count": 2734,
+            "live_resources": 0
+          },
+          "closeAcknowledged": true,
+          "rgbSHA256": "b1a5e1bafc5e5b358fe13804fdfc3b71108f68a0dd6a001465b785d3708c3f72",
+          "question": "Is the circle in the left or right half of the image? Return only left or right.",
+          "seconds": 8.99
+        },
+        {
+          "id": "absolute-right",
+          "status": 0,
+          "output": " left",
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 1,
+            "positions": 114,
+            "image_chunks": 1,
+            "callback_count": 2734,
+            "live_resources": 0
+          },
+          "closeAcknowledged": true,
+          "rgbSHA256": "d6b04064ae8159f3bb0745027029e39c943b09eb2e3170e7b94fba278c8ea58d",
+          "question": "Is the circle in the left or right half of the image? Return only left or right.",
+          "seconds": 9.03
+        },
+        {
+          "id": "absolute-top",
+          "status": 0,
+          "output": " top",
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 1,
+            "positions": 114,
+            "image_chunks": 1,
+            "callback_count": 2734,
+            "live_resources": 0
+          },
+          "closeAcknowledged": true,
+          "rgbSHA256": "8d9cc30accd1c95186fc7a6659f19c968cb93dd20c61159f62641f1e7b76a258",
+          "question": "Is the circle in the top or bottom half of the image? Return only top or bottom.",
+          "seconds": 9.03
+        },
+        {
+          "id": "absolute-bottom",
+          "status": 0,
+          "output": " top",
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 1,
+            "positions": 114,
+            "image_chunks": 1,
+            "callback_count": 2734,
+            "live_resources": 0
+          },
+          "closeAcknowledged": true,
+          "rgbSHA256": "70f6bffaf9b00440cf1765a394eed31015ea0c1dc6d900f8f07204a965434f1f",
+          "question": "Is the circle in the top or bottom half of the image? Return only top or bottom.",
+          "seconds": 9.09
+        },
+        {
+          "id": "natural-landscape-full",
+          "status": 0,
+          "output": " river",
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 1,
+            "positions": 105,
+            "image_chunks": 1,
+            "callback_count": 2734,
+            "live_resources": 0
+          },
+          "closeAcknowledged": true,
+          "rgbSHA256": "3b7c527b3ea2b1c4338a3f89eb2278f5df281041cb99e9d54e3bea5abe0c01a6",
+          "question": "What is between the mountains? Return one word.",
+          "seconds": 8.81
+        },
+        {
+          "id": "natural-landscape-boxed",
+          "status": 0,
+          "output": " valley",
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 1,
+            "positions": 105,
+            "image_chunks": 1,
+            "callback_count": 2734,
+            "live_resources": 0
+          },
+          "closeAcknowledged": true,
+          "rgbSHA256": "b24a45de13a038184c42d761a7f7d855f860372955123956fd94cf36523b23e5",
+          "question": "What is between the mountains? Return one word.",
+          "seconds": 8.83
+        },
+        {
+          "id": "natural-flower-full",
+          "status": 0,
+          "output": " Lotus",
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 2,
+            "positions": 108,
+            "image_chunks": 1,
+            "callback_count": 3148,
+            "live_resources": 0
+          },
+          "closeAcknowledged": true,
+          "rgbSHA256": "00325b5584196bc0ccc782d1ee74e457ab55dae5d21a6f928c52d3802d03302f",
+          "question": "What is the main object in the image? Return one word.",
+          "seconds": 8.95
+        },
+        {
+          "id": "natural-flower-boxed",
+          "status": 0,
+          "output": " Lotus",
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 2,
+            "positions": 108,
+            "image_chunks": 1,
+            "callback_count": 3148,
+            "live_resources": 0
+          },
+          "closeAcknowledged": true,
+          "rgbSHA256": "7ba1f11b35835e60438b9972e62c5dc4bb1a5d87e5c903fa0eea420f2089ad83",
+          "question": "What is the main object in the image? Return one word.",
+          "seconds": 9
+        }
+      ],
+      "score": {
+        "scope": "Frozen synthetic diagnostic only; no broad vision/OCR or device acceptance claim",
+        "passed": false,
+        "cases": [
+          {
+            "id": "hold01",
+            "passed": true,
+            "runtimeComplete": true,
+            "answerMatched": true,
+            "normalizedAnswer": "left"
+          },
+          {
+            "id": "hold02",
+            "passed": false,
+            "runtimeComplete": true,
+            "answerMatched": false,
+            "normalizedAnswer": "above"
+          },
+          {
+            "id": "hold03",
+            "passed": true,
+            "runtimeComplete": true,
+            "answerMatched": true,
+            "normalizedAnswer": "above"
+          },
+          {
+            "id": "hold04",
+            "passed": true,
+            "runtimeComplete": true,
+            "answerMatched": true,
+            "normalizedAnswer": "below"
+          },
+          {
+            "id": "hold05",
+            "passed": false,
+            "runtimeComplete": true,
+            "answerMatched": false,
+            "normalizedAnswer": "1"
+          },
+          {
+            "id": "hold06",
+            "passed": true,
+            "runtimeComplete": true,
+            "answerMatched": true,
+            "normalizedAnswer": "1"
+          },
+          {
+            "id": "hold07",
+            "passed": true,
+            "runtimeComplete": true,
+            "answerMatched": true,
+            "normalizedAnswer": "2"
+          },
+          {
+            "id": "hold08",
+            "passed": false,
+            "runtimeComplete": true,
+            "answerMatched": false,
+            "normalizedAnswer": "4"
+          },
+          {
+            "id": "hold09",
+            "passed": true,
+            "runtimeComplete": true,
+            "answerMatched": true,
+            "normalizedAnswer": "5"
+          },
+          {
+            "id": "hold10",
+            "passed": true,
+            "runtimeComplete": true,
+            "answerMatched": true,
+            "normalizedAnswer": "6"
+          },
+          {
+            "id": "absolute-left",
+            "passed": true,
+            "runtimeComplete": true,
+            "answerMatched": true,
+            "normalizedAnswer": "left"
+          },
+          {
+            "id": "absolute-right",
+            "passed": false,
+            "runtimeComplete": true,
+            "answerMatched": false,
+            "normalizedAnswer": "left"
+          },
+          {
+            "id": "absolute-top",
+            "passed": true,
+            "runtimeComplete": true,
+            "answerMatched": true,
+            "normalizedAnswer": "top"
+          },
+          {
+            "id": "absolute-bottom",
+            "passed": false,
+            "runtimeComplete": true,
+            "answerMatched": false,
+            "normalizedAnswer": "top"
+          },
+          {
+            "id": "natural-landscape-full",
+            "passed": true,
+            "runtimeComplete": true,
+            "answerMatched": true,
+            "normalizedAnswer": "river"
+          },
+          {
+            "id": "natural-landscape-boxed",
+            "passed": false,
+            "runtimeComplete": true,
+            "answerMatched": false,
+            "normalizedAnswer": "valley"
+          },
+          {
+            "id": "natural-flower-full",
+            "passed": true,
+            "runtimeComplete": true,
+            "answerMatched": true,
+            "normalizedAnswer": "lotus"
+          },
+          {
+            "id": "natural-flower-boxed",
+            "passed": true,
+            "runtimeComplete": true,
+            "answerMatched": true,
+            "normalizedAnswer": "lotus"
+          }
+        ]
+      }
+    },
+    "base-QualityV1.json": {
+      "scope": "Linux diagnostic only; binary-to-source provenance requires separate build evidence",
+      "librarySHA256": "79ca739081659037968483f0e25d773fadfe683a963e45a23b606136c5efdeec",
+      "modelManifest": {
+        "repository": "ggml-org/SmolVLM2-2.2B-Instruct-GGUF",
+        "revision": "1bc3c9f74ceafd4c8d4411cc9cf188bba3798f91",
+        "license": "Apache-2.0",
+        "artifacts": [
+          {
+            "file": "SmolVLM2-2.2B-Instruct-Q4_K_M.gguf",
+            "size": 1112602656,
+            "sha": "0cf76814555b8665149075b74ab6b5c1d428ea1d3d01c1918c12012e8d7c9f58",
+            "actualSHA256": "0cf76814555b8665149075b74ab6b5c1d428ea1d3d01c1918c12012e8d7c9f58"
+          },
+          {
+            "file": "mmproj-SmolVLM2-2.2B-Instruct-f16.gguf",
+            "size": 872303680,
+            "sha": "db9a3a1648cab1ebc3af4a2b0c8145dd8faebf6f7dd7b16e7dc1842229f14ac4",
+            "actualSHA256": "db9a3a1648cab1ebc3af4a2b0c8145dd8faebf6f7dd7b16e7dc1842229f14ac4"
+          }
+        ]
+      },
+      "cases": [
+        {
+          "id": "case01",
+          "status": 0,
+          "output": " left",
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 1,
+            "positions": 120,
+            "image_chunks": 1,
+            "callback_count": 2734,
+            "live_resources": 0
+          },
+          "closeAcknowledged": true,
+          "rgbSHA256": "a7747e45a7ec97a95cfb02bcad4ddfd7277c8d22b2c45396f52c2443ed60089e",
+          "question": "Where is the blue circle relative to the orange square? Answer with one word: left, right, above, or below.",
+          "seconds": 9.06
+        },
+        {
+          "id": "case02",
+          "status": 0,
+          "output": " left",
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 1,
+            "positions": 120,
+            "image_chunks": 1,
+            "callback_count": 2734,
+            "live_resources": 0
+          },
+          "closeAcknowledged": true,
+          "rgbSHA256": "41b273ed0e2df5d34bf7c5aecb1b04f4e1b82f84ef01a7167b507cc6e416fd94",
+          "question": "Where is the blue circle relative to the orange square? Answer with one word: left, right, above, or below.",
+          "seconds": 9.05
+        },
+        {
+          "id": "case03",
+          "status": 0,
+          "output": " above",
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 1,
+            "positions": 120,
+            "image_chunks": 1,
+            "callback_count": 2734,
+            "live_resources": 0
+          },
+          "closeAcknowledged": true,
+          "rgbSHA256": "a610b3f017ecdce7bb6afdc81ae5062e1a4ac481ea41f55443c127d45c35b217",
+          "question": "Where is the blue circle relative to the orange square? Answer with one word: left, right, above, or below.",
+          "seconds": 9.08
+        },
+        {
+          "id": "case04",
+          "status": 0,
+          "output": " below",
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 1,
+            "positions": 120,
+            "image_chunks": 1,
+            "callback_count": 2734,
+            "live_resources": 0
+          },
+          "closeAcknowledged": true,
+          "rgbSHA256": "095e6fc19b8a28536216def1f623d5c3f4a7b738fae822a8768ce3b52cbbdbef",
+          "question": "Where is the blue circle relative to the orange square? Answer with one word: left, right, above, or below.",
+          "seconds": 9.07
+        },
+        {
+          "id": "case05",
+          "status": 0,
+          "output": " 0",
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 2,
+            "positions": 106,
+            "image_chunks": 1,
+            "callback_count": 3148,
+            "live_resources": 0
+          },
+          "closeAcknowledged": true,
+          "rgbSHA256": "65e1fe416a16e7555d901aaddc14a981a6dabb73703dae18b10c84a7b3ab626a",
+          "question": "How many circles are visible? Return only the number.",
+          "seconds": 8.86
+        },
+        {
+          "id": "case06",
+          "status": 0,
+          "output": " 1",
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 2,
+            "positions": 106,
+            "image_chunks": 1,
+            "callback_count": 3148,
+            "live_resources": 0
+          },
+          "closeAcknowledged": true,
+          "rgbSHA256": "4a01f0c17f90746a56ee97372c228b6ae76d1fe61007addbfaa1073848809427",
+          "question": "How many circles are visible? Return only the number.",
+          "seconds": 8.86
+        },
+        {
+          "id": "case07",
+          "status": 0,
+          "output": " 2",
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 2,
+            "positions": 106,
+            "image_chunks": 1,
+            "callback_count": 3148,
+            "live_resources": 0
+          },
+          "closeAcknowledged": true,
+          "rgbSHA256": "23364317a6674cc30802b9d5d535cc473adf8b5847f153890a66c45f94a706b6",
+          "question": "How many circles are visible? Return only the number.",
+          "seconds": 8.84
+        },
+        {
+          "id": "case08",
+          "status": 0,
+          "output": " 5",
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 2,
+            "positions": 106,
+            "image_chunks": 1,
+            "callback_count": 3148,
+            "live_resources": 0
+          },
+          "closeAcknowledged": true,
+          "rgbSHA256": "9722e72cbcc84c577facf360cbaa3047c28140c00d4a675409da140854d55744",
+          "question": "How many circles are visible? Return only the number.",
+          "seconds": 8.85
+        },
+        {
+          "id": "case09",
+          "status": 0,
+          "output": " MAPLE 47",
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 5,
+            "positions": 109,
+            "image_chunks": 1,
+            "callback_count": 4390,
+            "live_resources": 0
+          },
+          "closeAcknowledged": true,
+          "rgbSHA256": "655132665db9e033f0efa6941b4e00ae8592cc7eb9c78bc3a32a3f86492d7979",
+          "question": "Transcribe all text in the image. Return only the text.",
+          "seconds": 9.17
+        },
+        {
+          "id": "case10",
+          "status": 0,
+          "output": " CEDAR 82",
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 6,
+            "positions": 109,
+            "image_chunks": 1,
+            "callback_count": 4804,
+            "live_resources": 0
+          },
+          "closeAcknowledged": true,
+          "rgbSHA256": "b0fb97b76cca7282c2916858e27b68f522d39e2cf9d7fc6f4d616bfa794807b0",
+          "question": "Transcribe all text in the image. Return only the text.",
+          "seconds": 9.1
+        }
+      ],
+      "score": {
+        "scope": "Frozen synthetic diagnostic only; no broad vision/OCR or device acceptance claim",
+        "passed": false,
+        "cases": [
+          {
+            "id": "case01",
+            "passed": true,
+            "runtimeComplete": true,
+            "answerMatched": true,
+            "normalizedAnswer": "left"
+          },
+          {
+            "id": "case02",
+            "passed": false,
+            "runtimeComplete": true,
+            "answerMatched": false,
+            "normalizedAnswer": "left"
+          },
+          {
+            "id": "case03",
+            "passed": true,
+            "runtimeComplete": true,
+            "answerMatched": true,
+            "normalizedAnswer": "above"
+          },
+          {
+            "id": "case04",
+            "passed": true,
+            "runtimeComplete": true,
+            "answerMatched": true,
+            "normalizedAnswer": "below"
+          },
+          {
+            "id": "case05",
+            "passed": true,
+            "runtimeComplete": true,
+            "answerMatched": true,
+            "normalizedAnswer": "0"
+          },
+          {
+            "id": "case06",
+            "passed": true,
+            "runtimeComplete": true,
+            "answerMatched": true,
+            "normalizedAnswer": "1"
+          },
+          {
+            "id": "case07",
+            "passed": true,
+            "runtimeComplete": true,
+            "answerMatched": true,
+            "normalizedAnswer": "2"
+          },
+          {
+            "id": "case08",
+            "passed": false,
+            "runtimeComplete": true,
+            "answerMatched": false,
+            "normalizedAnswer": "5"
+          },
+          {
+            "id": "case09",
+            "passed": true,
+            "runtimeComplete": true,
+            "answerMatched": true,
+            "normalizedAnswer": "maple 47"
+          },
+          {
+            "id": "case10",
+            "passed": true,
+            "runtimeComplete": true,
+            "answerMatched": true,
+            "normalizedAnswer": "cedar 82"
+          }
+        ]
+      }
+    },
+    "vision-BorderHoldout.json": {
+      "scope": "Linux diagnostic only; binary-to-source provenance requires separate build evidence",
+      "librarySHA256": "7f6d1b0d70319a6aaef77a4d9c6f8d27aab8c0f7ea091c376c1b32517272cfd7",
+      "modelManifest": {
+        "repository": "ggml-org/SmolVLM2-2.2B-Instruct-GGUF",
+        "revision": "1bc3c9f74ceafd4c8d4411cc9cf188bba3798f91",
+        "license": "Apache-2.0",
+        "artifacts": [
+          {
+            "file": "SmolVLM2-2.2B-Instruct-Q4_K_M.gguf",
+            "size": 1112602656,
+            "sha": "0cf76814555b8665149075b74ab6b5c1d428ea1d3d01c1918c12012e8d7c9f58",
+            "actualSHA256": "0cf76814555b8665149075b74ab6b5c1d428ea1d3d01c1918c12012e8d7c9f58"
+          },
+          {
+            "file": "mmproj-SmolVLM2-2.2B-Instruct-f16.gguf",
+            "size": 872303680,
+            "sha": "db9a3a1648cab1ebc3af4a2b0c8145dd8faebf6f7dd7b16e7dc1842229f14ac4",
+            "actualSHA256": "db9a3a1648cab1ebc3af4a2b0c8145dd8faebf6f7dd7b16e7dc1842229f14ac4"
+          }
+        ]
+      },
+      "cases": [
+        {
+          "id": "hold01",
+          "status": 0,
+          "output": " left",
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 1,
+            "positions": 120,
+            "image_chunks": 1,
+            "callback_count": 2734,
+            "live_resources": 0
+          },
+          "closeAcknowledged": true,
+          "rgbSHA256": "909746b067cceacdf1dd34aa1ab5c9e0f30a749a55b4520765eba73d8b1b538f",
+          "question": "Where is the blue circle relative to the orange square? Answer with one word: left, right, above, or below.",
+          "seconds": 9.02
+        },
+        {
+          "id": "hold02",
+          "status": 0,
+          "output": " left",
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 1,
+            "positions": 120,
+            "image_chunks": 1,
+            "callback_count": 2734,
+            "live_resources": 0
+          },
+          "closeAcknowledged": true,
+          "rgbSHA256": "4c6076e21a87e22266e7089e7f942fac4004e7291f694231e818905f64d08b58",
+          "question": "Where is the blue circle relative to the orange square? Answer with one word: left, right, above, or below.",
+          "seconds": 9.08
+        },
+        {
+          "id": "hold03",
+          "status": 0,
+          "output": " above",
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 1,
+            "positions": 120,
+            "image_chunks": 1,
+            "callback_count": 2734,
+            "live_resources": 0
+          },
+          "closeAcknowledged": true,
+          "rgbSHA256": "df75db1d21a0f1e36c552d5fbeabd01394150bd1d819fa7b9887f3a02638052c",
+          "question": "Where is the blue circle relative to the orange square? Answer with one word: left, right, above, or below.",
+          "seconds": 9.06
+        },
+        {
+          "id": "hold04",
+          "status": 0,
+          "output": " below",
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 1,
+            "positions": 120,
+            "image_chunks": 1,
+            "callback_count": 2734,
+            "live_resources": 0
+          },
+          "closeAcknowledged": true,
+          "rgbSHA256": "fb499cfb0bbf033b0dac710805f5fc85c4ded01e786059898727a27c56b8ecf5",
+          "question": "Where is the blue circle relative to the orange square? Answer with one word: left, right, above, or below.",
+          "seconds": 9.04
+        },
+        {
+          "id": "hold05",
+          "status": 0,
+          "output": " 0",
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 2,
+            "positions": 106,
+            "image_chunks": 1,
+            "callback_count": 3148,
+            "live_resources": 0
+          },
+          "closeAcknowledged": true,
+          "rgbSHA256": "1303379d245f7ad36b367042cd155ac86737ccecc5b05cac88d27b62c105527a",
+          "question": "How many circles are visible? Return only the number.",
+          "seconds": 8.83
+        },
+        {
+          "id": "hold06",
+          "status": 0,
+          "output": " 1",
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 2,
+            "positions": 106,
+            "image_chunks": 1,
+            "callback_count": 3148,
+            "live_resources": 0
+          },
+          "closeAcknowledged": true,
+          "rgbSHA256": "f9ac37139f46aac16b2c79ee240c5a29522f6f8b91b181f74a7b3bffe6430b23",
+          "question": "How many circles are visible? Return only the number.",
+          "seconds": 8.88
+        },
+        {
+          "id": "hold07",
+          "status": 0,
+          "output": " 2",
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 2,
+            "positions": 106,
+            "image_chunks": 1,
+            "callback_count": 3148,
+            "live_resources": 0
+          },
+          "closeAcknowledged": true,
+          "rgbSHA256": "a623ec5537e672669c5c5fda8f8d5d7c919b51167aa6c0746ca5f369d054a66f",
+          "question": "How many circles are visible? Return only the number.",
+          "seconds": 8.82
+        },
+        {
+          "id": "hold08",
+          "status": 0,
+          "output": " 4",
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 2,
+            "positions": 106,
+            "image_chunks": 1,
+            "callback_count": 3148,
+            "live_resources": 0
+          },
+          "closeAcknowledged": true,
+          "rgbSHA256": "6bc5301b4734750ab8fa7cdc609cb5539f204052ac29d069a519eb88fc34dbe8",
+          "question": "How many circles are visible? Return only the number.",
+          "seconds": 8.85
+        },
+        {
+          "id": "hold09",
+          "status": 0,
+          "output": " 5",
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 2,
+            "positions": 106,
+            "image_chunks": 1,
+            "callback_count": 3148,
+            "live_resources": 0
+          },
+          "closeAcknowledged": true,
+          "rgbSHA256": "6bc4830da1a081faf4e97fbbef4cd41512d85d237de42407e7e3ab6344b2e72f",
+          "question": "How many circles are visible? Return only the number.",
+          "seconds": 8.78
+        },
+        {
+          "id": "hold10",
+          "status": 0,
+          "output": " 6",
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 2,
+            "positions": 106,
+            "image_chunks": 1,
+            "callback_count": 3148,
+            "live_resources": 0
+          },
+          "closeAcknowledged": true,
+          "rgbSHA256": "bcc662b848f31f3d2b7dbbd07149dded5128b9e5e735d20df9a16e8729353487",
+          "question": "How many circles are visible? Return only the number.",
+          "seconds": 8.8
+        },
+        {
+          "id": "absolute-left",
+          "status": 0,
+          "output": " left",
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 1,
+            "positions": 114,
+            "image_chunks": 1,
+            "callback_count": 2734,
+            "live_resources": 0
+          },
+          "closeAcknowledged": true,
+          "rgbSHA256": "b1a5e1bafc5e5b358fe13804fdfc3b71108f68a0dd6a001465b785d3708c3f72",
+          "question": "Is the circle in the left or right half of the image? Return only left or right.",
+          "seconds": 8.97
+        },
+        {
+          "id": "absolute-right",
+          "status": 0,
+          "output": " left",
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 1,
+            "positions": 114,
+            "image_chunks": 1,
+            "callback_count": 2734,
+            "live_resources": 0
+          },
+          "closeAcknowledged": true,
+          "rgbSHA256": "d6b04064ae8159f3bb0745027029e39c943b09eb2e3170e7b94fba278c8ea58d",
+          "question": "Is the circle in the left or right half of the image? Return only left or right.",
+          "seconds": 8.96
+        },
+        {
+          "id": "absolute-top",
+          "status": 0,
+          "output": " top",
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 1,
+            "positions": 114,
+            "image_chunks": 1,
+            "callback_count": 2734,
+            "live_resources": 0
+          },
+          "closeAcknowledged": true,
+          "rgbSHA256": "8d9cc30accd1c95186fc7a6659f19c968cb93dd20c61159f62641f1e7b76a258",
+          "question": "Is the circle in the top or bottom half of the image? Return only top or bottom.",
+          "seconds": 8.91
+        },
+        {
+          "id": "absolute-bottom",
+          "status": 0,
+          "output": " top",
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 1,
+            "positions": 114,
+            "image_chunks": 1,
+            "callback_count": 2734,
+            "live_resources": 0
+          },
+          "closeAcknowledged": true,
+          "rgbSHA256": "70f6bffaf9b00440cf1765a394eed31015ea0c1dc6d900f8f07204a965434f1f",
+          "question": "Is the circle in the top or bottom half of the image? Return only top or bottom.",
+          "seconds": 8.93
+        },
+        {
+          "id": "natural-landscape-full",
+          "status": 0,
+          "output": " river",
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 1,
+            "positions": 105,
+            "image_chunks": 1,
+            "callback_count": 2734,
+            "live_resources": 0
+          },
+          "closeAcknowledged": true,
+          "rgbSHA256": "3b7c527b3ea2b1c4338a3f89eb2278f5df281041cb99e9d54e3bea5abe0c01a6",
+          "question": "What is between the mountains? Return one word.",
+          "seconds": 8.78
+        },
+        {
+          "id": "natural-landscape-boxed",
+          "status": 0,
+          "output": " river",
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 1,
+            "positions": 105,
+            "image_chunks": 1,
+            "callback_count": 2734,
+            "live_resources": 0
+          },
+          "closeAcknowledged": true,
+          "rgbSHA256": "b24a45de13a038184c42d761a7f7d855f860372955123956fd94cf36523b23e5",
+          "question": "What is between the mountains? Return one word.",
+          "seconds": 8.72
+        },
+        {
+          "id": "natural-flower-full",
+          "status": 0,
+          "output": " Lotus",
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 2,
+            "positions": 108,
+            "image_chunks": 1,
+            "callback_count": 3148,
+            "live_resources": 0
+          },
+          "closeAcknowledged": true,
+          "rgbSHA256": "00325b5584196bc0ccc782d1ee74e457ab55dae5d21a6f928c52d3802d03302f",
+          "question": "What is the main object in the image? Return one word.",
+          "seconds": 8.79
+        },
+        {
+          "id": "natural-flower-boxed",
+          "status": 0,
+          "output": " Lily",
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 1,
+            "positions": 108,
+            "image_chunks": 1,
+            "callback_count": 2734,
+            "live_resources": 0
+          },
+          "closeAcknowledged": true,
+          "rgbSHA256": "7ba1f11b35835e60438b9972e62c5dc4bb1a5d87e5c903fa0eea420f2089ad83",
+          "question": "What is the main object in the image? Return one word.",
+          "seconds": 8.77
+        }
+      ],
+      "score": {
+        "scope": "Frozen synthetic diagnostic only; no broad vision/OCR or device acceptance claim",
+        "passed": false,
+        "cases": [
+          {
+            "id": "hold01",
+            "passed": true,
+            "runtimeComplete": true,
+            "answerMatched": true,
+            "normalizedAnswer": "left"
+          },
+          {
+            "id": "hold02",
+            "passed": false,
+            "runtimeComplete": true,
+            "answerMatched": false,
+            "normalizedAnswer": "left"
+          },
+          {
+            "id": "hold03",
+            "passed": true,
+            "runtimeComplete": true,
+            "answerMatched": true,
+            "normalizedAnswer": "above"
+          },
+          {
+            "id": "hold04",
+            "passed": true,
+            "runtimeComplete": true,
+            "answerMatched": true,
+            "normalizedAnswer": "below"
+          },
+          {
+            "id": "hold05",
+            "passed": true,
+            "runtimeComplete": true,
+            "answerMatched": true,
+            "normalizedAnswer": "0"
+          },
+          {
+            "id": "hold06",
+            "passed": true,
+            "runtimeComplete": true,
+            "answerMatched": true,
+            "normalizedAnswer": "1"
+          },
+          {
+            "id": "hold07",
+            "passed": true,
+            "runtimeComplete": true,
+            "answerMatched": true,
+            "normalizedAnswer": "2"
+          },
+          {
+            "id": "hold08",
+            "passed": false,
+            "runtimeComplete": true,
+            "answerMatched": false,
+            "normalizedAnswer": "4"
+          },
+          {
+            "id": "hold09",
+            "passed": true,
+            "runtimeComplete": true,
+            "answerMatched": true,
+            "normalizedAnswer": "5"
+          },
+          {
+            "id": "hold10",
+            "passed": true,
+            "runtimeComplete": true,
+            "answerMatched": true,
+            "normalizedAnswer": "6"
+          },
+          {
+            "id": "absolute-left",
+            "passed": true,
+            "runtimeComplete": true,
+            "answerMatched": true,
+            "normalizedAnswer": "left"
+          },
+          {
+            "id": "absolute-right",
+            "passed": false,
+            "runtimeComplete": true,
+            "answerMatched": false,
+            "normalizedAnswer": "left"
+          },
+          {
+            "id": "absolute-top",
+            "passed": true,
+            "runtimeComplete": true,
+            "answerMatched": true,
+            "normalizedAnswer": "top"
+          },
+          {
+            "id": "absolute-bottom",
+            "passed": false,
+            "runtimeComplete": true,
+            "answerMatched": false,
+            "normalizedAnswer": "top"
+          },
+          {
+            "id": "natural-landscape-full",
+            "passed": true,
+            "runtimeComplete": true,
+            "answerMatched": true,
+            "normalizedAnswer": "river"
+          },
+          {
+            "id": "natural-landscape-boxed",
+            "passed": true,
+            "runtimeComplete": true,
+            "answerMatched": true,
+            "normalizedAnswer": "river"
+          },
+          {
+            "id": "natural-flower-full",
+            "passed": true,
+            "runtimeComplete": true,
+            "answerMatched": true,
+            "normalizedAnswer": "lotus"
+          },
+          {
+            "id": "natural-flower-boxed",
+            "passed": true,
+            "runtimeComplete": true,
+            "answerMatched": true,
+            "normalizedAnswer": "lily"
+          }
+        ]
+      }
+    },
+    "vision-QualityV1.json": {
+      "scope": "Linux diagnostic only; binary-to-source provenance requires separate build evidence",
+      "librarySHA256": "7f6d1b0d70319a6aaef77a4d9c6f8d27aab8c0f7ea091c376c1b32517272cfd7",
+      "modelManifest": {
+        "repository": "ggml-org/SmolVLM2-2.2B-Instruct-GGUF",
+        "revision": "1bc3c9f74ceafd4c8d4411cc9cf188bba3798f91",
+        "license": "Apache-2.0",
+        "artifacts": [
+          {
+            "file": "SmolVLM2-2.2B-Instruct-Q4_K_M.gguf",
+            "size": 1112602656,
+            "sha": "0cf76814555b8665149075b74ab6b5c1d428ea1d3d01c1918c12012e8d7c9f58",
+            "actualSHA256": "0cf76814555b8665149075b74ab6b5c1d428ea1d3d01c1918c12012e8d7c9f58"
+          },
+          {
+            "file": "mmproj-SmolVLM2-2.2B-Instruct-f16.gguf",
+            "size": 872303680,
+            "sha": "db9a3a1648cab1ebc3af4a2b0c8145dd8faebf6f7dd7b16e7dc1842229f14ac4",
+            "actualSHA256": "db9a3a1648cab1ebc3af4a2b0c8145dd8faebf6f7dd7b16e7dc1842229f14ac4"
+          }
+        ]
+      },
+      "cases": [
+        {
+          "id": "case01",
+          "status": 0,
+          "output": " left",
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 1,
+            "positions": 120,
+            "image_chunks": 1,
+            "callback_count": 2734,
+            "live_resources": 0
+          },
+          "closeAcknowledged": true,
+          "rgbSHA256": "a7747e45a7ec97a95cfb02bcad4ddfd7277c8d22b2c45396f52c2443ed60089e",
+          "question": "Where is the blue circle relative to the orange square? Answer with one word: left, right, above, or below.",
+          "seconds": 9.06
+        },
+        {
+          "id": "case02",
+          "status": 0,
+          "output": " left",
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 1,
+            "positions": 120,
+            "image_chunks": 1,
+            "callback_count": 2734,
+            "live_resources": 0
+          },
+          "closeAcknowledged": true,
+          "rgbSHA256": "41b273ed0e2df5d34bf7c5aecb1b04f4e1b82f84ef01a7167b507cc6e416fd94",
+          "question": "Where is the blue circle relative to the orange square? Answer with one word: left, right, above, or below.",
+          "seconds": 9.01
+        },
+        {
+          "id": "case03",
+          "status": 0,
+          "output": " above",
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 1,
+            "positions": 120,
+            "image_chunks": 1,
+            "callback_count": 2734,
+            "live_resources": 0
+          },
+          "closeAcknowledged": true,
+          "rgbSHA256": "a610b3f017ecdce7bb6afdc81ae5062e1a4ac481ea41f55443c127d45c35b217",
+          "question": "Where is the blue circle relative to the orange square? Answer with one word: left, right, above, or below.",
+          "seconds": 9.08
+        },
+        {
+          "id": "case04",
+          "status": 0,
+          "output": " below",
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 1,
+            "positions": 120,
+            "image_chunks": 1,
+            "callback_count": 2734,
+            "live_resources": 0
+          },
+          "closeAcknowledged": true,
+          "rgbSHA256": "095e6fc19b8a28536216def1f623d5c3f4a7b738fae822a8768ce3b52cbbdbef",
+          "question": "Where is the blue circle relative to the orange square? Answer with one word: left, right, above, or below.",
+          "seconds": 9.05
+        },
+        {
+          "id": "case05",
+          "status": 0,
+          "output": " 0",
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 2,
+            "positions": 106,
+            "image_chunks": 1,
+            "callback_count": 3148,
+            "live_resources": 0
+          },
+          "closeAcknowledged": true,
+          "rgbSHA256": "65e1fe416a16e7555d901aaddc14a981a6dabb73703dae18b10c84a7b3ab626a",
+          "question": "How many circles are visible? Return only the number.",
+          "seconds": 8.84
+        },
+        {
+          "id": "case06",
+          "status": 0,
+          "output": " 1",
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 2,
+            "positions": 106,
+            "image_chunks": 1,
+            "callback_count": 3148,
+            "live_resources": 0
+          },
+          "closeAcknowledged": true,
+          "rgbSHA256": "4a01f0c17f90746a56ee97372c228b6ae76d1fe61007addbfaa1073848809427",
+          "question": "How many circles are visible? Return only the number.",
+          "seconds": 8.83
+        },
+        {
+          "id": "case07",
+          "status": 0,
+          "output": " 2",
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 2,
+            "positions": 106,
+            "image_chunks": 1,
+            "callback_count": 3148,
+            "live_resources": 0
+          },
+          "closeAcknowledged": true,
+          "rgbSHA256": "23364317a6674cc30802b9d5d535cc473adf8b5847f153890a66c45f94a706b6",
+          "question": "How many circles are visible? Return only the number.",
+          "seconds": 8.83
+        },
+        {
+          "id": "case08",
+          "status": 0,
+          "output": " 5",
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 2,
+            "positions": 106,
+            "image_chunks": 1,
+            "callback_count": 3148,
+            "live_resources": 0
+          },
+          "closeAcknowledged": true,
+          "rgbSHA256": "9722e72cbcc84c577facf360cbaa3047c28140c00d4a675409da140854d55744",
+          "question": "How many circles are visible? Return only the number.",
+          "seconds": 8.81
+        },
+        {
+          "id": "case09",
+          "status": 0,
+          "output": " MAPLE 47",
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 5,
+            "positions": 109,
+            "image_chunks": 1,
+            "callback_count": 4390,
+            "live_resources": 0
+          },
+          "closeAcknowledged": true,
+          "rgbSHA256": "655132665db9e033f0efa6941b4e00ae8592cc7eb9c78bc3a32a3f86492d7979",
+          "question": "Transcribe all text in the image. Return only the text.",
+          "seconds": 9.06
+        },
+        {
+          "id": "case10",
+          "status": 0,
+          "output": " CEDAR 82",
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 6,
+            "positions": 109,
+            "image_chunks": 1,
+            "callback_count": 4804,
+            "live_resources": 0
+          },
+          "closeAcknowledged": true,
+          "rgbSHA256": "b0fb97b76cca7282c2916858e27b68f522d39e2cf9d7fc6f4d616bfa794807b0",
+          "question": "Transcribe all text in the image. Return only the text.",
+          "seconds": 9.1
+        }
+      ],
+      "score": {
+        "scope": "Frozen synthetic diagnostic only; no broad vision/OCR or device acceptance claim",
+        "passed": false,
+        "cases": [
+          {
+            "id": "case01",
+            "passed": true,
+            "runtimeComplete": true,
+            "answerMatched": true,
+            "normalizedAnswer": "left"
+          },
+          {
+            "id": "case02",
+            "passed": false,
+            "runtimeComplete": true,
+            "answerMatched": false,
+            "normalizedAnswer": "left"
+          },
+          {
+            "id": "case03",
+            "passed": true,
+            "runtimeComplete": true,
+            "answerMatched": true,
+            "normalizedAnswer": "above"
+          },
+          {
+            "id": "case04",
+            "passed": true,
+            "runtimeComplete": true,
+            "answerMatched": true,
+            "normalizedAnswer": "below"
+          },
+          {
+            "id": "case05",
+            "passed": true,
+            "runtimeComplete": true,
+            "answerMatched": true,
+            "normalizedAnswer": "0"
+          },
+          {
+            "id": "case06",
+            "passed": true,
+            "runtimeComplete": true,
+            "answerMatched": true,
+            "normalizedAnswer": "1"
+          },
+          {
+            "id": "case07",
+            "passed": true,
+            "runtimeComplete": true,
+            "answerMatched": true,
+            "normalizedAnswer": "2"
+          },
+          {
+            "id": "case08",
+            "passed": false,
+            "runtimeComplete": true,
+            "answerMatched": false,
+            "normalizedAnswer": "5"
+          },
+          {
+            "id": "case09",
+            "passed": true,
+            "runtimeComplete": true,
+            "answerMatched": true,
+            "normalizedAnswer": "maple 47"
+          },
+          {
+            "id": "case10",
+            "passed": true,
+            "runtimeComplete": true,
+            "answerMatched": true,
+            "normalizedAnswer": "cedar 82"
+          }
+        ]
+      }
+    }
+  }
+}
