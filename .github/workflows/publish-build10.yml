@@ -1,0 +1,87 @@
+name: Publish verified Orivyn build 10 preview
+on:
+  push:
+    branches: [codex/publish-build10-20261115]
+    paths: ['.github/workflows/publish-build10.yml']
+permissions:
+  contents: write
+  actions: read
+jobs:
+  publish:
+    if: github.event.repository.private == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 40844c2d96441b8183f231fb27e8a52faa1db80c
+          persist-credentials: false
+      - name: Require verified package and identical tested application source
+        run: |
+          gh api repos/$GH_REPO/actions/runs/43687359101 > package-run.json
+          gh api repos/$GH_REPO/actions/runs/43687359101/jobs > package-jobs.json
+          gh api repos/$GH_REPO/actions/runs/43685204421 > app-run.json
+          gh api repos/$GH_REPO/actions/runs/43685204421/jobs > app-jobs.json
+          gh api repos/$GH_REPO/compare/03b9c5cc0f96e0dce332e0e3c36460a9346ff304...40844c2d96441b8183f231fb27e8a52faa1db80c > lineage.json
+          python3 - <<'PY'
+          import json
+          r=json.load(open('package-run.json'))
+          assert r['head_sha']=='40844c2d96441b8183f231fb27e8a52faa1db80c' and r['conclusion']=='success'
+          jobs=json.load(open('package-jobs.json'))['jobs']
+          assert len(jobs)==1 and jobs[0]['name']=='candidate' and jobs[0]['conclusion']=='success'
+          a=json.load(open('app-run.json'))
+          assert a['head_sha']=='03b9c5cc0f96e0dce332e0e3c36460a9346ff304'
+          jobs=json.load(open('app-jobs.json'))['jobs']
+          assert len(jobs)==1
+          steps=[s for s in jobs[0]['steps'] if s['name']=='Required reviewed native route and LFM simulator inference']
+          assert len(steps)==1 and steps[0]['conclusion']=='success'
+          diff=json.load(open('lineage.json'))
+          allowed={'.github/workflows/build10-candidate.yml','Diagnostics/CombinedRuntime/prepare_build.py','scripts/ci_combined_runtime.sh','scripts/ci_macos.sh','scripts/ci_native_inference.sh','scripts/tests/test_combined_recipe.py','scripts/verify_build10_runtime_reuse.py'}
+          assert diff['status']=='ahead' and diff['behind_by']==0 and diff['ahead_by']==2
+          assert {f['filename'] for f in diff['files']}==allowed
+          PY
+      - name: Retrieve and verify exact package
+        run: |
+          gh run download 43687359101 --name Orivyn-build10-package-evidence --dir candidate
+          python3 - <<'PY'
+          import pathlib,subprocess,json
+          paths=list(pathlib.Path('candidate').rglob('*.ipa'))
+          assert len(paths)==1,paths
+          subprocess.run(['python3','scripts/verify_ipa.py',str(paths[0]),'--output','verified-ipa.json'],check=True)
+          v=json.load(open('verified-ipa.json'))
+          assert v['build']=='10' and v['version']=='0.1.1' and v['bundle_identifier']=='app.jarvisevo.ios'
+          assert v['sha256']=='65ca3580cbba4ea8513a4dcb0bc97e2fe67933ba13aea1ad38f039f75b282bf8' and v['size']==37141596
+          pathlib.Path('ipa-path.txt').write_text(str(paths[0]))
+          PY
+      - name: Publish labeled unfinished preview
+        run: |
+          set -euo pipefail
+          IPA="$(cat ipa-path.txt)"
+          sha256sum "$IPA" | sed 's|  .*/|  |' > SHA256SUMS
+          cat > release-notes.md <<'NOTES'
+          Orivyn 0.1.1 build 10 — unfinished unsigned iOS 26+ preview.
+          
+          Includes the reviewed native read route, the LFM2.5-VL-1.6B vision option, and the history-import presentation fix. Automatic live sync remains disabled while pairing and scheduling integration are tested.
+          
+          To use the reviewed native route, explicitly download/select Qwen3 · 1.7B · Q4_K_M, create a Read messages plan for one exact quoted conversation title and one message index, review the scope, approve, then Run. Other tasks/models use their existing routes. Vision requires an explicit model download and review of the displayed model license; no model weights are included in this IPA.
+          
+          Known limits: generic autonomous tasks may still answer before completing requested reads. Vision remains experimental: the frozen synthetic evaluation scored 9/10, with mixed-shape counting still failing; one app-level simulator smoke does not establish broad image understanding. This candidate does not provide automatic live sync. A process termination can leave a temporary model snapshot using additional storage. Physical-device installation, signing refresh, voice, memory/thermal behavior and device runtime are unverified.
+          
+          Verified application source 03b9c5cc0f96e0dce332e0e3c36460a9346ff304: 1,040 native core tests, 1,035 passed, five explicit skips, zero failures. Separately, the actual reviewed Q4 workflow passed with three native decisions and a fresh verification marker; the LFM simulator smoke passed with cleanup acknowledged. These ran on an ARM64 iPhone 16 Plus simulator with iOS 26.0.1. Generic agent and standalone suggestion gates were not run for this candidate. Selected UI fixes passed earlier scoped tests; the full combined UI suite was not rerun.
+          
+          The first package attempt stopped at its dirty-source guard. Tooling-only corrections produced final package source 40844c2d96441b8183f231fb27e8a52faa1db80c; all app and app-test files are unchanged from the tested source. The clean Release device build, unsigned IPA validation, exact bundled LFM license check and runtime provenance checks passed. Native tests were not repeated on that tooling-only packaging commit.
+          
+          App verification: https://github.com/R347H4CK3R/Orivyn/actions/runs/43685204421
+          Final package verification: https://github.com/R347H4CK3R/Orivyn/actions/runs/43687359101
+          Preserved evidence: https://github.com/R347H4CK3R/Orivyn/tree/2ced666db0a8be6e438a355bdf84c68e03f6eec5/docs/evidence
+          
+          File: Orivyn-0.1.1-build10-unsigned.ipa
+          Size: 37,141,596 bytes
+          SHA-256: 65ca3580cbba4ea8513a4dcb0bc97e2fe67933ba13aea1ad38f039f75b282bf8
+          
+          This is not completed 1.0.0. SideStore or another installer must sign the IPA. Preserve existing app data and signing identity when updating. Required third-party notices and LFM license terms are bundled. No signing keys or personal conversations are included.
+          NOTES
+          gh release create orivyn-v0.1.1-build10 "$IPA" SHA256SUMS verified-ipa.json --target 40844c2d96441b8183f231fb27e8a52faa1db80c --title "Orivyn 0.1.1 build 10 — unfinished preview" --notes-file release-notes.md --prerelease
