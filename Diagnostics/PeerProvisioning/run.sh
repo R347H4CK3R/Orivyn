@@ -4,6 +4,19 @@ umask 077
 root="$(pwd)"
 build_root="$(mktemp -d "$RUNNER_TEMP/orivyn-provisioning.XXXXXX")"
 trap 'rm -rf "$build_root"' EXIT
+# Diagnose the exact storage primitive before expensive X509 compilation.
+# These private keys exist only as disposable CI fixtures and are never uploaded.
+openssl_bin="$(brew --prefix openssl@3)/bin/openssl"
+for mode in reference DER; do
+  "$openssl_bin" req -new -x509 -newkey ec -pkeyopt ec_paramgen_curve:P-256 -noenc \
+    -keyout "$build_root/$mode.key" -out "$build_root/$mode.pem" \
+    -subj "/CN=Orivyn-storage-fixture-$(uuidgen)" -days 1 \
+    > /dev/null 2>&1
+  "$openssl_bin" x509 -in "$build_root/$mode.pem" -outform DER -out "$build_root/$mode.der"
+done
+xcrun swiftc -swift-version 6 -parse-as-library Diagnostics/PeerProvisioning/check_certificate_storage.swift -o "$build_root/storage-probe"
+"$build_root/storage-probe" "$build_root/reference.der" "$build_root/DER.der" \
+  2>&1 | tee "$RUNNER_TEMP/peer-provisioning-storage.log"
 for dependency in swift-certificates:8789d7e78f996d56272836c8bf3590c5bd9c9754 swift-crypto:9f96b82711cc4ce5816343c02eccd5ad907972d3 swift-asn1:12b0abc19498e562a8d97eebb67a11e9e6a255dd; do
   repo="${dependency%%:*}"
   revision="${dependency#*:}"

@@ -1,0 +1,4 @@
+{
+  "note": "Fast native diagnostic added before package compilation, no separate native run triggered. Two disposable public certificates test transient-reference vs DER insertion; outputs only status codes and boolean matches. DER insertion lookup/cleanup is required to pass before full tests.",
+  "private_material": "Generated CI private keys stay in mktemp directory removed by EXIT trap; artifact paths contain only logs."
+}
