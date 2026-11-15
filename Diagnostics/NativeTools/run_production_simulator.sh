@@ -27,9 +27,14 @@ trap cleanup EXIT
 # simulator test-host propagation. Restore the generated scheme on every exit.
 MODEL_ID="${ORIVYN_PRODUCTION_MODEL_ID:-qwen3-1.7b-q8_0}"
 GATE_KIND="${NATIVE_TOOLS_GATE_KIND:-native-tools}"
+TRANSCRIPT_ARGS=()
+if [[ "${ORIVYN_REQUIRE_NATIVE_TRANSCRIPT_ROUTE:-0}" == 1 ]]; then
+ [[ "$GATE_KIND" == reviewed-plan && " $ORIVYN_NATIVE_FEATURES " == *' ORIVYN_NATIVE_TRANSCRIPT '* ]] || { echo 'Native transcript proof needs reviewed-plan and its build flag.' >&2; exit 2; }
+ TRANSCRIPT_ARGS+=(--require-native-transcript)
+fi
 python3 "$ROOT/Diagnostics/NativeTools/simulator_gate.py" --scheme "$SCHEME" \
  --models "$ORIVYN_NATIVE_TOOLS_MODEL_DIR" --destination "$NATIVE_TOOLS_DESTINATION" \
- --model-id "$MODEL_ID" --gate "$GATE_KIND" > "$NATIVE_TOOLS_EVIDENCE_DIR/gate-config.json"
+ --model-id "$MODEL_ID" --gate "$GATE_KIND" "${TRANSCRIPT_ARGS[@]}" > "$NATIVE_TOOLS_EVIDENCE_DIR/gate-config.json"
 case "$GATE_KIND" in
  native-tools) SELECTOR='JarvisEVOTests/ProductionNativeToolsRuntimeTests/testRequiredProductionSuggestionAndReload'; DEFAULT_ALLOWANCE=300; MAX_ALLOWANCE=600 ;;
  reviewed-plan) SELECTOR='JarvisEVOTests/ProductionReviewedReadPlanTests/testRequiredModelProposalApprovalAndGroundedRead'; DEFAULT_ALLOWANCE=1200; MAX_ALLOWANCE=1200 ;;

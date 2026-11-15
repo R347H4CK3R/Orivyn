@@ -21,6 +21,8 @@ final class LocalAgentSession {
     private(set) var status = "Choose a saved task or enter a local read-only task."
     private(set) var error: String?
     private(set) var recoveryWarning: String?
+    /// Successful native decisions in the current explicit Run, excluding fallback.
+    private(set) var nativeTranscriptDecisionCount = 0
     var isRunning: Bool { work != nil }
     var isPreparingReadPlan: Bool { drafting && isRunning }
     var canManageSavedTasks: Bool { !isRunning && model.heavyWorkLease?.kind != .localAgent }
@@ -157,6 +159,7 @@ final class LocalAgentSession {
         do {
             if current.status == "interrupted" { state = try core.call("resume", [state]); try persist(state) }
         } catch { self.error = error.localizedDescription; return }
+        nativeTranscriptDecisionCount = 0
         let identity = UUID(); owner = identity; error = nil
         work = Task { @MainActor [self] in
             do {
@@ -187,7 +190,10 @@ final class LocalAgentSession {
                     }
                     let decision:String
                     #if ORIVYN_NATIVE_TRANSCRIPT
-                    do { decision=try await collectDecision(request,provider:provider,identity:identity) }
+                    do {
+                        decision=try await collectDecision(request,provider:provider,identity:identity)
+                        if request.nativeTranscriptInput != nil { nativeTranscriptDecisionCount += 1 }
+                    }
                     catch NativeToolTranscript.Failure.wrongTemplate {
                         // No native text is yielded before template validation and
                         // EOG/adapter success. Fall back only for unsupported

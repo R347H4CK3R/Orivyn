@@ -14,6 +14,12 @@ final class ProductionReviewedReadPlanTests: XCTestCase {
         guard environment["ORIVYN_REQUIRE_PRODUCTION_REVIEWED_PLAN"] == "1" else {
             throw XCTSkip("Explicit reviewed-plan proposal/approval gate is not enabled; no inference pass is claimed.")
         }
+        #if !ORIVYN_NATIVE_TRANSCRIPT
+        if environment["ORIVYN_REQUIRE_NATIVE_TRANSCRIPT_ROUTE"] == "1" {
+            XCTFail("Required native transcript route must be compiled into app AND test targets.")
+            return
+        }
+        #endif
         #if !ORIVYN_NATIVE_TOOLS
         XCTFail("Required agent gate needs the combined framework and ORIVYN_NATIVE_TOOLS in app AND test targets.")
         #elseif !targetEnvironment(simulator)
@@ -148,6 +154,10 @@ final class ProductionReviewedReadPlanTests: XCTestCase {
         let persisted = try LocalAgentStore(directory: taskDirectory).load(id: id)
         let evidence = XCTAttachment(string: "scope=real simulator model proposal, explicit approval, required search/read task\nmodelSHA256=\(descriptor.sha256)\nelapsedSeconds=\(Date().timeIntervalSince(started))\ntimeout=\(exceededDeadline)\ncleanupFinished=\(cleanupFinished)\nsessionError=\(session.error ?? "none")\nstate=\(persisted)")
         evidence.name = "production-reviewed-plan-search-read"; evidence.lifetime = .keepAlways; add(evidence)
+        if environment["ORIVYN_REQUIRE_NATIVE_TRANSCRIPT_ROUTE"] == "1" {
+            XCTAssertEqual(session.nativeTranscriptDecisionCount, 3, "Must execute native search, read, and answer; legacy fallback does not satisfy this gate")
+        }
+        attach("native-transcript-route", "successfulNativeDecisions=\(session.nativeTranscriptDecisionCount)")
         XCTAssertFalse(exceededDeadline, "Actual multistep inference exceeded 600 seconds")
         XCTAssertTrue(cleanupFinished, "Session must join inference and release its lease")
         XCTAssertNil(model.heavyWorkLease)
