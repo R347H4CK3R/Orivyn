@@ -95,14 +95,16 @@ static void generate(ov_session*s,const ov_request&r,std::string&out,ov_report&r
    if(std::memcmp(pixels+(size_t(y)*width+x)*3,pixels,3)){
     x0=std::min(x0,x);y0=std::min(y0,y);x1=std::max(x1,x);y1=std::max(y1,y);
    }
+  // Remove equal margins on every side: original image center and axes
+  // remain unchanged. Keep all foreground plus 16 pixels of background.
   if(x0>=16&&y0>=16&&x1+16<width&&y1+16<height){
-   uint32_t side=std::max(x1-x0+1,y1-y0+1)+32;
-   if(side<std::min(width,height)){
-    uint32_t left=uint32_t(std::max(0,std::min(int(width-side),(int(x0)+int(x1)+1-int(side))/2)));
-    uint32_t top=uint32_t(std::max(0,std::min(int(height-side),(int(y0)+int(y1)+1-int(side))/2)));
-    cropped.resize(size_t(side)*side*3);
-    for(uint32_t y=0;y<side;++y)std::memcpy(cropped.data()+size_t(y)*side*3,pixels+(size_t(top+y)*width+left)*3,size_t(side)*3);
-    pixels=cropped.data();width=height=side;
+   uint32_t margin=std::min(std::min(x0,y0),std::min(width-1-x1,height-1-y1))-16;
+   if(margin>0){
+    uint32_t crop_width=width-2*margin,crop_height=height-2*margin;
+    cropped.resize(size_t(crop_width)*crop_height*3);
+    for(uint32_t y=0;y<crop_height;++y)
+     std::memcpy(cropped.data()+size_t(y)*crop_width*3,pixels+(size_t(margin+y)*width+margin)*3,size_t(crop_width)*3);
+    pixels=cropped.data();width=crop_width;height=crop_height;
    }
   }
  }
