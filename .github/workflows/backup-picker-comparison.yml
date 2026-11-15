@@ -1,7 +1,7 @@
 name: Controlled backup picker comparison
 on:
   push:
-    branches: [ci/backup-picker-runtime-20261115]
+    branches: [ci/backup-picker-resources-20261115]
 permissions:
   contents: read
 concurrency:

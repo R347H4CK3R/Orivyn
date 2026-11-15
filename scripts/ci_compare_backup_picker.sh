@@ -19,8 +19,10 @@ for variant in baseline candidate; do
     python3 "$ROOT/scripts/instrument_backup_picker.py" "$dir"
     git -C "$dir" diff > "$OUT/$variant-instrumentation.patch"
     shasum -a 256 "$dir/UITests/JarvisEVOUITests.swift" > "$OUT/$variant-test-hash.txt"
-    (cd "$dir"; python3 scripts/materialize_guest.py Fixtures/maintained.img.gz JarvisEVO/Resources/VMAssets/maintained.img; bash scripts/bootstrap_llama.sh; python3 scripts/generate_project.py)
+    (cd "$dir"; python3 scripts/materialize_guest.py Fixtures/maintained.img.gz JarvisEVO/Resources/VMAssets/maintained.img; bash scripts/bootstrap_llama.sh; python3 scripts/download_test_model.py > "$OUT/$variant-model-path.txt"; python3 scripts/generate_project.py)
 done
+cmp "$BASE/.cache/test-models/qwen2.5-0.5b-instruct-q4_k_m.gguf" "$CAND/.cache/test-models/qwen2.5-0.5b-instruct-q4_k_m.gguf"
+shasum -a 256 "$BASE/.cache/test-models/qwen2.5-0.5b-instruct-q4_k_m.gguf" "$CAND/.cache/test-models/qwen2.5-0.5b-instruct-q4_k_m.gguf" > "$OUT/model-hashes.txt"
 cmp "$BASE/UITests/JarvisEVOUITests.swift" "$CAND/UITests/JarvisEVOUITests.swift"
 xcrun simctl list devices available -j > "$OUT/simulators.json"
 SIMULATOR_ID=$(python3 "$ROOT/scripts/select_picker_runtime.py" "$OUT/simulators.json")
@@ -48,6 +50,7 @@ import json,sys,pathlib
 p=pathlib.Path(sys.argv[1])
 try:
  s=json.loads((p/'summary.json').read_text())
+ if s.get('totalTestCount') != 1: raise ValueError('Expected exactly one executed test')
  verdict='pass' if s.get('totalTestCount')==1 and s.get('passedTests')==1 and s.get('failedTests')==0 and s.get('skippedTests')==0 and (p/'exit.txt').read_text().strip()=='0' else 'fail'
 except (ValueError,OSError): verdict='infrastructure'
 (p/'verdict.txt').write_text(verdict+'\n')

@@ -42,3 +42,24 @@ class InstrumentationTests(unittest.TestCase):
         workflow = (ROOT / ".github/workflows/backup-picker-comparison.yml").read_text()
         self.assertIn("github.event.repository.private == false", workflow)
         self.assertIn("timeout-minutes: 60", workflow)
+
+    def test_both_variants_prepare_pinned_model_before_build(self):
+        script = (ROOT / "scripts/ci_compare_backup_picker.sh").read_text()
+        loop = script[script.index("for variant in baseline candidate;"):script.index("done")]
+        self.assertIn("python3 scripts/download_test_model.py", loop)
+        self.assertLess(loop.index("python3 scripts/download_test_model.py"), loop.index("python3 scripts/generate_project.py"))
+        self.assertIn('cmp "$BASE/.cache/test-models/qwen2.5-0.5b-instruct-q4_k_m.gguf"', script)
+
+    def test_zero_test_summary_is_infrastructure_not_app_failure(self):
+        script = (ROOT / "scripts/ci_compare_backup_picker.sh").read_text()
+        start = script.index("import json,sys,pathlib")
+        end = script.index("\nPY", start)
+        harness = script[start:end]
+        import json, subprocess, sys
+        for count, passed, failed, code, expected in [(0,0,0,65,"infrastructure"),(1,1,0,0,"pass"),(1,0,1,65,"fail")]:
+            with self.subTest(count=count, passed=passed), tempfile.TemporaryDirectory() as temp:
+                root = Path(temp)
+                (root / "summary.json").write_text(json.dumps(dict(totalTestCount=count, passedTests=passed, failedTests=failed, skippedTests=0)))
+                (root / "exit.txt").write_text(str(code))
+                subprocess.run([sys.executable, "-c", harness, temp], check=True, capture_output=True)
+                self.assertEqual((root / "verdict.txt").read_text().strip(), expected)
