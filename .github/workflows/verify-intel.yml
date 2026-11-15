@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     branches: [codex/complete-capabilities-20261114]
-    paths: ['.github/workflows/verify-intel.yml']
+    paths: ['.github/workflows/verify-intel.yml', 'JarvisEVO/Core/LocalReadPlan.swift']
 permissions:
   contents: read
 concurrency:

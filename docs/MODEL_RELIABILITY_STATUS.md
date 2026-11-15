@@ -1,3 +1,13 @@
+# Current reviewed-read verification
+
+The illustrative title-extraction prompt passed the original four real-model cases in run 43657155662, then the unchanged candidate passed those four plus two independent heldouts in run 43657760816 (commit ad3447407a5ae5378b3606b4a72fb3134027b803). All six artifacts were inspected: actual approved searches and reads succeeded; the pagination case read offset 512; every final answer exactly matched its expected stored code. The two independent cases used fresh random codes. Durable reopen checks passed. The six-case runner and prompt are now integrated; explicit exact-answer assertions were added for quoted and independent cases and are rerun by integration CI.
+
+No parser repair, fixture rewrite, default scope or permission relaxation was used. These are Linux production-engine/reducer tests with host scaffolding, not iOS/device acceptance or a general-autonomy guarantee. The separate unreviewed agent path still has a premature-answer failure.
+
+Vision remains at the original 8/10 baseline. A two-pass candidate scored 5/10 complete matching cases and was rejected. A 512-pixel nearest-neighbor diagnostic failed both targeted cases; its source and transformed RGB hashes are preserved. No vision workaround is integrated.
+
+## Earlier observations, preserved
+
 # Remaining model reliability gaps
 
 The free Linux model workflow compiles the production Swift engine and runs the pinned Qwen3 1.7B Q4 model with the real reducer, scope checks and durable task records. It preserves every independent case result even when an earlier case fails. No failures were converted to skips or expected answers.

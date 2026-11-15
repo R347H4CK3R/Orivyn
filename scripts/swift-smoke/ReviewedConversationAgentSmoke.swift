@@ -42,15 +42,17 @@ import llama
         let alternate = variant == "maple"
         let pagination = variant == "pagination"
         let quotedTitle = variant == "quoted-title"
-        let title = quotedTitle ? "Willow conversation" : (pagination ? "Juniper pages" : (alternate ? "Maple journal" : "Orchid notebook"))
-        let marker = quotedTitle ? "QUOTE-" + UUID().uuidString : (pagination ? "PAGE-" + UUID().uuidString : (alternate ? "HARBOR-319" : "LANTERN-742"))
+        let independentQuoted = variant == "independent-quoted"
+        let independentUnquoted = variant == "independent-unquoted"
+        let title = independentQuoted ? "Conversation about Q2" : (independentUnquoted ? "Moss-trail 27" : (quotedTitle ? "Willow conversation" : (pagination ? "Juniper pages" : (alternate ? "Maple journal" : "Orchid notebook"))))
+        let marker = (independentQuoted || independentUnquoted) ? "HOLDOUT-" + UUID().uuidString : quotedTitle ? "QUOTE-" + UUID().uuidString : (pagination ? "PAGE-" + UUID().uuidString : (alternate ? "HARBOR-319" : "LANTERN-742"))
         let padding = pagination ? String(repeating:"Background notes. ", count:34) : ""
         model.conversations = [Conversation(id: fixtureID, title: title, messages: [
             ChatMessage(role: .user, content: "\(title) opening note. The exact verification code is recorded in the second message, not this note."),
             ChatMessage(role: .assistant, content: padding + "The synthetic verification code is \(marker). This is harmless test fixture text.")]),
             Conversation(title: "Unrelated notebook", messages: [ChatMessage(role: .user, content: "No requested information here.")])]
         let id = UUID().uuidString.lowercased()
-        let goal = quotedTitle ? "Read message 2 of the conversation titled \"Willow conversation\" and return only its verification code." : (pagination ? "Return only the exact code, with no label or explanation. " : "") + "Find the saved \(title) conversation, read its second message, and tell me the exact verification code. Search first, then use read_conversation. Do not guess from a search excerpt."
+        let goal = independentQuoted ? "Read message 2 of the conversation titled \"Conversation about Q2\" and return only its verification code." : quotedTitle ? "Read message 2 of the conversation titled \"Willow conversation\" and return only its verification code." : (pagination ? "Return only the exact code, with no label or explanation. " : "") + "Find the saved \(title) conversation, read its second message, and tell me the exact verification code. Search first, then use read_conversation. Do not guess from a search excerpt."
         let engine = LlamaEngine()
         let proposalRequest=try GenerationRequest.readPlanProposal(goal:goal,kind:"conversation_read")
         try Data(proposalRequest.messages[0].content.utf8).write(to:root.appendingPathComponent("proposal-prompt.txt"))
@@ -112,6 +114,9 @@ import llama
                           accepted.history.contains(where: { $0.name == "read_conversation" && $0.outcome == "succeeded" && $0.result?.contains(marker) == true }),
                           !accepted.history.contains(where: { $0.name == "search_conversations" && $0.result?.contains(marker) == true }),
                           let answer = accepted.answer, answer.contains(marker) else { throw Failure.failed("Answer lacked actual search/read evidence or exact fixture code") }
+                    if quotedTitle || independentQuoted || independentUnquoted {
+                        guard answer == marker else { throw Failure.failed("Quoted/independent exact-answer acceptance failed") }
+                    }
                     if pagination {
                         guard answer == marker,
                               accepted.history.contains(where: { $0.name == "read_conversation" && ($0.arguments.objectValue?["offset"]?.integerValue ?? 0) > 0 }) else {
