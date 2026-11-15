@@ -1,0 +1,17 @@
+{
+  "repository": "ggml-org/SmolVLM2-2.2B-Instruct-GGUF",
+  "revision": "1bc3c9f74ceafd4c8d4411cc9cf188bba3798f91",
+  "license": "Apache-2.0",
+  "artifacts": [
+    {
+      "file": "SmolVLM2-2.2B-Instruct-Q8_0.gguf",
+      "size": 1927933984,
+      "sha": "c850ffa51b0708be8911766e1d35e8e71365e987c8efb2513a7f237baade074f"
+    },
+    {
+      "file": "mmproj-SmolVLM2-2.2B-Instruct-f16.gguf",
+      "size": 872303680,
+      "sha": "db9a3a1648cab1ebc3af4a2b0c8145dd8faebf6f7dd7b16e7dc1842229f14ac4"
+    }
+  ]
+}
