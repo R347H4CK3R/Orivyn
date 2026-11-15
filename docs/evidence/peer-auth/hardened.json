@@ -1,0 +1,159 @@
+{
+  "commit": "03c88b944ebb1f8984f59a71ae884d77fd87ba93",
+  "run": "https://github.com/R347H4CK3R/Orivyn/actions/runs/43655527605",
+  "platform": "macOS 15 x86_64; Swift 6.2.4; actual Network/Security mutual TLS loopback",
+  "results": [
+    {
+      "expectedAuthentication": true,
+      "name": "valid-pair",
+      "passed": true,
+      "peers": [
+        {
+          "authenticated": true,
+          "scopeValid": true,
+          "side": "client"
+        },
+        {
+          "authenticated": true,
+          "scopeValid": true,
+          "side": "server"
+        }
+      ],
+      "seconds": 0.06862401962280273,
+      "timedOut": false
+    },
+    {
+      "expectedAuthentication": false,
+      "name": "unpaired-client",
+      "passed": true,
+      "peers": [
+        {
+          "authenticated": false,
+          "scopeValid": false,
+          "side": "client"
+        },
+        {
+          "authenticated": false,
+          "scopeValid": false,
+          "side": "server"
+        }
+      ],
+      "seconds": 0.0250319242477417,
+      "timedOut": false
+    },
+    {
+      "expectedAuthentication": false,
+      "name": "generation-mismatch",
+      "passed": true,
+      "peers": [
+        {
+          "authenticated": false,
+          "scopeValid": false,
+          "side": "client"
+        },
+        {
+          "authenticated": false,
+          "scopeValid": false,
+          "side": "server"
+        }
+      ],
+      "seconds": 0.016738057136535645,
+      "timedOut": false
+    },
+    {
+      "expectedAuthentication": false,
+      "name": "expired",
+      "passed": true,
+      "peers": [
+        {
+          "authenticated": false,
+          "scopeValid": false,
+          "side": "client"
+        },
+        {
+          "authenticated": false,
+          "scopeValid": false,
+          "side": "server"
+        }
+      ],
+      "seconds": 0.013630986213684082,
+      "timedOut": false
+    },
+    {
+      "expectedAuthentication": false,
+      "name": "future",
+      "passed": true,
+      "peers": [
+        {
+          "authenticated": false,
+          "scopeValid": false,
+          "side": "client"
+        },
+        {
+          "authenticated": false,
+          "scopeValid": false,
+          "side": "server"
+        }
+      ],
+      "seconds": 0.013936996459960938,
+      "timedOut": false
+    },
+    {
+      "expectedAuthentication": false,
+      "name": "wrong-usage",
+      "passed": true,
+      "peers": [
+        {
+          "authenticated": false,
+          "scopeValid": false,
+          "side": "client"
+        },
+        {
+          "authenticated": false,
+          "scopeValid": false,
+          "side": "server"
+        }
+      ],
+      "seconds": 0.01633298397064209,
+      "timedOut": false
+    },
+    {
+      "expectedAuthentication": false,
+      "name": "critical",
+      "passed": true,
+      "peers": [
+        {
+          "authenticated": false,
+          "scopeValid": false,
+          "side": "client"
+        },
+        {
+          "authenticated": false,
+          "scopeValid": false,
+          "side": "server"
+        }
+      ],
+      "seconds": 0.013374090194702148,
+      "timedOut": false
+    },
+    {
+      "expectedAuthentication": false,
+      "name": "bad-signature",
+      "passed": true,
+      "peers": [
+        {
+          "authenticated": false,
+          "scopeValid": false,
+          "side": "client"
+        },
+        {
+          "authenticated": false,
+          "scopeValid": false,
+          "side": "server"
+        }
+      ],
+      "seconds": 0.014383077621459961,
+      "timedOut": false
+    }
+  ]
+}

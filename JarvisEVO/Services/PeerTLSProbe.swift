@@ -5,6 +5,10 @@ import Foundation
 @preconcurrency import Network
 @preconcurrency import Security
 import CryptoKit
+#if canImport(X509) && canImport(SwiftASN1)
+import X509
+import SwiftASN1
+#endif
 
 /// Explicit locally supplied pairing material. This is not populated from a peer's
 /// network message. The eventual pairing UI must independently verify the DER pin.
@@ -130,6 +134,35 @@ final class PeerTLSProbe: @unchecked Sendable {
         return parameters
     }
 
+
+    /// A pinned trust anchor is not necessarily checked for its self-signature or
+    /// unknown critical extensions by platform trust. Use a maintained X.509
+    /// implementation for those checks; missing validation support fails closed.
+    private func validateCertificateProfile(_ leaf:SecCertificate,peerIsServer:Bool)->Bool {
+        #if canImport(X509) && canImport(SwiftASN1)
+        do {
+            let parsed=try Certificate(leaf)
+            let now=Date()
+            guard parsed.issuer==parsed.subject,
+                  parsed.notValidBefore<=now,now<=parsed.notValidAfter,
+                  parsed.signatureAlgorithm == .ecdsaWithSHA256,
+                  parsed.publicKey.isValidSignature(parsed.signature,for:parsed) else { return false }
+            let understoodCritical:Set<ASN1ObjectIdentifier> = [[2,5,29,15],[2,5,29,19],[2,5,29,37],[2,5,29,17]]
+            guard Set(parsed.extensions.map(\.oid)).count==parsed.extensions.count,
+                  parsed.extensions.allSatisfy({ !$0.critical || understoodCritical.contains($0.oid) }),
+                  try parsed.extensions.basicConstraints == .notCertificateAuthority,
+                  let usage=try parsed.extensions.keyUsage,usage.digitalSignature,
+                  !usage.keyCertSign,!usage.cRLSign,
+                  let extended=try parsed.extensions.extendedKeyUsage,
+                  extended.contains(peerIsServer ? .serverAuth : .clientAuth) else { return false }
+            _=try parsed.extensions.subjectAlternativeNames
+            return true
+        } catch { return false }
+        #else
+        return false
+        #endif
+    }
+
     private func validate(_ trust: SecTrust, peerIsServer: Bool) -> Bool {
         guard active, SecTrustGetCertificateCount(trust) == 1,
               let leaf = SecTrustGetCertificateAtIndex(trust, 0),
@@ -138,10 +171,11 @@ final class PeerTLSProbe: @unchecked Sendable {
               let attributes = SecKeyCopyAttributes(key) as? [CFString: Any],
               attributes[kSecAttrKeyType] as? String == kSecAttrKeyTypeECSECPrimeRandom as String,
               attributes[kSecAttrKeySizeInBits] as? Int == 256 else { return false }
+        guard validateCertificateProfile(leaf,peerIsServer:peerIsServer) else { return false }
         // Pin the entire leaf and ask platform trust for the correct TLS usage,
         // using only the locally paired certificate as anchor and no network fetch.
-        // Explicit anchor expiry/self-signature/critical-extension behavior MUST be
-        // demonstrated in the native gate; this disabled spike does not assert it.
+        // The independent profile check above closes anchor exceptions. Platform
+        // TLS policy validation remains required in addition to those checks.
         guard SecTrustSetPolicies(trust, SecPolicyCreateSSL(peerIsServer, nil)) == errSecSuccess,
               SecTrustSetAnchorCertificates(trust, [pair.peerCertificate] as CFArray) == errSecSuccess,
               SecTrustSetAnchorCertificatesOnly(trust, true) == errSecSuccess,
