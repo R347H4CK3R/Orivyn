@@ -95,6 +95,31 @@ enum NativeTextExchangeChecks {
         defer { channels.close() }
         let approved: Set<UUID> = mode == "unapproved-source" ? [UUID()] : [source.id]
         let outgoing = channels.outgoing, incoming = channels.incoming
+        if mode == "cancel-sender-after-request" {
+            // The real peer has received the request but deliberately sends no
+            // receipt. Cancellation must release the sender without relying on
+            // the channel's 30-second absolute deadline or advancing delivery.
+            let operation = Task {
+                await outcome {
+                    try await PeerTextRevisionExchange.send(transferID: staged.identity.transfer, store: sender, over: outgoing)
+                }
+            }
+            let request = try UnverifiedTextRevisionPacket.decode(await rawReceive(incoming))
+            guard request.identity == staged.identity, request.payload == staged.payload else {
+                operation.cancel()
+                throw GateError.failed("Cancellation fixture received unexpected request")
+            }
+            let clock = ContinuousClock(), start = ContinuousClock.now
+            operation.cancel()
+            let result = await operation.value
+            let elapsed = start.duration(to: clock.now)
+            let stored = try await receiver.list(includeArchived: true)
+            let delivered = try await sender.textRevisionSend(id: staged.identity.transfer)?.delivered == true
+            let failed: Bool
+            if case .failure = result { failed = true } else { failed = false }
+            return .init(name: mode, passed: failed && elapsed < .seconds(5) && stored.isEmpty && !delivered,
+                         receiverUnchanged: stored.isEmpty, senderDelivered: delivered)
+        }
         async let received = outcome {
             if mode == "false-receipt-digest" || mode == "false-receipt-transfer" {
                 defer { incoming.cancel() }
@@ -139,7 +164,7 @@ enum NativeTextExchangeChecks {
         let a = try FixtureIdentity(root: root, name: "a", password: password)
         let b = try FixtureIdentity(root: root, name: "b", password: password)
         var rows: [NativeTextExchangeResult] = []
-        for mode in ["approved-request-receipt", "unapproved-source", "wrong-epoch", "revoked-receiver", "wrong-request-digest", "false-receipt-digest", "false-receipt-transfer", "lost-receipt-retry"] {
+        for mode in ["approved-request-receipt", "unapproved-source", "wrong-epoch", "revoked-receiver", "wrong-request-digest", "false-receipt-digest", "false-receipt-transfer", "lost-receipt-retry", "cancel-sender-after-request"] {
             let result = try await check(mode, a: a, b: b, root: root); rows.append(result)
             let encoder = JSONEncoder(); encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
             try encoder.encode(rows).write(to: output, options: .atomic)

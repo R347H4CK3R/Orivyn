@@ -125,7 +125,7 @@ struct AttachmentPreviewView: View {
                                 Image(uiImage: image).resizable().scaledToFit().frame(maxWidth: .infinity)
                                     .accessibilityLabel("Image preview").accessibilityIdentifier("attachment.image")
                             } else { Label("Preview is unavailable", systemImage: "photo").foregroundStyle(.secondary) }
-                            Text("Images are read with on-device text recognition. Current models receive recognized text, not image pixels. They cannot describe objects or generate images.")
+                            Text("This preview shows text recognized on this iPhone. Chat attachments provide recognized text. The separate Analyze image action uses image pixels with a local vision model when supported by this build.")
                                 .font(.callout).accessibilityIdentifier("attachment.ocr.notice")
                             Text("Recognized text").font(.headline)
                             Text(attachment.extractedText ?? "No text was recognized.").textSelection(.enabled)
