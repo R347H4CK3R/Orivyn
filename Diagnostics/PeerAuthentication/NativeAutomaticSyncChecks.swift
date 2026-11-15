@@ -16,13 +16,13 @@ enum NativeAutomaticSyncChecks {
         let a = try FixtureIdentity(root: root, name: "a", password: password)
         let b = try FixtureIdentity(root: root, name: "b", password: password)
         var results: [Result] = []
-        for mode in ["automatic-send", "pending-retry", "snapshot-outside-scope", "revoked-sender"] {
+        for mode in ["automatic-send", "pending-retry", "snapshot-outside-scope", "revoked-sender", "idle-then-edit", "local-busy"] {
             let directory = root.appendingPathComponent("automatic-" + UUID().uuidString)
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
             defer { try? FileManager.default.removeItem(at: directory) }
             let sender = try SQLiteConversationStore(url: directory.appendingPathComponent("sender.sqlite"))
             let receiver = try SQLiteConversationStore(url: directory.appendingPathComponent("receiver.sqlite"))
-            let source = Conversation(title: "Synthetic automatic exchange")
+            var source = Conversation(title: "Synthetic automatic exchange")
             let other = Conversation(title: "Unapproved synthetic record")
             try await sender.save(source)
             try await sender.save(other)
@@ -45,10 +45,15 @@ enum NativeAutomaticSyncChecks {
                 try await sender.revokeTextPeer(peerCertificateSHA256: a.pin, pairingGeneration: generation)
             }
             let ports = AsyncStream<NWEndpoint.Port>.makeStream()
+            var listenerCreations = 0
             let incoming = PeerAutomaticSyncController(store: receiver, route: .receive(.any),
                 currentAuthorization: { receiveAuth },
-                makeProbe: { _ in PeerTLSProbe(pair: try .init(identity: a.identity,
-                    scannedPeerSHA256: b.pin, peerCertificateDER: b.der, generation: generation)) },
+                makeProbe: { _ in
+                    listenerCreations += 1
+                    return PeerTLSProbe(pair: try .init(identity: a.identity,
+                        scannedPeerSHA256: b.pin, peerCertificateDER: b.der, generation: generation),
+                        timeoutSeconds: mode == "idle-then-edit" && listenerCreations <= 5 ? 0.1 : 30)
+                },
                 snapshot: { _ in throw GateError.failed("receiver must not export") },
                 receive: { auth, channel in
                     // This harness has no AppModel; production must inject its
@@ -59,16 +64,34 @@ enum NativeAutomaticSyncChecks {
                 listenerReady: { ports.continuation.yield($0) })
             incoming.update(.init(enabled: true, foreground: true, protectedDataAvailable: true, authorization: receiveAuth))
             var iterator = ports.stream.makeAsyncIterator()
-            guard let port = await iterator.next() else { throw GateError.failed("listener did not start") }
+            var selectedPort: NWEndpoint.Port?
+            for _ in 0..<(mode == "idle-then-edit" ? 6 : 1) {
+                guard let port = await iterator.next() else { throw GateError.failed("listener did not start") }
+                selectedPort = port
+            }
+            guard let port = selectedPort else { throw GateError.failed("missing port") }
+            if mode == "idle-then-edit" {
+                source.title = "Edited after five idle listener expirations"
+                try await sender.save(source)
+            }
+            var snapshotCalls = 0
             let outgoing = PeerAutomaticSyncController(store: sender, route: .send(.hostPort(host: "127.0.0.1", port: port)),
                 currentAuthorization: { sendAuth },
                 makeProbe: { _ in PeerTLSProbe(pair: try .init(identity: b.identity,
                     scannedPeerSHA256: a.pin, peerCertificateDER: a.der, generation: generation)) },
-                snapshot: { ids in try await sender.exportTextSnapshot(ids: mode == "snapshot-outside-scope" ? [other.id] : ids) },
+                snapshot: { ids in
+                    snapshotCalls += 1
+                    if mode == "local-busy" && snapshotCalls == 1 { throw TextSnapshotError.busy }
+                    return try await sender.exportTextSnapshot(ids: mode == "snapshot-outside-scope" ? [other.id] : ids)
+                },
                 receive: { _, _ in throw GateError.failed("sender must not receive") })
             outgoing.update(.init(enabled: true, foreground: true, protectedDataAvailable: true, authorization: sendAuth))
             for _ in 0..<1500 {
-                if outgoing.status == .waiting || outgoing.status == .blocked { break }
+                if outgoing.status == .blocked { break }
+                if outgoing.status == .waiting {
+                    let received = try await receiver.list(includeArchived: true)
+                    if !received.isEmpty { break }
+                }
                 try await Task.sleep(nanoseconds: 10_000_000)
             }
             let received = try await receiver.list(includeArchived: true)
@@ -77,8 +100,9 @@ enum NativeAutomaticSyncChecks {
             let reused: Bool
             if let pendingID { reused = try await sender.textRevisionSend(id: pendingID)?.delivered == true }
             else { reused = true }
-            let expectedSuccess = mode == "automatic-send" || mode == "pending-retry"
-            let passed = local.count == 2 && (expectedSuccess
+            let expectedSuccess = mode == "automatic-send" || mode == "pending-retry" || mode == "idle-then-edit" || mode == "local-busy"
+            let passed = local.count == 2 && (mode != "idle-then-edit" || listenerCreations >= 6) &&
+                (mode != "local-busy" || snapshotCalls >= 2) && (expectedSuccess
                 ? outgoing.status == .waiting && received == [source] && pending.isEmpty && reused
                 : outgoing.status == .blocked && received.isEmpty && pending.isEmpty)
             outgoing.stop()

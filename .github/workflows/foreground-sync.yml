@@ -1,7 +1,7 @@
 name: Foreground sync coordinator
 on:
   push:
-    branches: [codex/foreground-sync-scheduler-20261115]
+    branches: [codex/foreground-sync-scheduler-20261115, codex/foreground-sync-idle-fix-20261115]
     paths:
       - 'JarvisEVO/Core/ForegroundSyncCoordinator.swift'
       - 'Diagnostics/ForegroundSync/**'

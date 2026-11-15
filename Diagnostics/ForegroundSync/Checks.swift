@@ -147,6 +147,39 @@ struct Checks {
             expect(p.seen.count == 4 && s.status == .retryLimitReached, "mid-backoff reset retry budget")
             checks += 1
         }
+        // Idle/local-busy deferrals keep scheduling beyond the transport retry
+        // limit; a later operation runs normally without a manual restart.
+        do {
+            let p = OperationProbe(), c = ManualClock()
+            p.immediate = .deferred
+            let s = ForegroundSyncCoordinator(sleep: { try await c.sleep($0) }, operation: { await p.run($0) })
+            s.update(enabled(auth())); await settle()
+            for _ in 0..<8 { c.advance(); await settle() }
+            expect(p.seen.count == 9 && c.delays.allSatisfy { $0 == 1_000_000_000 }, "idle exhausted or spun")
+            p.immediate = .success
+            c.advance(); await settle()
+            expect(p.seen.count == 10 && c.delays.last == 30_000_000_000, "work after idle absent")
+            s.update(.init()); c.advance(); await settle()
+            checks += 1
+        }
+        // A local busy period must not forgive previous transport failures.
+        do {
+            let p = OperationProbe(), c = ManualClock()
+            p.immediate = .retryableFailure
+            let s = ForegroundSyncCoordinator(sleep: { try await c.sleep($0) }, operation: { await p.run($0) })
+            s.update(enabled(auth())); await settle()
+            p.immediate = .deferred
+            c.advance(); await settle()
+            for _ in 0..<5 { c.advance(); await settle() }
+            p.immediate = .retryableFailure
+            c.advance(); await settle()
+            expect(c.delays.last == 5_000_000_000, "busy reset failure budget")
+            c.advance(); await settle()
+            expect(c.delays.last == 15_000_000_000, "third backoff lost")
+            c.advance(); await settle()
+            expect(s.status == .retryLimitReached, "busy weakened retry limit")
+            checks += 1
+        }
         // Security/conflict failures and broken clocks never retry implicitly.
         for clockFailure in [false, true] {
             let p = OperationProbe(), c = ManualClock()
