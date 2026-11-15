@@ -1,0 +1,60 @@
+name: Build 11 unfinished backup preview package gate
+on:
+  push:
+    branches: [ci/backup-build11-20261115]
+    paths: ['.github/workflows/build11-candidate.yml']
+permissions:
+  contents: read
+concurrency:
+  group: build11-candidate
+  cancel-in-progress: false
+jobs:
+  candidate:
+    if: github.event.repository.private == false
+    runs-on: macos-15
+    timeout-minutes: 120
+    env:
+      ORIVYN_NATIVE_FEATURES: 'ORIVYN_NATIVE_VISION ORIVYN_NATIVE_TOOLS ORIVYN_NATIVE_TRANSCRIPT'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Select Xcode 26
+        id: xcode
+        run: |
+          XCODE=$(find /Applications -maxdepth 1 -name 'Xcode_26*.app' | sort -V | tail -1)
+          test -n "$XCODE" || { echo 'Xcode 26 is required'; exit 1; }
+          sudo xcode-select -s "$XCODE/Contents/Developer"
+          echo "identity=$(xcodebuild -version | shasum -a 256 | awk '{print $1}')" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache/restore@v4
+        id: combined-cache
+        with:
+          path: .cache/orivyn-combined
+          key: combined-v1-macOS-ARM64-bb7fc9a8f5e063e81975b33054b3a526c91bcccff263ad11d5bd8bcdbe8f0973-f7345d0e3804bdea5af3b734f22b7f70dd8e3a64af60b220e247d6430a981762
+      - name: Verify exact runtime reuse provenance
+        if: steps.combined-cache.outputs.cache-hit == 'true'
+        env:
+          ORIVYN_RUNTIME_REUSE_CACHE_KEY: 'combined-v1-macOS-ARM64-bb7fc9a8f5e063e81975b33054b3a526c91bcccff263ad11d5bd8bcdbe8f0973-f7345d0e3804bdea5af3b734f22b7f70dd8e3a64af60b220e247d6430a981762'
+        run: |
+          test "${{ steps.xcode.outputs.identity }}" = bb7fc9a8f5e063e81975b33054b3a526c91bcccff263ad11d5bd8bcdbe8f0973
+          git fetch --no-tags --depth=1 origin 03b9c5cc0f96e0dce332e0e3c36460a9346ff304
+          git fetch --no-tags --depth=1 origin f49c7558686046a16c66d29484ee953abefeb464
+          git fetch --no-tags --depth=1 origin 5c5ca7fbfe812386fb6afb8bc20778c374e0f525
+          python3 scripts/verify_build11_runtime_reuse.py
+      - name: Build and verify combined native runtime
+        run: bash scripts/ci_combined_runtime.sh
+      - name: Portable package and graph regressions
+        run: |
+          python3 -m unittest discover -s scripts/tests -p 'test_build11_lineage.py'
+          python3 -m unittest discover -s scripts/tests -p 'test_verify_ipa.py'
+          python3 -m unittest discover -s scripts/tests -p 'test_generate_project.py'
+      - name: Release device build and actual IPA resource validation
+        id: package
+        run: bash scripts/ci_package_only.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Orivyn-build11-package-evidence
+          path: artifacts
+          retention-days: 7
+          if-no-files-found: error
