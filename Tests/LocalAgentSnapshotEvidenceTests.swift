@@ -3,7 +3,7 @@ import XCTest
 
 final class LocalAgentSnapshotEvidenceTests: XCTestCase {
     func testDecodedEvidenceDoesNotDependOnModelAnswer() throws {
-        let raw = #"{"history":[{"operationID":"test:1","name":"calculate","arguments":{"expression":"(12 + 8) / 4"},"outcome":"succeeded","result":"{\"expression\":\"(12 + 8) / 4\",\"result\":\"5\",\"approximate\":true,\"engine\":\"local-arithmetic\"}"}],"id":"test","goal":"Calculate (12 + 8) / 4","status":"answered","revision":3,"steps":1,"pending":null,"answer":"It is 14","error":null}"#
+        let raw = #"{"version":1,"history":[{"operationID":"test:1","name":"calculate","arguments":{"expression":"(12 + 8) / 4"},"outcome":"succeeded","result":"{\"expression\":\"(12 + 8) / 4\",\"result\":\"5\",\"approximate\":true,\"engine\":\"local-arithmetic\"}"}],"id":"test","goal":"Calculate (12 + 8) / 4","status":"answered","revision":3,"steps":1,"pending":null,"answer":"It is 14","error":null}"#
         let snapshot = try JSONDecoder().decode(LocalAgentSnapshot.self, from: Data(raw.utf8))
         XCTAssertEqual(snapshot.answer, "It is 14", "Do not rewrite or silently endorse model prose")
         let event = try XCTUnwrap(snapshot.history.first)

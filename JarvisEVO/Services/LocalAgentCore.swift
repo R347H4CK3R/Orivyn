@@ -16,7 +16,7 @@ final class LocalAgentCore {
         self.context = context; self.api = api
     }
     func call(_ name: String, _ arguments: [String]) throws -> String {
-        guard ["createReviewed", "decisionPolicy", "conversationIDs", "create", "prompt", "acceptDecision", "recordResult", "cancel", "recover", "resume", "fail"].contains(name),
+        guard ["createContract", "createReviewed", "decisionPolicy", "conversationIDs", "create", "prompt", "acceptDecision", "recordResult", "cancel", "recover", "resume", "fail"].contains(name),
               arguments.count <= 2, arguments.allSatisfy({ $0.utf8.count <= 131_072 }) else { throw LocalAgentError.invalidState }
         context.exception = nil
         guard let function = api.forProperty(name), !function.isUndefined,
@@ -26,6 +26,7 @@ final class LocalAgentCore {
     }
     func snapshot(_ raw: String) throws -> LocalAgentSnapshot {
         guard raw.utf8.count <= 131_072, let data = raw.data(using: .utf8),
+              let _ = try? MCPJSONValue.parse(data, maximumBytes: 131_072),
               let value = try? JSONDecoder().decode(LocalAgentSnapshot.self, from: data) else { throw LocalAgentError.invalidState }
         return value
     }

@@ -5,6 +5,11 @@ struct LocalAgentView: View {
     @State private var session: LocalAgentSession?
     @State private var goal = ""
     @State private var planKind = "conversation_read"
+    @State private var includeAppInfo = false
+    @State private var includeModels = false
+    @State private var includeMemory = false
+    @State private var memoryQuery = ""
+    @State private var memoryLimit = 3
     @State private var setupError: String?
     @State private var confirmArchive = false
     @Environment(\.scenePhase) private var phase
@@ -14,17 +19,17 @@ struct LocalAgentView: View {
                 Text("Jarvis can choose tools to read app information, installed model names, matching conversations, bounded pages of their saved messages, and saved memory notes, or calculate bounded arithmetic. All reasoning stays on your iPhone. This does not send messages, edit files, access websites or repair the app.").font(.caption)
                 Text("Uses your selected installed local model. Saved task records stay in Orivyn; no external actions are available.").font(.caption)
                 TextEditor(text: $goal).frame(minHeight: 80).accessibilityIdentifier("agent.goal")
-                    .disabled(session?.isPreparingReadPlan == true || session?.proposedReadPlan != nil)
+                    .disabled(session?.isPreparingReadPlan == true || (session?.proposedReadPlan != nil || session?.proposedCompletion != nil))
                 Text("\(goal.utf8.count)/512 bytes").font(.caption2)
                 Text("For a saved-conversation question, draft a read plan and review its search and message scope before approving it. Drafting uses only your request with the selected local model; saved messages are not supplied to it.").font(.caption)
                 Picker("Plan scope", selection: $planKind) {
                     Text("Read messages").tag("conversation_read")
                     Text("Search only").tag("conversation_search")
                 }.pickerStyle(.segmented).accessibilityIdentifier("agent.plan.kind")
-                    .disabled(session?.isRunning == true || session?.proposedReadPlan != nil)
+                    .disabled(session?.isRunning == true || (session?.proposedReadPlan != nil || session?.proposedCompletion != nil))
                 Text("For Read messages, put the exact conversation title in quotation marks and include the message numbers. Example: Read message 2 of \"Project notes\".").font(.caption)
                 Button("Draft plan for review") { session?.prepareReadPlan(goal: goal, kind: planKind) }
-                    .disabled(session?.canManageSavedTasks != true || session?.proposedReadPlan != nil || goal.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || goal.utf8.count > 512)
+                    .disabled(session?.canManageSavedTasks != true || (session?.proposedReadPlan != nil || session?.proposedCompletion != nil) || goal.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || goal.utf8.count > 512)
                     .buttonStyle(.borderedProminent)
                     .accessibilityIdentifier("agent.plan.draft")
                 Text("Review the proposed scope, approve it, then tap Run. Required approved reads must finish before an answer is accepted; the answer's accuracy still needs your review.").font(.caption)
@@ -32,13 +37,28 @@ struct LocalAgentView: View {
                     Text("For app information, model lists, memory searches or arithmetic. This mode has no approved completion checklist: it can answer after a search without reading the message you asked about. For saved-message questions, use the reviewed plan above.").font(.caption).foregroundStyle(.orange)
                     Text("For arithmetic, use Calculate followed by the expression. Numbers, signs and parentheses must match; word-problem translations are not verified.").font(.caption)
                     Button("Create experimental task") { session?.create(goal: goal) }
-                        .disabled(session?.canManageSavedTasks != true || session?.proposedReadPlan != nil || goal.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || goal.utf8.count > 512)
+                        .disabled(session?.canManageSavedTasks != true || (session?.proposedReadPlan != nil || session?.proposedCompletion != nil) || goal.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || goal.utf8.count > 512)
                         .accessibilityIdentifier("agent.create")
                 } label: {
                     Text("Other local tasks · experimental")
                         .accessibilityIdentifier("agent.experimental.options")
                 }
             }
+            Section("Reviewed local checklist") {
+                Text("For app information, installed models, or an exact saved-memory search. Select the operations yourself; this does not infer everything your request needs. Your request above and the complete checklist must be reviewed before Run.").font(.caption)
+                Toggle("Read bundled app information", isOn:$includeAppInfo).accessibilityIdentifier("completion.info")
+                Toggle("List installed models", isOn:$includeModels).accessibilityIdentifier("completion.models")
+                Toggle("Search saved memory", isOn:$includeMemory).accessibilityIdentifier("completion.memory")
+                if includeMemory {
+                    TextField("Exact memory search text",text:$memoryQuery).accessibilityIdentifier("completion.query")
+                    Stepper("Maximum matches: \(memoryLimit)",value:$memoryLimit,in:1...10)
+                    Text("Searches at most 500 saved notes. Results can be partial; no conversation messages, original files, websites or external apps are read.").font(.caption)
+                }
+                Button("Review checklist") {
+                    if let contract=completionDraft { session?.prepareCompletion(goal:goal,contract:contract) }
+                }.disabled(session?.canManageSavedTasks != true || session?.proposedReadPlan != nil || session?.proposedCompletion != nil || completionDraft == nil || goal.trimmingCharacters(in:.whitespacesAndNewlines).isEmpty || goal.utf8.count > 512)
+                    .accessibilityIdentifier("completion.prepare")
+            }.disabled(session?.isRunning == true || session?.proposedReadPlan != nil || session?.proposedCompletion != nil)
             if let setupError { Section { Text(setupError).foregroundStyle(.orange) } }
             if let session {
                 if let warning = session.recoveryWarning { Section { Text(warning).font(.caption).foregroundStyle(.orange) } }
@@ -61,10 +81,25 @@ struct LocalAgentView: View {
                             .disabled(!session.canManageSavedTasks).accessibilityIdentifier("agent.plan.discard")
                     }.accessibilityIdentifier("agent.plan.review")
                 }
+                if let review=session.proposedCompletion {
+                    Section("Review exact local operations") {
+                        Text(review.goal).accessibilityIdentifier("completion.review")
+                        completionSummary(review.contract)
+                        Text("Approve only if these operations match your request. Approval saves this exact checklist; nothing runs until you tap Run. Operation completion does not verify the model answer.").font(.caption)
+                        Button("Approve and create checklist") {
+                            if let contract=completionDraft { session.approveCompletion(goal:goal,contract:contract) }
+                        }.disabled(!session.canManageSavedTasks).accessibilityIdentifier("completion.approve")
+                        Button("Discard checklist",role:.destructive) { session.discardReadPlan() }
+                            .disabled(!session.canManageSavedTasks).accessibilityIdentifier("completion.discard")
+                    }
+                }
                 if let task = session.snapshot {
                     Section("Current task") {
                         Text(task.goal)
-                        if let plan = task.readPlan {
+                        if let contract=task.completionContract {
+                            completionSummary(contract)
+                            Text("Only the approved operations may run, in order. An answer is accepted only after their results are recorded. Results reflect the time of each call and may be partial; model prose is unverified.").font(.caption).foregroundStyle(.secondary)
+                        } else if let plan = task.readPlan {
                             readPlanSummary(plan)
                             Text(task.status == "answered"
                                  ? "Approved steps recorded. The model answer still needs your review."
@@ -80,7 +115,7 @@ struct LocalAgentView: View {
                         Text(session.status).font(.caption).accessibilityIdentifier("agent.status")
                         HStack {
                             Button(task.status == "interrupted" ? "Resume" : "Run") { session.run() }
-                                .disabled(session.isRunning || session.proposedReadPlan != nil || !["ready", "interrupted"].contains(task.status)).accessibilityIdentifier("agent.run")
+                                .disabled(session.isRunning || session.proposedReadPlan != nil || session.proposedCompletion != nil || !["ready", "interrupted"].contains(task.status)).accessibilityIdentifier("agent.run")
                             Button("Pause") { session.stop(cancelTask: false) }.disabled(!session.isRunning || session.isPreparingReadPlan)
                             Button("Cancel task", role: .destructive) { session.stop(cancelTask: true) }
                                 .disabled(session.isPreparingReadPlan || ["answered", "failed", "cancelled"].contains(task.status))
@@ -140,11 +175,38 @@ struct LocalAgentView: View {
                 session = try LocalAgentSession(model: model, directory: directory)
             } catch { setupError = error.localizedDescription }
         }
-        .onDisappear { session?.stop(cancelTask: false) }
-        .onChange(of: phase) { _, phase in if phase != .active { session?.stop(cancelTask: false) } }
+        .onDisappear { session?.stop(cancelTask: false); session?.discardReadPlan() }
+        .onChange(of: phase) { _, phase in if phase != .active { session?.stop(cancelTask: false); session?.discardReadPlan() } }
+        .onChange(of: goal) { _, _ in session?.discardReadPlan() }
+        .onChange(of: includeAppInfo) { _, _ in session?.discardReadPlan() }
+        .onChange(of: includeModels) { _, _ in session?.discardReadPlan() }
+        .onChange(of: includeMemory) { _, _ in session?.discardReadPlan() }
+        .onChange(of: memoryQuery) { _, _ in session?.discardReadPlan() }
+        .onChange(of: memoryLimit) { _, _ in session?.discardReadPlan() }
+        .onChange(of: model.selectedProviderID) { _, _ in session?.discardReadPlan() }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.didReceiveMemoryWarningNotification)) { _ in session?.stop(cancelTask: false) }
         .onReceive(NotificationCenter.default.publisher(for: ProcessInfo.thermalStateDidChangeNotification)) { _ in
             if ProcessInfo.processInfo.thermalState == .serious || ProcessInfo.processInfo.thermalState == .critical { session?.stop(cancelTask: false) }
+        }
+    }
+
+    private var completionDraft: LocalCompletionContract? {
+        var steps:[MCPJSONValue]=[]
+        if includeAppInfo { steps.append(.object(["name":.string("get_app_info"),"arguments":.object([:])])) }
+        if includeModels { steps.append(.object(["name":.string("list_models"),"arguments":.object([:])])) }
+        if includeMemory { steps.append(.object(["name":.string("search_memory"),"arguments":.object(["query":.string(memoryQuery),"limit":.integer(Int64(memoryLimit))])])) }
+        return try? LocalCompletionContract(value:.object(["schema":.integer(1),"steps":.array(steps)]))
+    }
+    @ViewBuilder
+    private func completionSummary(_ contract: LocalCompletionContract) -> some View {
+        ForEach(Array(contract.steps.enumerated()),id:\.offset) { index,action in
+            VStack(alignment:.leading) {
+                Text("\(index+1). " + (action.name == "get_app_info" ? "Read bundled app information" : action.name == "list_models" ? "List installed models" : "Search saved memory"))
+                if action.name == "search_memory" {
+                    Text(action.arguments.objectValue?["query"]?.stringValue ?? "").textSelection(.enabled)
+                    Text("Maximum matches: \(action.arguments.objectValue?["limit"]?.integerValue ?? 0)").font(.caption)
+                }
+            }
         }
     }
 

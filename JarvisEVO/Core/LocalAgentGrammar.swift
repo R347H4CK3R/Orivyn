@@ -66,3 +66,24 @@ string ::= "\"" char+ "\""
 char ::= [^"\\\x00-\x1F] | "\\" (["\\/bfnrt] | "u" [0-9a-fA-F] [0-9a-fA-F] [0-9a-fA-F] [0-9a-fA-F])
 """#
 }
+
+extension LocalAgentGrammar {
+    static func completion(_ policy: LocalCompletionPolicy, bundle: Bundle = .main) throws -> String {
+        try completion(policy, source: load(requireTool:false,bundle:bundle))
+    }
+    static func completion(_ policy: LocalCompletionPolicy, source: String) throws -> String {
+        guard source.hasPrefix("root ::= tool | read-result | answer\n"),
+              source.contains("answer ::="), policy.actions.count <= 1,
+              policy.canAnswer == policy.actions.isEmpty else { throw LocalAgentError.invalidState }
+        var lines=source.components(separatedBy:"\n")
+        if let action=policy.actions.first {
+            // The typed action already validated its exact supported arguments.
+            let decision=String(decoding:try action.decision.encoded(maximumBytes:4096),as:UTF8.self)
+            let encoder=JSONEncoder(); encoder.outputFormatting = .withoutEscapingSlashes
+            let literal=String(decoding:try encoder.encode(decision),as:UTF8.self)
+            lines[0]="root ::= completion-next"
+            lines.append("completion-next ::= " + literal)
+        } else { lines[0]="root ::= answer" }
+        return lines.joined(separator:"\n")
+    }
+}
