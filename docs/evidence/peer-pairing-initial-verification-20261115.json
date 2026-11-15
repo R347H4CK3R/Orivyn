@@ -1,0 +1,37 @@
+{
+  "source_commit": "1e167a94fcdfd6344c7e60dcd8f039901712bc34",
+  "run_id": 43679629517,
+  "job_id": 132707216572,
+  "result": "compile failure; no native tests executed",
+  "errors": [
+    "2026-11-15T05:23:29.5957050Z /Users/runner/work/_temp/orivyn-provisioning.H61CVt/gate/Sources/PairingPolicy/PeerIdentityProvisioner.swift:52:53: error: value of type 'CFError' has no member 'code'",
+    "2026-11-15T05:23:29.5964010Z     |                                                     `- error: value of type 'CFError' has no member 'code'",
+    "2026-11-15T05:23:29.5968220Z /Users/runner/work/_temp/orivyn-provisioning.H61CVt/gate/Sources/PairingPolicy/PeerIdentityProvisioner.swift:68:17: error: call can throw, but it is not marked with 'try' and the error is not handled",
+    "2026-11-15T05:23:29.5974670Z     |                 `- error: call can throw, but it is not marked with 'try' and the error is not handled",
+    "2026-11-15T05:23:29.6379470Z error: fatalError"
+  ],
+  "policy_baseline": {
+    "source_commit": "2d315e6e35b660116174dac34f5ab59b7d497ad5",
+    "run_id": 43679466870,
+    "job_id": 132706718929,
+    "tests": 9,
+    "failures": 0
+  },
+  "syntax_only": {
+    "source_commit": "9c48926e23137c23fef5a6770f7ad2268b5e1bcd",
+    "compiler": "Swift 6.1.3 Linux recovered compiler",
+    "args": [
+      "-frontend",
+      "-parse",
+      "-"
+    ],
+    "exit_code": 0,
+    "source_sha256": {
+      "Diagnostics/PeerProvisioning/PeerIdentityProvisionerTests.swift": "e8c9bb92a52d21fd97e1fa78d37114bc516abc2d294af89bce54927acc149711",
+      "JarvisEVO/Core/PeerPairingApproval.swift": "e3c22049e205f37d77986935a362bb16869e9980b1bf6522f556571321bf5d81",
+      "JarvisEVO/Services/PeerIdentityProvisioner.swift": "45ce62efdf2756c64f6d1408e9e8a45eec7fd84c0c24f2e6bc5e722b60c83790",
+      "JarvisEVO/UI/PeerPairingReviewView.swift": "132d0247ff9fbc20139f8bd7c4a5f15543ec9b0e59369330ee405e0f80e522da",
+      "Tests/PeerPairingApprovalTests.swift": "9afdf4745f34698de4b16f11b99132bd8c63636373c502248442019532258b79"
+    }
+  }
+}
