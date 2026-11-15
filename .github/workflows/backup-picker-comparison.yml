@@ -1,0 +1,43 @@
+name: Controlled backup picker comparison
+on:
+  push:
+    branches: [ci/backup-picker-comparison-20261115]
+permissions:
+  contents: read
+concurrency:
+  group: isolated-backup-picker-comparison
+  cancel-in-progress: false
+jobs:
+  compare:
+    if: github.event.repository.private == false
+    runs-on: macos-15-intel
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: a7bb85d2b7974bd6853306ae051f52366a30332a
+          path: comparison-baseline
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: 1939a4737e95b94e135268b6efbec2a6f39f6fa2
+          path: comparison-candidate
+          persist-credentials: false
+      - name: Select Xcode26
+        run: |
+          XCODE=$(find /Applications -maxdepth 1 -name 'Xcode_26*.app' | sort -V | tail -1)
+          test -n "$XCODE"
+          sudo xcode-select -s "$XCODE/Contents/Developer"
+      - run: bash scripts/ci_compare_backup_picker.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: controlled-picker-${{ github.sha }}
+          path: |
+            artifacts/picker-comparison/**
+            !artifacts/picker-comparison/derived-*/**
+          retention-days: 3
+          if-no-files-found: warn
