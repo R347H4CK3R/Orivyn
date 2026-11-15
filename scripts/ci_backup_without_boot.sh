@@ -13,7 +13,7 @@ python3 - "$A/host-tests.log" <<'PY'
 import re,sys
 text=open(sys.argv[1]).read()
 assert not re.search(r'Test Case .* skipped|\b[1-9][0-9]* (?:tests? )?skipped',text), 'Skipped checks are not allowed'
-assert re.search(r'Executed 153 tests, with 0 failures',text), 'Expected all 153 Darwin XCTest component checks, no zero-test pass'
+assert re.search(r'Executed 156 tests, with 0 failures',text), 'Expected all 156 Darwin XCTest component checks, no zero-test pass'
 PY
 python3 scripts/materialize_guest.py Fixtures/maintained.img.gz JarvisEVO/Resources/VMAssets/maintained.img
 command -v xcodegen >/dev/null || brew install xcodegen

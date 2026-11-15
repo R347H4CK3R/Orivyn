@@ -1,7 +1,7 @@
 name: Verify backup without simulator boot
 on:
   push:
-    branches: [ci/backup-sdk-sqlite-20261115]
+    branches: [ci/backup-host-chain-20261115]
     paths: ['JarvisEVO/**', 'Tests/**', 'UITests/**', 'scripts/prepare_backup_host_tests.py', 'scripts/run_persistence_tests.py', 'scripts/ci_backup_without_boot.sh', '.github/workflows/backup-without-boot.yml']
 permissions:
   contents: read

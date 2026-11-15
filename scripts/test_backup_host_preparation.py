@@ -13,7 +13,7 @@ class HostPreparationTests(unittest.TestCase):
             output=Path(temp)/'proof'
             prepare(ROOT,output)
             entries=json.loads((output/'SOURCE-MANIFEST.json').read_text())
-            self.assertEqual(len(entries),27)
+            self.assertEqual(len(entries),28)
             for entry in entries:
                 source=Path(entry['source'])
                 folder='Tests/JarvisEVOTests' if str(source).startswith('Tests/') else 'Sources/JarvisEVO'
@@ -36,7 +36,7 @@ class HostPreparationTests(unittest.TestCase):
         self.assertIn("generic/platform=iOS Simulator",commands)
         self.assertIn('build-for-testing',commands)
         self.assertIn('iOS tests NOT executed',commands)
-        self.assertIn('Executed 153 tests, with 0 failures',commands)
+        self.assertIn('Executed 156 tests, with 0 failures',commands)
     def test_darwin_count_accounts_for_linux_only_descriptor_test(self):
         total=0
         excluded=[]
@@ -59,8 +59,8 @@ class HostPreparationTests(unittest.TestCase):
                         else: total+=1
             self.assertFalse(linux)
         self.assertEqual(excluded, ['testRepeatedInitializationMigrationFailureDoesNotLeakDatabaseDescriptors'])
-        self.assertEqual(total,153)
+        self.assertEqual(total,156)
         script=(ROOT/'scripts/ci_backup_without_boot.sh').read_text()
-        self.assertIn('Executed 153 tests, with 0 failures',script)
+        self.assertIn('Executed 156 tests, with 0 failures',script)
         self.assertIn('Skipped checks are not allowed',script)
 if __name__=='__main__': unittest.main()

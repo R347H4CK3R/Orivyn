@@ -5,7 +5,7 @@ from pathlib import Path
 from run_persistence_tests import SOURCES, TESTS
 
 EXTRA_SOURCES = ['JarvisEVO/Core/BackupImportConfirmation.swift', 'JarvisEVO/Services/BackupFileReader.swift']
-EXTRA_TESTS = ['Tests/BackupImportConfirmationTests.swift', 'Tests/BackupFileReaderTests.swift']
+EXTRA_TESTS = ['Tests/BackupImportConfirmationTests.swift', 'Tests/BackupFileReaderTests.swift', 'Tests/BackupHostChainTests.swift']
 PACKAGE = '''// swift-tools-version: 6.0
 import PackageDescription
 let package = Package(name: "BackupHostProof", platforms: [.macOS(.v14)], targets: [
