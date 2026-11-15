@@ -26,8 +26,8 @@ jobs:
           git -C "$RUNNER_TEMP/llama" checkout --detach FETCH_HEAD
           test "$(git -C "$RUNNER_TEMP/llama" rev-parse HEAD)" = 2496f9c14965c39589f53eea31bdb6d762b1d360
           cmake -S "$RUNNER_TEMP/llama" -B "$RUNNER_TEMP/llama/build" -DCMAKE_BUILD_TYPE=Release -DLLAMA_CURL=OFF -DGGML_NATIVE=OFF -DGGML_BACKEND_DL=OFF -DLLAMA_BUILD_TESTS=OFF > artifacts/decoded-results/configure.log 2>&1
-          cmake --build "$RUNNER_TEMP/llama/build" --target llama-cli -j 2 > artifacts/decoded-results/build.log 2>&1
-          echo "DIAGNOSTIC_CLI=$RUNNER_TEMP/llama/build/bin/llama-cli" >> "$GITHUB_ENV"
+          cmake --build "$RUNNER_TEMP/llama/build" --target llama-completion -j 2 > artifacts/decoded-results/build.log 2>&1
+          echo "DIAGNOSTIC_CLI=$RUNNER_TEMP/llama/build/bin/llama-completion" >> "$GITHUB_ENV"
       - name: Download and verify pinned Q4 model
         run: |
           python3 Diagnostics/NativeTools/download.py --model-id qwen3-1.7b-q4_k_m --output "$RUNNER_TEMP/Qwen3-1.7B-Q4_K_M.gguf"
