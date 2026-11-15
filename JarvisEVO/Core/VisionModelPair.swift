@@ -7,12 +7,15 @@ struct VisionModelArtifact: Sendable, Equatable {
     var url: URL { URL(string: "https://huggingface.co/\(VisionModelPair.repository)/resolve/\(VisionModelPair.revision)/\(name)")! }
 }
 enum VisionModelPair {
-    static let repository = "ggml-org/SmolVLM2-2.2B-Instruct-GGUF"
-    static let revision = "1bc3c9f74ceafd4c8d4411cc9cf188bba3798f91"
-    static let model = VisionModelArtifact(name: "SmolVLM2-2.2B-Instruct-Q4_K_M.gguf", bytes: 1_112_602_656,
-        sha256: "0cf76814555b8665149075b74ab6b5c1d428ea1d3d01c1918c12012e8d7c9f58")
-    static let projector = VisionModelArtifact(name: "mmproj-SmolVLM2-2.2B-Instruct-f16.gguf", bytes: 872_303_680,
-        sha256: "db9a3a1648cab1ebc3af4a2b0c8145dd8faebf6f7dd7b16e7dc1842229f14ac4")
+    static let displayName = "LFM2.5-VL 1.6B"
+    static let license = "LFM Open License 1.0"
+    static let licenseResource = "LFM-Vision-LICENSE"
+    static let repository = "LiquidAI/LFM2.5-VL-1.6B-GGUF"
+    static let revision = "36fc16bc95133424921bcc3da009e83b2f23ffb5"
+    static let model = VisionModelArtifact(name: "LFM2.5-VL-1.6B-Q6_K.gguf", bytes: 962_844_544,
+        sha256: "5436b6e50a2d0c8c3b1f3b4c5f37fd8d75512e56590a55f5a989ad40170a8c37")
+    static let projector = VisionModelArtifact(name: "mmproj-LFM2.5-VL-1.6b-F16.gguf", bytes: 853_993_856,
+        sha256: "2cddba98b98390c011c606c416de2e63dcfdd3b21452bf71ad6aab59fa52d2ee")
     static let artifacts = [model, projector]
     static let totalBytes = model.bytes + projector.bytes
 }
