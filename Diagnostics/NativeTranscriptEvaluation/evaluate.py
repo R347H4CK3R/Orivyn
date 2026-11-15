@@ -80,7 +80,8 @@ for case,title,index,ordinal,hostile in cases:
    assert isinstance(tokens,list) and all(type(n) is int for n in tokens)
    row['promptTokens']=len(tokens);row['reservedOutputTokens']=384
    assert 0<len(tokens) and len(tokens)+384<=2048,'Complete prompt plus output exceeds context; no truncation permitted'
-   command=[str(cli),'-m',str(model),'-t','2','-c','2048','-n','384','--temp','0','--no-conversation','--no-display-prompt','--no-escape','--simple-io','--no-context-shift','-f',str(promptfile)]
+   grammarfile=prefix.with_suffix('.grammar.gbnf');grammarfile.write_text(rendered['grammar'])
+   command=[str(cli),'-m',str(model),'-t','2','-c','2048','-n','384','--temp','0','--no-conversation','--no-display-prompt','--no-escape','--simple-io','--grammar-file',str(grammarfile),'--no-context-shift','-f',str(promptfile)]
    row['command']=command;started=time.monotonic()
    generated=subprocess.run(command,capture_output=True,text=True,timeout=180)
    row['elapsedSeconds']=time.monotonic()-started;row['exitCode']=generated.returncode

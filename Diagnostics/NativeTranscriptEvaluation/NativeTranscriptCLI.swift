@@ -26,7 +26,7 @@ import Foundation
         switch mode {
         case "render":
             result = .object(["prompt":.string(transcript.prompt),"remainingCalls":.integer(Int64(transcript.remainingCalls)),
-                              "allowedIDs":.array(transcript.allowedIDs.sorted().map{.string($0)})])
+                              "allowedIDs":.array(transcript.allowedIDs.sorted().map{.string($0)}),"grammar":try transcript.responseGrammar().map{.string($0)} ?? .null])
         case "parse":
             guard let response=fields["response"]?.stringValue else { throw NativeToolTranscript.Failure.invalidInput }
             result = .object(["decision":.string(try NativeToolResponseAdapter.decision(response,transcript:transcript))])

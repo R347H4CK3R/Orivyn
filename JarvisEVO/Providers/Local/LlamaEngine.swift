@@ -18,6 +18,8 @@ actor LlamaEngine: LocalResourceReleasing {
     private var resources: LlamaResources?
     private var loadedPath: String?
     private var loadedIdentity: ModelFileIdentity?
+    private var nativeSourcePath:String?
+    private var nativeSourceIdentity:ModelFileIdentity?
     private var busy = false
     private var workerTask: Task<Void, Never>?
     private var releaseRequests = 0
@@ -29,6 +31,9 @@ actor LlamaEngine: LocalResourceReleasing {
               (0...2).contains(request.temperature), request.messages.contains(where: { $0.role == .user && (!$0.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || $0.attachments.contains(where: { !($0.extractedText ?? "").isEmpty })) }),
               request.systemPrompt.utf8.count + request.messages.reduce(0, { $0 + $1.content.utf8.count }) <= 1_000_000 else { throw LocalModelError.invalidRequest }
         try request.validateInternalModes()
+        #if !ORIVYN_NATIVE_TRANSCRIPT
+        guard request.nativeTranscriptInput == nil else { throw LocalModelError.unsupportedChatTemplate }
+        #endif
         guard (request.nativeReadGoal != nil) == (nativeReadPolicy != nil) else { throw LocalModelError.invalidRequest }
         busy = true
         let pair = AsyncThrowingStream<String, Error>.makeStream()
@@ -60,9 +65,10 @@ actor LlamaEngine: LocalResourceReleasing {
         resources = nil
         loadedPath = nil
         loadedIdentity = nil
+        nativeSourcePath=nil;nativeSourceIdentity=nil
     }
 
-    private func load(_ url: URL) throws -> LlamaResources {
+    private func load(_ url: URL,ownedDirectory:URL? = nil) throws -> LlamaResources {
         // Transactions replace a model atomically at the same pathname. A path
         // match alone can otherwise keep using the old mmap after new bytes were verified.
         let identity = ModelFileIdentity.read(url)
@@ -70,6 +76,7 @@ actor LlamaEngine: LocalResourceReleasing {
         resources = nil
         loadedPath = nil
         loadedIdentity = nil
+        nativeSourcePath=nil;nativeSourceIdentity=nil
         _ = Self.backend
         var modelParameters = llama_model_default_params()
         #if targetEnvironment(simulator)
@@ -100,7 +107,7 @@ actor LlamaEngine: LocalResourceReleasing {
             llama_model_free(model)
             throw LocalModelError.loadFailed
         }
-        let loaded = LlamaResources(model: model, context: context)
+        let loaded = LlamaResources(model: model, context: context,ownedDirectory:ownedDirectory)
         resources = loaded
         loadedPath = url.path
         loadedIdentity = identity
@@ -109,7 +116,13 @@ actor LlamaEngine: LocalResourceReleasing {
 
     private func generate(_ request: GenerationRequest, modelURL: URL, nativeReadPolicy: NativeReadPolicy?, continuation: AsyncThrowingStream<String, Error>.Continuation) async throws {
         try Task.checkCancellation()
-        let owned = try load(modelURL)
+        let owned:LlamaResources
+        #if ORIVYN_NATIVE_TRANSCRIPT
+        if request.nativeTranscriptInput != nil { owned=try loadNativeSnapshot(modelURL) }
+        else { owned=try load(modelURL) }
+        #else
+        owned=try load(modelURL)
+        #endif
         try request.validateInternalModes()
         if let goal = request.nativeReadGoal {
             #if ORIVYN_NATIVE_TOOLS
@@ -132,22 +145,24 @@ actor LlamaEngine: LocalResourceReleasing {
         guard let vocabulary = llama_model_get_vocab(model) else { throw LocalModelError.loadFailed }
         llama_memory_clear(llama_get_memory(context), true)
         defer { llama_memory_clear(llama_get_memory(context), true) }
+        let nativeGrammar:String?
         let nativeDecision:((String) throws -> String)?
         let prompt:String
         if let input=request.nativeTranscriptInput {
             #if ORIVYN_NATIVE_TRANSCRIPT
             guard request.maxTokens == 384,request.temperature == 0 else { throw LocalModelError.invalidRequest }
-            try verifyNativeModel(modelURL)
             guard let template=llama_model_chat_template(model,nil) else { throw LocalModelError.missingChatTemplate }
             let templateHash=SHA256.hash(data:Data(String(cString:template).utf8)).map { String(format:"%02x",$0) }.joined()
             _=try MCPJSONValue.parse(Data(input.stateJSON.utf8),maximumBytes:32768)
             let state=try JSONDecoder().decode(LocalAgentSnapshot.self,from:Data(input.stateJSON.utf8))
             let transcript=try NativeToolTranscript.build(state,templateSHA256:templateHash,readScope:.init(query:input.query,messageIndex:input.messageIndex))
+            nativeGrammar=try transcript.responseGrammar()
             nativeDecision={ try NativeToolResponseAdapter.decision($0,transcript:transcript) };prompt=transcript.prompt
             #else
             throw LocalModelError.unsupportedChatTemplate
             #endif
         } else {
+            nativeGrammar=nil
             nativeDecision=nil
             try LocalPromptBuilder.validateSystemPrompt(request.systemPrompt,maxTokens:request.maxTokens,contextSize:Int(contextSize)) { [owned] text in
                 guard let vocab=llama_model_get_vocab(owned.model) else { throw LocalModelError.loadFailed }
@@ -167,7 +182,8 @@ actor LlamaEngine: LocalResourceReleasing {
         defer { llama_sampler_free(sampler) }
         try request.validateInternalModes()
         let decisionGrammar: String?
-        if let kind=request.localReadPlanKind { decisionGrammar = try LocalAgentGrammar.readPlanProposal(kind:kind) }
+        if let nativeGrammar { decisionGrammar=nativeGrammar }
+        else if let kind=request.localReadPlanKind { decisionGrammar = try LocalAgentGrammar.readPlanProposal(kind:kind) }
         else if let policy = request.localReadWorkflowPolicy { decisionGrammar = try LocalAgentGrammar.reviewed(policy) }
         else if let requireTool = request.localAgentRequiresTool { decisionGrammar = try LocalAgentGrammar.load(requireTool:requireTool,conversationIDs:request.localAgentConversationIDs) }
         else { decisionGrammar = nil }
@@ -234,22 +250,48 @@ actor LlamaEngine: LocalResourceReleasing {
     }
 
     #if ORIVYN_NATIVE_TRANSCRIPT
-    /// Hash actual bytes after load and verify they still identify this resource
-    /// owner. No model hash from a caller, filename or model metadata is trusted.
-    private func verifyNativeModel(_ url:URL) throws {
-        guard let before=ModelFileIdentity.read(url),before==loadedIdentity,
-              before.size>0,before.size<=2_000_000_000 else { throw LocalModelError.integrityMismatch }
-        let file=try FileHandle(forReadingFrom:url)
-        defer { try? file.close() }
+    /// App-controlled writers never receive or mutate this private copy. Hash the
+    /// exact bytes copied from one open handle, then load only the verified copy.
+    /// Its directory belongs to the resource owner and is removed on release.
+    private func loadNativeSnapshot(_ url:URL) throws -> LlamaResources {
+        let identity=ModelFileIdentity.read(url)
+        if let resources,let identity,nativeSourcePath==url.path,nativeSourceIdentity==identity { return resources }
+        guard let identity,identity.size>0,identity.size<=2_000_000_000 else { throw LocalModelError.integrityMismatch }
+        resources=nil;loadedPath=nil;loadedIdentity=nil
+        nativeSourcePath=nil;nativeSourceIdentity=nil
+        let manager=FileManager.default
+        let directory=manager.temporaryDirectory.appendingPathComponent("OrivynNativeModel-"+UUID().uuidString,isDirectory:true)
+        try manager.createDirectory(at:directory,withIntermediateDirectories:false,attributes:[.posixPermissions:0o700])
+        var retained=false
+        defer { if !retained { try? manager.removeItem(at:directory) } }
+        let copy=directory.appendingPathComponent("model.gguf")
+        guard manager.createFile(atPath:copy.path,contents:nil,attributes:[.posixPermissions:0o600]) else { throw LocalModelError.integrityMismatch }
+        let source=try FileHandle(forReadingFrom:url)
+        defer { try? source.close() }
+        let destination=try FileHandle(forWritingTo:copy)
+        defer { try? destination.close() }
         var hash=SHA256(),count:UInt64=0
-        while let chunk=try file.read(upToCount:1_048_576),!chunk.isEmpty {
+        while let chunk=try source.read(upToCount:1_048_576),!chunk.isEmpty {
             try Task.checkCancellation()
             count += UInt64(chunk.count)
-            guard count<=before.size else { throw LocalModelError.integrityMismatch }
+            guard count<=2_000_000_000 else { throw LocalModelError.integrityMismatch }
+            try destination.write(contentsOf:chunk)
             hash.update(data:chunk)
         }
-        guard count==before.size,ModelFileIdentity.read(url)==before,
+        guard count==1_282_439_264,
               hash.finalize().map({String(format:"%02x",$0)}).joined()==NativeToolTranscript.modelSHA256 else { throw LocalModelError.integrityMismatch }
+        try destination.synchronize()
+        try destination.close()
+        try manager.setAttributes([.posixPermissions:0o400],ofItemAtPath:copy.path)
+        try Task.checkCancellation()
+        let owned=try load(copy,ownedDirectory:directory)
+        retained=true
+        // Only a cache hint for the caller's source path. The loaded bytes remain
+        // owned by the private snapshot even if that path changes.
+        if ModelFileIdentity.read(url)==identity {
+            nativeSourcePath=url.path;nativeSourceIdentity=identity
+        }
+        return owned
     }
 
     #endif
@@ -332,8 +374,12 @@ actor LlamaEngine: LocalResourceReleasing {
 private final class LlamaResources: @unchecked Sendable {
     let model: OpaquePointer
     let context: OpaquePointer
-    init(model: OpaquePointer, context: OpaquePointer) { self.model = model; self.context = context }
-    deinit { llama_free(context); llama_model_free(model) }
+    private let ownedDirectory:URL?
+    init(model: OpaquePointer, context: OpaquePointer,ownedDirectory:URL? = nil) { self.model=model;self.context=context;self.ownedDirectory=ownedDirectory }
+    deinit {
+        llama_free(context);llama_model_free(model)
+        if let ownedDirectory { try? FileManager.default.removeItem(at:ownedDirectory) }
+    }
 }
 
 /// Cache invalidation metadata, not a substitute for LocalModelStore SHA verification.

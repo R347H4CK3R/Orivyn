@@ -16,6 +16,33 @@ struct NativeToolTranscript {
     /// Explicit caller-owned scope, never derived from model output.
     struct ReadScope { let query:String; let messageIndex:Int64 }
     let readScope:ReadScope?
+    /// Optional constrained decoding for this explicit bounded workflow. This is
+    /// not consent: the caller still owns approval and the reducer still gates
+    /// execution. No expected answer or stored message text enters the grammar.
+    func responseGrammar() throws -> String? {
+        guard let scope=readScope else { return nil }
+        if canAnswer {
+            // Experimental plain-text answer format excludes protocol/tag starts.
+            // Do not strip a generated marker and pretend it was a valid answer.
+            return #"root ::= [^\x00<]+"# + "\n"
+        }
+        guard remainingCalls>0 else { throw Failure.invalidInput }
+        var calls:[MCPJSONValue]=[]
+        if !searched {
+            for limit:Int64 in 1...10 {
+                calls.append(.object(["name":.string("search_conversations"),"arguments":.object(["query":.string(scope.query),"limit":.integer(limit)])]))
+            }
+        } else {
+            for id in allowedIDs.sorted() {
+                calls.append(.object(["name":.string("read_conversation"),"arguments":.object(["id":.string(id),"messageIndex":.integer(scope.messageIndex),"offset":.integer(0)])]))
+            }
+        }
+        guard !calls.isEmpty else { throw Failure.invalidInput }
+        let choices=try calls.map { call in
+            try Self.json(.string("<tool_call>\n"+Self.json(call)+"\n</tool_call>"))
+        }
+        return "root ::= "+choices.joined(separator:" | ")+"\n"
+    }
     let searched:Bool
     let completedReads:Int
     func validateNext(_ name:String,_ arguments:MCPJSONValue) throws {

@@ -22,6 +22,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - run: python3 -m pip install jinja2==3.1.6
+      - name: Strict adapter and scope regression tests
+        run: python3 scripts/test_native_transcript.py --output "$RUNNER_TEMP/native-transcript"
       - name: Build actual Swift adapter CLI
         run: |
           echo "EVIDENCE_DIR=$RUNNER_TEMP/swift-native-evaluation" >> "$GITHUB_ENV"
@@ -64,6 +67,7 @@ jobs:
           name: swift-native-evaluation-${{ github.sha }}
           path: |
             ${{ runner.temp }}/swift-native-evaluation
+            ${{ runner.temp }}/native-transcript
             ${{ runner.temp }}/native-engine/compile.log
             ${{ runner.temp }}/native-engine/source-manifest.json
             ${{ runner.temp }}/native-engine/Package.swift

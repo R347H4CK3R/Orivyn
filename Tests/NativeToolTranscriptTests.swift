@@ -89,6 +89,8 @@ final class NativeToolTranscriptTests: XCTestCase {
             try NativeToolTranscript.build(snapshot(history:history),templateSHA256:NativeToolTranscript.templateSHA256,readScope:scope)
         }
         let first=try scoped([]),next=try scoped([search()])
+        XCTAssertFalse(try XCTUnwrap(first.responseGrammar()).contains("read_conversation"))
+        XCTAssertFalse(try XCTUnwrap(next.responseGrammar()).contains("search_conversations"))
         XCTAssertThrowsError(try first.validateNext("search_conversations",.object(["query":.string("a"),"limit":.integer(1)])))
         XCTAssertNoThrow(try first.validateNext("search_conversations",search().arguments))
         XCTAssertThrowsError(try NativeToolResponseAdapter.decision("premature",transcript:next))
@@ -103,6 +105,8 @@ final class NativeToolTranscriptTests: XCTestCase {
         let read=LocalAgentSnapshot.Event(operationID:"op2",name:"read_conversation",arguments:args,outcome:"succeeded",result:result)
         let done=try scoped([search(),read])
         XCTAssertEqual(done.toolsJSON,"[]")
+        XCTAssertFalse(try XCTUnwrap(done.responseGrammar()).contains("Read all other"))
+        XCTAssertFalse(try XCTUnwrap(done.responseGrammar()).contains(cid))
         XCTAssertNoThrow(try NativeToolResponseAdapter.decision("Read completed.",transcript:done))
         XCTAssertThrowsError(try done.validateNext("read_conversation",args))
         let extra=LocalAgentSnapshot.Event(operationID:"op3",name:"read_conversation",arguments:args,outcome:"succeeded",result:result)
