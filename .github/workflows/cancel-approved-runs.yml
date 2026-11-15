@@ -11,14 +11,14 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 5
     steps:
-      - name: Cancel only the five user-approved run identities
+      - name: Cancel only the two newly user-approved run identities
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           python3 - <<'PY'
           import json, os, urllib.request, urllib.error
           repo = "R347H4CK3R/Orivyn"
-          allow = {"43650605952":"ffd9eefe7ea8180218391a7a2902bee0c0c18b8e","43651747995":"439d7850be1a0bfb8dbc7763cee448133aa77e32","43651828947":"14739e7dfb692d732c25981d96308ffa00837a61","43652211991":"a6a8240db53842760c359905082b77feb9eba531","43652396839":"ff3854fac77a60ce971935691e89fd14a1d1456d"}
+          allow = {"43653937642":"277ec3af7e8ae5df8d54231b2f3a559bfdddce5c","43657509220":"b9ce34fa68c4b98d09f732cd896e61500b8cc7c9"}
           base = "https://api.github.com/repos/" + repo + "/actions/runs/"
           headers = {"Authorization": "Bearer " + os.environ["GH_TOKEN"], "Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28"}
           for run_id, expected_sha in allow.items():
