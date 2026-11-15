@@ -10,6 +10,6 @@ class SnapshotPreviewTests(unittest.TestCase):
   self.assertNotIn('gh release',actual)
  def test_identity_and_unique_build(self):
   p=(ROOT/'project.yml').read_text()
-  for value in ('CURRENT_PROJECT_VERSION: 12','MARKETING_VERSION: 0.1.1','app.jarvisevo.ios'):
+  for value in ('CURRENT_PROJECT_VERSION: 13','MARKETING_VERSION: 0.1.1','app.jarvisevo.ios'):
    self.assertIn(value,p)
 if __name__=='__main__': unittest.main()
