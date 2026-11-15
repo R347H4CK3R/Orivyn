@@ -1,0 +1,287 @@
+{
+  "run": 43679738991,
+  "commit": "3fb351ada3abff1499e539e3bef34b556b283b37",
+  "artifact": 14148031841,
+  "artifactSHA256": "960ff4d71809a65409311622f434ebd448d9e8fd1127652257a086f50e40b282",
+  "result": {
+    "scope": "Linux diagnostic only; binary-to-source provenance requires separate build evidence",
+    "librarySHA256": "79ca739081659037968483f0e25d773fadfe683a963e45a23b606136c5efdeec",
+    "modelManifest": {
+      "repository": "ggml-org/SmolVLM2-2.2B-Instruct-GGUF",
+      "revision": "1bc3c9f74ceafd4c8d4411cc9cf188bba3798f91",
+      "license": "Apache-2.0",
+      "artifacts": [
+        {
+          "file": "SmolVLM2-2.2B-Instruct-Q4_K_M.gguf",
+          "size": 1112602656,
+          "sha": "0cf76814555b8665149075b74ab6b5c1d428ea1d3d01c1918c12012e8d7c9f58",
+          "actualSHA256": "0cf76814555b8665149075b74ab6b5c1d428ea1d3d01c1918c12012e8d7c9f58"
+        },
+        {
+          "file": "mmproj-SmolVLM2-2.2B-Instruct-f16.gguf",
+          "size": 872303680,
+          "sha": "db9a3a1648cab1ebc3af4a2b0c8145dd8faebf6f7dd7b16e7dc1842229f14ac4",
+          "actualSHA256": "db9a3a1648cab1ebc3af4a2b0c8145dd8faebf6f7dd7b16e7dc1842229f14ac4"
+        }
+      ]
+    },
+    "cases": [
+      {
+        "id": "case01",
+        "status": 0,
+        "output": " left",
+        "report": {
+          "status": 0,
+          "phase": 5,
+          "tokens": 1,
+          "positions": 120,
+          "image_chunks": 1,
+          "callback_count": 2734,
+          "live_resources": 0
+        },
+        "closeAcknowledged": true,
+        "rgbSHA256": "a7747e45a7ec97a95cfb02bcad4ddfd7277c8d22b2c45396f52c2443ed60089e",
+        "question": "Where is the blue circle relative to the orange square? Answer with one word: left, right, above, or below.",
+        "seconds": 9.63
+      },
+      {
+        "id": "case02",
+        "status": 0,
+        "output": " left",
+        "report": {
+          "status": 0,
+          "phase": 5,
+          "tokens": 1,
+          "positions": 120,
+          "image_chunks": 1,
+          "callback_count": 2734,
+          "live_resources": 0
+        },
+        "closeAcknowledged": true,
+        "rgbSHA256": "41b273ed0e2df5d34bf7c5aecb1b04f4e1b82f84ef01a7167b507cc6e416fd94",
+        "question": "Where is the blue circle relative to the orange square? Answer with one word: left, right, above, or below.",
+        "seconds": 9.53
+      },
+      {
+        "id": "case03",
+        "status": 0,
+        "output": " above",
+        "report": {
+          "status": 0,
+          "phase": 5,
+          "tokens": 1,
+          "positions": 120,
+          "image_chunks": 1,
+          "callback_count": 2734,
+          "live_resources": 0
+        },
+        "closeAcknowledged": true,
+        "rgbSHA256": "a610b3f017ecdce7bb6afdc81ae5062e1a4ac481ea41f55443c127d45c35b217",
+        "question": "Where is the blue circle relative to the orange square? Answer with one word: left, right, above, or below.",
+        "seconds": 9.57
+      },
+      {
+        "id": "case04",
+        "status": 0,
+        "output": " below",
+        "report": {
+          "status": 0,
+          "phase": 5,
+          "tokens": 1,
+          "positions": 120,
+          "image_chunks": 1,
+          "callback_count": 2734,
+          "live_resources": 0
+        },
+        "closeAcknowledged": true,
+        "rgbSHA256": "095e6fc19b8a28536216def1f623d5c3f4a7b738fae822a8768ce3b52cbbdbef",
+        "question": "Where is the blue circle relative to the orange square? Answer with one word: left, right, above, or below.",
+        "seconds": 9.53
+      },
+      {
+        "id": "case05",
+        "status": 0,
+        "output": " 0",
+        "report": {
+          "status": 0,
+          "phase": 5,
+          "tokens": 2,
+          "positions": 106,
+          "image_chunks": 1,
+          "callback_count": 3148,
+          "live_resources": 0
+        },
+        "closeAcknowledged": true,
+        "rgbSHA256": "65e1fe416a16e7555d901aaddc14a981a6dabb73703dae18b10c84a7b3ab626a",
+        "question": "How many circles are visible? Return only the number.",
+        "seconds": 9.22
+      },
+      {
+        "id": "case06",
+        "status": 0,
+        "output": " 1",
+        "report": {
+          "status": 0,
+          "phase": 5,
+          "tokens": 2,
+          "positions": 106,
+          "image_chunks": 1,
+          "callback_count": 3148,
+          "live_resources": 0
+        },
+        "closeAcknowledged": true,
+        "rgbSHA256": "4a01f0c17f90746a56ee97372c228b6ae76d1fe61007addbfaa1073848809427",
+        "question": "How many circles are visible? Return only the number.",
+        "seconds": 9.35
+      },
+      {
+        "id": "case07",
+        "status": 0,
+        "output": " 2",
+        "report": {
+          "status": 0,
+          "phase": 5,
+          "tokens": 2,
+          "positions": 106,
+          "image_chunks": 1,
+          "callback_count": 3148,
+          "live_resources": 0
+        },
+        "closeAcknowledged": true,
+        "rgbSHA256": "23364317a6674cc30802b9d5d535cc473adf8b5847f153890a66c45f94a706b6",
+        "question": "How many circles are visible? Return only the number.",
+        "seconds": 9.25
+      },
+      {
+        "id": "case08",
+        "status": 0,
+        "output": " 5",
+        "report": {
+          "status": 0,
+          "phase": 5,
+          "tokens": 2,
+          "positions": 106,
+          "image_chunks": 1,
+          "callback_count": 3148,
+          "live_resources": 0
+        },
+        "closeAcknowledged": true,
+        "rgbSHA256": "9722e72cbcc84c577facf360cbaa3047c28140c00d4a675409da140854d55744",
+        "question": "How many circles are visible? Return only the number.",
+        "seconds": 9.34
+      },
+      {
+        "id": "case09",
+        "status": 0,
+        "output": " MAPLE 47",
+        "report": {
+          "status": 0,
+          "phase": 5,
+          "tokens": 5,
+          "positions": 109,
+          "image_chunks": 1,
+          "callback_count": 4390,
+          "live_resources": 0
+        },
+        "closeAcknowledged": true,
+        "rgbSHA256": "655132665db9e033f0efa6941b4e00ae8592cc7eb9c78bc3a32a3f86492d7979",
+        "question": "Transcribe all text in the image. Return only the text.",
+        "seconds": 9.57
+      },
+      {
+        "id": "case10",
+        "status": 0,
+        "output": " CEDAR 82",
+        "report": {
+          "status": 0,
+          "phase": 5,
+          "tokens": 6,
+          "positions": 109,
+          "image_chunks": 1,
+          "callback_count": 4804,
+          "live_resources": 0
+        },
+        "closeAcknowledged": true,
+        "rgbSHA256": "b0fb97b76cca7282c2916858e27b68f522d39e2cf9d7fc6f4d616bfa794807b0",
+        "question": "Transcribe all text in the image. Return only the text.",
+        "seconds": 9.66
+      }
+    ],
+    "score": {
+      "scope": "Frozen synthetic diagnostic only; no broad vision/OCR or device acceptance claim",
+      "passed": false,
+      "cases": [
+        {
+          "id": "case01",
+          "passed": true,
+          "runtimeComplete": true,
+          "answerMatched": true,
+          "normalizedAnswer": "left"
+        },
+        {
+          "id": "case02",
+          "passed": false,
+          "runtimeComplete": true,
+          "answerMatched": false,
+          "normalizedAnswer": "left"
+        },
+        {
+          "id": "case03",
+          "passed": true,
+          "runtimeComplete": true,
+          "answerMatched": true,
+          "normalizedAnswer": "above"
+        },
+        {
+          "id": "case04",
+          "passed": true,
+          "runtimeComplete": true,
+          "answerMatched": true,
+          "normalizedAnswer": "below"
+        },
+        {
+          "id": "case05",
+          "passed": true,
+          "runtimeComplete": true,
+          "answerMatched": true,
+          "normalizedAnswer": "0"
+        },
+        {
+          "id": "case06",
+          "passed": true,
+          "runtimeComplete": true,
+          "answerMatched": true,
+          "normalizedAnswer": "1"
+        },
+        {
+          "id": "case07",
+          "passed": true,
+          "runtimeComplete": true,
+          "answerMatched": true,
+          "normalizedAnswer": "2"
+        },
+        {
+          "id": "case08",
+          "passed": false,
+          "runtimeComplete": true,
+          "answerMatched": false,
+          "normalizedAnswer": "5"
+        },
+        {
+          "id": "case09",
+          "passed": true,
+          "runtimeComplete": true,
+          "answerMatched": true,
+          "normalizedAnswer": "maple 47"
+        },
+        {
+          "id": "case10",
+          "passed": true,
+          "runtimeComplete": true,
+          "answerMatched": true,
+          "normalizedAnswer": "cedar 82"
+        }
+      ]
+    }
+  }
+}
