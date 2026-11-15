@@ -20,6 +20,10 @@ let package=Package(name:"EngineProof",dependencies:[.package(url:"https://githu
 .systemLibrary(name:"llama"),
 .executableTarget(name:"EngineCLI",dependencies:["llama",.product(name:"Crypto",package:"swift-crypto")],swiftSettings:[.define("ORIVYN_NATIVE_TRANSCRIPT"),.unsafeFlags(["-Xcc","-I'''+str(pathlib.Path(os.environ['LLAMA_SOURCE'])/'ggml/include')+'''"])],linkerSettings:[.unsafeFlags(["-L","'''+str(runtime)+'''","-Xlinker","-rpath","-Xlinker","'''+str(runtime)+'''"])])])
 ''')
+resource='JarvisEVO/Resources/LocalAgentDecision.gbnf'
+data=(root/resource).read_bytes()
+(out/'LocalAgentDecision.gbnf').write_bytes(data)
+manifest.append({'source':resource,'sha256':hashlib.sha256(data).hexdigest()})
 (out/'source-manifest.json').write_text(json.dumps(manifest,indent=2))
 env={**os.environ,'LD_LIBRARY_PATH':str(runtime)}
 with (out/'compile.log').open('w') as log:
