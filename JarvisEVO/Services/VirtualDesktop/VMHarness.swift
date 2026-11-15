@@ -2,6 +2,9 @@ import SwiftUI
 import WebKit
 import Observation
 import CryptoKit
+#if DEBUG
+import OSLog
+#endif
 
 @MainActor
 final class VMAssetHandler: NSObject, @preconcurrency WKURLSchemeHandler {
@@ -169,11 +172,20 @@ final class VMHarnessController: NSObject, @preconcurrency WKScriptMessageHandle
     }
 
     func checkpoint(restore: Bool) {
+        #if DEBUG
+        Logger(subsystem: "app.jarvisevo.boundary-diagnostic", category: "checkpoint").notice("checkpoint.enter restore=\(restore) view=\(self.webView != nil) owner=\(self.owner != nil) busy=\(self.checkpointBusy)")
+        #endif
         guard let view = webView, let identity = owner, !checkpointBusy else { return }
+        #if DEBUG
+        Logger(subsystem: "app.jarvisevo.boundary-diagnostic", category: "checkpoint").notice("checkpoint.admitted restore=\(restore)")
+        #endif
         checkpointBusy = true
         checkpointStatus = restore ? "Verifying and loading checkpoint…" : "Pausing and saving verified checkpoint…"
         let script = restore ? "const value=await window.orivynRestoreCheckpoint(); return value === null ? 'missing' : 'restored';" : "await window.orivynSaveCheckpoint(); return 'saved';"
         view.callAsyncJavaScript(script, arguments: [:], in: nil, in: .page) { [weak self, weak view] result in
+            #if DEBUG
+            Logger(subsystem: "app.jarvisevo.boundary-diagnostic", category: "checkpoint").notice("checkpoint.callback ownerMatches=\(self?.owner == identity) viewMatches=\(self?.webView === view)")
+            #endif
             guard let self, self.owner == identity, self.webView === view else { return }
             self.checkpointBusy = false
             switch result {

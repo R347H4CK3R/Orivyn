@@ -8,6 +8,9 @@ final class VirtualDesktopIntegrationUITests: XCTestCase {
     }
 
     override func tearDown() async throws {
+        let app = XCUIApplication()
+        let image = XCTAttachment(screenshot: app.screenshot()); image.name = "Checkpoint diagnostic final screen"; image.lifetime = .keepAlways; add(image)
+        let tree = XCTAttachment(string: app.debugDescription); tree.name = "Checkpoint diagnostic final hierarchy"; tree.lifetime = .keepAlways; add(tree)
         // XCTest can abort a failed interaction without executing the test's
         // Swift defer. Reset at both boundaries so the next test is independent.
         XCUIDevice.shared.orientation = .portrait
@@ -145,6 +148,8 @@ final class VirtualDesktopIntegrationUITests: XCTestCase {
         app.launch(); requirePortrait(app); openDesktop()
         XCTAssertFalse(app.staticTexts["desktop.console"].label.contains(expected))
         revealDesktopControl(app.buttons["Restore"], in: app)
+        print("CHECKPOINT_RESTORE_BEFORE enabled=\(app.buttons["Restore"].isEnabled) hittable=\(app.buttons["Restore"].isHittable)")
+        let before = XCTAttachment(string: app.debugDescription); before.name = "Before Restore tap"; before.lifetime = .keepAlways; add(before)
         app.buttons["Restore"].tap()
         waitForStatus("Checkpoint verified and restored")
         XCTAssertFalse(app.buttons["desktop.input.send"].isEnabled)

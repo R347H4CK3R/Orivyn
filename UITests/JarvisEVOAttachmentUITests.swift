@@ -13,6 +13,11 @@ final class JarvisEVOAttachmentUITests: XCTestCase {
         XCTAssertTrue(app.textViews["composer.input"].waitForExistence(timeout: 10))
     }
 
+    override func tearDown() async throws {
+        captureEvidence("Picker diagnostic final state")
+        try await super.tearDown()
+    }
+
     func testPhotosCancellationKeepsDraftAndAllowsFilesAfterwards() {
         let input = app.textViews["composer.input"]
         input.tap(); input.typeText("Keep the selected idea")

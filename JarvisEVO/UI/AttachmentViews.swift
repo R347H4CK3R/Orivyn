@@ -3,6 +3,9 @@ import PhotosUI
 import UniformTypeIdentifiers
 import QuickLook
 import AVFoundation
+#if DEBUG
+import OSLog
+#endif
 
 /// Read the temporary Photos file during the provider callback, while its grant
 /// is valid. Only bounded copied bytes cross into the asynchronous import task.
@@ -38,6 +41,9 @@ struct PhotoAttachmentPicker: UIViewControllerRepresentable {
     let complete: ([NSItemProvider]) -> Void
     func makeCoordinator() -> Coordinator { Coordinator(complete: complete) }
     func makeUIViewController(context: Context) -> PHPickerViewController {
+        #if DEBUG
+        Logger(subsystem: "app.jarvisevo.boundary-diagnostic", category: "picker").notice("photos.make")
+        #endif
         var configuration = PHPickerConfiguration()
         configuration.filter = .images
         configuration.selectionLimit = selectionLimit
@@ -51,6 +57,9 @@ struct PhotoAttachmentPicker: UIViewControllerRepresentable {
         let complete: ([NSItemProvider]) -> Void
         init(complete: @escaping ([NSItemProvider]) -> Void) { self.complete = complete }
         func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
+            #if DEBUG
+            Logger(subsystem: "app.jarvisevo.boundary-diagnostic", category: "picker").notice("photos.complete empty=\(results.isEmpty)")
+            #endif
             complete(results.map(\.itemProvider))
         }
     }
@@ -60,12 +69,20 @@ struct FileAttachmentPicker: UIViewControllerRepresentable {
     let complete: (Result<[URL], any Error>) -> Void
     func makeCoordinator() -> Coordinator { Coordinator(complete: complete) }
     func makeUIViewController(context: Context) -> UIDocumentPickerViewController {
+        #if DEBUG
+        Logger(subsystem: "app.jarvisevo.boundary-diagnostic", category: "picker").notice("files.make")
+        #endif
         let picker = UIDocumentPickerViewController(forOpeningContentTypes: [.pdf, .plainText, .json, .sourceCode, .jpeg, .png, .heic, .heif], asCopy: false)
         picker.allowsMultipleSelection = true
         picker.delegate = context.coordinator
         return picker
     }
     func updateUIViewController(_ controller: UIDocumentPickerViewController, context: Context) { }
+    static func dismantleUIViewController(_ controller: UIDocumentPickerViewController, coordinator: Coordinator) {
+        #if DEBUG
+        Logger(subsystem: "app.jarvisevo.boundary-diagnostic", category: "picker").notice("files.dismantle")
+        #endif
+    }
     @MainActor final class Coordinator: NSObject, UIDocumentPickerDelegate {
         let complete: (Result<[URL], any Error>) -> Void
         init(complete: @escaping (Result<[URL], any Error>) -> Void) { self.complete = complete }
