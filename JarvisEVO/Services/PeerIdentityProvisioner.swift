@@ -72,16 +72,20 @@ actor PeerIdentityProvisioner {
         var serializer = DER.Serializer()
         try serializer.serialize(certificate)
         let der = Data(serializer.serializedBytes)
-        guard SecCertificateCreateWithData(nil, der as CFData) != nil else { throw Failure.invalidIdentity }
+        guard let secCertificate = SecCertificateCreateWithData(nil, der as CFData) else { throw Failure.invalidIdentity }
         let add: [CFString: Any] = [
-            // Add DER rather than a transient certificate reference so the supplied
-            // searchable label is part of the stored item on both Keychain backends.
-            kSecClass: kSecClassCertificate, kSecValueData: der,
+            kSecClass: kSecClassCertificate, kSecValueRef: secCertificate,
             kSecAttrLabel: label, kSecAttrAccessible: kSecAttrAccessibleWhenUnlockedThisDeviceOnly,
             kSecAttrSynchronizable: false
         ]
         let status = SecItemAdd(add as CFDictionary, nil)
         guard status == errSecSuccess else { throw Failure.keychain(status) }
+        // Legacy macOS reference insertion bypasses the provided attribute list.
+        // Update only the exact certificate just inserted; never broaden to all items.
+        let labelStatus = SecItemUpdate([
+            kSecClass: kSecClassCertificate, kSecValueRef: secCertificate
+        ] as CFDictionary, [kSecAttrLabel: label] as CFDictionary)
+        guard labelStatus == errSecSuccess else { throw Failure.keychain(labelStatus) }
         guard let result = try load(now: now) else { throw Failure.incompleteIdentity }
         return result
     }

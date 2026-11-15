@@ -8,7 +8,7 @@ import Network
 @testable import PairingPolicy
 
 final class PeerIdentityProvisionerTests: XCTestCase, @unchecked Sendable {
-    func testDERCertificateInsertionPreservesSearchableLabel() throws {
+    func testExactCertificateLabelUpdatePreservesSearchableLabel() throws {
         let label = "orivyn.ci.der-label." + UUID().uuidString
         var error: Unmanaged<CFError>?
         let key = try XCTUnwrap(SecKeyCreateRandomKey([
@@ -26,15 +26,40 @@ final class PeerIdentityProvisionerTests: XCTestCase, @unchecked Sendable {
         var serializer = DER.Serializer()
         try serializer.serialize(certificate)
         let der = Data(serializer.serializedBytes)
-        let add: [CFString: Any] = [kSecClass: kSecClassCertificate, kSecValueData: der,
+        let reference = try XCTUnwrap(SecCertificateCreateWithData(nil, der as CFData))
+        let add: [CFString: Any] = [kSecClass: kSecClassCertificate, kSecValueRef: reference,
             kSecAttrLabel: label, kSecAttrAccessible: kSecAttrAccessibleWhenUnlockedThisDeviceOnly,
-            kSecAttrSynchronizable: false, kSecReturnAttributes: true]
-        var attributes: CFTypeRef?
-        XCTAssertEqual(SecItemAdd(add as CFDictionary, &attributes), errSecSuccess)
+            kSecAttrSynchronizable: false]
+        // A second certificate catches accidental class-wide label updates.
+        let decoyLabel = "orivyn.ci.decoy." + UUID().uuidString
+        let decoyName = try DistinguishedName { CommonName("Orivyn decoy " + UUID().uuidString) }
+        let decoyCertificate = try Certificate(version: .v3, serialNumber: .init(bytes: [4, 5, 6]),
+            publicKey: privateKey.publicKey, notValidBefore: now.addingTimeInterval(-60),
+            notValidAfter: now.addingTimeInterval(3600), issuer: decoyName, subject: decoyName,
+            signatureAlgorithm: .ecdsaWithSHA256, extensions: Certificate.Extensions {},
+            issuerPrivateKey: privateKey)
+        var decoySerializer = DER.Serializer(); try decoySerializer.serialize(decoyCertificate)
+        let decoyDER = Data(decoySerializer.serializedBytes)
+        let decoyReference = try XCTUnwrap(SecCertificateCreateWithData(nil, decoyDER as CFData))
+        let decoyExact: [CFString: Any] = [kSecClass: kSecClassCertificate, kSecValueRef: decoyReference]
+        XCTAssertEqual(SecItemAdd(decoyExact as CFDictionary, nil), errSecSuccess)
+        defer { SecItemDelete(decoyExact as CFDictionary) }
+        XCTAssertEqual(SecItemUpdate(decoyExact as CFDictionary, [kSecAttrLabel: decoyLabel] as CFDictionary), errSecSuccess)
+        XCTAssertEqual(SecItemAdd(add as CFDictionary, nil), errSecSuccess)
+        defer { SecItemDelete([kSecClass: kSecClassCertificate, kSecValueRef: reference] as CFDictionary) }
+        let update: [CFString: Any] = [kSecClass: kSecClassCertificate, kSecValueRef: reference]
+        XCTAssertEqual(SecItemUpdate(update as CFDictionary, [kSecAttrLabel: label] as CFDictionary), errSecSuccess)
         let delete: [CFString: Any] = [kSecClass: kSecClassCertificate, kSecAttrLabel: label,
             kSecAttrSynchronizable: false]
-        defer { SecItemDelete(delete as CFDictionary) }
-        XCTAssertEqual((attributes as? [CFString: Any])?[kSecAttrLabel] as? String, label)
+        var decoyResult: CFTypeRef?
+        XCTAssertEqual(SecItemCopyMatching([
+            kSecClass: kSecClassCertificate, kSecAttrLabel: decoyLabel,
+            kSecReturnData: true, kSecMatchLimit: kSecMatchLimitOne
+        ] as CFDictionary, &decoyResult), errSecSuccess)
+        let decoyData = try XCTUnwrap(decoyResult)
+        XCTAssertEqual(CFGetTypeID(decoyData), CFDataGetTypeID())
+        guard CFGetTypeID(decoyData) == CFDataGetTypeID() else { return }
+        XCTAssertEqual(decoyData as? Data, decoyDER)
         var query = delete
         query[kSecReturnRef] = true; query[kSecMatchLimit] = kSecMatchLimitOne
         var result: CFTypeRef?
