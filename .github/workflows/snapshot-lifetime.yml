@@ -1,7 +1,7 @@
 name: Verify native snapshot lifetime without simulator boot
 on:
   push:
-    branches: [ci/snapshot-lifetime-20261115]
+    branches: [ci/snapshot-lifetime-sdk-20261115]
     paths: ['.github/workflows/snapshot-lifetime.yml']
 permissions:
   contents: read
@@ -44,7 +44,7 @@ jobs:
           swift test --package-path artifacts/snapshot-host 2>&1 | tee artifacts/snapshot-host-tests.log
           grep -Eq 'Executed 10 tests, with 0 failures' artifacts/snapshot-host-tests.log
           ! grep -Eiq 'skipped|failed' artifacts/snapshot-host-tests.log
-          python3 scripts/run_snapshot_process_smoke.py --swiftc "$(xcrun --find swiftc)" | tee artifacts/snapshot-process.json
+          python3 scripts/run_snapshot_process_smoke.py --swiftc "$(xcrun --find swiftc)" --sdk "$(xcrun --sdk macosx --show-sdk-path)" | tee artifacts/snapshot-process.json
           echo 'Host synthetic filesystem/process tests and native-flag device compilation only; not iOS inference, mmap lifetime or physical device acceptance.' > artifacts/SNAPSHOT-SCOPE.txt
       - name: Build and verify combined native runtime
         run: bash scripts/ci_combined_runtime.sh

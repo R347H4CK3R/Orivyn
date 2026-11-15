@@ -24,13 +24,17 @@ if CommandLine.arguments[1] == "hold" {
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--swiftc', required=True)
+    parser.add_argument('--sdk', help='Explicit host macOS SDK for an Xcode swiftc; omit on Linux')
     args = parser.parse_args()
     source = pathlib.Path(__file__).resolve().parents[1] / 'JarvisEVO/Core/NativeModelSnapshot.swift'
     with tempfile.TemporaryDirectory(prefix='orivyn-snapshot-process-') as temp:
         temp = pathlib.Path(temp)
         main = temp / 'main.swift'; main.write_text(PROBE)
         exe = temp / 'probe'
-        subprocess.run([args.swiftc, str(source), str(main), '-o', str(exe)], check=True, timeout=120)
+        command = [args.swiftc, str(source), str(main), '-o', str(exe)]
+        if args.sdk:
+            command += ['-sdk', args.sdk]
+        subprocess.run(command, check=True, timeout=120)
         root = temp / 'snapshots'; root.mkdir()
         child = subprocess.Popen([str(exe), 'hold', str(root)], stdout=subprocess.PIPE, text=True)
         try:
