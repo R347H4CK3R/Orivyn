@@ -6,6 +6,7 @@ on:
     paths:
       - 'Diagnostics/PeerAuthentication/**'
       - 'JarvisEVO/Services/PeerTLSProbe.swift'
+      - 'JarvisEVO/Services/PeerTextRevisionExchange.swift'
       - 'JarvisEVO/Core/PeerSyncControlFrame.swift'
       - '.github/workflows/peer-auth.yml'
 permissions:
