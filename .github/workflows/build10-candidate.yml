@@ -1,4 +1,5 @@
 name: Build 10 isolated integration gate
+# Retry after runtime tool probe exit134; no app changes.
 on:
   push:
     branches: [codex/build10-integration-20261115]
