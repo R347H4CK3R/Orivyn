@@ -21,6 +21,14 @@ class HostPreparationTests(unittest.TestCase):
                 self.assertEqual(data,(ROOT/source).read_bytes())
                 self.assertEqual(hashlib.sha256(data).hexdigest(),entry['sha256'])
             with self.assertRaises(FileExistsError): prepare(ROOT,output)
+    def test_macos_sdk_sqlite_not_redeclared(self):
+        with tempfile.TemporaryDirectory() as temp:
+            output=Path(temp)/'proof'
+            prepare(ROOT,output)
+            package=(output/'Package.swift').read_text()
+            self.assertFalse((output/'Sources/SQLite3').exists())
+            self.assertNotIn('.systemLibrary',package)
+            self.assertIn('.linkedLibrary("sqlite3")',package)
     def test_no_boot_or_run_claim(self):
         script=(ROOT/'scripts/ci_backup_without_boot.sh').read_text()
         commands='\n'.join(line for line in script.splitlines() if not line.startswith('#'))
