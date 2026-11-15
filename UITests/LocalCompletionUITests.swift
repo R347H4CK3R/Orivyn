@@ -10,7 +10,7 @@ final class LocalCompletionUITests: XCTestCase {
         let input=app.textViews["agent.goal"]
         reveal(input,in:app.collectionViews.firstMatch);input.tap();input.typeText(goal)
         for id in ["completion.info","completion.memory"] {
-            let toggle=app.switches[id];reveal(toggle,in:app.collectionViews.firstMatch);toggle.tap()
+            enableSwitch(app,id)
         }
         let query=app.textFields["completion.query"]
         reveal(query,in:app.collectionViews.firstMatch);query.tap();query.typeText("Cedar acceptance")
@@ -30,7 +30,7 @@ final class LocalCompletionUITests: XCTestCase {
         XCTAssertFalse(app.buttons["completion.approve"].exists);XCTAssertFalse(app.buttons["agent.run"].exists)
         // Navigation creates a fresh composer. Re-enter exact approved scope.
         reveal(input,in:app.collectionViews.firstMatch);input.tap();input.typeText(goal)
-        for id in ["completion.info","completion.memory"] {let t=app.switches[id];reveal(t,in:app.collectionViews.firstMatch);t.tap()}
+        for id in ["completion.info","completion.memory"] {enableSwitch(app,id)}
         reveal(query,in:app.collectionViews.firstMatch);query.tap();query.typeText("Cedar acceptance final")
         prepare(app,goal:goal,query:"Cedar acceptance final")
         capture(app,"Exact review")
@@ -48,6 +48,18 @@ final class LocalCompletionUITests: XCTestCase {
         let scope=app.staticTexts["Cedar acceptance final"];reveal(scope,in:app.collectionViews.firstMatch)
         XCTAssertTrue(scope.exists);capture(app,"Restored approved scope without execution")
         app.terminate()
+    }
+    private func enableSwitch(_ app:XCUIApplication,_ id:String) {
+        let toggle=app.switches[id];reveal(toggle,in:app.collectionViews.firstMatch)
+        XCTAssertTrue(toggle.isEnabled)
+        XCTAssertEqual(toggle.value as? String,"0")
+        // Native evidence: SwiftUI exposes the whole row as Switch; its center
+        // hits label text. Activate the visible trailing toggle within that row.
+        capture(app,"Before enabling " + id)
+        toggle.coordinate(withNormalizedOffset:CGVector(dx:0.92,dy:0.5)).tap()
+        let enabled=NSPredicate(format:"value == %@","1")
+        XCTAssertEqual(XCTWaiter.wait(for:[XCTNSPredicateExpectation(predicate:enabled,object:toggle)],timeout:5),.completed)
+        capture(app,"Enabled " + id)
     }
     private func prepare(_ app:XCUIApplication,goal:String,query:String) {
         let button=app.buttons["completion.prepare"];reveal(button,in:app.collectionViews.firstMatch)
