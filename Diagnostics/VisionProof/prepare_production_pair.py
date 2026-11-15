@@ -17,7 +17,7 @@ def main():
     if target.is_symlink():
         raise ValueError('Refusing symlink model directory')
     target.mkdir(mode=0o700, parents=True, exist_ok=True)
-    manifest = json.loads((Path(__file__).parent / 'Linux/Evidence/production/MODEL_PAIR.json').read_text())
+    manifest = json.loads((Path(__file__).parent / 'PRODUCTION_MODEL_PAIR.json').read_text())
     assets = manifest['artifacts']
     if len(assets) != 2 or sum(a['size'] for a in assets) > 2_000_000_000:
         raise ValueError('Pinned pair exceeds fixed asset budget')
@@ -56,6 +56,7 @@ def main():
         finally:
             if created:
                 partial.unlink(missing_ok=True)
+    shutil.copy2(Path(__file__).parent / 'PRODUCTION_MODEL_PAIR.json', target / 'MODEL_PAIR.json')
     print('Verified production pair; no app or simulator was launched.', flush=True)
 
 

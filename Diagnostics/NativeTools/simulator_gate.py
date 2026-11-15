@@ -10,7 +10,9 @@ GATES = {
     'local-agent': ('ORIVYN_REQUIRE_PRODUCTION_LOCAL_AGENT', 'ORIVYN_LOCAL_AGENT_MODEL_DIR', 'JarvisEVOTests/ProductionLocalAgentSessionTests/testRequiredSearchThenReadGroundedAnswer', 840, 840),
 }
 
-def prepare(scheme, models, destination, model_id=DEFAULT_MODEL_ID, gate='native-tools'):
+def prepare(scheme, models, destination, model_id=DEFAULT_MODEL_ID, gate='native-tools', require_native_transcript=False):
+    if require_native_transcript and (gate != 'reviewed-plan' or model_id != 'qwen3-1.7b-q4_k_m'):
+        raise ValueError('Native transcript proof requires the reviewed-plan Q4 gate')
     model = select(model_id)
     if gate not in GATES: raise ValueError('Unknown production gate')
     if not re.fullmatch(r'platform=iOS Simulator,id=[0-9A-Fa-f]{8}(?:-[0-9A-Fa-f]{4}){3}-[0-9A-Fa-f]{12}', destination):
@@ -26,17 +28,20 @@ def prepare(scheme, models, destination, model_id=DEFAULT_MODEL_ID, gate='native
     action.set('shouldUseLaunchSchemeArgsEnv', 'NO')
     variables = action.find('EnvironmentVariables')
     if variables is None: variables = ET.SubElement(action, 'EnvironmentVariables')
-    keys = {'ORIVYN_PRODUCTION_MODEL_ID'} | {key for row in GATES.values() for key in row[:2]}
+    keys = {'ORIVYN_PRODUCTION_MODEL_ID', 'ORIVYN_REQUIRE_NATIVE_TRANSCRIPT_ROUTE'} | {key for row in GATES.values() for key in row[:2]}
     for existing in list(variables):
         if existing.get('key') in keys: variables.remove(existing)
     required, directory, selector, default, maximum = GATES[gate]
     for key, value in [(required, '1'), (directory, str(root)), ('ORIVYN_PRODUCTION_MODEL_ID', model_id)]:
         ET.SubElement(variables, 'EnvironmentVariable', key=key, value=value, isEnabled='YES')
+    if require_native_transcript:
+        ET.SubElement(variables, 'EnvironmentVariable', key='ORIVYN_REQUIRE_NATIVE_TRANSCRIPT_ROUTE', value='1', isEnabled='YES')
     tree.write(scheme, encoding='UTF-8', xml_declaration=True)
-    return dict(gate=gate, modelID=model_id, selector=selector, defaultAllowance=default, maximumAllowance=maximum)
+    return dict(requireNativeTranscript=require_native_transcript, gate=gate, modelID=model_id, selector=selector, defaultAllowance=default, maximumAllowance=maximum)
 
 if __name__ == '__main__':
     p=argparse.ArgumentParser(description=__doc__)
     for key in ['scheme','models','destination']: p.add_argument('--'+key,required=True)
     p.add_argument('--model-id',default=DEFAULT_MODEL_ID);p.add_argument('--gate',choices=GATES,default='native-tools')
-    a=p.parse_args();print(json.dumps(prepare(a.scheme,a.models,a.destination,a.model_id,a.gate)))
+    p.add_argument('--require-native-transcript', action='store_true')
+    a=p.parse_args();print(json.dumps(prepare(a.scheme,a.models,a.destination,a.model_id,a.gate,a.require_native_transcript)))

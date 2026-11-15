@@ -15,6 +15,8 @@ struct VisionAnalysisView: View {
     @State private var downloadProgress = VisionDownloadProgressState()
     @State private var error: String?
     @State private var stopping = false
+    private let licenseText: String? = Bundle.main.url(forResource: VisionModelPair.licenseResource, withExtension: "txt")
+        .flatMap { try? String(contentsOf: $0, encoding: .utf8) }
 
     var body: some View {
         NavigationStack {
@@ -27,11 +29,24 @@ struct VisionAnalysisView: View {
                     }
                 }
                 Section("Vision model") {
-                    Text("SmolVLM2 2.2B · Apache-2.0 · 1.98 GB download")
+                    Text("\(VisionModelPair.displayName) · 1.82 GB download")
+                    Text("Object counts and shape distinctions can be wrong. Check the original image.")
+                        .font(.caption).foregroundStyle(.secondary)
+                    Text("\(VisionModelPair.license) includes commercial-use restrictions.")
+                        .font(.caption).foregroundStyle(.secondary)
+                    if let licenseText {
+                        DisclosureGroup("Model license and usage terms") {
+                            Text(licenseText).font(.caption).textSelection(.enabled)
+                        }
+                    } else {
+                        Text("The model license is missing from this build. Model setup is unavailable.")
+                            .foregroundStyle(.secondary)
+                    }
+                    Link("Model source and attribution", destination: URL(string: "https://huggingface.co/\(VisionModelPair.repository)/tree/\(VisionModelPair.revision)")!)
                     Text("Download once to use offline. Model setup needs additional free space for verified installation.")
                         .font(.caption).foregroundStyle(.secondary)
                     Button("Download or verify vision model") { install() }
-                        .disabled(working || stopping || !VisionServices.nativeAvailable || !model.canBeginHeavyWork)
+                        .disabled(working || stopping || licenseText == nil || !VisionServices.nativeAvailable || !model.canBeginHeavyWork)
                     if let value = downloadProgress.value { ProgressView(value: value) }
                 }
                 Section("Ask about this image") {

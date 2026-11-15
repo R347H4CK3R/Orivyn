@@ -11,7 +11,7 @@ xcodebuild -version > "$evidence/xcode-version.txt"
 bash scripts/bootstrap_llama.sh
 python3 scripts/materialize_guest.py Fixtures/maintained.img.gz JarvisEVO/Resources/VMAssets/maintained.img
 if ! command -v xcodegen >/dev/null; then brew install xcodegen; fi
-xcodegen generate
+python3 scripts/generate_project.py --peer
 for platform in iOS 'iOS Simulator'; do
   suffix=${platform// /-}
   xcodebuild -project JarvisEVO.xcodeproj -scheme JarvisEVO -destination "generic/platform=$platform" -derivedDataPath "$RUNNER_TEMP/orivyn-peer-app-build" CODE_SIGNING_ALLOWED=NO ORIVYN_NATIVE_FEATURES=ORIVYN_PEER_TLS_SPIKE build > "$evidence/build-$suffix.log" 2>&1

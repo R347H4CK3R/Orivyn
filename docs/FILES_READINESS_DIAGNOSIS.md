@@ -1,0 +1,7 @@
+# Files readiness after Photos cancellation
+
+Source 32ddf39174ce7afe0b026f26380b5b0d6ad66a04 failed UI-2 run 43679464506 job 132706712133 at line 33 of JarvisEVOAttachmentUITests. Preserve artifact 14147399747; original failure remains evidence despite previous three isolated passes.
+
+Photos cancellation succeeded. Files Cancel was absent through most of the helper's ten-second budget, appeared near its end, and did not meet the existing stable/hittable predicate before expiry. Screenshot 16FF6829-28F9-4B79-85CA-C3CA9B35AE9B.png shows Recents, Search, Cancel, browsing tabs and LOADING. AX BB79D8C0-F6CA-420A-A579-655663983D09.txt confirms the full document-manager hierarchy and Cancel frame (370,93,36,36). This differs from the earlier blank history-import sheet. It does not establish that the Cancel control was usable.
+
+The diagnostic candidate separately bounds readiness of the real Files navigation, search, tabs and Cancel at 30 seconds, followed by the original ten-second stable/hittable predicate and one normal Cancel tap. It records elapsed time, loading and hittability at both boundaries. No coordinate fallback, production change, skipped test or retry-until-pass. The focused harness runs the actual UI-2 selection first and three independent isolated observations afterward. A failure remains a failure even if later observations pass. Device acceptance and broader integration are separate.

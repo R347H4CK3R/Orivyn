@@ -1,4 +1,11 @@
 import Foundation
+#if ORIVYN_NATIVE_TRANSCRIPT
+#if canImport(CryptoKit)
+import CryptoKit
+#else
+import Crypto
+#endif
+#endif
 import llama
 
 /// A single actor owns llama's mutable context. No runtime pointer leaves this file.
@@ -11,6 +18,8 @@ actor LlamaEngine: LocalResourceReleasing {
     private var resources: LlamaResources?
     private var loadedPath: String?
     private var loadedIdentity: ModelFileIdentity?
+    private var nativeSourcePath:String?
+    private var nativeSourceIdentity:ModelFileIdentity?
     private var busy = false
     private var workerTask: Task<Void, Never>?
     private var releaseRequests = 0
@@ -22,6 +31,9 @@ actor LlamaEngine: LocalResourceReleasing {
               (0...2).contains(request.temperature), request.messages.contains(where: { $0.role == .user && (!$0.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || $0.attachments.contains(where: { !($0.extractedText ?? "").isEmpty })) }),
               request.systemPrompt.utf8.count + request.messages.reduce(0, { $0 + $1.content.utf8.count }) <= 1_000_000 else { throw LocalModelError.invalidRequest }
         try request.validateInternalModes()
+        #if !ORIVYN_NATIVE_TRANSCRIPT
+        guard request.nativeTranscriptInput == nil else { throw LocalModelError.unsupportedChatTemplate }
+        #endif
         guard (request.nativeReadGoal != nil) == (nativeReadPolicy != nil) else { throw LocalModelError.invalidRequest }
         busy = true
         let pair = AsyncThrowingStream<String, Error>.makeStream()
@@ -53,9 +65,10 @@ actor LlamaEngine: LocalResourceReleasing {
         resources = nil
         loadedPath = nil
         loadedIdentity = nil
+        nativeSourcePath=nil;nativeSourceIdentity=nil
     }
 
-    private func load(_ url: URL) throws -> LlamaResources {
+    private func load(_ url: URL,ownedDirectory:URL? = nil) throws -> LlamaResources {
         // Transactions replace a model atomically at the same pathname. A path
         // match alone can otherwise keep using the old mmap after new bytes were verified.
         let identity = ModelFileIdentity.read(url)
@@ -63,6 +76,7 @@ actor LlamaEngine: LocalResourceReleasing {
         resources = nil
         loadedPath = nil
         loadedIdentity = nil
+        nativeSourcePath=nil;nativeSourceIdentity=nil
         _ = Self.backend
         var modelParameters = llama_model_default_params()
         #if targetEnvironment(simulator)
@@ -93,7 +107,7 @@ actor LlamaEngine: LocalResourceReleasing {
             llama_model_free(model)
             throw LocalModelError.loadFailed
         }
-        let loaded = LlamaResources(model: model, context: context)
+        let loaded = LlamaResources(model: model, context: context,ownedDirectory:ownedDirectory)
         resources = loaded
         loadedPath = url.path
         loadedIdentity = identity
@@ -102,7 +116,13 @@ actor LlamaEngine: LocalResourceReleasing {
 
     private func generate(_ request: GenerationRequest, modelURL: URL, nativeReadPolicy: NativeReadPolicy?, continuation: AsyncThrowingStream<String, Error>.Continuation) async throws {
         try Task.checkCancellation()
-        let owned = try load(modelURL)
+        let owned:LlamaResources
+        #if ORIVYN_NATIVE_TRANSCRIPT
+        if request.nativeTranscriptInput != nil { owned=try loadNativeSnapshot(modelURL) }
+        else { owned=try load(modelURL) }
+        #else
+        owned=try load(modelURL)
+        #endif
         try request.validateInternalModes()
         if let goal = request.nativeReadGoal {
             #if ORIVYN_NATIVE_TOOLS
@@ -125,26 +145,51 @@ actor LlamaEngine: LocalResourceReleasing {
         guard let vocabulary = llama_model_get_vocab(model) else { throw LocalModelError.loadFailed }
         llama_memory_clear(llama_get_memory(context), true)
         defer { llama_memory_clear(llama_get_memory(context), true) }
-        // Capture the resource owner, not task-local raw-pointer aliases. The
-        // synchronous callback obtains its pointers within this actor's isolation.
-        try LocalPromptBuilder.validateSystemPrompt(request.systemPrompt, maxTokens: request.maxTokens, contextSize: Int(contextSize)) { [owned] text in
-            guard let promptVocabulary = llama_model_get_vocab(owned.model) else { throw LocalModelError.loadFailed }
-            return try tokenCount(text, vocabulary: promptVocabulary)
+        let nativeGrammar:String?
+        let nativeDecision:((String) throws -> String)?
+        let prompt:String
+        if let input=request.nativeTranscriptInput {
+            #if ORIVYN_NATIVE_TRANSCRIPT
+            guard request.maxTokens == 384,request.temperature == 0 else { throw LocalModelError.invalidRequest }
+            guard let template=llama_model_chat_template(model,nil) else { throw LocalModelError.missingChatTemplate }
+            let templateHash=SHA256.hash(data:Data(String(cString:template).utf8)).map { String(format:"%02x",$0) }.joined()
+            _=try MCPJSONValue.parse(Data(input.stateJSON.utf8),maximumBytes:32768)
+            let state=try JSONDecoder().decode(LocalAgentSnapshot.self,from:Data(input.stateJSON.utf8))
+            let transcript:NativeToolTranscript
+            if input.reviewed {
+                guard let scope=NativeToolTranscript.reviewedScope(state),scope.query==input.query,scope.messageIndex==input.messageIndex else { throw LocalAgentError.invalidState }
+                transcript=try NativeToolTranscript.buildReviewed(state,templateSHA256:templateHash)
+            } else {
+                transcript=try NativeToolTranscript.build(state,templateSHA256:templateHash,readScope:.init(query:input.query,messageIndex:input.messageIndex))
+            }
+            nativeGrammar=try transcript.responseGrammar()
+            nativeDecision={ try NativeToolResponseAdapter.decision($0,transcript:transcript) };prompt=transcript.prompt
+            #else
+            throw LocalModelError.unsupportedChatTemplate
+            #endif
+        } else {
+            nativeGrammar=nil
+            nativeDecision=nil
+            try LocalPromptBuilder.validateSystemPrompt(request.systemPrompt,maxTokens:request.maxTokens,contextSize:Int(contextSize)) { [owned] text in
+                guard let vocab=llama_model_get_vocab(owned.model) else { throw LocalModelError.loadFailed }
+                return try tokenCount(text,vocabulary:vocab)
+            }
+            let messages=try LocalPromptBuilder.prepareMessages(from:request.messages,maxTokens:request.maxTokens,contextSize:Int(contextSize)) { [owned] entries in
+                guard let vocab=llama_model_get_vocab(owned.model) else { throw LocalModelError.loadFailed }
+                return try tokenCount(format(entries,systemPrompt:request.systemPrompt,model:owned.model,conciseQwen3:request.conciseQwen3),vocabulary:vocab)
+            }
+            prompt=try format(messages,systemPrompt:request.systemPrompt,model:model,conciseQwen3:request.conciseQwen3)
         }
-        let messages = try LocalPromptBuilder.prepareMessages(from: request.messages, maxTokens: request.maxTokens, contextSize: Int(contextSize)) { [owned] entries in
-            guard let promptVocabulary = llama_model_get_vocab(owned.model) else { throw LocalModelError.loadFailed }
-            let rendered = try format(entries, systemPrompt: request.systemPrompt, model: owned.model, conciseQwen3: request.conciseQwen3)
-            return try tokenCount(rendered, vocabulary: promptVocabulary)
-        }
-        let prompt = try format(messages, systemPrompt: request.systemPrompt, model: model, conciseQwen3: request.conciseQwen3)
-        let tokens = try tokenize(prompt, vocabulary: vocabulary)
-        guard !tokens.isEmpty, tokens.count + request.maxTokens <= Int(contextSize) else { throw LocalModelError.promptTooLong }
+        // Complete native transcript is tokenized once, without history trimming.
+        let tokens=try tokenize(prompt,vocabulary:vocabulary)
+        guard !tokens.isEmpty,tokens.count+request.maxTokens<=Int(contextSize) else { throw LocalModelError.promptTooLong }
 
         guard let sampler = llama_sampler_chain_init(llama_sampler_chain_default_params()) else { throw LocalModelError.loadFailed }
         defer { llama_sampler_free(sampler) }
         try request.validateInternalModes()
         let decisionGrammar: String?
-        if let kind=request.localReadPlanKind { decisionGrammar = try LocalAgentGrammar.readPlanProposal(kind:kind) }
+        if let nativeGrammar { decisionGrammar=nativeGrammar }
+        else if let kind=request.localReadPlanKind { decisionGrammar = try LocalAgentGrammar.readPlanProposal(kind:kind) }
         else if let policy = request.localReadWorkflowPolicy { decisionGrammar = try LocalAgentGrammar.reviewed(policy) }
         else if let requireTool = request.localAgentRequiresTool { decisionGrammar = try LocalAgentGrammar.load(requireTool:requireTool,conversationIDs:request.localAgentConversationIDs) }
         else { decisionGrammar = nil }
@@ -173,6 +218,7 @@ actor LlamaEngine: LocalResourceReleasing {
             await Task.yield()
         }
         var decoder = UTF8TokenAccumulator()
+        var nativeOutput=""
         var producedText = false
         var sawEndOfGeneration = false
         for _ in 0..<request.maxTokens {
@@ -182,7 +228,10 @@ actor LlamaEngine: LocalResourceReleasing {
             let bytes = try tokenBytes(token, vocabulary: vocabulary)
             if let text = decoder.append(bytes), !text.isEmpty {
                 producedText = true
-                if case .terminated = continuation.yield(text) { throw CancellationError() }
+                if nativeDecision != nil {
+                    guard nativeOutput.utf8.count+text.utf8.count<=32768 else { throw LocalAgentError.outputBound }
+                    nativeOutput += text
+                } else if case .terminated = continuation.yield(text) { throw CancellationError() }
             }
             let result = withUnsafeMutablePointer(to: &token) { pointer in
                 llama_decode(context, llama_batch_get_one(pointer, 1))
@@ -192,10 +241,66 @@ actor LlamaEngine: LocalResourceReleasing {
         }
         try Task.checkCancellation()
         let suffix = decoder.finish()
-        if !suffix.isEmpty { producedText = true; continuation.yield(suffix) }
+        if !suffix.isEmpty {
+            producedText=true
+            if nativeDecision != nil { nativeOutput += suffix }
+            else { continuation.yield(suffix) }
+        }
         guard sawEndOfGeneration else { throw LocalModelError.generationLimitReached }
         guard producedText else { throw LocalModelError.emptyGeneration }
+        if let nativeDecision {
+            let decision=try nativeDecision(nativeOutput)
+            try Task.checkCancellation()
+            if case .terminated=continuation.yield(decision) { throw CancellationError() }
+        }
     }
+
+    #if ORIVYN_NATIVE_TRANSCRIPT
+    /// App-controlled writers never receive or mutate this private copy. Hash the
+    /// exact bytes copied from one open handle, then load only the verified copy.
+    /// Its directory belongs to the resource owner and is removed on release.
+    private func loadNativeSnapshot(_ url:URL) throws -> LlamaResources {
+        let identity=ModelFileIdentity.read(url)
+        if let resources,let identity,nativeSourcePath==url.path,nativeSourceIdentity==identity { return resources }
+        guard let identity,identity.size>0,identity.size<=2_000_000_000 else { throw LocalModelError.integrityMismatch }
+        resources=nil;loadedPath=nil;loadedIdentity=nil
+        nativeSourcePath=nil;nativeSourceIdentity=nil
+        let manager=FileManager.default
+        let directory=manager.temporaryDirectory.appendingPathComponent("OrivynNativeModel-"+UUID().uuidString,isDirectory:true)
+        try manager.createDirectory(at:directory,withIntermediateDirectories:false,attributes:[.posixPermissions:0o700])
+        var retained=false
+        defer { if !retained { try? manager.removeItem(at:directory) } }
+        let copy=directory.appendingPathComponent("model.gguf")
+        guard manager.createFile(atPath:copy.path,contents:nil,attributes:[.posixPermissions:0o600]) else { throw LocalModelError.integrityMismatch }
+        let source=try FileHandle(forReadingFrom:url)
+        defer { try? source.close() }
+        let destination=try FileHandle(forWritingTo:copy)
+        defer { try? destination.close() }
+        var hash=SHA256(),count:UInt64=0
+        while let chunk=try source.read(upToCount:1_048_576),!chunk.isEmpty {
+            try Task.checkCancellation()
+            count += UInt64(chunk.count)
+            guard count<=2_000_000_000 else { throw LocalModelError.integrityMismatch }
+            try destination.write(contentsOf:chunk)
+            hash.update(data:chunk)
+        }
+        guard count==1_282_439_264,
+              hash.finalize().map({String(format:"%02x",$0)}).joined()==NativeToolTranscript.modelSHA256 else { throw LocalModelError.integrityMismatch }
+        try destination.synchronize()
+        try destination.close()
+        try manager.setAttributes([.posixPermissions:0o400],ofItemAtPath:copy.path)
+        try Task.checkCancellation()
+        let owned=try load(copy,ownedDirectory:directory)
+        retained=true
+        // Only a cache hint for the caller's source path. The loaded bytes remain
+        // owned by the private snapshot even if that path changes.
+        if ModelFileIdentity.read(url)==identity {
+            nativeSourcePath=url.path;nativeSourceIdentity=identity
+        }
+        return owned
+    }
+
+    #endif
 
     private func format(_ entries: [LocalPromptMessage], systemPrompt: String, model: OpaquePointer, conciseQwen3: Bool) throws -> String {
         guard let template = llama_model_chat_template(model, nil) else { throw LocalModelError.missingChatTemplate }
@@ -275,8 +380,12 @@ actor LlamaEngine: LocalResourceReleasing {
 private final class LlamaResources: @unchecked Sendable {
     let model: OpaquePointer
     let context: OpaquePointer
-    init(model: OpaquePointer, context: OpaquePointer) { self.model = model; self.context = context }
-    deinit { llama_free(context); llama_model_free(model) }
+    private let ownedDirectory:URL?
+    init(model: OpaquePointer, context: OpaquePointer,ownedDirectory:URL? = nil) { self.model=model;self.context=context;self.ownedDirectory=ownedDirectory }
+    deinit {
+        llama_free(context);llama_model_free(model)
+        if let ownedDirectory { try? FileManager.default.removeItem(at:ownedDirectory) }
+    }
 }
 
 /// Cache invalidation metadata, not a substitute for LocalModelStore SHA verification.

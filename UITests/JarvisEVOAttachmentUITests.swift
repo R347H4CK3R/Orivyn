@@ -23,14 +23,13 @@ final class JarvisEVOAttachmentUITests: XCTestCase {
         input.tap(); input.typeText("Keep the selected idea")
         app.buttons["composer.attach"].tap()
         app.buttons["attachment.photos"].tap()
-        let cancel = app.buttons["Cancel"].firstMatch
         dismissPhotosPicker()
         XCTAssertEqual(input.value as? String, "Keep the selected idea")
         app.buttons["composer.attach"].tap()
         let files = app.buttons["attachment.files"]
         XCTAssertTrue(files.waitForExistence(timeout: 10))
         files.tap()
-        dismissNativePicker(cancel)
+        dismissFilesPicker()
         XCTAssertEqual(input.value as? String, "Keep the selected idea")
         XCTAssertTrue(app.buttons["composer.send"].isEnabled)
     }
@@ -68,7 +67,24 @@ final class JarvisEVOAttachmentUITests: XCTestCase {
         XCTAssertFalse(app.buttons["Cancel"].firstMatch.exists, file: file, line: line)
     }
 
-    private func dismissNativePicker(_ cancel: XCUIElement, file: StaticString = #filePath, line: UInt = #line) {
+    private func dismissFilesPicker(file: StaticString = #filePath, line: UInt = #line) {
+        // The integrated UI-2 failure reached Files only near the end of the
+        // old ten-second combined load/settle budget. Its screenshot shows
+        // Recents/Search/tabs and LOADING, not a blank presentation.
+        // Bound remote-content readiness separately; do not bypass hittability.
+        let started = Date()
+        let navigation = app.navigationBars["FullDocumentManagerViewControllerNavigationBar"]
+        let tabs = app.tabBars["DOC.browsingModeTabBar"]
+        let cancel = navigation.buttons["Cancel"]
+        let ready = NSPredicate { _, _ in
+            navigation.exists && tabs.exists &&
+            navigation.searchFields["Search"].exists && cancel.exists
+        }
+        let readiness = XCTWaiter.wait(
+            for: [XCTNSPredicateExpectation(predicate: ready, object: navigation)], timeout: 30)
+        recordFilesState("readiness", started: started, navigation: navigation, cancel: cancel)
+        XCTAssertEqual(readiness, .completed,
+                       "The real Files navigation, search, browsing tabs and Cancel must load", file: file, line: line)
         // Existence alone can expose a moving native picker during presentation.
         // Exercise the intended control only once its public geometry settles.
         var priorFrame: CGRect?
@@ -80,12 +96,29 @@ final class JarvisEVOAttachmentUITests: XCTestCase {
             if priorFrame != frame { priorFrame = frame; stableSince = Date(); return false }
             return Date().timeIntervalSince(stableSince ?? Date()) >= 0.3
         }
-        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: settled, object: cancel)], timeout: 10),
-                       .completed, "Native Cancel must be stable and hittable", file: file, line: line)
+        let settlement = XCTWaiter.wait(
+            for: [XCTNSPredicateExpectation(predicate: settled, object: cancel)], timeout: 10)
+        recordFilesState("settlement", started: started, navigation: navigation, cancel: cancel)
+        XCTAssertEqual(settlement, .completed,
+                       "Native Cancel must be stable and hittable", file: file, line: line)
         cancel.tap()
         let gone = NSPredicate(format: "exists == false")
         XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: gone, object: cancel)], timeout: 10),
                        .completed, "Native picker must dismiss before the next app action", file: file, line: line)
+    }
+
+    private func recordFilesState(_ stage: String, started: Date,
+                                  navigation: XCUIElement, cancel: XCUIElement) {
+        let evidence = XCTAttachment(string:
+            "stage=\(stage), elapsed=\(Date().timeIntervalSince(started)), " +
+            "navigation=\(navigation.exists), cancelExists=\(cancel.exists), " +
+            "cancelHittable=\(cancel.exists && cancel.isHittable), " +
+            "cancelFrame=\(cancel.exists ? cancel.frame : .zero), " +
+            "loading=\(app.staticTexts["LOADING"].exists), " +
+            "progress=\(app.activityIndicators["In progress"].exists)")
+        evidence.name = "Files \(stage) timing and loading"
+        evidence.lifetime = .keepAlways
+        add(evidence)
     }
 
     func testRealPhotoImportShowsRecognizedTextAndSafeSharingChoices() {

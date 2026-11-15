@@ -21,6 +21,8 @@ final class LocalAgentSession {
     private(set) var status = "Choose a saved task or enter a local read-only task."
     private(set) var error: String?
     private(set) var recoveryWarning: String?
+    /// Successful native decisions in the current explicit Run, excluding fallback.
+    private(set) var nativeTranscriptDecisionCount = 0
     var isRunning: Bool { work != nil }
     var isPreparingReadPlan: Bool { drafting && isRunning }
     var canManageSavedTasks: Bool { !isRunning && model.heavyWorkLease?.kind != .localAgent }
@@ -157,6 +159,7 @@ final class LocalAgentSession {
         do {
             if current.status == "interrupted" { state = try core.call("resume", [state]); try persist(state) }
         } catch { self.error = error.localizedDescription; return }
+        nativeTranscriptDecisionCount = 0
         let identity = UUID(); owner = identity; error = nil
         work = Task { @MainActor [self] in
             do {
@@ -169,20 +172,38 @@ final class LocalAgentSession {
                     status = "Thinking locally · \(item.steps)/6 read-only tool calls used"
                     let prompt = try core.call("prompt", [value])
                     let request: GenerationRequest
+                    var nativeFallback:GenerationRequest? = nil
                     if let plan=item.readPlan {
                         let policy=try LocalReadWorkflowPolicy.derive(plan:plan,history:item.history,conversations:model.conversations)
-                        request = .reviewedAgent(prompt:prompt,policy:policy)
+                        let legacy=GenerationRequest.reviewedAgent(prompt:prompt,policy:policy)
+                        #if ORIVYN_NATIVE_TRANSCRIPT
+                        if provider.model.sha256.lowercased()==NativeToolTranscript.modelSHA256,
+                           let native=try GenerationRequest.reviewedNative(stateJSON:value) {
+                            request=native;nativeFallback=legacy
+                        } else { request=legacy }
+                        #else
+                        request=legacy
+                        #endif
                     } else {
                         let conversationIDs = try JSONDecoder().decode([String].self, from: Data(core.call("conversationIDs", [value]).utf8))
                         request = GenerationRequest.localAgent(prompt: prompt,requiresTool: !item.history.contains { $0.outcome == "succeeded" },conversationIDs:conversationIDs)
                     }
-                    let stream = try await provider.stream(request)
-                    var decision = ""
-                    for try await part in stream {
-                        try checkOwner(identity)
-                        guard decision.utf8.count + part.utf8.count <= 32_768 else { throw LocalAgentError.outputBound }
-                        decision += part
+                    let decision:String
+                    #if ORIVYN_NATIVE_TRANSCRIPT
+                    do {
+                        decision=try await collectDecision(request,provider:provider,identity:identity)
+                        if request.nativeTranscriptInput != nil { nativeTranscriptDecisionCount += 1 }
                     }
+                    catch NativeToolTranscript.Failure.wrongTemplate {
+                        // No native text is yielded before template validation and
+                        // EOG/adapter success. Fall back only for unsupported
+                        // template identity, never for malformed model decisions.
+                        guard let nativeFallback else { throw NativeToolTranscript.Failure.wrongTemplate }
+                        decision=try await collectDecision(nativeFallback,provider:provider,identity:identity)
+                    }
+                    #else
+                    decision=try await collectDecision(request,provider:provider,identity:identity)
+                    #endif
                     try checkOwner(identity)
                     let next = try core.call("acceptDecision", [value, decision])
                     let accepted = try core.snapshot(next)
@@ -219,6 +240,16 @@ final class LocalAgentSession {
             if owner == identity { owner = nil; work = nil }
             do { try reloadRecords() } catch { self.error = error.localizedDescription }
         }
+    }
+    private func collectDecision(_ request:GenerationRequest,provider:any AIProvider,identity:UUID) async throws -> String {
+        var decision=""
+        for try await part in try await provider.stream(request) {
+            try checkOwner(identity)
+            guard decision.utf8.count+part.utf8.count<=32768 else { throw LocalAgentError.outputBound }
+            decision += part
+        }
+        try checkOwner(identity)
+        return decision
     }
     private func checkOwner(_ identity: UUID) throws {
         try Task.checkCancellation()

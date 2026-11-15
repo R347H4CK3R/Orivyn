@@ -14,13 +14,13 @@ if ! command -v xcodegen >/dev/null; then brew install xcodegen; fi
 if [[ -n "${ORIVYN_NATIVE_FEATURES:-}" ]]; then
   [[ -n "${ORIVYN_COMBINED_RUNTIME_ARCHIVE:-}" ]] || { echo 'Native features require the verified combined runtime archive.' >&2; exit 2; }
   for feature in $ORIVYN_NATIVE_FEATURES; do
-    case "$feature" in ORIVYN_NATIVE_VISION|ORIVYN_NATIVE_TOOLS) ;; *) echo 'Unsupported native feature flag.' >&2; exit 2;; esac
+    case "$feature" in ORIVYN_NATIVE_VISION|ORIVYN_NATIVE_TOOLS|ORIVYN_NATIVE_TRANSCRIPT) ;; *) echo 'Unsupported native feature flag.' >&2; exit 2;; esac
   done
 fi
 printf '%s\n' "${ORIVYN_NATIVE_FEATURES:-}" > "$ARTIFACTS/native-features.txt"
 bash scripts/bootstrap_llama.sh
 python3 scripts/materialize_guest.py Fixtures/maintained.img.gz JarvisEVO/Resources/VMAssets/maintained.img
-xcodegen generate
+python3 scripts/generate_project.py
 # Device-only build: no simulator boot, test-model download, or implied native-test pass.
 xcodebuild -project JarvisEVO.xcodeproj -scheme JarvisEVO -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO "ORIVYN_NATIVE_FEATURES=${ORIVYN_NATIVE_FEATURES:-}" build > "$ARTIFACTS/device-build.log" 2>&1
 APP=build/Build/Products/Release-iphoneos/JarvisEVO.app

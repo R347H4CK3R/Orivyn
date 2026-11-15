@@ -53,6 +53,10 @@ def _release_content(archive, app, binary, build):
         # Build 5 makes the runtime notice part of every app copy, not only source.
         if int(build.split('.')[0]) >= 5:
             expected_resources['llama.cpp-LICENSE.txt'] = '94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d'
+        # Build 10 introduces the LFM vision model. Historical builds remain
+        # re-verifiable without requiring a resource they never shipped.
+        if int(build.split('.')[0]) >= 10:
+            expected_resources['LFM-Vision-LICENSE.txt'] = '61d7e939a05911c765b7e98ffaa1ab5ca6c0174a65350766c25cb10197d19fc8'
         for name, expected in expected_resources.items():
             try:
                 with archive.open(app + name) as stream:
@@ -170,6 +174,7 @@ def verify(path):
                 'sha256':digest,'size':path.stat().st_size,
                 'release_fixture_markers_absent':True,'candidate3_resources_required':resources_required,
                 'bundled_resources':resources,'bundled_test_media_absent':True,
+                'candidate10_resources_required':int(build.split('.')[0]) >= 10,
                 'verification':'package structure, executable fixture exclusion and build-specific resources only; runtime and SideStore signing are separate gates'}
 
 if __name__ == '__main__':
