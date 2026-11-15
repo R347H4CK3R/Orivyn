@@ -17,6 +17,11 @@ final class LocalAgentIntegrationUITests: XCTestCase {
         // Form rows below the expanded plan guidance are lazy and may not exist
         // while the goal editor/keyboard is visible. Reach the actual control.
         let form = app.collectionViews.firstMatch
+        let draft = app.buttons["agent.plan.draft"]
+        reveal(draft, in: form)
+        XCTAssertEqual(draft.label, "Draft plan for review")
+        XCTAssertTrue(draft.isEnabled)
+        XCTAssertFalse(app.buttons["agent.create"].isHittable)
         // Generic creation is intentionally behind an explicit experimental disclosure.
         let experimental = app.descendants(matching: .any).matching(identifier: "agent.experimental.options").firstMatch
         reveal(experimental, in: form)
