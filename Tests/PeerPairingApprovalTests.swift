@@ -1,5 +1,9 @@
 import XCTest
+#if canImport(PairingPolicy)
 @testable import PairingPolicy
+#else
+@testable import JarvisEVO
+#endif
 
 final class PeerPairingApprovalTests: XCTestCase {
     let local = Data(repeating: 1, count: 32)
@@ -10,23 +14,23 @@ final class PeerPairingApprovalTests: XCTestCase {
     @MainActor func coordinator() -> PeerPairingCoordinator {
         PeerPairingCoordinator(localCertificateSHA256: local, certificateSHA256: { _ in self.remote })
     }
-    @MainActor func testOfferDoesNotGrantAuthority() throws {
+    @MainActor func testOfferDoesNotGrantAuthority() async throws {
         let c = coordinator()
         try c.review(offer())
         XCTAssertNil(c.approved)
     }
-    @MainActor func testWrongFingerprintFailsClosed() throws {
+    @MainActor func testWrongFingerprintFailsClosed() async throws {
         let c = coordinator(); try c.review(offer())
         XCTAssertThrowsError(try c.approve(independentlyVerifiedFingerprint: String(repeating:"00",count:32),
             sourceIDs: [UUID()], receiverEpoch: UUID()))
         XCTAssertNil(c.approved)
     }
-    @MainActor func testEmptyScopeFails() throws {
+    @MainActor func testEmptyScopeFails() async throws {
         let c = coordinator(); try c.review(offer())
         XCTAssertThrowsError(try c.approve(independentlyVerifiedFingerprint: String(repeating:"02",count:32),
             sourceIDs: [], receiverEpoch: UUID()))
     }
-    @MainActor func testApprovalBindsExactIdentityScopeAndEpoch() throws {
+    @MainActor func testApprovalBindsExactIdentityScopeAndEpoch() async throws {
         let c = coordinator(); let o = offer(); let source = UUID(), epoch = UUID()
         try c.review(o)
         let a = try c.approve(independentlyVerifiedFingerprint: String(repeating:"02",count:32), sourceIDs:[source], receiverEpoch:epoch)
@@ -34,25 +38,25 @@ final class PeerPairingApprovalTests: XCTestCase {
         XCTAssertEqual(a.pairingGeneration,o.pairingGeneration); XCTAssertEqual(a.receiverEpoch,epoch)
         XCTAssertEqual(a.approvedSourceIDs,[source]); XCTAssertEqual(c.approved,a)
     }
-    @MainActor func testRevokeRejectsReplayedGeneration() throws {
+    @MainActor func testRevokeRejectsReplayedGeneration() async throws {
         let c = coordinator(); let o = offer(); try c.review(o)
         _ = try c.approve(independentlyVerifiedFingerprint:String(repeating:"02",count:32),sourceIDs:[UUID()],receiverEpoch:UUID())
         c.revoke()
         XCTAssertNil(c.approved); XCTAssertThrowsError(try c.review(o))
     }
-    @MainActor func testIdentityChangeDropsPendingAndApproved() throws {
+    @MainActor func testIdentityChangeDropsPendingAndApproved() async throws {
         let c = coordinator(); try c.review(offer())
         c.replaceLocalIdentity(certificateSHA256:Data(repeating:3,count:32))
         XCTAssertNil(c.pending); XCTAssertNil(c.approved)
         XCTAssertThrowsError(try c.approve(independentlyVerifiedFingerprint:String(repeating:"02",count:32),sourceIDs:[UUID()],receiverEpoch:UUID()))
     }
-    @MainActor func testNewOfferRequiresRevocationFirst() throws {
+    @MainActor func testNewOfferRequiresRevocationFirst() async throws {
         let c = coordinator(); try c.review(offer())
         _ = try c.approve(independentlyVerifiedFingerprint:String(repeating:"02",count:32),sourceIDs:[UUID()],receiverEpoch:UUID())
         XCTAssertThrowsError(try c.review(offer()))
         XCTAssertNotNil(c.approved)
     }
-    @MainActor func testSelfPairingRejected() throws {
+    @MainActor func testSelfPairingRejected() async throws {
         let c = PeerPairingCoordinator(localCertificateSHA256:local,certificateSHA256:{ _ in self.local })
         XCTAssertThrowsError(try c.review(offer()))
     }

@@ -1,0 +1,29 @@
+name: Native pairing identity
+on:
+  push:
+    branches: [codex/peer-pairing-approval-20261115]
+    paths: ['JarvisEVO/Services/PeerIdentityProvisioner.swift', 'Diagnostics/PeerProvisioning/**', '.github/workflows/pairing-identity.yml']
+permissions:
+  contents: read
+jobs:
+  identity:
+    if: github.event.repository.private == false
+    runs-on: macos-15-intel
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Select Xcode 26
+        run: |
+          XCODE=$(find /Applications -maxdepth 1 -name 'Xcode_26*.app' | sort -V | tail -1)
+          test -n "$XCODE"
+          sudo xcode-select -s "$XCODE/Contents/Developer"
+      - name: Provision and reload real Keychain identities
+        run: bash Diagnostics/PeerProvisioning/run.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-pairing-identity-${{ github.sha }}
+          path: ${{ runner.temp }}/peer-provisioning-*.log
+          retention-days: 7
