@@ -66,9 +66,18 @@ final class LocalCompletionUITests: XCTestCase {
         XCTAssertTrue(button.isEnabled);button.tap()
         let review=app.staticTexts["completion.review"];reveal(review,in:app.collectionViews.firstMatch)
         XCTAssertEqual(review.label,goal)
-        for label in ["1. Read bundled app information","2. Search saved memory",query,"Maximum matches: 3"] {
+        for label in ["1. Read bundled app information","2. Search saved memory",query] {
             let text=app.staticTexts[label];reveal(text,in:app.collectionViews.firstMatch);XCTAssertTrue(text.exists)
         }
+        // Both composer and review intentionally show the limit. The composer
+        // is disabled during review; require the single enabled summary label.
+        let limits=app.staticTexts.matching(NSPredicate(format:"label == %@ AND enabled == true","Maximum matches: 3"))
+        XCTAssertEqual(limits.count,1)
+        let limit=limits.element(boundBy:0);reveal(limit,in:app.collectionViews.firstMatch)
+        XCTAssertEqual(limit.label,"Maximum matches: 3")
+        let composerLimit=app.steppers["Maximum matches: 3"]
+        XCTAssertTrue(composerLimit.exists);XCTAssertFalse(composerLimit.isEnabled)
+        XCTAssertEqual(composerLimit.value as? String,"3")
         XCTAssertTrue(app.buttons["completion.approve"].isEnabled)
     }
     private func ready(_ app:XCUIApplication) {

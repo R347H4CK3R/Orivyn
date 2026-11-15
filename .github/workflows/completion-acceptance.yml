@@ -1,7 +1,7 @@
 name: Explicit completion UI and real model acceptance
 on:
   push:
-    branches: [ci/completion-acceptance-switch-20261115]
+    branches: [ci/completion-acceptance-scope-20261115]
     paths: ['.github/workflows/completion-acceptance.yml']
 permissions:
   contents: read
