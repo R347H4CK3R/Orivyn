@@ -1,0 +1,48 @@
+name: Verify isolated LFM app integration
+on:
+  push:
+    branches: [codex/vision-lfm-integration-20261115]
+    paths: ['.github/workflows/vision-app.yml']
+permissions:
+  contents: read
+jobs:
+  vision-candidate:
+    # Standard GitHub-hosted macOS is free for public repositories. Never consume
+    # private allowance or larger/paid runners if visibility changes again.
+    if: github.event.repository.private == false
+    runs-on: macos-15
+    timeout-minutes: 120
+    env:
+      ORIVYN_NATIVE_FEATURES: 'ORIVYN_NATIVE_VISION ORIVYN_NATIVE_TOOLS'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Select Xcode 26
+        id: xcode
+        run: |
+          XCODE=$(find /Applications -maxdepth 1 -name 'Xcode_26*.app' | sort -V | tail -1)
+          test -n "$XCODE" || { echo 'Xcode 26 is required'; exit 1; }
+          sudo xcode-select -s "$XCODE/Contents/Developer"
+          echo "identity=$(xcodebuild -version | shasum -a 256 | awk '{print $1}')" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache/restore@v4
+        id: combined-cache
+        with:
+          path: .cache/orivyn-combined
+          key: combined-v1-${{ runner.os }}-${{ runner.arch }}-${{ steps.xcode.outputs.identity }}-${{ hashFiles('Diagnostics/CombinedRuntime/prepare_build.py', 'Diagnostics/CombinedRuntime/simulator-slices.sh', 'Diagnostics/CombinedRuntime/build-ios-combined.sh', 'Diagnostics/CombinedRuntime/native-bridges.cmake', 'Diagnostics/VisionRuntime/prepare_build.py', 'Diagnostics/VisionRuntime/source/build-xcframework.sh', 'Diagnostics/NativeTools/*.cpp', 'Diagnostics/NativeTools/*.h', 'Diagnostics/VisionProof/Bridge/*.cpp', 'Diagnostics/VisionProof/Bridge/*.h', 'scripts/verify_combined_runtime.py', 'scripts/ci_combined_runtime.sh') }}
+      - name: Build and verify combined native runtime
+        run: bash scripts/ci_combined_runtime.sh
+      - uses: actions/cache/save@v4
+        if: steps.combined-cache.outputs.cache-hit != 'true'
+        with:
+          path: .cache/orivyn-combined
+          key: ${{ steps.combined-cache.outputs.cache-primary-key }}
+      - name: Compile app and test actual selected vision model
+        run: bash scripts/ci_vision_candidate.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Orivyn-LFM-app-integration-evidence
+          path: artifacts
+          retention-days: 7
+          if-no-files-found: warn
