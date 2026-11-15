@@ -30,8 +30,7 @@ jobs:
           PY
           swift --version | tee artifacts/swift-version.txt
           swift test --package-path artifacts/host 2>&1 | tee artifacts/tests.log
-          grep -Eq 'Executed 19 tests, with 0 failures' artifacts/tests.log
-          ! grep -Eiq 'skipped|failed' artifacts/tests.log
+          python3 scripts/verify_recovery_tests.py artifacts/tests.log
           echo 'Actual Darwin Foundation filesystem tests with synthetic local files; not iOS application/device runtime, concurrent-writer security or power-loss durability.' > artifacts/SCOPE.txt
       - uses: actions/upload-artifact@v4
         if: always()
