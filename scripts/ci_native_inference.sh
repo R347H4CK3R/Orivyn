@@ -13,7 +13,7 @@ command -v xcodegen >/dev/null || brew install xcodegen
 bash scripts/bootstrap_llama.sh
 # The shared test target has this resource even with an only-testing selector.
 python3 scripts/download_test_model.py > "$EVIDENCE/chat-test-model-path.txt"
-xcodegen generate
+python3 scripts/generate_project.py
 xcrun simctl list devices available -j > "$EVIDENCE/simulators.json"
 SIMULATOR_ID=$(python3 - "$EVIDENCE/simulators.json" <<'PY'
 import json,sys

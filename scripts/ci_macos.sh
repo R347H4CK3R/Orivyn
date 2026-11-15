@@ -29,7 +29,7 @@ xcodebuild -showsdks | grep -Eq 'iphoneos2[6-9]' || { echo 'iOS 26+ SDK is requi
 if ! command -v xcodegen >/dev/null; then brew install xcodegen; fi
 bash scripts/bootstrap_llama.sh
 python3 scripts/download_test_model.py > "$ARTIFACTS/test-model-path.txt"
-xcodegen generate
+python3 scripts/generate_project.py
 xcrun simctl list devices available -j > "$ARTIFACTS/simulators.json"
 SIMULATOR_ID=$(python3 - <<'PY'
 import json,os
