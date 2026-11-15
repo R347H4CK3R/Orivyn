@@ -48,11 +48,15 @@ private struct PeerSyncSetupView: View {
                     }.disabled(session.pendingOffer != nil)
                     if direction == .send {
                     ForEach(model.conversations) { conversation in
-                        Toggle(conversation.title, isOn: Binding(get: { selected.contains(conversation.id) },
-                            set: { value in
-                                if value { selected.insert(conversation.id) }
-                                else { selected.remove(conversation.id) }
-                            })).disabled(session.pendingOffer != nil)
+                        Button {
+                            if selected.contains(conversation.id) { selected.remove(conversation.id) }
+                            else { selected.insert(conversation.id) }
+                        } label: {
+                            Label(conversation.title, systemImage: selected.contains(conversation.id)
+                                ? "checkmark.circle.fill" : "circle")
+                        }
+                        .accessibilityValue(selected.contains(conversation.id) ? "Selected" : "Not selected")
+                        .disabled(session.pendingOffer != nil)
                     }
                     }
                     Text("Only selected titles and identifiers are included in your pairing document. Conversation contents are not included.")
@@ -104,7 +108,13 @@ private struct PeerSyncSetupView: View {
                     Text(session.direction.rawValue)
                     Text(session.endpointDescription)
                     Text("\(session.approval?.approvedSourceIDs.count ?? 0) conversations")
-                    Toggle("Enable while open and unlocked", isOn: Binding(get: { session.enabled }, set: session.setEnabled))
+                    if session.enabled {
+                        Button("Pause nearby sync") { session.setEnabled(false) }
+                            .accessibilityIdentifier("peerSync.pause")
+                    } else {
+                        Button("Enable while open and unlocked") { session.setEnabled(true) }
+                            .accessibilityIdentifier("peerSync.enable")
+                    }
                     TimelineView(.periodic(from: .now, by: 1)) { _ in Text(session.status).font(.caption) }
                     if let listeningPort = session.listeningPort {
                         Text("Listening on port \(listeningPort)").font(.caption)
