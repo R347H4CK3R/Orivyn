@@ -1,7 +1,7 @@
 name: Explicit completion native session gate
 on:
   push:
-    branches: [ci/completion-session-20261115]
+    branches: [ci/completion-session-fixture-20261115]
     paths: ['.github/workflows/completion-session.yml']
 permissions:
   contents: read

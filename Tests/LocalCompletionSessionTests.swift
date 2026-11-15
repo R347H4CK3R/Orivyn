@@ -1,4 +1,5 @@
 import XCTest
+import CryptoKit
 @testable import JarvisEVO
 
 /// Deterministic model-output enforcement, not real inference or grammar proof.
@@ -17,13 +18,17 @@ final class LocalCompletionSessionTests: XCTestCase {
         let modelRoot=root.appendingPathComponent("models")
         try FileManager.default.createDirectory(at:modelRoot,withIntermediateDirectories:true)
         // Metadata fixture only. Never passed to an inference runtime by these tests.
-        let descriptor=LocalModelDescriptor(id:"completion-fixture",name:"Synthetic metadata",fileName:"fixture.gguf",downloadURL:nil,sha256:String(repeating:"a",count:64),byteCount:1,license:"test",sourceURL:nil)
-        try Data([0]).write(to:modelRoot.appendingPathComponent(descriptor.fileName))
+        let bytes=Data([0x47,0x47,0x55,0x46,3,0,0,0]+Array(repeating:UInt8(0),count:16))
+        let digest=SHA256.hash(data:bytes).map { String(format:"%02x",$0) }.joined()
+        let descriptor=LocalModelDescriptor(id:"completion-fixture",name:"Synthetic metadata",fileName:"fixture.gguf",downloadURL:nil,sha256:digest,byteCount:Int64(bytes.count),license:"test",sourceURL:nil)
+        try bytes.write(to:modelRoot.appendingPathComponent(descriptor.fileName))
         try JSONEncoder().encode([descriptor]).write(to:modelRoot.appendingPathComponent("installed-models.json"))
         defaults.set(descriptor.id,forKey:"selectedProviderID")
-        let model=AppModel(store:try SQLiteConversationStore(url:root.appendingPathComponent("history.sqlite")),attachmentService:try AttachmentService(directory:root.appendingPathComponent("attachments")),modelStore:try LocalModelStore(root:modelRoot),defaults:defaults)
+        let modelStore=try LocalModelStore(root:modelRoot)
+        _ = try await modelStore.verifiedURL(for:descriptor)
+        let model=AppModel(store:try SQLiteConversationStore(url:root.appendingPathComponent("history.sqlite")),attachmentService:try AttachmentService(directory:root.appendingPathComponent("attachments")),modelStore:modelStore,defaults:defaults)
         await model.bootstrap()
-        XCTAssertNotNil(model.selectedLocalAgentProvider)
+        _ = try XCTUnwrap(model.selectedLocalAgentProvider)
         let session=try LocalAgentSession(model:model,directory:root.appendingPathComponent("tasks"),decisionStream:{ request,_ in try await script.stream(request) })
         return (model,session)
     }

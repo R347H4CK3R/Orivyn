@@ -16,3 +16,9 @@ class CompletionGate(unittest.TestCase):
   script=(ROOT/'scripts/ci_completion_session.sh').read_text()
   for name in names:self.assertIn('-only-testing:JarvisEVOTests/'+name,script)
   self.assertNotIn('publish',script)
+ def test_session_fixture_meets_store_header_and_digest_validation(self):
+  s=(ROOT/'Tests/LocalCompletionSessionTests.swift').read_text()
+  self.assertIn('SHA256.hash(data:bytes)',s)
+  self.assertIn('byteCount:Int64(bytes.count)',s)
+  self.assertIn('try await modelStore.verifiedURL(for:descriptor)',s)
+  self.assertIn('try XCTUnwrap(model.selectedLocalAgentProvider)',s)
