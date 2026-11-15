@@ -26,7 +26,9 @@ jobs:
           test -n "$XCODE"
           sudo xcode-select -s "$XCODE/Contents/Developer"
       - name: Typecheck bounded channel API
-        run: xcrun swiftc -swift-version 6 -D ORIVYN_PEER_TLS_SPIKE -parse-as-library -typecheck -target x86_64-apple-macosx15.0 JarvisEVO/Core/PeerSyncControlFrame.swift JarvisEVO/Services/PeerTLSProbe.swift Diagnostics/PeerAuthentication/NativePeerGate.swift Diagnostics/PeerAuthentication/NativeChannelChecks.swift
+        run: xcrun swiftc -swift-version 6 -D ORIVYN_PEER_TLS_SPIKE -parse-as-library -typecheck -target x86_64-apple-macosx15.0 JarvisEVO/Core/PeerSyncControlFrame.swift JarvisEVO/Services/PeerTLSProbe.swift
+      # The SwiftPM gate below compiles the complete test executable with SQLite
+      # and pinned X509 dependencies, then runs every authentication/exchange case.
       - name: Exercise actual platform mutual TLS
         run: bash Diagnostics/PeerAuthentication/run.sh "$RUNNER_TEMP/orivyn-peer-auth-evidence"
       - uses: actions/upload-artifact@v4
