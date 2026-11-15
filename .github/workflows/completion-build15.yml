@@ -1,0 +1,69 @@
+name: Verify Orivyn build 15 explicit-checklist preview
+on:
+  push:
+    branches: [ci/completion-build15-20261115]
+    paths: ['.github/workflows/completion-build15.yml']
+permissions:
+  contents: read
+concurrency:
+  group: completion-build15
+  cancel-in-progress: false
+jobs:
+  candidate:
+    if: github.event.repository.private == false
+    runs-on: macos-15
+    timeout-minutes: 120
+    env:
+      ORIVYN_NATIVE_FEATURES: 'ORIVYN_NATIVE_VISION ORIVYN_NATIVE_TOOLS ORIVYN_NATIVE_TRANSCRIPT'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Select Xcode 26
+        id: xcode
+        run: |
+          XCODE=/Applications/Xcode_26.1.app
+          test -d "$XCODE" || { echo 'Pinned Xcode 26.1 is required'; exit 1; }
+          sudo xcode-select -s "$XCODE/Contents/Developer"
+          echo "identity=$(xcodebuild -version | shasum -a 256 | awk '{print $1}')" >> "$GITHUB_OUTPUT"
+      - name: Run exact production recovery filesystem tests on Darwin
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          python3 - <<'PY'
+          import pathlib,hashlib,json
+          root=pathlib.Path('artifacts/host'); manifest=[]
+          for source,destination in [('JarvisEVO/Providers/Local/ModelInstallTransaction.swift','Sources/JarvisEVO'),('Tests/ModelInstallTransactionTests.swift','Tests/JarvisEVOTests')]:
+              data=pathlib.Path(source).read_bytes(); out=root/destination;out.mkdir(parents=True,exist_ok=True)
+              (out/pathlib.Path(source).name).write_bytes(data)
+              manifest.append({'source':source,'sha256':hashlib.sha256(data).hexdigest()})
+          (root/'SOURCE-MANIFEST.json').write_text(json.dumps(manifest,indent=2))
+          (root/'Package.swift').write_text('// swift-tools-version: 6.0\nimport PackageDescription\nlet package = Package(name:"RecoveryProof",platforms:[.macOS(.v14)],targets:[.target(name:"JarvisEVO"),.testTarget(name:"JarvisEVOTests",dependencies:["JarvisEVO"])])\n')
+          PY
+          swift --version | tee artifacts/swift-version.txt
+          swift test --package-path artifacts/host 2>&1 | tee artifacts/tests.log
+          python3 scripts/verify_recovery_tests.py artifacts/tests.log
+          echo 'Actual Darwin Foundation filesystem tests with synthetic local files; not iOS application/device runtime, concurrent-writer security or power-loss durability.' > artifacts/SCOPE.txt
+      - name: Build and verify combined native runtime
+        run: bash scripts/ci_combined_runtime.sh
+      - name: Portable package and graph regressions
+        run: |
+          python3 -m unittest discover -s scripts/tests -p 'test_verify_ipa.py'
+          python3 -m unittest discover -s scripts/tests -p 'test_generate_project.py'
+          python3 -m unittest discover -s scripts/tests -p 'test_reviewed*.py'
+          python3 -m unittest discover -s scripts/tests -p 'test_completion*.py'
+          python3 -m unittest discover -s scripts/tests -p test_build11_lineage.py
+          python3 -m unittest discover -s scripts/tests -p test_snapshot_preview.py
+          node --test scripts/agent-tests/*.test.cjs
+      - name: Exact-source checklist UI and real-model acceptance
+        run: bash scripts/ci_completion_acceptance.sh
+      - name: Release device build and actual IPA resource validation
+        id: package
+        run: bash scripts/ci_package_only.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Orivyn-build15-package-evidence
+          path: artifacts
+          retention-days: 7
+          if-no-files-found: error
