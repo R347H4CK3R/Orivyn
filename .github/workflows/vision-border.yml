@@ -27,6 +27,7 @@ jobs:
           test "$(git -C "$RUNNER_TEMP/llama" rev-parse HEAD)" = 2496f9c14965c39589f53eea31bdb6d762b1d360
           cmake -S "$RUNNER_TEMP/llama" -B "$RUNNER_TEMP/llama/build" -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DGGML_OPENMP=OFF -DGGML_NATIVE=OFF -DGGML_BACKEND_DL=OFF -DLLAMA_CURL=OFF -DLLAMA_BUILD_TESTS=OFF > artifacts/vision-border/configure.log 2>&1
           cmake --build "$RUNNER_TEMP/llama/build" --target mtmd -j 2 > artifacts/vision-border/build.log 2>&1
+          git fetch --depth 1 origin ebf810d88be3702e3149707058d101a59a746afb
           git show ebf810d88be3702e3149707058d101a59a746afb:Diagnostics/VisionProof/Bridge/vision_bridge.cpp > "$RUNNER_TEMP/base.cpp"
           cp Diagnostics/VisionProof/Bridge/vision_bridge.cpp "$RUNNER_TEMP/candidate.cpp"
           cp "$RUNNER_TEMP/base.cpp" Diagnostics/VisionProof/Bridge/vision_bridge.cpp
