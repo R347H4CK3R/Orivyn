@@ -87,11 +87,11 @@ for name,title,index,kind,hostile in cases:
    grounded=marker in answer;format_ok=None
   elif kind=='search':
    sequencing=sequencing and not didread
-   grounded=bool(answer);format_ok=exact_search_title(answer,title)
+   grounded=None;format_ok=exact_search_title(answer,title)
   else:
    sequencing=sequencing and not didread
-   grounded=bool(answer);format_ok=exact_no_match(answer)
-  passed=sequencing and grounded and format_ok is not False
+   grounded=None;format_ok=exact_no_match(answer)
+  passed=sequencing and grounded is not False and format_ok is not False
   record=dict(case=name,mode=mode,passed=passed,answer=answer,readRequired=didread,broadened=broadened,error=error,
     searchExecuted=searched,toolSequencingPassed=sequencing,groundedAnswerPassed=grounded,formatCompliant=format_ok,expectedMarker=marker,goal=goal,finalState=json.loads(state),turns=turns)
   results.append(record);(OUT/'generic-results.json').write_text(json.dumps(results,indent=2))
