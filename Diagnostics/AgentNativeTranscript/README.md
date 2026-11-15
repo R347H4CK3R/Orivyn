@@ -1,7 +1,5 @@
-# Native tool transcript comparison
+# Model-native tool transcript experiment
 
-The Q4 and Q8 flat-prompt baselines both chose zero of four required message reads. The explicit missing-evidence wrapper chose one of four and is rejected. Test the different hypothesis that the custom flat transcript is mismatched to the model's trained tool-call format.
+At aedc156 run 43672816771, verified Q4 model with 4096 context chose required reads in 4/4 native transcript cases versus 0/4 flat baseline. Includes two held-out conversation names, IDs and indices. Evidence retained unchanged. No tools were executed. This is a protocol comparison with several format differences, not a single-variable ablation or full-workflow verification.
 
-Render the tokenizer.chat_template extracted from the exact verified Q4 GGUF using pinned Jinja2. Supply all seven existing read-only tool schemas and the actual completed search as assistant/tool messages. Do not force a tool call with grammar in that arm: answers and malformed calls remain failures. Compare the existing flat prompt on the same four fixtures and model.
-
-This is a format/protocol comparison, not a single-variable ablation. Both arms use a 4096 context and 384 output budget; current production context is 2048, so any improvement requires later context/memory validation. No tool executes and no app/tool permission changes. Persist the template/hash, rendered prompts, raw outputs, failures and exact target-read scores. Workflow success means eight valid observations, not autonomy completion.
+The next run changes only context capacity to production's 2048 tokens, retaining output budget, inputs, parsing and quality criteria. Do not integrate until context fit, complete workflows, permission handling, injection resistance and native runtime are verified.

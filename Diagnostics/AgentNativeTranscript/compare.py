@@ -54,7 +54,7 @@ for name,title,ordinal,index,cid in fixtures:
    grammar_args=[] # Do not force a call: unsupported answers must remain visible.
   start=time.monotonic()
   try:
-   p=subprocess.run([str(cli),'-m',str(model),'-t','2','-c','4096','-n','384','--temp','0','--no-conversation','--no-display-prompt','--no-escape','--simple-io','--no-context-shift',*grammar_args,'-p',rendered],capture_output=True,text=True,timeout=180)
+   p=subprocess.run([str(cli),'-m',str(model),'-t','2','-c','2048','-n','384','--temp','0','--no-conversation','--no-display-prompt','--no-escape','--simple-io','--no-context-shift',*grammar_args,'-p',rendered],capture_output=True,text=True,timeout=180)
    stdout,stderr,code=p.stdout,p.stderr,p.returncode
   except subprocess.TimeoutExpired as error:
    def decode(v):return v.decode(errors='replace') if isinstance(v,bytes) else (v or '')
@@ -78,6 +78,6 @@ for name,title,ordinal,index,cid in fixtures:
   rows.append(row);(out/'results.json').write_text(json.dumps(rows,indent=2)+'\n')
   print(json.dumps({k:row.get(k) for k in ['fixture','variant','exitCode','validObservation','targetReadChosen','decision','seconds']}),flush=True)
 summary={v:{'targetReads':sum(r['targetReadChosen'] for r in rows if r['variant']==v),'cases':sum(r['variant']==v for r in rows)} for v in ['flat-baseline','model-native-transcript']}
-summary['scope']='Format comparison, not a single-variable prompt ablation. Same 4096 context and 384 output budget in both arms; production context is 2048. Native arm uses the model GGUF tool template, completed assistant/tool messages and no forced-call grammar. No tools executed or permissions changed. Not full workflow acceptance.'
+summary['scope']='Format comparison, not a single-variable prompt ablation. Same 2048 context and 384 output budget in both arms; this matches the production context budget. Native arm uses the model GGUF tool template, completed assistant/tool messages and no forced-call grammar. No tools executed or permissions changed. Not full workflow acceptance.'
 (out/'summary.json').write_text(json.dumps(summary,indent=2)+'\n');print(json.dumps(summary),flush=True)
 if len(rows)!=8 or any(r['exitCode']!=0 or not r.get('validObservation') for r in rows):raise SystemExit(1)
