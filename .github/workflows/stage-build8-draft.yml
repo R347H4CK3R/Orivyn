@@ -1,0 +1,60 @@
+name: Preserve verified build 8 as unpublished draft
+on:
+  push:
+    branches: [codex/stage-build8-release-20261115]
+    paths: [.github/workflows/stage-build8-draft.yml]
+permissions:
+  contents: read
+jobs:
+  draft:
+    if: github.repository == 'R347H4CK3R/Orivyn' && github.ref == 'refs/heads/codex/stage-build8-release-20261115'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: R347H4CK3R/Orivyn
+    steps:
+      - name: Verify fixed artifact and retain as draft only
+        shell: python
+        run: |
+          import subprocess,json,pathlib,hashlib,zipfile,plistlib,os
+          repo="R347H4CK3R/Orivyn"
+          sha="a6c696a89a2e5a6224e220b6772b62614d30b4df"
+          tag="orivyn-v0.1.1-build8"
+          def gh(*args):
+              return subprocess.check_output(["gh",*args],text=True)
+          run=json.loads(gh("api",f"repos/{repo}/actions/runs/43660234783"))
+          assert run["head_sha"]==sha and run["conclusion"]=="success" and run["status"]=="completed"
+          artifact=json.loads(gh("api",f"repos/{repo}/actions/artifacts/14141600689"))
+          assert not artifact["expired"] and artifact["workflow_run"]["id"]==43660234783
+          assert artifact["name"]=="Orivyn-build8-package-"+sha
+          releases=json.loads(gh("api",f"repos/{repo}/releases?per_page=100"))
+          assert all(r["tag_name"]!=tag for r in releases), "Existing release: refuse to overwrite"
+          root=pathlib.Path(os.environ["RUNNER_TEMP"])/"orivyn-build8-draft"
+          root.mkdir()
+          gh("run","download","43660234783","--name",artifact["name"],"--dir",str(root))
+          ipa=root/"package-only/Orivyn-0.1.1-build8-unsigned.ipa"
+          data=ipa.read_bytes()
+          digest="04c2bd77eb6f807eb17c24bce6ff0a8cf88cae5d74e0e43955cba9230d01723d"
+          assert len(data)==37072679 and hashlib.sha256(data).hexdigest()==digest
+          with zipfile.ZipFile(ipa) as z:
+              info=plistlib.loads(z.read("Payload/JarvisEVO.app/Info.plist"))
+              assert info["CFBundleIdentifier"]=="app.jarvisevo.ios"
+              assert info["CFBundleVersion"]=="8" and info["CFBundleShortVersionString"]=="0.1.1"
+              assert info["MinimumOSVersion"]=="26.0"
+          assert (ipa.parent/"source-commit.txt").read_text().strip()==sha
+          scope=json.loads((ipa.parent/"SCOPE.json").read_text())
+          assert scope["source_commit"]==sha and scope["release_status"]=="development_candidate_not_1_0_complete"
+          assert set(scope["native_features"])=={"ORIVYN_NATIVE_VISION","ORIVYN_NATIVE_TOOLS"}
+          assert scope["native_unit_tests"]==scope["simulator_ui_tests"]==scope["physical_device_acceptance"]=="not_run"
+          sums=root/"SHA256SUMS";sums.write_text(digest+"  "+ipa.name+"\n")
+          notes=root/"release-notes.md";notes.write_text("Orivyn 0.1.1 build 8 — development preview\n\nUnsigned ARM64 IPA for iOS 26 or later; SideStore signs it for your account and device. Preserve the existing app data and signing identity when updating. Models download separately.\n\nIncludes the current local assistant, reviewed read-workflow fixes, native tools/vision runtime, and durable text-sync storage. Live automatic sync is not enabled. General unreviewed autonomy and broad vision reliability remain unfinished. A UI test found that New conversation did not clear the previous response after a real model reply. Physical-device installation, signing refresh, memory/thermal behavior and runtime acceptance remain unverified. This is not completed 1.0.0.\n\nThis package passed unsigned device compilation, runtime archive validation, IPA structure/resource checks and independent identity/hash inspection. Native unit/UI tests were not run for this exact package. Parent implementation fb146910 separately passed 1,014 native tests (5 skipped, zero failures), all 129 portable persistence tests and six reviewed-read real-model cases; its general-agent and one UI test failed. Vision's frozen synthetic baseline matched 8/10 cases. None of these results certifies general autonomy, reliable broad vision, automatic sync or physical-device readiness.\n\nSource: a6c696a89a2e5a6224e220b6772b62614d30b4df\nBuild: https://github.com/R347H4CK3R/Orivyn/actions/runs/43660234783\nFile: Orivyn-0.1.1-build8-unsigned.ipa\nSize: 37,072,679 bytes\nSHA-256: 04c2bd77eb6f807eb17c24bce6ff0a8cf88cae5d74e0e43955cba9230d01723d\n\nRequired llama.cpp and KaTeX notices are bundled. Test fixtures, model weights, signing keys and personal conversations are not included. Application source is public. Not an OpenAI product.\n")
+          gh("release","create",tag,str(ipa),str(sums),"--draft","--prerelease","--target",sha,"--title","Orivyn 0.1.1 build 8 — development preview","--notes-file",str(notes))
+          draft=json.loads(gh("release","view",tag,"--json","isDraft,targetCommitish,assets,url"))
+          assert draft["isDraft"] is True and draft["targetCommitish"]==sha
+          assert any(a["name"]==ipa.name and a["size"]==37072679 for a in draft["assets"])
+          print(json.dumps({"draft":True,"url":draft["url"],"source":sha,"sha256":digest}))
+          
