@@ -10,6 +10,7 @@ ARTIFACTS="$ROOT/artifacts/combined-runtime"
 CACHE="$ROOT/.cache/orivyn-combined"
 ARCHIVE="$CACHE/runtime.zip"
 mkdir -p "$ARTIFACTS" "$CACHE"
+python3 -m unittest discover -s "$ROOT/scripts/tests" -p test_combined_recipe.py
 trap 'status=$?; if [[ "$status" != 0 && -f "$ARTIFACTS/build.log" ]]; then tail -n 180 "$ARTIFACTS/build.log"; fi; exit "$status"' EXIT
 if [[ -f "$ARCHIVE" && -f "$CACHE/sha256.txt" ]]; then
   HASH="$(cat "$CACHE/sha256.txt")"
