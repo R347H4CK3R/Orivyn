@@ -1,7 +1,7 @@
 name: Verify isolated backup picker lifecycle
 on:
   push:
-    branches: [ci/backup-picker-20261115]
+    branches: [ci/backup-picker-intel-20261115]
     paths: ['JarvisEVO/**', 'Tests/**', 'UITests/**', 'scripts/ci_backup_picker.sh', '.github/workflows/backup-picker.yml']
 permissions:
   contents: read
@@ -12,7 +12,7 @@ jobs:
   simulator:
     # Public-repository standard runner only. Never use private allowance or paid larger runners.
     if: github.event.repository.private == false
-    runs-on: macos-15
+    runs-on: macos-15-intel
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
