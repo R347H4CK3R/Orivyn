@@ -8,7 +8,7 @@ struct VisionModelStorage: VisionPairFileStore {
     private func descriptor(_ asset: VisionModelArtifact) -> LocalModelDescriptor {
         LocalModelDescriptor(id: asset.sha256, name: asset.name, fileName: asset.name,
             downloadURL: asset.url, sha256: asset.sha256, byteCount: asset.bytes,
-            license: "Apache-2.0", sourceURL: URL(string: "https://huggingface.co/\(VisionModelPair.repository)/tree/\(VisionModelPair.revision)"))
+            license: VisionModelPair.license, sourceURL: URL(string: "https://huggingface.co/\(VisionModelPair.repository)/tree/\(VisionModelPair.revision)"))
     }
     func verify(_ artifact: VisionModelArtifact) async throws -> URL {
         try await store.verifiedURL(for: descriptor(artifact))
