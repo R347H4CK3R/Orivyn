@@ -35,7 +35,7 @@ run_variant() {
       -derivedDataPath "$OUT/derived-$variant" \
       -destination "platform=iOS Simulator,id=$SIMULATOR_ID" -destination-timeout 120 \
       -parallel-testing-enabled NO -test-timeouts-enabled YES \
-      -default-test-execution-time-allowance 120 -maximum-test-execution-time-allowance 300 \
+      -default-test-execution-time-allowance 300 -maximum-test-execution-time-allowance 300 \
       -only-testing:JarvisEVOUITests/JarvisEVOUITests/testHistoryImportCancellationReturnsToSettingsAndPreservesComposer \
       -resultBundlePath "$OUT/$label/Tests.xcresult" CODE_SIGNING_ALLOWED=NO test) \
       > "$OUT/$label/xcodebuild.log" 2>&1

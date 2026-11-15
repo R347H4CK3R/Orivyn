@@ -52,6 +52,11 @@ def instrument(root):
     }
 
 ''' + marker, 1)
+    # The controlled runner took >10s to expose Files and >120s for navigation.
+    # Extend only readiness/overall budget, never remove or bypass assertions.
+    readiness = "pickerNavigation.waitForExistence(timeout: 10)"
+    assert source.count(readiness) == 1
+    source = source.replace(readiness, "pickerNavigation.waitForExistence(timeout: 60)")
     test.write_text(source)
 
 

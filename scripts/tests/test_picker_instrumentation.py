@@ -20,7 +20,10 @@ class InstrumentationTests(unittest.TestCase):
             module.instrument(root)
             test = (root / "UITests/JarvisEVOUITests.swift").read_text()
             start = original.index("    func testHistoryImportCancellation")
-            self.assertIn(original[start:], test)
+            readiness = "pickerNavigation.waitForExistence(timeout: 60)"
+            self.assertEqual(test.count(readiness), 1)
+            normalized = test.replace(readiness, "pickerNavigation.waitForExistence(timeout: 10)")
+            self.assertIn(original[start:], normalized)
             source = (root / "JarvisEVO/UI/SettingsView.swift").read_text()
             self.assertIn("confirmation.invalidate()", source)
             self.assertIn("confirmation.finishSelection(selectionID)", source)
@@ -32,6 +35,7 @@ class InstrumentationTests(unittest.TestCase):
     def test_ci_is_pinned_bounded_and_keeps_failures(self):
         script = (ROOT / "scripts/ci_compare_backup_picker.sh").read_text()
         self.assertIn("--timeout 300", script)
+        self.assertIn("-default-test-execution-time-allowance 300 -maximum-test-execution-time-allowance 300", script)
         self.assertIn("run_variant baseline A1", script)
         self.assertIn("run_variant candidate B1", script)
         self.assertIn("run_variant candidate B2", script)
