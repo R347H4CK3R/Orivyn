@@ -11,8 +11,10 @@ struct ProvisionedPeerIdentity: @unchecked Sendable {
     let certificateDER: Data
     var certificateSHA256: Data { Data(SHA256.hash(data: certificateDER)) }
     var fingerprint: String { certificateSHA256.map { String(format: "%02x", $0) }.joined() }
-    func offer(generation: UUID) -> PeerPairingOffer {
-        PeerPairingOffer(version: 1, pairingGeneration: generation, certificateDER: certificateDER)
+    func offer(generation: UUID, receiverEpoch: UUID? = nil,
+               offeredConversations: [PeerPairingOffer.Conversation] = []) -> PeerPairingOffer {
+        PeerPairingOffer(version: 1, pairingGeneration: generation, certificateDER: certificateDER,
+                         receiverEpoch: receiverEpoch, offeredConversations: offeredConversations)
     }
 }
 
@@ -49,7 +51,7 @@ actor PeerIdentityProvisioner {
             ] as [CFString: Any]
         ]
         guard let key = SecKeyCreateRandomKey(attributes as CFDictionary, &failure) else {
-            let code = failure?.takeRetainedValue().code ?? Int(errSecInternalComponent)
+            let code = failure.map { CFErrorGetCode($0.takeRetainedValue()) } ?? Int(errSecInternalComponent)
             throw Failure.keychain(OSStatus(code))
         }
         // Keep a partially created identity on failure. An explicit reset is required.

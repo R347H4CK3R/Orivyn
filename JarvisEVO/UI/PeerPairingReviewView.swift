@@ -37,12 +37,15 @@ struct PeerPairingReviewView: View {
                             if enabled { selected.insert(conversation.id) }
                             else { selected.remove(conversation.id) }
                         })) {
-                        Text(conversation.title)
+                        VStack(alignment: .leading) {
+                            Text(conversation.title)
+                            Text(conversation.id.uuidString).font(.caption2.monospaced())
+                        }
                     }
                 }
             } header: { Text("Approve conversations") }
               footer: {
-                Text("Only selected conversation IDs are authorized. Attachments, credentials and other conversations are excluded. Pairing does not enable background transfers.")
+                Text("Imported titles and IDs are untrusted proposals. Compare them on the other device. Only selected conversation IDs are authorized. Attachments, credentials and other conversations are excluded. Pairing does not enable background transfers.")
               }
             if let failure { Text(failure).foregroundStyle(.red).accessibilityIdentifier("peerPairingFailure") }
             Button("Approve this pairing") {

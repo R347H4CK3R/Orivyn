@@ -5,14 +5,40 @@ struct PeerPairingOffer: Codable, Equatable, Sendable {
     let version: Int
     let pairingGeneration: UUID
     let certificateDER: Data
+    struct Conversation: Codable, Equatable, Sendable, Identifiable {
+        let id: UUID
+        let title: String
+    }
+    /// Untrusted proposals, never restored consent or authenticated provenance.
+    let receiverEpoch: UUID?
+    let offeredConversations: [Conversation]
+    init(version: Int, pairingGeneration: UUID, certificateDER: Data,
+         receiverEpoch: UUID? = nil, offeredConversations: [Conversation] = []) {
+        self.version = version; self.pairingGeneration = pairingGeneration
+        self.certificateDER = certificateDER; self.receiverEpoch = receiverEpoch
+        self.offeredConversations = offeredConversations
+    }
+    private enum CodingKeys: String, CodingKey { case version, pairingGeneration, certificateDER, receiverEpoch, offeredConversations }
+    init(from decoder: any Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        version = try values.decode(Int.self, forKey: .version)
+        pairingGeneration = try values.decode(UUID.self, forKey: .pairingGeneration)
+        certificateDER = try values.decode(Data.self, forKey: .certificateDER)
+        receiverEpoch = try values.decodeIfPresent(UUID.self, forKey: .receiverEpoch)
+        offeredConversations = try values.decodeIfPresent([Conversation].self, forKey: .offeredConversations) ?? []
+    }
     static func decode(_ bytes: Data) throws -> Self {
-        guard bytes.count <= 24_000 else { throw PeerPairingCoordinator.Failure.invalidOffer }
+        guard bytes.count <= 64_000 else { throw PeerPairingCoordinator.Failure.invalidOffer }
         let offer = try JSONDecoder().decode(Self.self, from: bytes)
         try offer.validate()
         return offer
     }
     func validate() throws {
-        guard version == 1, (1...16_384).contains(certificateDER.count) else {
+        guard version == 1, (1...16_384).contains(certificateDER.count),
+              offeredConversations.count <= 100,
+              Set(offeredConversations.map(\.id)).count == offeredConversations.count,
+              offeredConversations.allSatisfy({ (1...240).contains($0.title.utf8.count)
+                  && !$0.title.unicodeScalars.contains(where: { CharacterSet.controlCharacters.contains($0) }) }) else {
             throw PeerPairingCoordinator.Failure.invalidOffer
         }
     }

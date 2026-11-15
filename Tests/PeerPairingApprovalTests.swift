@@ -60,8 +60,28 @@ final class PeerPairingApprovalTests: XCTestCase {
         let c = PeerPairingCoordinator(localCertificateSHA256:local,certificateSHA256:{ _ in self.local })
         XCTAssertThrowsError(try c.review(offer()))
     }
+    func testUntrustedMetadataIsBoundedAndOptional() throws {
+        let id = UUID(), generation = UUID(), epoch = UUID()
+        let record = PeerPairingOffer.Conversation(id: id, title: "Reviewed notes")
+        let valid = PeerPairingOffer(version: 1, pairingGeneration: generation, certificateDER: Data([1]),
+            receiverEpoch: epoch, offeredConversations: [record])
+        XCTAssertEqual(try PeerPairingOffer.decode(JSONEncoder().encode(valid)), valid)
+        let duplicate = PeerPairingOffer(version: 1, pairingGeneration: generation, certificateDER: Data([1]),
+            offeredConversations: [record, record])
+        XCTAssertThrowsError(try duplicate.validate())
+        let controlTitle = PeerPairingOffer(version: 1, pairingGeneration: generation, certificateDER: Data([1]),
+            offeredConversations: [.init(id: id, title: "hidden\nname")])
+        XCTAssertThrowsError(try controlTitle.validate())
+        let hugeTitle = PeerPairingOffer(version: 1, pairingGeneration: generation, certificateDER: Data([1]),
+            offeredConversations: [.init(id: id, title: String(repeating: "x", count: 241))])
+        XCTAssertThrowsError(try hugeTitle.validate())
+        let legacy: [String: Any] = ["version": 1, "pairingGeneration": generation.uuidString,
+            "certificateDER": Data([1]).base64EncodedString()]
+        let decoded = try PeerPairingOffer.decode(JSONSerialization.data(withJSONObject: legacy))
+        XCTAssertNil(decoded.receiverEpoch); XCTAssertTrue(decoded.offeredConversations.isEmpty)
+    }
     func testDecoderBoundsAndVersion() throws {
-        XCTAssertThrowsError(try PeerPairingOffer.decode(Data(repeating:32,count:24001)))
+        XCTAssertThrowsError(try PeerPairingOffer.decode(Data(repeating:32,count:64001)))
         let unsupported = PeerPairingOffer(version:2,pairingGeneration:UUID(),certificateDER:Data([1]))
         XCTAssertThrowsError(try PeerPairingOffer.decode(JSONEncoder().encode(unsupported)))
         let empty = PeerPairingOffer(version:1,pairingGeneration:UUID(),certificateDER:Data())

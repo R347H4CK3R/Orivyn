@@ -14,7 +14,7 @@ for dependency in swift-certificates:8789d7e78f996d56272836c8bf3590c5bd9c9754 sw
   test "$(git -C "$build_root/$repo" rev-parse HEAD)" = "$revision"
 done
 mkdir -p "$build_root/gate/Sources/PairingPolicy" "$build_root/gate/Tests/PairingPolicyTests"
-cp JarvisEVO/Core/PeerPairingApproval.swift JarvisEVO/Services/PeerIdentityProvisioner.swift "$build_root/gate/Sources/PairingPolicy/"
+cp JarvisEVO/Core/PeerSyncControlFrame.swift JarvisEVO/Services/PeerTLSProbe.swift JarvisEVO/Core/PeerPairingApproval.swift JarvisEVO/Services/PeerIdentityProvisioner.swift "$build_root/gate/Sources/PairingPolicy/"
 cp Diagnostics/PeerProvisioning/PeerIdentityProvisionerTests.swift "$build_root/gate/Tests/PairingPolicyTests/"
 cat > "$build_root/gate/Package.swift" <<'EOF'
 // swift-tools-version:6.2
