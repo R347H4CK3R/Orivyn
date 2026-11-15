@@ -82,7 +82,7 @@ static void generate(ov_session*s,const ov_request&r,std::string&out,ov_report&r
  Owner<mtmd_context,mtmd_free> vision(mtmd_init_from_file(r.projector,model.p,vp));if(!vision.p||!mtmd_support_vision(vision.p))throw 3;check(s);
  Owner<mtmd_bitmap,mtmd_bitmap_free> bitmap(mtmd_bitmap_init(r.width,r.height,r.rgb));if(!bitmap.p)throw 4;
  Owner<mtmd_input_chunks,mtmd_input_chunks_free> chunks(mtmd_input_chunks_init());if(!chunks.p)throw 4;
- std::string text=std::string(mtmd_default_marker())+"\n"+std::string(r.question,r.question_bytes);
+ std::string text=std::string(mtmd_default_marker())+"\nFor counting questions, first distinguish each object\'s category, then count only the requested category. Exclude objects from other categories. Follow the requested answer format.\n"+std::string(r.question,r.question_bytes);
  llama_chat_message msg{"user",text.c_str()};const char*templ=llama_model_chat_template(model.p,nullptr);if(!templ)throw 4;
  int n=llama_chat_apply_template(templ,&msg,1,true,nullptr,0);if(n<=0||n>16384)throw 4;
  std::vector<char> prompt(n+1);if(llama_chat_apply_template(templ,&msg,1,true,prompt.data(),prompt.size())!=n)throw 4;
