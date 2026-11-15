@@ -156,7 +156,10 @@ actor LlamaEngine: LocalResourceReleasing {
             _=try MCPJSONValue.parse(Data(input.stateJSON.utf8),maximumBytes:32768)
             let state=try JSONDecoder().decode(LocalAgentSnapshot.self,from:Data(input.stateJSON.utf8))
             let transcript:NativeToolTranscript
-            if input.reviewed {
+            if input.unscoped {
+                guard !input.reviewed,input.query.isEmpty,input.messageIndex==0 else { throw LocalAgentError.invalidState }
+                transcript=try NativeToolTranscript.build(state,templateSHA256:templateHash)
+            } else if input.reviewed {
                 guard let scope=NativeToolTranscript.reviewedScope(state),scope.query==input.query,scope.messageIndex==input.messageIndex else { throw LocalAgentError.invalidState }
                 transcript=try NativeToolTranscript.buildReviewed(state,templateSHA256:templateHash)
             } else {

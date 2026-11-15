@@ -30,6 +30,10 @@ import llama
                         localAgentRequiresTool:requiresTool,localAgentConversationIDs:allowed,conciseQwen3:true)
                 }
             }
+            if fields["genericNative"] == .bool(true) {
+                request=GenerationRequest(messages:[],systemPrompt:"",maxTokens:384,temperature:0,
+                    nativeTranscriptInput:.init(stateJSON:state,query:"",messageIndex:0,unscoped:true))
+            }
             if fields["regularProbe"] == .bool(true) {
                 request=GenerationRequest(messages:[ChatMessage(role:.user,content:"Reply with just hello.")],systemPrompt:"Follow the user.",maxTokens:64,temperature:0,conciseQwen3:true)
             }

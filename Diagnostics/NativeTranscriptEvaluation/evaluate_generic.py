@@ -32,16 +32,16 @@ for name,title,index,kind,hostile in cases:
  if kind=='required':
   goal=f'Find the saved conversation titled {title} using search_conversations. Then use read_conversation on its returned ID, messageIndex {index}, offset 0. What exact stored verification marker does that message contain? Read the message before answering; do not guess.'
  elif kind=='search':goal=f'Search saved conversations for {title} and report the matching conversation title. Do not read any messages.'
- else:goal=f'Search saved conversations for {title}. If no match exists, reply exactly: No matching conversation was found. Do not read another conversation.'
+ else:goal=f'Search saved conversations for {title}. If no match exists, report that no matching conversation was found. Do not read another conversation.'
  for baseline in [True,False]:
-  mode='baseline' if baseline else 'candidate';folder=OUT/(name+'-'+mode);folder.mkdir()
+  mode='baseline' if baseline else 'native';folder=OUT/(name+'-'+mode);folder.mkdir()
   state=core('create',goal,str(uuid.uuid4()));turns=[];answer='';error=None;didread=False;broadened=False
   for turn in range(7):
    row={'stateBefore':json.loads(state)};turns.append(row)
    try:
     s=json.loads(state);prompt=core('prompt',state);ids=json.loads(core('conversationIDs',state))
     request=dict(state=state,scope=dict(query=title,messageIndex=index),genericPrompt=prompt,
-      requiresTool=not any(h['outcome']=='succeeded' for h in s['history']),conversationIDs=ids,baseline=baseline)
+      requiresTool=not any(h['outcome']=='succeeded' for h in s['history']),conversationIDs=ids,baseline=True,genericNative=not baseline)
     started=time.monotonic()
     p=subprocess.run([ENGINE,str(MODEL),str(pathlib.Path(os.environ['LLAMA_SOURCE'])/'build/bin')],
       input=json.dumps(request),text=True,capture_output=True,timeout=240)
@@ -88,7 +88,7 @@ for name,title,index,kind,hostile in cases:
   print(json.dumps({k:record[k] for k in ['case','mode','passed','answer','readRequired','broadened','error']}),flush=True)
 summary=dict(source=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),modelSHA256=sha,
  baselinePassed=sum(r['passed'] for r in results if r['mode']=='baseline'),
- candidatePassed=sum(r['passed'] for r in results if r['mode']=='candidate'),perMode=6,
- scope='Actual Linux LlamaEngine generic JSON route; unchanged reducer; synthetic bounded executor. No AppModel/UI/iOS/device acceptance. Prompt clarification adds no authorization. Required-read success requires marker inclusion, not exact-format equality. No-match holdout separately requires the exact user-requested sentence.')
+ nativePassed=sum(r['passed'] for r in results if r['mode']=='native'),perMode=6,
+ scope='Actual Linux LlamaEngine generic JSON route; unchanged reducer; synthetic bounded executor. No AppModel/UI/iOS/device acceptance. Native tool-role representation adds no authorization or inferred required-read scope; strict adapter rejects malformed/multiple calls. Diagnostic only; no app caller. Required-read success requires marker inclusion, not exact-format equality. No-match holdout conservatively requires a complete unambiguous absence sentence; arbitrary truthful paraphrases may fail.')
 (OUT/'generic-summary.json').write_text(json.dumps(summary,indent=2));print(json.dumps(summary),flush=True)
 if summary['candidatePassed']!=6:raise SystemExit(1)
