@@ -1,0 +1,18 @@
+{
+  "source": "75727fb504995324ae5b29a26c60e2a446048d6f",
+  "run": 43675182727,
+  "job": 132693650074,
+  "artifact": 14146487725,
+  "tests": 7,
+  "passed": 6,
+  "failed": 1,
+  "failure": "testStaleHistoryRejectsReceiveWithoutDiscardingLocalState: retry after deleting stale persisted row threw busy at line130",
+  "passedCases": [
+    "actual cancellation after commit reloads and releases",
+    "committed receive preserves composer",
+    "failed reload blocks mutations until recovery",
+    "lost acknowledgement reloads",
+    "transfer excludes competing mutations",
+    "stale preflight retains actual attachment file"
+  ]
+}

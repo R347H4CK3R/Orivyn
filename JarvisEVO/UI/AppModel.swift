@@ -1052,7 +1052,7 @@ final class AppModel {
     /// transfer and owns cancellation; this method grants no network authority.
     func performPeerHistoryReceive(_ operation: @MainActor () async throws -> Void) async throws {
         try Task.checkCancellation()
-        guard canBeginHeavyWork, attachmentHistoryIsLoaded, !peerHistoryNeedsReload,
+        guard canBeginHeavyWork, !peerHistoryNeedsReload,
               beginHistoryChange() else { throw TextSnapshotError.busy }
         var releaseHistory = true
         defer { if releaseHistory { finishHistoryChange() } }
@@ -1064,6 +1064,9 @@ final class AppModel {
                 == conversations.sorted(by: { $0.id.uuidString < $1.id.uuidString }) else {
             throw PeerHistoryReceiveError.unsavedOrStaleHistory
         }
+        // Equality establishes fresh cleanup authority. A canceled preflight
+        // can release ownership safely; rejected preflights remain retryable.
+        attachmentHistoryIsLoaded = true
         try Task.checkCancellation()
         // A failed transfer can still have committed before losing its receipt.
         // No attachment sweep may use the old snapshot after this point.

@@ -25,7 +25,7 @@ PY
 )
 python3 scripts/boot_ci_simulator.py --simulator "$SIMULATOR_ID" --evidence "$ARTIFACTS/simulator-boot.json"
 # Compile the complete real app and native targets. No inference fixture/model substitution.
-# Select exactly seven receive-ownership tests; evidence validation rejects skips and zero-test success.
+# Select exactly eight receive-ownership tests; evidence validation rejects skips and zero-test success.
 xcodebuild -project JarvisEVO.xcodeproj -scheme JarvisEVO \
  -destination "platform=iOS Simulator,id=$SIMULATOR_ID" -destination-timeout 60 \
  -parallel-testing-enabled NO -test-timeouts-enabled YES \
@@ -37,6 +37,6 @@ xcrun xcresulttool get test-results summary --path "$ARTIFACTS/Tests.xcresult" >
 python3 - "$ARTIFACTS/test-summary.json" <<'PY'
 import json,sys
 s=json.load(open(sys.argv[1]))
-assert s['totalTestCount']==7 and s['passedTests']==7 and s['failedTests']==0 and s['skippedTests']==0,s
+assert s['totalTestCount']==8 and s['passedTests']==8 and s['failedTests']==0 and s['skippedTests']==0,s
 PY
 echo 'Focused native regression passed. Full suite, real inference, IPA/device acceptance remain separate.'

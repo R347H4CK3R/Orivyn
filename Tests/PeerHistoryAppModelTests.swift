@@ -53,6 +53,35 @@ final class PeerHistoryAppModelTests: XCTestCase {
         XCTAssertEqual(String(decoding: bytes, as: UTF8.self), "Newly persisted private text")
     }
 
+
+    func testUnsavedInMemoryTurnRejectsReceiveWithoutDiscardingIt() async throws {
+        let (model, store) = try await fixture()
+        let created = await model.newConversation()
+        XCTAssertTrue(created)
+        let id = try XCTUnwrap(model.selectedConversationID)
+        model.replaceProviders([ProviderOption(id: "no-inference", title: "No inference", detail: "Test", provider: NoInferenceProvider())])
+        var connection: OpaquePointer?
+        XCTAssertEqual(sqlite3_open(root.appendingPathComponent("history.sqlite").path, &connection), SQLITE_OK)
+        defer { sqlite3_close(connection) }
+        XCTAssertEqual(sqlite3_exec(connection, "CREATE TRIGGER fail_history BEFORE INSERT ON conversations BEGIN SELECT RAISE(ABORT, 'test save failure'); END;", nil, nil, nil), SQLITE_OK)
+        model.draft = "Unpersisted local turn"
+        model.send()
+        model.draft = "New composer draft"
+        let deadline = Date().addingTimeInterval(3)
+        while model.isGenerating && Date() < deadline { try await Task.sleep(for: .milliseconds(5)) }
+        XCTAssertFalse(model.isGenerating)
+        XCTAssertTrue(model.activeConversation?.messages.contains(where: { $0.content == "Unpersisted local turn" }) == true)
+        XCTAssertEqual(sqlite3_exec(connection, "DROP TRIGGER fail_history", nil, nil, nil), SQLITE_OK)
+        do {
+            try await model.performPeerHistoryReceive { XCTFail("Unsaved history must block receive") }
+            XCTFail("Unsaved history must reject admission")
+        } catch {}
+        XCTAssertTrue(model.activeConversation?.messages.contains(where: { $0.content == "Unpersisted local turn" }) == true)
+        XCTAssertEqual(model.draft, "New composer draft")
+        let saved = try await store.load(id: id)
+        XCTAssertTrue(saved?.messages.isEmpty == true)
+    }
+
     private func fixture() async throws -> (AppModel, SQLiteConversationStore) {
         let store = try SQLiteConversationStore(url: root.appendingPathComponent("history.sqlite"))
         let model = AppModel(store: store,
@@ -148,6 +177,9 @@ final class PeerHistoryAppModelTests: XCTestCase {
         } catch {}
         let blocked = await model.newConversation()
         XCTAssertFalse(blocked, "Unreadable post-receive history must block mutations")
+        do { try await model.recoverPeerHistoryReceive(); XCTFail("Unreadable history must not recover") } catch {}
+        let stillBlocked = await model.newConversation()
+        XCTAssertFalse(stillBlocked, "Failed recovery must retain mutation exclusion")
         try await store.save(incoming)
         try await model.recoverPeerHistoryReceive()
         XCTAssertEqual(model.conversations.map(\.id), [incoming.id])
@@ -156,3 +188,12 @@ final class PeerHistoryAppModelTests: XCTestCase {
     }
 }
 private enum ReceiveFailure: Error { case lostAcknowledgement }
+
+private struct NoInferenceProvider: AIProvider {
+    let id = "no-inference"
+    let displayName = "No inference"
+    func stream(_ request: GenerationRequest) async throws -> AsyncThrowingStream<String, Error> {
+        XCTFail("The failed initial save must prevent provider execution")
+        throw ReceiveFailure.lostAcknowledgement
+    }
+}
