@@ -13,19 +13,79 @@ final class JarvisEVOAttachmentUITests: XCTestCase {
         XCTAssertTrue(app.textViews["composer.input"].waitForExistence(timeout: 10))
     }
 
+    override func tearDown() async throws {
+        captureEvidence("Picker diagnostic final state")
+        try await super.tearDown()
+    }
+
     func testPhotosCancellationKeepsDraftAndAllowsFilesAfterwards() {
         let input = app.textViews["composer.input"]
         input.tap(); input.typeText("Keep the selected idea")
         app.buttons["composer.attach"].tap()
         app.buttons["attachment.photos"].tap()
         let cancel = app.buttons["Cancel"].firstMatch
-        XCTAssertTrue(cancel.waitForExistence(timeout: 10)); cancel.tap()
+        dismissPhotosPicker()
         XCTAssertEqual(input.value as? String, "Keep the selected idea")
         app.buttons["composer.attach"].tap()
-        app.buttons["attachment.files"].tap()
-        XCTAssertTrue(cancel.waitForExistence(timeout: 10)); cancel.tap()
+        let files = app.buttons["attachment.files"]
+        XCTAssertTrue(files.waitForExistence(timeout: 10))
+        files.tap()
+        dismissNativePicker(cancel)
         XCTAssertEqual(input.value as? String, "Keep the selected idea")
         XCTAssertTrue(app.buttons["composer.send"].isEnabled)
+    }
+
+    private func dismissPhotosPicker(file: StaticString = #filePath, line: UInt = #line) {
+        // The failed runs first exposed PUPickerUnavailableView's Cancel,
+        // then replaced it with the remote Photos navigation bar.
+        let navigation = app.navigationBars["Photos"]
+        XCTAssertTrue(navigation.waitForExistence(timeout: 30), file: file, line: line)
+        let cancel = navigation.buttons["Cancel"]
+        XCTAssertTrue(cancel.waitForExistence(timeout: 10), file: file, line: line)
+        let frame = cancel.frame
+        let viewport = app.frame
+        guard app.state == .runningForeground, !app.alerts.firstMatch.exists,
+              !app.menus.firstMatch.exists,
+              [frame.minX, frame.minY, frame.width, frame.height].allSatisfy(\.isFinite),
+              frame.width >= 24, frame.height >= 24,
+              navigation.frame.contains(frame), viewport.contains(frame) else {
+            return XCTFail("Photos Cancel must have valid visible navigation geometry", file: file, line: line)
+        }
+        let geometry = XCTAttachment(string: "Photos Cancel hittable=\(cancel.isHittable), frame=\(frame), navigation=\(navigation.frame)")
+        geometry.name = "Photos Cancel resolved remote geometry"
+        geometry.lifetime = .keepAlways; add(geometry)
+        let point = CGPoint(x: frame.midX, y: frame.midY)
+        guard navigation.exists, cancel.exists,
+              cancel.frame.insetBy(dx: -1, dy: -1).contains(frame),
+              frame.insetBy(dx: -1, dy: -1).contains(cancel.frame) else {
+            return XCTFail("Photos Cancel changed after validation", file: file, line: line)
+        }
+        // Remote Photos elements can have valid visible frames while XCTest
+        // reports them unhittable, as with the existing real photo selection.
+        app.coordinate(withNormalizedOffset: .zero)
+            .withOffset(CGVector(dx: point.x - viewport.minX, dy: point.y - viewport.minY)).tap()
+        XCTAssertTrue(navigation.waitForNonExistence(timeout: 10), "Photos must dismiss after one Cancel tap", file: file, line: line)
+        XCTAssertFalse(app.buttons["Cancel"].firstMatch.exists, file: file, line: line)
+    }
+
+    private func dismissNativePicker(_ cancel: XCUIElement, file: StaticString = #filePath, line: UInt = #line) {
+        // Existence alone can expose a moving native picker during presentation.
+        // Exercise the intended control only once its public geometry settles.
+        var priorFrame: CGRect?
+        var stableSince: Date?
+        let settled = NSPredicate { _, _ in
+            guard cancel.exists, cancel.isHittable else { priorFrame = nil; stableSince = nil; return false }
+            let frame = cancel.frame
+            guard !frame.isEmpty else { return false }
+            if priorFrame != frame { priorFrame = frame; stableSince = Date(); return false }
+            return Date().timeIntervalSince(stableSince ?? Date()) >= 0.3
+        }
+        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: settled, object: cancel)], timeout: 10),
+                       .completed, "Native Cancel must be stable and hittable", file: file, line: line)
+        cancel.tap()
+        let gone = NSPredicate(format: "exists == false")
+        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: gone, object: cancel)], timeout: 10),
+                       .completed, "Native picker must dismiss before the next app action", file: file, line: line)
     }
 
     func testRealPhotoImportShowsRecognizedTextAndSafeSharingChoices() {
