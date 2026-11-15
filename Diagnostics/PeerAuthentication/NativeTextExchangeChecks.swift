@@ -63,8 +63,8 @@ enum NativeTextExchangeChecks {
         try await sender.save(source)
         let snapshot = try await sender.exportTextSnapshot(ids: [source.id])
         let staged = try await sender.stageTextRevisionSend(snapshot, senderCertificateSHA256: b.pin,
-            peerCertificateSHA256: a.pin, pairingGeneration: generation, receiverEpoch: mode == "wrong-epoch" ? UUID() : epoch)
-        if mode == "revoked-receiver" { try await receiver.revokeTextPeer(peerCertificateSHA256: b.pin, pairingGeneration: generation) }
+            peerCertificateSHA256: a.pin, pairingGeneration: generation, receiverEpoch: mode.hasSuffix("wrong-epoch") ? UUID() : epoch)
+        if mode == "revoked-receiver" || mode == "busy-revoked-receiver" { try await receiver.revokeTextPeer(peerCertificateSHA256: b.pin, pairingGeneration: generation) }
         if mode == "lost-receipt-retry" {
             // Simulate connection loss after the receiver's durable commit but
             // before its receipt reaches the sender. No transaction rollback.
@@ -93,7 +93,7 @@ enum NativeTextExchangeChecks {
         }
         let channels = try pair(a: a, b: b, generation: generation)
         defer { channels.close() }
-        let approved: Set<UUID> = mode == "unapproved-source" ? [UUID()] : [source.id]
+        let approved: Set<UUID> = mode.hasSuffix("unapproved-source") ? [UUID()] : [source.id]
         let outgoing = channels.outgoing, incoming = channels.incoming
         if mode == "cancel-sender-after-request" {
             // The real peer has received the request but deliberately sends no
@@ -121,6 +121,10 @@ enum NativeTextExchangeChecks {
                          receiverUnchanged: stored.isEmpty, senderDelivered: delivered)
         }
         async let received = outcome {
+            if mode.hasPrefix("busy-") {
+                try await PeerTextRevisionExchange.deferBusy(approvedSourceIDs: approved, expectedEpoch: epoch, store: receiver, over: incoming)
+                return .init(records: [])
+            }
             if mode.hasPrefix("false-busy") {
                 defer { incoming.cancel() }
                 let request = try UnverifiedTextRevisionPacket.decode(await rawReceive(incoming))
@@ -151,7 +155,7 @@ enum NativeTextExchangeChecks {
             return try await PeerTextRevisionExchange.receive(approvedSourceIDs: approved, expectedEpoch: epoch, store: receiver, over: incoming)
         }
         async let sent = outcome {
-            if mode == "wrong-request-digest" {
+            if mode.hasSuffix("wrong-request-digest") {
                 defer { outgoing.cancel() }
                 let request = try UnverifiedTextRevisionPacket.request(identity: staged.identity, payload: staged.payload, declaredSHA256: Data(repeating: 0, count: 32))
                 try await rawSend(request.data, channel: outgoing)
@@ -188,7 +192,7 @@ enum NativeTextExchangeChecks {
         let a = try FixtureIdentity(root: root, name: "a", password: password)
         let b = try FixtureIdentity(root: root, name: "b", password: password)
         var rows: [NativeTextExchangeResult] = []
-        for mode in ["approved-request-receipt", "unapproved-source", "wrong-epoch", "revoked-receiver", "wrong-request-digest", "false-receipt-digest", "false-receipt-transfer", "lost-receipt-retry", "cancel-sender-after-request", "false-busy-digest", "false-busy-transfer", "false-busy-epoch", "false-busy-payload"] {
+        for mode in ["approved-request-receipt", "unapproved-source", "wrong-epoch", "revoked-receiver", "wrong-request-digest", "false-receipt-digest", "false-receipt-transfer", "lost-receipt-retry", "cancel-sender-after-request", "false-busy-digest", "false-busy-transfer", "false-busy-epoch", "false-busy-payload", "busy-unapproved-source", "busy-wrong-epoch", "busy-revoked-receiver", "busy-wrong-request-digest"] {
             let result = try await check(mode, a: a, b: b, root: root); rows.append(result)
             let encoder = JSONEncoder(); encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
             try encoder.encode(rows).write(to: output, options: .atomic)
