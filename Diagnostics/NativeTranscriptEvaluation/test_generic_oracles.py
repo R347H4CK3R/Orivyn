@@ -4,7 +4,7 @@ from unittest.mock import patch
 source=pathlib.Path(__file__).with_name('evaluate_generic.py').read_text()
 ns={'uuid':uuid}
 for node in ast.parse(source).body:
- if isinstance(node,ast.FunctionDef) and node.name in ('requested_read','exact_no_match'):
+ if isinstance(node,ast.FunctionDef) and node.name in ('requested_read','exact_no_match','exact_search_title'):
   exec(compile(ast.Module(body=[node],type_ignores=[]),'generic-oracles','exec'),ns)
 class Oracles(unittest.TestCase):
  def test_engine_request_json_schema(self):
@@ -62,6 +62,10 @@ class Oracles(unittest.TestCase):
    dict(base,messageIndex=3),dict(base,offset=1),dict(base,messageIndex=True),dict(base,extra=1)]
   for value in cases:
    with self.subTest(value=value):self.assertFalse(ns['requested_read'](value,cid,2))
+ def test_search_title_format_rejects_echo_and_contradiction(self):
+  self.assertTrue(ns['exact_search_title']('Larch archive','Larch archive'))
+  for answer in ['Search saved conversations for Larch archive.','No matching Larch archive was found.','Larch archive; also read all messages.','']:
+   self.assertFalse(ns['exact_search_title'](answer,'Larch archive'))
  def test_no_match_cannot_pass_by_negation_substring(self):
   self.assertTrue(ns['exact_no_match']('No matching conversation was found.'))
   for answer in ['No matching conversation was found. However, here is a match.','There is none, but I found Sequoia.','No match: ID12345','']:
