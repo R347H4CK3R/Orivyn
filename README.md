@@ -2,17 +2,17 @@
 
 A native, independent iPhone assistant for iOS 26+. **Orivyn is the app; Jarvis is its assistant.** The target release is **1.0.0**, currently in development, not yet release-ready. Original branding, local-first inference and no paid tiers for core offline use. Not an OpenAI product or a reproduction of proprietary GPT services.
 
-## Install the development preview
+## Install a development preview
 
-- [Orivyn 0.1.1 build 8 release and installation notes](https://github.com/R347H4CK3R/Orivyn/releases/tag/orivyn-v0.1.1-build8)
+- [Published Orivyn previews and installation notes](https://github.com/R347H4CK3R/Orivyn/releases)
 - [Shared Strata source](https://raw.githubusercontent.com/R347H4CK3R/OmniForge/main/unified-source.json)
 - [Orivyn-only source](https://raw.githubusercontent.com/R347H4CK3R/Orivyn-Distribution/main/source.json)
 
-Build 8 is an explicitly incomplete prerelease, not finished 1.0.0. SideStore must sign the unsigned ARM64 package for your account/device. Preserve existing app data and signing identity when updating. Models download separately; optional online providers may charge. This source repository is public.
+These are explicitly incomplete prereleases, not finished 1.0.0. SideStore must sign the unsigned ARM64 package for your account/device. Preserve existing app data and signing identity when updating. Models download separately; optional online providers may charge. This source repository is public. Use each release's exact IPA size, checksum and verification notes; compilation or package validation does not establish physical-device acceptance.
 
-Published IPA: **0.1.1 build 8**, iOS 26+, **37,072,679 bytes**, SHA-256 `04c2bd77eb6f807eb17c24bce6ff0a8cf88cae5d74e0e43955cba9230d01723d`. Source: `a6c696a89a2e5a6224e220b6772b62614d30b4df`. Independent download inspection verified ARM64, minimum OS, bundled resources/notices and fixture exclusions. Exact-package native unit/UI tests were not run; package verification is not device/runtime acceptance. See [publication evidence and limitations](docs/BUILD8_PUBLICATION.md).
+The current source includes the build 14 candidate's clearer reviewed-task entry point and experimental-task warning. The primary reviewed flow requires explicit approval of its search/message scope before Run, and rejects answers until those approved reads finish. Generic tasks remain experimental and can answer prematurely; they are not repaired by the UI change. [Candidate evidence and remaining limits](docs/BUILD14_CANDIDATE.md). A candidate is not published until its own package gate and artifact review pass.
 
-General unreviewed autonomy, broad vision reliability and live automatic sync remain unfinished. Known UI issues and physical iPhone/voice/signing-refresh/thermal acceptance remain unresolved. Later peer-exchange and dependency integrations are not included in this IPA.
+Historical build 8 package evidence remains in [its publication record](docs/BUILD8_PUBLICATION.md). General unreviewed autonomy, broad vision reliability and live automatic sync remain unfinished. Physical iPhone, voice, signing-refresh, thermal and HDMI acceptance remain separate.
 
 ## Verified baseline and active work
 
