@@ -22,6 +22,16 @@ CASES=[
 ]
 """
 extra += """
+# New mixed-category inputs authored before the counting instruction is evaluated.
+SQUARECOUNT='How many squares are visible? Return only the number.'
+CASES += [
+ ('new-count01','count',COUNT,['2','two','2 circles','two circles'],[('circle',96,96),('circle',288,288),('square',192,96),('square',288,96),('square',96,288),('square',192,288)]),
+ ('new-count02','count',COUNT,['3','three','3 circles','three circles'],[('circle',96,96),('circle',192,192),('circle',288,288),('square',288,96),('square',96,288)]),
+ ('new-count03','count',SQUARECOUNT,['2','two','2 squares','two squares'],[('square',96,96),('square',288,288),('circle',192,96),('circle',288,96),('circle',96,288),('circle',192,288)]),
+ ('new-count04','count',SQUARECOUNT,['0','zero','none','no squares','0 squares','zero squares'],[('circle',120,120),('circle',264,120),('circle',192,264)]),
+ ('new-count05','count',COUNT,['5','five','5 circles','five circles'],[('circle',96,96),('circle',192,96),('circle',288,96),('circle',96,288),('circle',192,288),('square',288,288)]),
+ ('new-count06','count',SQUARECOUNT,['4','four','4 squares','four squares'],[('square',96,96),('square',288,96),('square',96,288),('square',288,288),('circle',192,192)]),
+]
 # Absolute positions retain original image-center semantics.
 ABSX='Is the circle in the left or right half of the image? Return only left or right.'
 ABSY='Is the circle in the top or bottom half of the image? Return only top or bottom.'
