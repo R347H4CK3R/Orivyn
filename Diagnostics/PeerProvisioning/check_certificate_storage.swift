@@ -1,71 +1,85 @@
 import Foundation
 import Security
 
-/// Disposable public certificates only. Never enumerates the user's Keychain.
+/// Public certificate fixtures only; no Keychain enumeration or private-key access.
 @main
 struct CertificateStorageProbe {
     struct Result: Codable {
         let mode: String
         let addStatus: OSStatus
-        let returnedLabelMatches: Bool
+        let labelUpdateStatus: OSStatus?
         let lookupWithNonSync: OSStatus
         let lookupWithoutNonSync: OSStatus
         let exactDERMatches: Bool
         let cleanupStatus: OSStatus
     }
-    enum Failure: Error { case invalidArguments, invalidFixture, DERInsertionRegression }
-    static func check(der: Data, useDER: Bool) throws -> Result {
+    enum Failure: Error { case invalidArguments, invalidFixture, unexpectedReturnType, certificateLookupRegression }
+    static func stage(_ value: String) {
+        FileHandle.standardError.write(Data(("STORAGE_STAGE " + value + "\n").utf8))
+    }
+    static func check(der: Data, updateLabel: Bool) throws -> Result {
+        let mode = updateLabel ? "reference-with-explicit-label-update" : "reference-add-only"
+        stage(mode + " create-certificate begin")
         guard let certificate = SecCertificateCreateWithData(nil, der as CFData) else { throw Failure.invalidFixture }
+        stage(mode + " create-certificate complete")
         let label = "orivyn.storage.probe." + UUID().uuidString
-        var add: [CFString: Any] = [
-            kSecClass: kSecClassCertificate, kSecAttrLabel: label,
+        let add: [CFString: Any] = [
+            kSecClass: kSecClassCertificate, kSecValueRef: certificate, kSecAttrLabel: label,
             kSecAttrAccessible: kSecAttrAccessibleWhenUnlockedThisDeviceOnly,
-            kSecAttrSynchronizable: false, kSecReturnAttributes: true, kSecReturnRef: true
+            kSecAttrSynchronizable: false
         ]
-        if useDER { add[kSecValueData] = der } else { add[kSecValueRef] = certificate }
-        var added: CFTypeRef?
-        let addStatus = SecItemAdd(add as CFDictionary, &added)
-        let attributes = added as? [CFString: Any]
-        let labelMatches = attributes?[kSecAttrLabel] as? String == label
+        stage(mode + " add begin")
+        let addStatus = SecItemAdd(add as CFDictionary, nil)
+        stage(mode + " add returned status=" + String(addStatus))
+        let exactItem: [CFString: Any] = [kSecClass: kSecClassCertificate, kSecValueRef: certificate]
+        var labelStatus: OSStatus?
+        if addStatus == errSecSuccess && updateLabel {
+            stage(mode + " exact-label-update begin")
+            labelStatus = SecItemUpdate(exactItem as CFDictionary, [kSecAttrLabel: label] as CFDictionary)
+            stage(mode + " exact-label-update returned status=" + String(labelStatus!))
+        }
         var query: [CFString: Any] = [
             kSecClass: kSecClassCertificate, kSecAttrLabel: label,
-            kSecAttrSynchronizable: false, kSecReturnRef: true, kSecMatchLimit: kSecMatchLimitOne
+            kSecAttrSynchronizable: false, kSecReturnData: true, kSecMatchLimit: kSecMatchLimitOne
         ]
         var found: CFTypeRef?
+        stage(mode + " lookup-nonsync begin")
         let withNonSync = SecItemCopyMatching(query as CFDictionary, &found)
+        stage(mode + " lookup-nonsync returned status=" + String(withNonSync))
         let exact: Bool
-        if let found, CFGetTypeID(found) == SecCertificateGetTypeID() {
-            exact = SecCertificateCopyData(found as! SecCertificate) as Data == der
+        if let found {
+            stage(mode + " lookup result-type=" + String(CFGetTypeID(found)))
+            guard CFGetTypeID(found) == CFDataGetTypeID(), let bytes = found as? Data else { throw Failure.unexpectedReturnType }
+            exact = bytes == der
         } else { exact = false }
         query.removeValue(forKey: kSecAttrSynchronizable)
         var without: CFTypeRef?
+        stage(mode + " lookup-default begin")
         let withoutNonSync = SecItemCopyMatching(query as CFDictionary, &without)
+        stage(mode + " lookup-default returned status=" + String(withoutNonSync))
         var cleanup = errSecItemNotFound
         if addStatus == errSecSuccess {
-            // The reference came from this exact insertion; do not broaden deletion.
-            if let stored = attributes?[kSecValueRef] {
-                cleanup = SecItemDelete([
-                    kSecClass: kSecClassCertificate, kSecMatchItemList: [stored]
-                ] as CFDictionary)
-            } else {
-                cleanup = SecItemDelete([
-                    kSecClass: kSecClassCertificate, kSecValueRef: certificate
-                ] as CFDictionary)
-            }
+            stage(mode + " cleanup-exact-certificate begin")
+            cleanup = SecItemDelete(exactItem as CFDictionary)
+            stage(mode + " cleanup returned status=" + String(cleanup))
         }
-        return Result(mode: useDER ? "DER" : "transient-reference", addStatus: addStatus,
-            returnedLabelMatches: labelMatches, lookupWithNonSync: withNonSync,
-            lookupWithoutNonSync: withoutNonSync, exactDERMatches: exact, cleanupStatus: cleanup)
+        return Result(mode: mode, addStatus: addStatus, labelUpdateStatus: labelStatus,
+            lookupWithNonSync: withNonSync, lookupWithoutNonSync: withoutNonSync,
+            exactDERMatches: exact, cleanupStatus: cleanup)
     }
 
     static func main() throws {
-        guard CommandLine.arguments.count == 3 else { throw Failure.invalidArguments }
-        let reference = try check(der: Data(contentsOf: URL(fileURLWithPath: CommandLine.arguments[1])), useDER: false)
-        let DER = try check(der: Data(contentsOf: URL(fileURLWithPath: CommandLine.arguments[2])), useDER: true)
+        guard CommandLine.arguments.count == 4 else { throw Failure.invalidArguments }
+        stage("main begin")
+        let baseline = try check(der: Data(contentsOf: URL(fileURLWithPath: CommandLine.arguments[1])), updateLabel: false)
+        let candidate = try check(der: Data(contentsOf: URL(fileURLWithPath: CommandLine.arguments[2])), updateLabel: true)
         let encoder = JSONEncoder(); encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-        print(String(decoding: try encoder.encode([reference, DER]), as: UTF8.self))
-        guard DER.addStatus == errSecSuccess, DER.returnedLabelMatches,
-              DER.lookupWithNonSync == errSecSuccess, DER.exactDERMatches,
-              DER.cleanupStatus == errSecSuccess else { throw Failure.DERInsertionRegression }
+        var report = try encoder.encode([baseline, candidate]); report.append(10)
+        FileHandle.standardOutput.write(report)
+        guard candidate.addStatus == errSecSuccess, candidate.labelUpdateStatus == errSecSuccess,
+              candidate.lookupWithNonSync == errSecSuccess, candidate.exactDERMatches,
+              candidate.cleanupStatus == errSecSuccess else { throw Failure.certificateLookupRegression }
+        try Data("PASS".utf8).write(to: URL(fileURLWithPath: CommandLine.arguments[3]), options: .atomic)
+        stage("main passed")
     }
 }

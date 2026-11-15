@@ -1,0 +1,27 @@
+{
+  "failed_source_commit": "76e0732d2941f82381480960dc95841fdd6581a1",
+  "run_id": 43685006410,
+  "job_id": 132723538182,
+  "artifact_id": 14150193092,
+  "artifact_zip_sha256": "b998a7546bf6047c996dd5e8eeb0898baa09cf81fd8384ad83fb17b7c609ab7e",
+  "result": "probe exited139(SIGSEGV); buffered log empty; four native XCTest cases did not execute",
+  "cause": "Exact crashing operation not established; empty piped stdout does not identify failure stage.",
+  "source_findings": [
+    "Pinned Apple legacy SecItemAdd_osx reference branch calls SecCertificateAddToKeychain without applying attrList, explaining original label lookup failure.",
+    "Reference add results may be array-shaped; generic dictionary assumption removed.",
+    "Direct DER insertion candidate removed. Use documented certificate reference insertion and exact-reference label update."
+  ],
+  "repair": [
+    "Unbuffered stderr stage markers before and after each Security call.",
+    "Data-only readback with CFData type validation; no dictionary/ref output casts.",
+    "Compile probe with debug symbols, run under LLDB with all-thread backtrace on crash; require PASS file written after assertions.",
+    "Retain exact DER/label/cleanup acceptance, plus target label update with live decoy certificate regression in four-case suite."
+  ],
+  "sources": [
+    "https://developer.apple.com/documentation/security/storing-a-certificate-in-the-keychain",
+    "https://developer.apple.com/documentation/security/secitemupdate(_:_:)",
+    "https://github.com/apple-oss-distributions/Security/blob/db15acbe6a7f257a859ad9a3bb86097bfe0679d9/OSX/libsecurity_keychain/lib/SecItem.cpp",
+    "https://github.com/apple-oss-distributions/Security/blob/db15acbe6a7f257a859ad9a3bb86097bfe0679d9/keychain/SecureObjectSync/SOSAccountFullPeerInfo.m"
+  ],
+  "acceptance": "Pending single combined gate owned by sync_app_integration; no standalone native job."
+}

@@ -141,17 +141,31 @@ enum NativeAutomaticSyncChecks {
         try finalEncoder.encode(results).write(to: output, options: .atomic)
         guard results.allSatisfy(\.passed) else { throw GateError.failed("Automatic sync adapter failed") }
     }
-    private enum PortEvent: Sendable { case ready(NWEndpoint.Port), cancelled }
+    private enum PortEvent: Sendable { case ready(NWEndpoint.Port), cancelled, failed(String) }
     private static func unusedPort() async throws -> NWEndpoint.Port {
         let listener = try NWListener(using: .tcp, on: .any)
         let events = AsyncStream<PortEvent>.makeStream()
-        defer { listener.cancel(); events.continuation.finish() }
+        let deadline = Task {
+            do { try await Task.sleep(nanoseconds: 5_000_000_000) }
+            catch { return }
+            events.continuation.yield(.failed("port fixture did not become ready/cancel within five seconds"))
+        }
+        defer {
+            deadline.cancel()
+            listener.stateUpdateHandler = nil
+            listener.newConnectionHandler = nil
+            listener.cancel()
+            events.continuation.finish()
+        }
+        // This fixture reserves no service and accepts no application traffic.
+        // Configure its connection handler before starting the listener.
+        listener.newConnectionHandler = { $0.cancel() }
         listener.stateUpdateHandler = { state in
             switch state {
             case .ready:
                 if let port = listener.port { events.continuation.yield(.ready(port)) }
             case .cancelled: events.continuation.yield(.cancelled)
-            case .failed: events.continuation.finish()
+            case .failed(let error): events.continuation.yield(.failed(String(describing: error)))
             default: break
             }
         }
@@ -163,9 +177,10 @@ enum NativeAutomaticSyncChecks {
             case .cancelled:
                 guard let selected else { throw GateError.failed("fixture port absent") }
                 return selected
+            case .failed(let detail): throw GateError.failed("fixture listener failed: " + detail)
             }
         }
-        throw GateError.failed("fixture listener failed")
+        throw GateError.failed("fixture listener event stream ended without readiness")
     }
 
     /// A TCP peer that never starts TLS must consume a failure, not receive the

@@ -20,9 +20,30 @@ jobs:
           test -n "$XCODE"
           sudo xcode-select -s "$XCODE/Contents/Developer"
       - name: Compile actual device and simulator app with sync enabled
+        id: app_compile
         run: bash scripts/ci_peer_app.sh
       - name: Run twenty-two signed simulator history and session checks
+        id: app_checks
         run: bash scripts/ci_combined_peer_history.sh
+      - name: Preserve app failure diagnostics immediately
+        if: ${{ failure() && (steps.app_checks.outcome == 'failure' || steps.app_compile.outcome == 'failure') }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: combined-sync-app-early-failure-${{ github.sha }}
+          path: |
+            artifacts/peer-app/source-commit.txt
+            artifacts/peer-app/build-iOS.log
+            artifacts/peer-app/build-iOS-Simulator.log
+            artifacts/focused/source-commit.txt
+            artifacts/focused/signed-project-spec.json
+            artifacts/focused/signed-build.log
+            artifacts/focused/native-tests.log
+            artifacts/focused/test-summary.json
+            artifacts/focused/host-entitlements.plist
+            artifacts/focused/signature-verification.log
+            artifacts/focused/signature-details.log
+          retention-days: 3
+          if-no-files-found: warn
       - name: Verify authenticated exchange including idle and busy scheduling
         if: always()
         run: |

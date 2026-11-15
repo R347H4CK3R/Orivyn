@@ -12,7 +12,20 @@ if ! command -v xcodegen >/dev/null; then brew install xcodegen; fi
 bash scripts/bootstrap_llama.sh
 # XcodeGen includes this real fixture resource even for focused unit tests.
 python3 scripts/download_test_model.py > "$ARTIFACTS/test-model-path.txt"
-python3 scripts/generate_project.py --peer
+# Keep entitlements on the iOS application host only. A command-line override
+# propagates into Swift package object targets and resolves against their roots.
+python3 - "$ARTIFACTS" <<'PY'
+import json,pathlib,sys
+spec=json.loads(pathlib.Path('project-peer.json').read_text())
+host=spec['targets']['JarvisEVO'].setdefault('settings',{}).setdefault('base',{})
+host['CODE_SIGN_ENTITLEMENTS']=str(pathlib.Path('Diagnostics/PeerProvisioning/SimulatorTestHost.entitlements').resolve())
+assert 'CODE_SIGN_ENTITLEMENTS' not in spec.get('settings',{}).get('base',{})
+encoded=json.dumps(spec,indent=2)+'\n'
+pathlib.Path('project-peer-ci.json').write_text(encoded)
+pathlib.Path(sys.argv[1],'signed-project-spec.json').write_text(encoded)
+PY
+xcodegen generate --spec project-peer-ci.json
+rm project-peer-ci.json
 xcrun simctl list devices available -j > "$ARTIFACTS/simulators.json"
 SIMULATOR_ID=$(python3 - <<'PY'
 import json,os
@@ -37,7 +50,7 @@ test_args=(-project JarvisEVO.xcodeproj -scheme JarvisEVO
  -only-testing:JarvisEVOTests/PeerSyncSessionPairingTests
  -only-testing:JarvisEVOTests/PeerSyncSessionEndToEndTests
  CODE_SIGNING_ALLOWED=YES CODE_SIGNING_REQUIRED=YES CODE_SIGN_IDENTITY=-
- CODE_SIGN_STYLE=Manual CODE_SIGN_ENTITLEMENTS=Diagnostics/PeerProvisioning/SimulatorTestHost.entitlements
+ CODE_SIGN_STYLE=Manual
  ORIVYN_NATIVE_FEATURES=ORIVYN_PEER_TLS_SPIKE
  -derivedDataPath "$RUNNER_TEMP/orivyn-peer-app-build")
 xcodebuild "${test_args[@]}" build-for-testing 2>&1 | tee "$ARTIFACTS/signed-build.log"

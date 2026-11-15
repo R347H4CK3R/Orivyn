@@ -60,23 +60,30 @@ final class PeerSyncSessionEndToEndTests: XCTestCase {
         throw TestFailure.timeout
     }
 
-    private enum TestFailure: Error { case timeout, portUnavailable }
-    private enum PortEvent: Sendable { case ready(NWEndpoint.Port), cancelled, failed }
+    private enum TestFailure: Error { case timeout, portUnavailable(String) }
+    private enum PortEvent: Sendable { case ready(NWEndpoint.Port), cancelled, failed(String) }
     private func unusedPort() async throws -> UInt16 {
         let listener = try NWListener(using: .tcp, on: .any)
         let events = AsyncStream<PortEvent>.makeStream()
         let deadline = Task {
             do { try await Task.sleep(nanoseconds: 5_000_000_000) }
             catch { return }
-            events.continuation.yield(.failed)
+            events.continuation.yield(.failed("port fixture did not become ready/cancel within five seconds"))
         }
-        defer { deadline.cancel(); listener.cancel(); events.continuation.finish() }
+        defer {
+            deadline.cancel()
+            listener.stateUpdateHandler = nil
+            listener.newConnectionHandler = nil
+            listener.cancel()
+            events.continuation.finish()
+        }
+        listener.newConnectionHandler = { $0.cancel() }
         listener.stateUpdateHandler = { state in
             switch state {
             case .ready:
                 if let port = listener.port { events.continuation.yield(.ready(port)) }
             case .cancelled: events.continuation.yield(.cancelled)
-            case .failed: events.continuation.yield(.failed)
+            case .failed(let error): events.continuation.yield(.failed(String(describing: error)))
             default: break
             }
         }
@@ -86,12 +93,12 @@ final class PeerSyncSessionEndToEndTests: XCTestCase {
             switch event {
             case .ready(let port): selected = port.rawValue; listener.cancel()
             case .cancelled:
-                guard let selected else { throw TestFailure.portUnavailable }
+                guard let selected else { throw TestFailure.portUnavailable("listener canceled without an assigned port") }
                 return selected
-            case .failed: throw TestFailure.portUnavailable
+            case .failed(let detail): throw TestFailure.portUnavailable(detail)
             }
         }
-        throw TestFailure.portUnavailable
+        throw TestFailure.portUnavailable("listener event stream ended without readiness")
     }
 
     func testReviewedSessionsAutomaticallyDeferBusyDeliverEditsAndHonorRevocation() async throws {
