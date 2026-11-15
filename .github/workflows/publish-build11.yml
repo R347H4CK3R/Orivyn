@@ -1,0 +1,102 @@
+name: Publish verified Orivyn build 11 preview
+on:
+  push:
+    branches: [codex/publish-build11-20261115]
+    paths: ['.github/workflows/publish-build11.yml']
+permissions:
+  contents: write
+  actions: read
+jobs:
+  publish:
+    if: github.event.repository.private == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 3f96a41b363e3b663f69497fef4bd698fb1fa514
+          persist-credentials: false
+      - name: Require verified package and identical tested application source
+        run: |
+          gh api repos/$GH_REPO/actions/runs/43723555076 > package-run.json
+          gh api repos/$GH_REPO/actions/runs/43723555076/jobs > package-jobs.json
+          gh api repos/$GH_REPO/actions/runs/43722288003 > app-run.json
+          gh api repos/$GH_REPO/actions/runs/43722288003/jobs > app-jobs.json
+          gh api repos/$GH_REPO/compare/5c5ca7fbfe812386fb6afb8bc20778c374e0f525...3f96a41b363e3b663f69497fef4bd698fb1fa514 > lineage.json
+          python3 - <<'PY'
+          import json
+          r=json.load(open('package-run.json'))
+          assert r['head_sha']=='3f96a41b363e3b663f69497fef4bd698fb1fa514' and r['conclusion']=='success'
+          jobs=json.load(open('package-jobs.json'))['jobs']
+          assert len(jobs)==1 and jobs[0]['name']=='candidate' and jobs[0]['conclusion']=='success'
+          a=json.load(open('app-run.json'))
+          assert a['head_sha']=='5c5ca7fbfe812386fb6afb8bc20778c374e0f525' and a['conclusion']=='success'
+          jobs=json.load(open('app-jobs.json'))['jobs']
+          assert len(jobs)==1 and jobs[0]['conclusion']=='success'
+          steps=[s for s in jobs[0]['steps'] if s['name']=='Run macOS components and compile iOS tests without boot']
+          assert len(steps)==1 and steps[0]['conclusion']=='success'
+          diff=json.load(open('lineage.json'))
+          allowed={'.github/workflows/build11-candidate.yml','project.yml','scripts/tests/test_build11_lineage.py','scripts/verify_build11_runtime_reuse.py'}
+          assert diff['status']=='ahead' and diff['behind_by']==0 and diff['ahead_by']==1
+          assert {f['filename'] for f in diff['files']}==allowed
+          PY
+      - name: Retrieve and verify exact package
+        run: |
+          gh run download 43723555076 --name Orivyn-build11-package-evidence --dir candidate
+          python3 - <<'PY'
+          import pathlib,subprocess,json
+          paths=list(pathlib.Path('candidate').rglob('*.ipa'))
+          assert len(paths)==1,paths
+          subprocess.run(['python3','scripts/verify_ipa.py',str(paths[0]),'--output','verified-ipa.json'],check=True)
+          v=json.load(open('verified-ipa.json'))
+          assert v['build']=='11' and v['version']=='0.1.1' and v['bundle_identifier']=='app.jarvisevo.ios'
+          assert v['sha256']=='499a0a1a2c335fab62b23a0b33be5ef1407278655de5f65bf43d5c22917ab7e9' and v['size']==37156968
+          expected=json.load(open(paths[0].parent/'ipa-verification.json'))
+          assert v==expected
+          scope=json.load(open(paths[0].parent/'SCOPE.json'))
+          assert scope['source_commit']=='3f96a41b363e3b663f69497fef4bd698fb1fa514'
+          assert scope['device_build']=='passed' and scope['ipa_structure_check']=='passed'
+          assert scope['native_features']==['ORIVYN_NATIVE_VISION','ORIVYN_NATIVE_TOOLS','ORIVYN_NATIVE_TRANSCRIPT']
+          assert not (paths[0].parent/'source-status-before.txt').read_text().strip()
+          assert (paths[0].parent/'SHA256SUMS').read_text().strip()==v['sha256']+'  '+paths[0].name
+          pathlib.Path('ipa-path.txt').write_text(str(paths[0]))
+          PY
+      - name: Publish labeled unfinished preview
+        run: |
+          set -euo pipefail
+          IPA="$(cat ipa-path.txt)"
+          sha256sum "$IPA" | sed 's|  .*/|  |' > SHA256SUMS
+          cat > release-notes.md <<'NOTES'
+          Orivyn 0.1.1 build 11 — unfinished unsigned iOS 26+ preview.
+
+          Adds a separate confirmation before replacing conversation history from a backup. Preserve-local remains the default. Canceling a pending replacement leaves stored history unchanged; stale picker callbacks after navigation are rejected, and a confirmed replacement is consumed once. Existing native tools, vision and transcript features are retained.
+
+          Verification of integrated source 5c5ca7fbfe812386fb6afb8bc20778c374e0f525: 152 macOS host XCTest cases passed with no failures or skips, including synthetic local-file fixtures exercising the production confirmation state → coordinated file reader → SQLite chain (not AppModel or Files UI) for replacement, cancellation/preservation and corrupt input. iOS build-for-testing passed, which compiles but does not execute the iOS tests. Portable Foundation and source-contract checks passed separately. A prior controlled simulator comparison verified Files presentation and cancel/navigation only, not selected-file replacement. Actual selected-file confirmation UI, external file-provider access grants and physical-iPhone behavior remain unverified.
+
+          Package source 3f96a41b363e3b663f69497fef4bd698fb1fa514 changes only the build number and packaging tooling from that tested integration. The prior build 10 simulator/native-route evidence belongs to its older source and was not rerun for this preview; it is not full verification of build 11.
+
+          Known limits: generic autonomous requests can still respond before completing requested reads. Vision remains experimental, with a known mixed-shape counting failure in the earlier frozen evaluation. Automatic live sync remains disabled. Models download separately; no weights are bundled. Optional remote providers may charge. Process termination can leave a temporary model snapshot using additional storage. Device installation/signing refresh, voice and memory/thermal performance are unverified. This is not completed 1.0.0 and is not an OpenAI product.
+
+          Integrated host and iOS compile evidence: https://github.com/R347H4CK3R/Orivyn/actions/runs/43722288003
+          Package gate: https://github.com/R347H4CK3R/Orivyn/actions/runs/43723555076
+
+          The pinned combined runtime rebuilt successfully, portable package/graph checks passed, and the Release device build and independent unsigned IPA inspection passed.
+
+          File: Orivyn-0.1.1-build11-unsigned.ipa
+          Size: 37,156,968 bytes
+          SHA-256: 499a0a1a2c335fab62b23a0b33be5ef1407278655de5f65bf43d5c22917ab7e9
+
+          SideStore or another compatible installer must sign this unsigned IPA. Preserve existing app data and signing identity when updating. Required third-party notices and model license terms remain bundled.
+          NOTES
+          # Create an exact lightweight tag atomically; fail if another tag already exists.
+          gh api --method POST repos/$GH_REPO/git/refs -f ref=refs/tags/orivyn-v0.1.1-build11 -f sha=3f96a41b363e3b663f69497fef4bd698fb1fa514 > created-tag.json
+          python3 - <<'PYTAG'
+          import json
+          tag=json.load(open('created-tag.json'))
+          assert tag['ref']=='refs/tags/orivyn-v0.1.1-build11'
+          assert tag['object']['type']=='commit' and tag['object']['sha']=='3f96a41b363e3b663f69497fef4bd698fb1fa514'
+          PYTAG
+          gh release create orivyn-v0.1.1-build11 --verify-tag "$IPA" SHA256SUMS verified-ipa.json --target 3f96a41b363e3b663f69497fef4bd698fb1fa514 --title "Orivyn 0.1.1 build 11 — unfinished preview" --notes-file release-notes.md --prerelease
