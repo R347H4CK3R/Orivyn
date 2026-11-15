@@ -3,6 +3,23 @@ import Foundation
 @testable import JarvisEVO
 
 final class NativeToolTranscriptTests: XCTestCase {
+    func testUnscopedFactoryPreservesEngineAdmissionWithoutAuthority() throws {
+        let request=GenerationRequest.unscopedNativeTranscript(stateJSON:"{}")
+        XCTAssertEqual(request.maxTokens,384)
+        XCTAssertEqual(request.temperature,0)
+        XCTAssertTrue(request.messages.contains { $0.role == .user && !$0.content.trimmingCharacters(in:.whitespacesAndNewlines).isEmpty })
+        XCTAssertTrue(request.systemPrompt.utf8.count + request.messages.reduce(0) { $0 + $1.content.utf8.count } <= 1_000_000)
+        try request.validateInternalModes()
+        let input=try XCTUnwrap(request.nativeTranscriptInput)
+        XCTAssertTrue(input.unscoped)
+        XCTAssertFalse(input.reviewed)
+        XCTAssertEqual(input.query,"")
+        XCTAssertEqual(input.messageIndex,0)
+        XCTAssertEqual(input.stateJSON,"{}")
+        let transcript=try build(snapshot())
+        XCTAssertNil(transcript.readScope)
+        XCTAssertNil(try transcript.responseGrammar())
+    }
     let cid = "abcdefab-1234-1234-1234-123456789abc"
     func snapshot(history: [LocalAgentSnapshot.Event] = [], goal: String = "Find café 雪 and read its second message.", status: String = "ready", pending: LocalAgentSnapshot.Intent? = nil, readPlan: LocalReadPlan? = nil) -> LocalAgentSnapshot {
         LocalAgentSnapshot(readPlan:readPlan, approvalRevision:nil, history:history,

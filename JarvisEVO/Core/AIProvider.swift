@@ -35,6 +35,13 @@ struct GenerationRequest: Sendable {
              systemPrompt:"",maxTokens:384,temperature:0,
              nativeTranscriptInput:.init(stateJSON:stateJSON,query:query,messageIndex:messageIndex))
     }
+    /// Diagnostic only. Preserve the existing engine admission placeholder; the
+    /// pinned renderer derives all real prompt content from stateJSON.
+    static func unscopedNativeTranscript(stateJSON:String) -> Self {
+        var request=Self.nativeTranscript(stateJSON:stateJSON,query:"",messageIndex:0)
+        request.nativeTranscriptInput = .init(stateJSON:stateJSON,query:"",messageIndex:0,unscoped:true)
+        return request
+    }
     static func readPlanProposal(goal: String, kind: String) throws -> Self {
         Self(messages:[ChatMessage(role:.user,content:try LocalReadPlan.proposalPrompt(goal:goal,kind:kind))],systemPrompt:"Return only a proposed JSON read plan for user review. Do not execute anything.",maxTokens:384,temperature:0,localReadPlanKind:kind,conciseQwen3:true)
     }
