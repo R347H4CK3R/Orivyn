@@ -59,9 +59,6 @@ import pathlib,runpy,shutil,sys,hashlib,json
 gate=pathlib.Path(sys.argv[1]);evidence=pathlib.Path(sys.argv[2])
 for source in runpy.run_path('scripts/run_persistence_tests.py')['SOURCES']:
     shutil.copy2(source,gate/'Sources/NativePeerGate'/pathlib.Path(source).name)
-module=gate/'Sources/SQLite3';module.mkdir()
-(module/'shim.h').write_text('#include <sqlite3.h>\n')
-(module/'module.modulemap').write_text('module SQLite3 [system] { header "shim.h" link "sqlite3" export * }\n')
 manifest={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in (gate/'Sources/NativePeerGate').glob('*.swift')}
 (evidence/'source-manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
 PY
