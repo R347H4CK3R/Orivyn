@@ -177,6 +177,16 @@ struct RootView: View {
             model.setHeavyWorkForeground(scenePhase == .active)
             model.setHeavyWorkThermalState(ProcessInfo.processInfo.thermalState)
         }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.protectedDataWillBecomeUnavailableNotification)) { _ in
+            #if ORIVYN_PEER_TLS_SPIKE && canImport(Network) && canImport(Security) && canImport(CryptoKit) && canImport(X509) && os(iOS)
+            model.peerSyncSession?.setProtectedDataAvailable(false)
+            #endif
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.protectedDataDidBecomeAvailableNotification)) { _ in
+            #if ORIVYN_PEER_TLS_SPIKE && canImport(Network) && canImport(Security) && canImport(CryptoKit) && canImport(X509) && os(iOS)
+            model.peerSyncSession?.setProtectedDataAvailable(true)
+            #endif
+        }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.didReceiveMemoryWarningNotification)) { _ in
             model.handleLocalResourcePressure()
         }
@@ -199,7 +209,7 @@ struct RootView: View {
             transcriptNearBottom = true
         }
         .onChange(of: model.selectedProviderID) { _, _ in stopAudio() }
-        .onDisappear { model.cancelAutomaticPreparation(); stopAudio(); cancelTransfers() }
+        .onDisappear { model.setHeavyWorkForeground(false); model.cancelAutomaticPreparation(); stopAudio(); cancelTransfers() }
     }
 
     private var canAcceptSharedText: Bool {

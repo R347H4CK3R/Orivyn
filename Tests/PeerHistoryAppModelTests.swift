@@ -82,6 +82,43 @@ final class PeerHistoryAppModelTests: XCTestCase {
         XCTAssertTrue(saved?.messages.isEmpty == true)
     }
 
+    func testOutgoingSnapshotRejectsStaleHistoryAndPreservesDraft() async throws {
+        let (model, store) = try await fixture()
+        let value = Conversation(title: "Not loaded")
+        try await store.save(value)
+        model.draft = "Keep this"
+        do {
+            _ = try await model.preparePeerTextSnapshot(ids: [value.id])
+            XCTFail("Must not export from stale app history")
+        } catch {}
+        XCTAssertEqual(model.draft, "Keep this")
+        XCTAssertTrue(model.conversations.isEmpty)
+    }
+
+    func testOutgoingSnapshotUsesSelectedPersistedConversationOnly() async throws {
+        let (model, store) = try await fixture()
+        let first = Conversation(title: "Selected")
+        let second = Conversation(title: "Not approved")
+        try await store.save(first); try await store.save(second)
+        await model.bootstrap()
+        model.draft = "Unsent draft remains local"
+        let snapshot = try await model.preparePeerTextSnapshot(ids: [first.id])
+        XCTAssertEqual(snapshot.conversations.map(\.id), [first.id])
+        XCTAssertEqual(model.draft, "Unsent draft remains local")
+        let created = await model.newConversation()
+        XCTAssertTrue(created, "Snapshot must release history ownership")
+    }
+
+    func testOutgoingSnapshotCannotRunDuringIncomingReceive() async throws {
+        let (model, _) = try await fixture()
+        try await model.performPeerHistoryReceive {
+            do {
+                _ = try await model.preparePeerTextSnapshot(ids: [UUID()])
+                XCTFail("Outgoing snapshot must respect incoming history owner")
+            } catch {}
+        }
+    }
+
     private func fixture() async throws -> (AppModel, SQLiteConversationStore) {
         let store = try SQLiteConversationStore(url: root.appendingPathComponent("history.sqlite"))
         let model = AppModel(store: store,
