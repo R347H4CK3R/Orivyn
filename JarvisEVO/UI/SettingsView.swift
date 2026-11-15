@@ -6,9 +6,6 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @AppStorage("appearance") private var appearance = "system"
     @State private var showModels = false
-    @State private var importingHistory = false
-    @State private var confirmingImport = false
-    @State private var importPolicy: BackupImportPolicy = .preserveLocal
     @State private var exportingHistory = false
     @State private var document = HistoryDocument(data: Data())
     @State private var exported = false
@@ -54,7 +51,7 @@ struct SettingsView: View {
                     NavigationLink { TextExportView(model: model) } label: {
                         Label("Export selected text…", systemImage: "checklist")
                     }.accessibilityIdentifier("settings.export-text")
-                    Button { confirmingImport = true } label: { Label("Import conversation backup", systemImage: "square.and.arrow.down") }.disabled(model.isGenerating)
+                    NavigationLink { HistoryImportView(model: model) } label: { Label("Import conversation backup", systemImage: "square.and.arrow.down") }.disabled(model.isGenerating)
                 } header: { Text("Your data") } footer: {
                     Text("Backups include conversation text, extracted attachment text, and saved memories. Original files, projects, favorites, response preferences and API keys are not included. Keep backups private. Add missing only preserves matching local records. Replacement import overwrites matching conversations and memories, even when the backup is older. Export current data before replacing.")
                 }
@@ -84,27 +81,9 @@ struct SettingsView: View {
             .navigationTitle("Settings").navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() }.accessibilityIdentifier("settings.done") } }
             .sheet(isPresented: $showModels) { ModelManagerView(model: model) }
-            .fileImporter(isPresented: $importingHistory, allowedContentTypes: [.json], allowsMultipleSelection: false) { result in
-                switch result {
-                case .success(let urls):
-                    if let url = urls.first {
-                        let policy = importPolicy
-                        Task { await model.importHistory(from: url, policy: policy) }
-                    }
-                case .failure(let error): model.report(error)
-                }
-            }
             .fileExporter(isPresented: $exportingHistory, document: document, contentType: .json, defaultFilename: "Orivyn-Backup") { result in
                 if case .failure(let error) = result { model.report(error) }
                 if case .success = result { exported = true }
-            }
-            .confirmationDialog("Import can overwrite current history", isPresented: $confirmingImport, titleVisibility: .visible) {
-                Button("Add missing only (keep local)") { importPolicy = .preserveLocal; importingHistory = true }
-                Button("Keep both versions (copy conflicts)") { importPolicy = .keepBoth; importingHistory = true }
-                Button("Replace matching records…", role: .destructive) { importPolicy = .replaceMatching; importingHistory = true }
-                Button("Cancel", role: .cancel) {}
-            } message: {
-                Text("Add missing only keeps all matching local records unchanged. Keep both versions skips identical matching records and imports changed matches as separate copies, preserving the local originals. Repeating a conflicting import creates more copies. With replacement import, matching conversation and memory identifiers are replaced, not combined. An older backup can remove newer messages. Export your current backup first. Original attachment files are not transferred. This is manual import, not automatic synchronization.")
             }
             .confirmationDialog("Delete all conversations and memories?", isPresented: $deletingAll, titleVisibility: .visible) {
                 Button("Delete all content", role: .destructive) { Task { await model.deleteAllContent() } }
@@ -113,6 +92,50 @@ struct SettingsView: View {
             .alert("Orivyn", isPresented: Binding(get: { model.errorMessage != nil }, set: { if !$0 { model.errorMessage = nil } })) {
                 Button("OK") { model.errorMessage = nil }
             } message: { Text(model.errorMessage ?? "") }
+        }
+    }
+}
+
+
+ // Keep policy selection in a stable navigation destination. Starting a system
+ // importer from a confirmation-dialog action can overlap its dismissal and
+ // leave a blank presentation (native UI run 43673278573, history import).
+private struct HistoryImportView: View {
+    @Bindable var model: AppModel
+    @State private var importPolicy: BackupImportPolicy = .preserveLocal
+    @State private var importingHistory = false
+
+    var body: some View {
+        Form {
+            Section("How to import") {
+                Picker("Matching records", selection: $importPolicy) {
+                    Text("Add missing only (keep local)").tag(BackupImportPolicy.preserveLocal)
+                    Text("Keep both versions (copy conflicts)").tag(BackupImportPolicy.keepBoth)
+                    Text("Replace matching records…").tag(BackupImportPolicy.replaceMatching)
+                }
+                .pickerStyle(.inline)
+                .accessibilityIdentifier("history.import-policy")
+                .disabled(importingHistory)
+            }
+            Section {
+                Button("Choose backup file…") { importingHistory = true }
+                    .accessibilityIdentifier("history.import-file")
+                    .disabled(model.isGenerating || importingHistory)
+            } footer: {
+                Text("Add missing only keeps all matching local records unchanged. Keep both versions skips identical matching records and imports changed matches as separate copies, preserving the local originals. Repeating a conflicting import creates more copies. With replacement import, matching conversation and memory identifiers are replaced, not combined. An older backup can remove newer messages. Export your current backup first. Original attachment files are not transferred. This is manual import, not automatic synchronization.")
+            }
+        }
+        .navigationTitle("Import backup")
+        .navigationBarTitleDisplayMode(.inline)
+        .fileImporter(isPresented: $importingHistory, allowedContentTypes: [.json], allowsMultipleSelection: false) { result in
+            switch result {
+            case .success(let urls):
+                if let url = urls.first {
+                    let policy = importPolicy
+                    Task { await model.importHistory(from: url, policy: policy) }
+                }
+            case .failure(let error): model.report(error)
+            }
         }
     }
 }

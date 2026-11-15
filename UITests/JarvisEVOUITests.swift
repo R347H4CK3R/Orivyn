@@ -120,6 +120,16 @@ final class JarvisEVOUITests: XCTestCase {
     }
 
     func testHistoryImportCancellationReturnsToSettingsAndPreservesComposer() {
+        // Persist one real empty conversation before cancelling import.
+        app.buttons["history.open"].tap()
+        app.buttons["history.new"].tap()
+        app.buttons["history.open"].tap()
+        let savedRows = app.buttons.matching(identifier: "history.conversation")
+        reveal(savedRows.firstMatch,
+               in: app.descendants(matching: .any).matching(identifier: "history.list").firstMatch)
+        let savedLabels = savedRows.allElementsBoundByIndex.map(\.label)
+        XCTAssertFalse(savedLabels.isEmpty)
+        app.buttons["history.close"].tap()
         let composer = app.textViews["composer.input"]
         composer.tap()
         composer.typeText("Keep this draft during import")
@@ -128,12 +138,13 @@ final class JarvisEVOUITests: XCTestCase {
         let importButton = app.buttons["Import conversation backup"]
         reveal(importButton, in: app.collectionViews.firstMatch)
         importButton.tap()
-        let keepLocal = app.buttons["Add missing only (keep local)"]
-        XCTAssertTrue(keepLocal.waitForExistence(timeout: 5))
-        keepLocal.tap()
+        let importPage = app.navigationBars["Import backup"]
+        XCTAssertTrue(importPage.waitForExistence(timeout: 5))
+        let chooseFile = app.buttons["history.import-file"]
+        XCTAssertTrue(chooseFile.waitForExistence(timeout: 5))
+        XCTAssertTrue(chooseFile.isHittable)
+        chooseFile.tap()
         let absent = NSPredicate(format: "exists == false")
-        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: absent, object: keepLocal)], timeout: 5), .completed,
-                       "The import policy confirmation must dismiss before interacting with Files.")
         // A dialog's Cancel is not evidence that the document picker opened.
         // iOS 26 Files uses this document-manager identifier; Recents is a child
         // title, not the navigation bar identifier (verified in CI #14 AX evidence).
@@ -153,10 +164,21 @@ final class JarvisEVOUITests: XCTestCase {
         XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: absent, object: pickerNavigation)], timeout: 5), .completed,
                        "Cancelling must dismiss the Files picker.")
         XCTAssertFalse(browsingTabs.exists)
+        XCTAssertTrue(importPage.waitForExistence(timeout: 5))
+        XCTAssertTrue(chooseFile.isEnabled)
+        XCTAssertTrue(importPage.buttons["Settings"].isHittable)
+        importPage.buttons["Settings"].tap()
         XCTAssertTrue(app.buttons["settings.done"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["settings.done"].isHittable)
         XCTAssertFalse(app.alerts["Backup exported"].exists)
         app.buttons["settings.done"].tap()
+        XCTAssertEqual(composer.value as? String, "Keep this draft during import")
+        app.buttons["history.open"].tap()
+        reveal(savedRows.firstMatch,
+               in: app.descendants(matching: .any).matching(identifier: "history.list").firstMatch)
+        XCTAssertEqual(savedRows.allElementsBoundByIndex.map(\.label), savedLabels,
+                       "Cancelling import must preserve the existing conversation list.")
+        app.buttons["history.close"].tap()
         XCTAssertEqual(composer.value as? String, "Keep this draft during import")
     }
 
