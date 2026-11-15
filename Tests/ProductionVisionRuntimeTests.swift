@@ -1,4 +1,5 @@
 import XCTest
+import CryptoKit
 import Foundation
 import CoreGraphics
 import ImageIO
@@ -36,6 +37,12 @@ final class ProductionVisionRuntimeTests: XCTestCase {
         guard environment["ORIVYN_REQUIRE_PRODUCTION_VISION"] == "1" else {
             throw XCTSkip("Opt-in real production vision smoke is not enabled; no inference pass is claimed.")
         }
+        let licenseURL = try XCTUnwrap(Bundle.main.url(forResource: VisionModelPair.licenseResource, withExtension: "txt"),
+            "The exact license shown before user-initiated setup must be packaged with the app.")
+        let licenseData = try Data(contentsOf: licenseURL)
+        XCTAssertEqual(licenseData.count, 10_644)
+        XCTAssertEqual(SHA256.hash(data: licenseData).map { String(format: "%02x", $0) }.joined(),
+            "61d7e939a05911c765b7e98ffaa1ab5ca6c0174a65350766c25cb10197d19fc8")
         #if !ORIVYN_NATIVE_VISION
         XCTFail("Required vision gate needs ORIVYN_NATIVE_VISION and the combined framework in app AND test targets.")
         #elseif !targetEnvironment(simulator)
