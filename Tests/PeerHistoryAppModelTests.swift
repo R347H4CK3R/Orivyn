@@ -18,6 +18,41 @@ final class PeerHistoryAppModelTests: XCTestCase {
         defaults.removePersistentDomain(forName: suite)
         try? FileManager.default.removeItem(at: root)
     }
+
+    func testCancellationAfterCommitReloadsAndReleasesHistory() async throws {
+        let (model, store) = try await fixture()
+        let incoming = Conversation(title: "Committed despite cancellation")
+        let task = Task { @MainActor in
+            try await model.performPeerHistoryReceive {
+                try await store.save(incoming)
+                withUnsafeCurrentTask { $0?.cancel() }
+                try Task.checkCancellation()
+            }
+        }
+        do { try await task.value; XCTFail("Cancellation must propagate") }
+        catch is CancellationError {} catch { XCTFail("Unexpected error: \(error)") }
+        XCTAssertEqual(model.conversations.map(\.id), [incoming.id])
+        let created = await model.newConversation()
+        XCTAssertTrue(created)
+    }
+
+    func testStalePreflightCannotSweepNewPersistedAttachment() async throws {
+        let (model, store) = try await fixture()
+        let source = root.appendingPathComponent("retain.txt")
+        try Data("Newly persisted private text".utf8).write(to: source)
+        let attachment = try model.attachmentService.importFile(at: source)
+        let saved = Conversation(messages: [ChatMessage(role: .user, content: "Keep", attachments: [attachment])])
+        try await store.save(saved)
+        do {
+            try await model.performPeerHistoryReceive { XCTFail("Stale receive must not run") }
+            XCTFail("Stale preflight must reject")
+        } catch {}
+        model.clearPendingAttachments()
+        XCTAssertNotNil(model.attachmentService.url(for: attachment), "A stale preflight cannot authorize file deletion")
+        let bytes = try Data(contentsOf: XCTUnwrap(model.attachmentService.url(for: attachment)))
+        XCTAssertEqual(String(decoding: bytes, as: UTF8.self), "Newly persisted private text")
+    }
+
     private func fixture() async throws -> (AppModel, SQLiteConversationStore) {
         let store = try SQLiteConversationStore(url: root.appendingPathComponent("history.sqlite"))
         let model = AppModel(store: store,
@@ -88,6 +123,12 @@ final class PeerHistoryAppModelTests: XCTestCase {
         XCTAssertEqual(saved.map(\.id), [existing.id])
         XCTAssertTrue(model.conversations.isEmpty)
         XCTAssertEqual(model.draft, "Preserve draft")
+        // Once the external stale row is removed, a fresh verified preflight
+        // must succeed without an unrelated bootstrap or data-discarding reload.
+        try await store.delete(id: existing.id)
+        let retry = Conversation(title: "Safe retry")
+        try await model.performPeerHistoryReceive { try await store.save(retry) }
+        XCTAssertEqual(model.conversations.map(\.id), [retry.id])
     }
 
     // A failed reload must retain the history lock until explicit recovery succeeds.
