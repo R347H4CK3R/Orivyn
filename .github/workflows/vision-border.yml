@@ -1,7 +1,7 @@
-name: Evaluate uniform border crop and independent holdouts
+name: Evaluate center preserving crop and expanded holdouts
 on:
   push:
-    branches: [codex/vision-border-candidate-20261115]
+    branches: [codex/vision-center-candidate-20261115]
     paths: ['Diagnostics/VisionBorder/**', '.github/workflows/vision-border.yml']
 permissions:
   contents: read
@@ -40,15 +40,19 @@ jobs:
       - name: Execute unchanged frozen acceptance and new holdouts for both binaries
         shell: bash
         run: |
-          set -uo pipefail
+          set -euo pipefail
+          python3 -m pip install Pillow==11.3.0
+          export ORIVYN_LLAMA_FIXTURES="$RUNNER_TEMP/llama/tools/server/webui/tests/stories/fixtures/assets"
           python3 Diagnostics/VisionBorder/holdout.py
           cp Diagnostics/VisionProof/Linux/Evidence/production/MODEL_PAIR.json artifacts/vision-border/
           cp Diagnostics/VisionProof/BorderHoldout/FROZEN_CASES.json artifacts/vision-border/HOLDOUT_CASES.json
+          set +e
           aggregate=0
           for library in base vision; do
             for suite in QualityV1 BorderHoldout; do
               python3 -u "Diagnostics/VisionProof/$suite/run.py" "$RUNNER_TEMP/$library.so" "$RUNNER_TEMP/vision-model" "artifacts/vision-border/$library-$suite.json" > "artifacts/vision-border/$library-$suite.log" 2>&1
               result=$?
+              cat "artifacts/vision-border/$library-$suite.json"
               printf '%s %s exit=%s\n' "$library" "$suite" "$result" | tee -a artifacts/vision-border/outcomes.txt
               if [[ "$result" != 0 ]]; then aggregate=1; fi
             done
