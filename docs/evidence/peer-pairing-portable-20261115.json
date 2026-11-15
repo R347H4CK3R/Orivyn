@@ -1,0 +1,22 @@
+{
+  "source_commit": "b744c2a61a584927a061188aec7b3d2bf6a51b59",
+  "run_id": 43681498220,
+  "job_id": 132712896880,
+  "result": "passed",
+  "tests": 10,
+  "failures": 0,
+  "compiler": "Swift 6.2.4 (swift-6.2.4-RELEASE)",
+  "target": "x86_64-unknown-linux-gnu",
+  "container_tag": "swift:6.2-bookworm",
+  "container_digest": "sha256:87947bfd51a61c86f487986ccf6390fc9cd4035cf98d74f7b8c9a7cb92d9282a",
+  "source_sha256": {
+    "JarvisEVO/Core/PeerPairingApproval.swift": "e3c22049e205f37d77986935a362bb16869e9980b1bf6522f556571321bf5d81",
+    "Tests/PeerPairingApprovalTests.swift": "9afdf4745f34698de4b16f11b99132bd8c63636373c502248442019532258b79"
+  },
+  "scope": "Foundation approval policy only; no native Keychain, Network, SwiftUI, iOS simulator, or physical device behavior executed",
+  "native_identity": {
+    "source_commit": "1032b209b8219d77f2b1fca25781c71e58c5fb30",
+    "run_id": 43680998109,
+    "status": "queued at handoff; no runtime acceptance claimed"
+  }
+}

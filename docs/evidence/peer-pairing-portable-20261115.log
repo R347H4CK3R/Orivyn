@@ -1,0 +1,26 @@
+2026-11-15T05:32:45.1794218Z Digest: sha256:87947bfd51a61c86f487986ccf6390fc9cd4035cf98d74f7b8c9a7cb92d9282a
+2026-11-15T05:32:55.6316324Z Swift version 6.2.4 (swift-6.2.4-RELEASE)
+2026-11-15T05:32:55.6316906Z Target: x86_64-unknown-linux-gnu
+2026-11-15T05:33:02.8071379Z Test Case 'PeerPairingApprovalTests.testApprovalBindsExactIdentityScopeAndEpoch' started at 2026-11-15 05:33:02.592
+2026-11-15T05:33:02.8072433Z Test Case 'PeerPairingApprovalTests.testApprovalBindsExactIdentityScopeAndEpoch' passed (0.001 seconds)
+2026-11-15T05:33:02.8073261Z Test Case 'PeerPairingApprovalTests.testDecoderBoundsAndVersion' started at 2026-11-15 05:33:02.593
+2026-11-15T05:33:02.8074546Z Test Case 'PeerPairingApprovalTests.testDecoderBoundsAndVersion' passed (0.0 seconds)
+2026-11-15T05:33:02.8075265Z Test Case 'PeerPairingApprovalTests.testEmptyScopeFails' started at 2026-11-15 05:33:02.593
+2026-11-15T05:33:02.8076004Z Test Case 'PeerPairingApprovalTests.testEmptyScopeFails' passed (0.1 seconds)
+2026-11-15T05:33:02.8076710Z Test Case 'PeerPairingApprovalTests.testIdentityChangeDropsPendingAndApproved' started at 2026-11-15 05:33:02.694
+2026-11-15T05:33:02.8077606Z Test Case 'PeerPairingApprovalTests.testIdentityChangeDropsPendingAndApproved' passed (0.101 seconds)
+2026-11-15T05:33:02.8078412Z Test Case 'PeerPairingApprovalTests.testNewOfferRequiresRevocationFirst' started at 2026-11-15 05:33:02.794
+2026-11-15T05:33:02.8079214Z Test Case 'PeerPairingApprovalTests.testNewOfferRequiresRevocationFirst' passed (0.0 seconds)
+2026-11-15T05:33:02.8080071Z Test Case 'PeerPairingApprovalTests.testOfferDoesNotGrantAuthority' started at 2026-11-15 05:33:02.795
+2026-11-15T05:33:02.8080807Z Test Case 'PeerPairingApprovalTests.testOfferDoesNotGrantAuthority' passed (0.0 seconds)
+2026-11-15T05:33:02.8081583Z Test Case 'PeerPairingApprovalTests.testRevokeRejectsReplayedGeneration' started at 2026-11-15 05:33:02.795
+2026-11-15T05:33:02.8082539Z Test Case 'PeerPairingApprovalTests.testRevokeRejectsReplayedGeneration' passed (0.0 seconds)
+2026-11-15T05:33:02.8083273Z Test Case 'PeerPairingApprovalTests.testSelfPairingRejected' started at 2026-11-15 05:33:02.795
+2026-11-15T05:33:02.8084019Z Test Case 'PeerPairingApprovalTests.testSelfPairingRejected' passed (0.0 seconds)
+2026-11-15T05:33:02.8084778Z Test Case 'PeerPairingApprovalTests.testUntrustedMetadataIsBoundedAndOptional' started at 2026-11-15 05:33:02.795
+2026-11-15T05:33:02.8085600Z Test Case 'PeerPairingApprovalTests.testUntrustedMetadataIsBoundedAndOptional' passed (0.001 seconds)
+2026-11-15T05:33:02.8086374Z Test Case 'PeerPairingApprovalTests.testWrongFingerprintFailsClosed' started at 2026-11-15 05:33:02.796
+2026-11-15T05:33:02.8087092Z Test Case 'PeerPairingApprovalTests.testWrongFingerprintFailsClosed' passed (0.0 seconds)
+2026-11-15T05:33:02.8088254Z 	 Executed 10 tests, with 0 failures (0 unexpected) in 0.204 (0.204) seconds
+2026-11-15T05:33:02.8089319Z 	 Executed 10 tests, with 0 failures (0 unexpected) in 0.204 (0.204) seconds
+2026-11-15T05:33:02.8090475Z 	 Executed 10 tests, with 0 failures (0 unexpected) in 0.204 (0.204) seconds
