@@ -1,0 +1,59 @@
+name: Evaluate official LFM candidate with unchanged pixels
+on:
+  push:
+    branches: [codex/vision-lfm-candidate-20261115]
+    paths: ['Diagnostics/VisionLFM/**', '.github/workflows/vision-lfm.yml']
+permissions:
+  contents: read
+jobs:
+  evaluate:
+    if: github.event.repository.private == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Build exact-source existing vision bridge
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/vision-lfm
+          git rev-parse HEAD > artifacts/vision-lfm/app-source.txt
+          git init "$RUNNER_TEMP/llama"
+          git -C "$RUNNER_TEMP/llama" remote add origin https://github.com/ggml-org/llama.cpp.git
+          git -C "$RUNNER_TEMP/llama" fetch --depth 1 origin 2496f9c14965c39589f53eea31bdb6d762b1d360
+          git -C "$RUNNER_TEMP/llama" checkout --detach FETCH_HEAD
+          test "$(git -C "$RUNNER_TEMP/llama" rev-parse HEAD)" = 2496f9c14965c39589f53eea31bdb6d762b1d360
+          cmake -S "$RUNNER_TEMP/llama" -B "$RUNNER_TEMP/llama/build" -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DGGML_OPENMP=OFF -DGGML_NATIVE=OFF -DGGML_BACKEND_DL=OFF -DLLAMA_CURL=OFF -DLLAMA_BUILD_TESTS=OFF > artifacts/vision-lfm/configure.log 2>&1
+          cmake --build "$RUNNER_TEMP/llama/build" --target mtmd -j 2 > artifacts/vision-lfm/build.log 2>&1
+          bash Diagnostics/VisionProof/Linux/build.sh "$RUNNER_TEMP/llama" "$RUNNER_TEMP/llama/build" "$RUNNER_TEMP/vision.so" > artifacts/vision-lfm/bridge-build.log 2>&1
+          sha256sum Diagnostics/VisionProof/Bridge/vision_bridge.cpp Diagnostics/VisionProof/QualityV1/{run.py,score.py,FROZEN_CASES.json,fixtures.py} "$RUNNER_TEMP/vision.so" > artifacts/vision-lfm/SOURCE_HASHES.txt
+      - name: Download pinned candidate pair
+        run: python3 Diagnostics/VisionLFM/download.py "$RUNNER_TEMP/vision-model"
+      - name: Execute unchanged frozen acceptance and expanded holdouts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m pip install Pillow==11.3.0
+          export ORIVYN_LLAMA_FIXTURES="$RUNNER_TEMP/llama/tools/server/webui/tests/stories/fixtures/assets"
+          python3 Diagnostics/VisionBorder/holdout.py
+          cp Diagnostics/VisionLFM/MODEL_PAIR.json artifacts/vision-lfm/
+          cp "$RUNNER_TEMP/vision-model/LICENSE" artifacts/vision-lfm/
+          cp Diagnostics/VisionProof/BorderHoldout/FROZEN_CASES.json artifacts/vision-lfm/HOLDOUT_CASES.json
+          set +e
+          aggregate=0
+          for suite in QualityV1 BorderHoldout; do
+            python3 -u "Diagnostics/VisionProof/$suite/run.py" "$RUNNER_TEMP/vision.so" "$RUNNER_TEMP/vision-model" "artifacts/vision-lfm/$suite.json" > "artifacts/vision-lfm/$suite.log" 2>&1
+            result=$?
+            cat "artifacts/vision-lfm/$suite.json"
+            printf '%s exit=%s\n' "$suite" "$result" | tee -a artifacts/vision-lfm/outcomes.txt
+            if [[ "$result" != 0 ]]; then aggregate=1; fi
+          done
+          exit "$aggregate"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: vision-lfm-${{ github.sha }}
+          path: artifacts/vision-lfm
+          retention-days: 7
