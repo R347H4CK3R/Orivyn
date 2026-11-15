@@ -2,7 +2,7 @@ name: Verify real local model on Linux
 on:
   workflow_dispatch:
   push:
-    branches: [codex/complete-capabilities-20261114]
+    branches: [codex/read-title-examples-20261115]
     paths:
       - '.github/workflows/model-host.yml'
       - 'JarvisEVO/Core/AIProvider.swift'

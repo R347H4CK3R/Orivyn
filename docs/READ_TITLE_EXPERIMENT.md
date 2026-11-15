@@ -1,0 +1,3 @@
+# Isolated title-extraction experiment
+
+Hypothesis: a few unrelated examples may distinguish surrounding request nouns from exact conversation titles more reliably than the rejected longer rule-only prompt. This candidate changes proposal prompting only, not parsing, approval, fixtures, oracle, tools, model, grammar or permissions. Existing orchid, maple, pagination and quoted-title real-model cases all remain required. Illustrative titles differ from all four fixtures. No output repair or default scope is allowed. A passing development set still requires independent holdouts before integration. This branch is not a release.
