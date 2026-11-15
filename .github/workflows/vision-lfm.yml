@@ -1,7 +1,7 @@
-name: Evaluate official LFM candidate with unchanged pixels
+name: Evaluate LFM counting instruction and native regressions
 on:
   push:
-    branches: [codex/vision-lfm-candidate-20261115]
+    branches: [codex/vision-lfm-counting-20261115]
     paths: ['Diagnostics/VisionLFM/**', '.github/workflows/vision-lfm.yml']
 permissions:
   contents: read
@@ -27,6 +27,11 @@ jobs:
           test "$(git -C "$RUNNER_TEMP/llama" rev-parse HEAD)" = 2496f9c14965c39589f53eea31bdb6d762b1d360
           cmake -S "$RUNNER_TEMP/llama" -B "$RUNNER_TEMP/llama/build" -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DGGML_OPENMP=OFF -DGGML_NATIVE=OFF -DGGML_BACKEND_DL=OFF -DLLAMA_CURL=OFF -DLLAMA_BUILD_TESTS=OFF > artifacts/vision-lfm/configure.log 2>&1
           cmake --build "$RUNNER_TEMP/llama/build" --target mtmd -j 2 > artifacts/vision-lfm/build.log 2>&1
+          git fetch --depth 1 origin a03ca637f1033fed13ac386948157e8fe4ce6cc5
+          cp Diagnostics/VisionProof/Bridge/vision_bridge.cpp "$RUNNER_TEMP/prefix.cpp"
+          git show a03ca637f1033fed13ac386948157e8fe4ce6cc5:Diagnostics/VisionProof/Bridge/vision_bridge.cpp > Diagnostics/VisionProof/Bridge/vision_bridge.cpp
+          bash Diagnostics/VisionProof/Linux/build.sh "$RUNNER_TEMP/llama" "$RUNNER_TEMP/llama/build" "$RUNNER_TEMP/base.so" > artifacts/vision-lfm/base-build.log 2>&1
+          cp "$RUNNER_TEMP/prefix.cpp" Diagnostics/VisionProof/Bridge/vision_bridge.cpp
           bash Diagnostics/VisionProof/Linux/build.sh "$RUNNER_TEMP/llama" "$RUNNER_TEMP/llama/build" "$RUNNER_TEMP/vision.so" > artifacts/vision-lfm/bridge-build.log 2>&1
           sha256sum Diagnostics/VisionProof/Bridge/vision_bridge.cpp Diagnostics/VisionProof/QualityV1/{run.py,score.py,FROZEN_CASES.json,fixtures.py} "$RUNNER_TEMP/vision.so" > artifacts/vision-lfm/SOURCE_HASHES.txt
       - name: Download pinned candidate pair
@@ -48,6 +53,20 @@ jobs:
             result=$?
             cat "artifacts/vision-lfm/$suite.json"
             printf '%s exit=%s\n' "$suite" "$result" | tee -a artifacts/vision-lfm/outcomes.txt
+            if [[ "$result" != 0 ]]; then aggregate=1; fi
+          done
+          for library in base vision; do
+            python3 -u Diagnostics/VisionProof/Linux/extended_gate.py "$RUNNER_TEMP/$library.so" "$RUNNER_TEMP/vision-model" "$ORIVYN_LLAMA_FIXTURES/1.jpg" "artifacts/vision-lfm/$library-legacy" > "artifacts/vision-lfm/$library-legacy.log" 2>&1
+            result=$?
+            printf '%s legacy exit=%s\n' "$library" "$result" | tee -a artifacts/vision-lfm/outcomes.txt
+            if [[ "$result" != 0 ]]; then aggregate=1; fi
+            python3 -u Diagnostics/VisionProof/Linux/real_gate.py "$RUNNER_TEMP/$library.so" "$RUNNER_TEMP/vision-model" "artifacts/vision-lfm/$library-cancel" > "artifacts/vision-lfm/$library-cancel.log" 2>&1
+            result=$?
+            printf '%s cancel exit=%s\n' "$library" "$result" | tee -a artifacts/vision-lfm/outcomes.txt
+            if [[ "$result" != 0 ]]; then aggregate=1; fi
+            python3 Diagnostics/VisionProof/Linux/output_limit_check.py "$RUNNER_TEMP/$library.so" "$RUNNER_TEMP/vision-model" > "artifacts/vision-lfm/$library-output-limit.json" 2> "artifacts/vision-lfm/$library-output-limit.log"
+            result=$?
+            printf '%s output-limit exit=%s\n' "$library" "$result" | tee -a artifacts/vision-lfm/outcomes.txt
             if [[ "$result" != 0 ]]; then aggregate=1; fi
           done
           exit "$aggregate"
