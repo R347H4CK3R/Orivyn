@@ -3,10 +3,48 @@ import Foundation
 import Security
 import CryptoKit
 import X509
+import SwiftASN1
 import Network
 @testable import PairingPolicy
 
 final class PeerIdentityProvisionerTests: XCTestCase, @unchecked Sendable {
+    func testDERCertificateInsertionPreservesSearchableLabel() throws {
+        let label = "orivyn.ci.der-label." + UUID().uuidString
+        var error: Unmanaged<CFError>?
+        let key = try XCTUnwrap(SecKeyCreateRandomKey([
+            kSecAttrKeyType: kSecAttrKeyTypeECSECPrimeRandom,
+            kSecAttrKeySizeInBits: 256
+        ] as CFDictionary, &error))
+        let privateKey = try Certificate.PrivateKey(key)
+        let name = try DistinguishedName { CommonName("Different certificate subject " + UUID().uuidString) }
+        let now = Date()
+        let certificate = try Certificate(version: .v3, serialNumber: .init(bytes: [1, 2, 3]),
+            publicKey: privateKey.publicKey, notValidBefore: now.addingTimeInterval(-60),
+            notValidAfter: now.addingTimeInterval(3600), issuer: name, subject: name,
+            signatureAlgorithm: .ecdsaWithSHA256, extensions: Certificate.Extensions {},
+            issuerPrivateKey: privateKey)
+        var serializer = DER.Serializer()
+        try serializer.serialize(certificate)
+        let der = Data(serializer.serializedBytes)
+        let add: [CFString: Any] = [kSecClass: kSecClassCertificate, kSecValueData: der,
+            kSecAttrLabel: label, kSecAttrAccessible: kSecAttrAccessibleWhenUnlockedThisDeviceOnly,
+            kSecAttrSynchronizable: false, kSecReturnAttributes: true]
+        var attributes: CFTypeRef?
+        XCTAssertEqual(SecItemAdd(add as CFDictionary, &attributes), errSecSuccess)
+        let delete: [CFString: Any] = [kSecClass: kSecClassCertificate, kSecAttrLabel: label,
+            kSecAttrSynchronizable: false]
+        defer { SecItemDelete(delete as CFDictionary) }
+        XCTAssertEqual((attributes as? [CFString: Any])?[kSecAttrLabel] as? String, label)
+        var query = delete
+        query[kSecReturnRef] = true; query[kSecMatchLimit] = kSecMatchLimitOne
+        var result: CFTypeRef?
+        let status = SecItemCopyMatching(query as CFDictionary, &result)
+        XCTAssertEqual(status, errSecSuccess)
+        let item = try XCTUnwrap(result)
+        XCTAssertEqual(CFGetTypeID(item), SecCertificateGetTypeID())
+        guard CFGetTypeID(item) == SecCertificateGetTypeID() else { return }
+        XCTAssertEqual(SecCertificateCopyData(item as! SecCertificate) as Data, der)
+    }
     func testCreateReloadSignAndDelete() async throws {
         let namespace = "orivyn.ci.identity." + UUID().uuidString
         let provisioner = PeerIdentityProvisioner(namespace: namespace)

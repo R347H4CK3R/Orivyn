@@ -1,0 +1,18 @@
+{
+  "source_commit": "1032b209b8219d77f2b1fca25781c71e58c5fb30",
+  "run_id": 43680998109,
+  "job_id": 132711376407,
+  "result": "3 tests executed, 3 failed before any usable identity was returned",
+  "failure_stage": "SecItemAdd certificate success, subsequent labeled certificate lookup returned errSecItemNotFound; loadOrCreate line83 threw incompleteIdentity",
+  "errors": [
+    "2026-11-15T05:43:32.1735870Z /Users/runner/work/_temp/orivyn-provisioning.STiRcK/gate/Sources/PairingPolicy/PeerIdentityProvisioner.swift:83: error: -[PairingPolicyTests.PeerIdentityProvisionerTests testCreateReloadSignAndDelete] : failed: caught error: \"incompleteIdentity\"",
+    "2026-11-15T05:43:32.1746580Z /Users/runner/work/_temp/orivyn-provisioning.STiRcK/gate/Sources/PairingPolicy/PeerIdentityProvisioner.swift:83: error: -[PairingPolicyTests.PeerIdentityProvisionerTests testExpiredIdentityIsNotSilentlyReplaced] : failed: caught error: \"incompleteIdentity\"",
+    "2026-11-15T05:43:32.1757570Z /Users/runner/work/_temp/orivyn-provisioning.STiRcK/gate/Sources/PairingPolicy/PeerIdentityProvisioner.swift:83: error: -[PairingPolicyTests.PeerIdentityProvisionerTests testGeneratedIdentitiesAuthenticateWithMutualTLS] : failed: caught error: \"incompleteIdentity\""
+  ],
+  "candidate": "Use DER (kSecValueData) insertion instead of transient certificate kSecValueRef; regression checks label attributes and immediate exact DER roundtrip. Runtime correction pending verification.",
+  "references": [
+    "https://developer.apple.com/documentation/security/secitemadd(_:_:)",
+    "https://developer.apple.com/documentation/technotes/tn3137-on-mac-keychains"
+  ],
+  "ui_change": "Remove custom Bool Binding from pairing review as same pattern implicated by independent SettingsView Swift6.2.4 compiler crash; no pairing-view crash asserted."
+}
