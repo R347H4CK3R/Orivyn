@@ -80,7 +80,33 @@ static void generate(ov_session*s,const ov_request&r,std::string&out,ov_report&r
  Owner<llama_context,llama_free> ctx(llama_init_from_model(model.p,cp));if(!ctx.p)throw 3;check(s);
  s->phase=2;auto vp=mtmd_context_params_default();vp.use_gpu=false;vp.n_threads=2;vp.warmup=false;vp.cb_eval=eval_callback;vp.cb_eval_user_data=s;
  Owner<mtmd_context,mtmd_free> vision(mtmd_init_from_file(r.projector,model.p,vp));if(!vision.p||!mtmd_support_vision(vision.p))throw 3;check(s);
- Owner<mtmd_bitmap,mtmd_bitmap_free> bitmap(mtmd_bitmap_init(r.width,r.height,r.rgb));if(!bitmap.p)throw 4;
+ // Experimental exact uniform-border crop. Never uses question or case identity.
+ std::vector<uint8_t> cropped;
+ uint32_t width=r.width,height=r.height;
+ const uint8_t *pixels=r.rgb;
+ bool uniform=true;
+ for(uint32_t y=0;y<height&&uniform;++y)for(uint32_t x=0;x<width;++x){
+  if(x&&y&&x+1<width&&y+1<height)continue;
+  if(std::memcmp(pixels+(size_t(y)*width+x)*3,pixels,3)){uniform=false;break;}
+ }
+ if(uniform){
+  uint32_t x0=width,y0=height,x1=0,y1=0;
+  for(uint32_t y=0;y<height;++y)for(uint32_t x=0;x<width;++x)
+   if(std::memcmp(pixels+(size_t(y)*width+x)*3,pixels,3)){
+    x0=std::min(x0,x);y0=std::min(y0,y);x1=std::max(x1,x);y1=std::max(y1,y);
+   }
+  if(x0>=16&&y0>=16&&x1+16<width&&y1+16<height){
+   uint32_t side=std::max(x1-x0+1,y1-y0+1)+32;
+   if(side<std::min(width,height)){
+    uint32_t left=uint32_t(std::max(0,std::min(int(width-side),(int(x0)+int(x1)+1-int(side))/2)));
+    uint32_t top=uint32_t(std::max(0,std::min(int(height-side),(int(y0)+int(y1)+1-int(side))/2)));
+    cropped.resize(size_t(side)*side*3);
+    for(uint32_t y=0;y<side;++y)std::memcpy(cropped.data()+size_t(y)*side*3,pixels+(size_t(top+y)*width+left)*3,size_t(side)*3);
+    pixels=cropped.data();width=height=side;
+   }
+  }
+ }
+ Owner<mtmd_bitmap,mtmd_bitmap_free> bitmap(mtmd_bitmap_init(width,height,pixels));if(!bitmap.p)throw 4;
  Owner<mtmd_input_chunks,mtmd_input_chunks_free> chunks(mtmd_input_chunks_init());if(!chunks.p)throw 4;
  std::string text=std::string(mtmd_default_marker())+"\n"+std::string(r.question,r.question_bytes);
  llama_chat_message msg{"user",text.c_str()};const char*templ=llama_model_chat_template(model.p,nullptr);if(!templ)throw 4;
