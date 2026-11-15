@@ -1,0 +1,368 @@
+{
+  "run": 43681967233,
+  "workflowSource": "4cec3d7eb267f7c7702eaed60a8d82bb6ebcd06b",
+  "testedBridgeSource": "a03ca637f1033fed13ac386948157e8fe4ce6cc5",
+  "artifact": 14149046194,
+  "artifactSHA256": "78ce06834a4a8e21e70634cd6bafc7f37c65ae940780a7e5b946f5438d21ba2e",
+  "model": {
+    "repository": "LiquidAI/LFM2.5-VL-1.6B-GGUF",
+    "revision": "36fc16bc95133424921bcc3da009e83b2f23ffb5",
+    "scope": "Isolated noncommercial Linux evaluation only; not app catalog or distribution approval",
+    "license": "lfm1.0",
+    "artifacts": [
+      {
+        "file": "LFM2.5-VL-1.6B-Q6_K.gguf",
+        "size": 962844544,
+        "sha": "5436b6e50a2d0c8c3b1f3b4c5f37fd8d75512e56590a55f5a989ad40170a8c37"
+      },
+      {
+        "file": "mmproj-LFM2.5-VL-1.6b-F16.gguf",
+        "size": 853993856,
+        "sha": "2cddba98b98390c011c606c416de2e63dcfdd3b21452bf71ad6aab59fa52d2ee"
+      }
+    ]
+  },
+  "results": {
+    "base-cancel/results.json": {
+      "scope": "Linux CPU real pinned mtmd; not iOS/device or broad vision acceptance",
+      "cases": [
+        {
+          "fixture": "red_circle",
+          "cancel_phase": null,
+          "status": 0,
+          "output": "This is a red circle.",
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 6,
+            "positions": 162,
+            "image_chunks": 1,
+            "callback_count": 4115,
+            "live_resources": 0
+          },
+          "seconds": 5.221,
+          "rgb_sha256": "9d8dcd4fcc57a30ca2058a110312f3e7f2cbc3cad1fd819377e2bf005bb4a388",
+          "passed": true
+        },
+        {
+          "fixture": "red_circle",
+          "cancel_phase": 1,
+          "status": 2,
+          "output": "",
+          "report": {
+            "status": 2,
+            "phase": 1,
+            "tokens": 0,
+            "positions": 0,
+            "image_chunks": 0,
+            "callback_count": 1,
+            "live_resources": 0
+          },
+          "seconds": 0.114,
+          "rgb_sha256": "9d8dcd4fcc57a30ca2058a110312f3e7f2cbc3cad1fd819377e2bf005bb4a388",
+          "passed": true
+        },
+        {
+          "fixture": "red_circle",
+          "cancel_phase": 3,
+          "status": 2,
+          "output": "",
+          "report": {
+            "status": 2,
+            "phase": 3,
+            "tokens": 0,
+            "positions": 162,
+            "image_chunks": 1,
+            "callback_count": 461,
+            "live_resources": 0
+          },
+          "seconds": 0.564,
+          "rgb_sha256": "9d8dcd4fcc57a30ca2058a110312f3e7f2cbc3cad1fd819377e2bf005bb4a388",
+          "passed": true
+        },
+        {
+          "fixture": "red_circle",
+          "cancel_phase": 5,
+          "status": 2,
+          "output": "",
+          "report": {
+            "status": 2,
+            "phase": 5,
+            "tokens": 1,
+            "positions": 162,
+            "image_chunks": 1,
+            "callback_count": 2256,
+            "live_resources": 0
+          },
+          "seconds": 4.943,
+          "rgb_sha256": "9d8dcd4fcc57a30ca2058a110312f3e7f2cbc3cad1fd819377e2bf005bb4a388",
+          "passed": true
+        },
+        {
+          "fixture": "blue_circle",
+          "cancel_phase": null,
+          "status": 0,
+          "output": "\nThis is a blue circle.",
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 7,
+            "positions": 162,
+            "image_chunks": 1,
+            "callback_count": 4425,
+            "live_resources": 0
+          },
+          "seconds": 5.365,
+          "rgb_sha256": "fb87103dc8866bc2b9aa698e3ba69b19f82849323cf1b0d6ad7cb59e50a2eca4",
+          "passed": true
+        },
+        {
+          "fixture": "red_square",
+          "cancel_phase": null,
+          "status": 0,
+          "output": "This is a red square.",
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 6,
+            "positions": 162,
+            "image_chunks": 1,
+            "callback_count": 4115,
+            "live_resources": 0
+          },
+          "seconds": 5.077,
+          "rgb_sha256": "1963b35af19841148aca7535137eca16aa31e2225e7c9ceea7f3487853702318",
+          "passed": true
+        },
+        {
+          "fixture": "blue_square",
+          "cancel_phase": null,
+          "status": 0,
+          "output": "This is a blue square.",
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 6,
+            "positions": 162,
+            "image_chunks": 1,
+            "callback_count": 4115,
+            "live_resources": 0
+          },
+          "seconds": 5.119,
+          "rgb_sha256": "ab0cb2e0d29a56cc08d16fea87ffd13fd7a25b052ad64dfdcddada3d2fc1c9af",
+          "passed": true
+        },
+        {
+          "fixture": "blank",
+          "cancel_phase": null,
+          "status": 10,
+          "output": "",
+          "report": {
+            "status": 10,
+            "phase": 0,
+            "tokens": 0,
+            "positions": 0,
+            "image_chunks": 0,
+            "callback_count": 0,
+            "live_resources": 0
+          },
+          "seconds": 0.001,
+          "rgb_sha256": "05cee4e08b431e15405ede17f74f3b6da563778652fcb974d4d987238e6e7a78",
+          "passed": true
+        }
+      ]
+    },
+    "base-legacy/results.json": {
+      "scope": "Linux CPU, real C bridge; limited diagnostic, not general-vision or iOS acceptance",
+      "model": {
+        "repository": "LiquidAI/LFM2.5-VL-1.6B-GGUF",
+        "revision": "36fc16bc95133424921bcc3da009e83b2f23ffb5",
+        "scope": "Isolated noncommercial Linux evaluation only; not app catalog or distribution approval",
+        "license": "lfm1.0",
+        "artifacts": [
+          {
+            "file": "LFM2.5-VL-1.6B-Q6_K.gguf",
+            "size": 962844544,
+            "sha": "5436b6e50a2d0c8c3b1f3b4c5f37fd8d75512e56590a55f5a989ad40170a8c37"
+          },
+          {
+            "file": "mmproj-LFM2.5-VL-1.6b-F16.gguf",
+            "size": 853993856,
+            "sha": "2cddba98b98390c011c606c416de2e63dcfdd3b21452bf71ad6aab59fa52d2ee"
+          }
+        ]
+      },
+      "cases": [
+        {
+          "fixture": "red_circle",
+          "question": "Describe the visible image in one sentence.",
+          "output": "A red circle is visible.",
+          "status": 0,
+          "passed": true,
+          "rgb_sha256": "9d8dcd4fcc57a30ca2058a110312f3e7f2cbc3cad1fd819377e2bf005bb4a388",
+          "seconds": 5.06,
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 6,
+            "positions": 165,
+            "image_chunks": 1,
+            "callback_count": 4115,
+            "live_resources": 0
+          }
+        },
+        {
+          "fixture": "red_square",
+          "question": "Describe the visible image in one sentence.",
+          "output": "A red square is visible.",
+          "status": 0,
+          "passed": true,
+          "rgb_sha256": "1963b35af19841148aca7535137eca16aa31e2225e7c9ceea7f3487853702318",
+          "seconds": 5.169,
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 6,
+            "positions": 165,
+            "image_chunks": 1,
+            "callback_count": 4115,
+            "live_resources": 0
+          }
+        },
+        {
+          "fixture": "blue_circle",
+          "question": "Describe the visible image in one sentence.",
+          "output": "A blue circle is visible.",
+          "status": 0,
+          "passed": true,
+          "rgb_sha256": "fb87103dc8866bc2b9aa698e3ba69b19f82849323cf1b0d6ad7cb59e50a2eca4",
+          "seconds": 5.193,
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 6,
+            "positions": 165,
+            "image_chunks": 1,
+            "callback_count": 4115,
+            "live_resources": 0
+          }
+        },
+        {
+          "fixture": "blue_square",
+          "question": "Describe the visible image in one sentence.",
+          "output": "A blue square is visible in the center of the image.",
+          "status": 0,
+          "passed": true,
+          "rgb_sha256": "ab0cb2e0d29a56cc08d16fea87ffd13fd7a25b052ad64dfdcddada3d2fc1c9af",
+          "seconds": 5.322,
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 12,
+            "positions": 165,
+            "image_chunks": 1,
+            "callback_count": 5975,
+            "live_resources": 0
+          }
+        },
+        {
+          "fixture": "spatial",
+          "question": "Where is the circle relative to the square? Answer in one sentence.",
+          "output": "The circle is to the left of the square.",
+          "status": 0,
+          "passed": true,
+          "rgb_sha256": "eb44b87046014118f78859a61c84affa9b904977d438cb3365797ee3af763e3e",
+          "seconds": 5.202,
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 10,
+            "positions": 170,
+            "image_chunks": 1,
+            "callback_count": 5355,
+            "live_resources": 0
+          }
+        },
+        {
+          "fixture": "spatial_reverse",
+          "question": "Where is the circle relative to the square? Answer in one sentence.",
+          "output": "The circle is to the right of the square.",
+          "status": 0,
+          "passed": true,
+          "rgb_sha256": "e802050dbeef18321f0d02bdff1d1d32bb60d8c8b8405c8aadeb48bf939ec8a1",
+          "seconds": 5.295,
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 10,
+            "positions": 170,
+            "image_chunks": 1,
+            "callback_count": 5355,
+            "live_resources": 0
+          }
+        },
+        {
+          "fixture": "count",
+          "question": "How many circles are visible? Answer briefly.",
+          "output": "3.",
+          "status": 0,
+          "passed": true,
+          "rgb_sha256": "eb942bf20ce70fa4839e16fc7845bf7e478fb525dc799b50a80a7271288fa295",
+          "seconds": 5.025,
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 2,
+            "positions": 165,
+            "image_chunks": 1,
+            "callback_count": 2875,
+            "live_resources": 0
+          }
+        },
+        {
+          "fixture": "natural_landscape",
+          "question": "Describe the visible scene in one sentence.",
+          "output": "A mountain range with a river running through it.",
+          "status": 0,
+          "passed": true,
+          "rgb_sha256": "3bccbd0d4299dd2b49ec61f06d4886ed8f64cd7017c0db8030ff9e29e7738927",
+          "seconds": 6.22,
+          "report": {
+            "status": 0,
+            "phase": 5,
+            "tokens": 10,
+            "positions": 197,
+            "image_chunks": 1,
+            "callback_count": 5355,
+            "live_resources": 0
+          }
+        },
+        {
+          "fixture": "blank",
+          "question": "Describe the visible image in one sentence.",
+          "output": "",
+          "status": 10,
+          "passed": true,
+          "rgb_sha256": "05cee4e08b431e15405ede17f74f3b6da563778652fcb974d4d987238e6e7a78",
+          "seconds": 0.001,
+          "report": {
+            "status": 10,
+            "phase": 0,
+            "tokens": 0,
+            "positions": 0,
+            "image_chunks": 0,
+            "callback_count": 0,
+            "live_resources": 0
+          }
+        }
+      ]
+    },
+    "base-output-limit.json": {
+      "status": 8,
+      "output": "",
+      "tokens": 1,
+      "live_resources": 0,
+      "passed": true
+    }
+  }
+}

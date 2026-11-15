@@ -1,0 +1,80 @@
+{
+  "packageSource": "40844c2d96441b8183f231fb27e8a52faa1db80c",
+  "nativeTestSource": "03b9c5cc0f96e0dce332e0e3c36460a9346ff304",
+  "appRun": 43685204421,
+  "appArtifact": 14150577540,
+  "packageRun": 43687359101,
+  "packageArtifact": 14151270354,
+  "core": {
+    "total": 1040,
+    "passed": 1035,
+    "skipped": 5,
+    "failed": 0,
+    "skips": [
+      "Physical iPhone data protection",
+      "ProductionLocalAgentSession opt-in",
+      "ProductionNativeToolsRuntime opt-in",
+      "ProductionReviewedReadPlan opt-in subsequently passed separately",
+      "ProductionVisionRuntime opt-in subsequently passed separately"
+    ]
+  },
+  "reviewedNative": {
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "successfulNativeDecisions": 3,
+    "elapsedSeconds": 60.671867,
+    "cleanupFinished": true,
+    "scope": "Actual model proposal, approval, explicit Run, required search/read and fresh marker in answer; not general autonomy or exact-format equality"
+  },
+  "vision": {
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "runtimeSeconds": 22.594556,
+    "actualAnswer": "A red square is visible.",
+    "closeAcknowledged": true,
+    "scope": "Production simulator CPU smoke; not broad image accuracy or live download/UI acceptance"
+  },
+  "portable": {
+    "packageTests": 32,
+    "graphTests": 4,
+    "generatorConsistency": 1
+  },
+  "failuresPreserved": [
+    {
+      "run": 43685108234,
+      "source": "f49c7558686046a16c66d29484ee953abefeb464",
+      "failure": "Runtime setup exit134; no app tests executed"
+    },
+    {
+      "run": 43685204421,
+      "source": "03b9c5cc0f96e0dce332e0e3c36460a9346ff304",
+      "failure": "Package guard refused dirty tracked generated builder; native/model phases separately passed"
+    }
+  ],
+  "packageEvidence": {
+    "combined-runtime/SHA256SUMS": "fcb5fb0ac432cd962461dfd7214caf8a40fdd438bea2ef5f31422879ddf341e8  orivyn-combined-runtime.zip\n",
+    "combined-runtime/cache.txt": "Exact compiler/source-keyed runtime cache verified; no rebuild.\n",
+    "combined-runtime/app-source-commit.txt": "40844c2d96441b8183f231fb27e8a52faa1db80c\n",
+    "package-only/Orivyn-0.1.1-build10-unsigned.ipa": {
+      "size": 37141596,
+      "sha256": "65ca3580cbba4ea8513a4dcb0bc97e2fe67933ba13aea1ad38f039f75b282bf8",
+      "licenseSHA256": "61d7e939a05911c765b7e98ffaa1ab5ca6c0174a65350766c25cb10197d19fc8"
+    },
+    "package-only/SCOPE.json": "{\n  \"source_commit\": \"40844c2d96441b8183f231fb27e8a52faa1db80c\",\n  \"native_features\": [\n    \"ORIVYN_NATIVE_VISION\",\n    \"ORIVYN_NATIVE_TOOLS\",\n    \"ORIVYN_NATIVE_TRANSCRIPT\"\n  ],\n  \"device_build\": \"passed\",\n  \"ipa_structure_check\": \"passed\",\n  \"native_unit_tests\": \"not_run\",\n  \"simulator_ui_tests\": \"not_run\",\n  \"physical_device_acceptance\": \"not_run\",\n  \"release_status\": \"development_candidate_not_1_0_complete\"\n}\n",
+    "package-only/SHA256SUMS": "65ca3580cbba4ea8513a4dcb0bc97e2fe67933ba13aea1ad38f039f75b282bf8  Orivyn-0.1.1-build10-unsigned.ipa\n",
+    "package-only/ipa-verification.json": "{\n  \"app\": \"Orivyn\",\n  \"bundle_identifier\": \"app.jarvisevo.ios\",\n  \"version\": \"0.1.1\",\n  \"build\": \"10\",\n  \"architecture\": \"arm64\",\n  \"minimum_ios\": \"26.0\",\n  \"frameworks\": [\n    \"Payload/JarvisEVO.app/Frameworks/llama.framework/llama\"\n  ],\n  \"sha256\": \"65ca3580cbba4ea8513a4dcb0bc97e2fe67933ba13aea1ad38f039f75b282bf8\",\n  \"size\": 37141596,\n  \"release_fixture_markers_absent\": true,\n  \"candidate3_resources_required\": true,\n  \"bundled_resources\": {\n    \"katex-0.19.1.min.js\": \"fa140498b8cfc8302cbe5e7cb1bdbc1f952bc38b3fa258ede09e73edbf9a74bc\",\n    \"KaTeX-0.19.1-LICENSE.txt\": \"766ccc1f306c885aa45542a9846bbd0a505b27a0374f146778171c2254ce18e3\",\n    \"llama.cpp-LICENSE.txt\": \"94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d\",\n    \"LFM-Vision-LICENSE.txt\": \"61d7e939a05911c765b7e98ffaa1ab5ca6c0174a65350766c25cb10197d19fc8\"\n  },\n  \"bundled_test_media_absent\": true,\n  \"candidate10_resources_required\": true,\n  \"verification\": \"package structure, executable fixture exclusion and build-specific resources only; runtime and SideStore signing are separate gates\"\n}\n",
+    "package-only/source-commit.txt": "40844c2d96441b8183f231fb27e8a52faa1db80c\n",
+    "runtime-reuse/provenance.json": "{\n  \"sourceRun\": 43685204421,\n  \"sourceCommit\": \"03b9c5cc0f96e0dce332e0e3c36460a9346ff304\",\n  \"executedRecipeSource\": \"f49c7558686046a16c66d29484ee953abefeb464\",\n  \"packageSource\": \"40844c2d96441b8183f231fb27e8a52faa1db80c\",\n  \"cacheKey\": \"combined-v1-macOS-ARM64-bb7fc9a8f5e063e81975b33054b3a526c91bcccff263ad11d5bd8bcdbe8f0973-f7345d0e3804bdea5af3b734f22b7f70dd8e3a64af60b220e247d6430a981762\",\n  \"archiveSHA256\": \"fcb5fb0ac432cd962461dfd7214caf8a40fdd438bea2ef5f31422879ddf341e8\",\n  \"compiledInputGitBlobs\": {\n    \"Diagnostics/CombinedRuntime/native-bridges.cmake\": \"a76cba420c6e4b47ceee606830ab6eba2e6a4744\",\n    \"Diagnostics/CombinedRuntime/simulator-slices.sh\": \"85f3e33dc416653a77436bf082662b744bcb1cfd\",\n    \"Diagnostics/NativeTools/bridge.cpp\": \"35e2361b613fd347ecfaed3a92aa79cbf7aea791\",\n    \"Diagnostics/NativeTools/bridge.h\": \"2f8ebbb5c9b9a3bb02cd773b3084e1ba5266ec6a\",\n    \"Diagnostics/NativeTools/driver-tests.cpp\": \"1ca46d89ade6d5c56e6f18f1114e30323be51202\",\n    \"Diagnostics/NativeTools/pinned-q4-candidate-template.h\": \"4ec6a15e361088e72d1313cf12ee3229bd6cb45c\",\n    \"Diagnostics/NativeTools/pinned-template.h\": \"50bcd70da8a33f5f286cb1737ab76a7da2039860\",\n    \"Diagnostics/NativeTools/policy-goal-tests.cpp\": \"20e6aa9164d4eecb8ac34645a1a8a2cbaf7c7a0a\",\n    \"Diagnostics/NativeTools/policy-tests.cpp\": \"22a52186e047fa36903ad14587716a8ee0c8aa7d\",\n    \"Diagnostics/NativeTools/test-shim.cpp\": \"8c360bfa6de90b8010f77aef969a836bc694bb98\",\n    \"Diagnostics/VisionProof/Bridge/vision_bridge.cpp\": \"be4775db2d5205c01b1512c850e422172e5e879d\",\n    \"Diagnostics/VisionProof/Bridge/vision_bridge.h\": \"ce1637f878bf8aa94aede3378f543c4406f7122d\",\n    \"Diagnostics/VisionRuntime/prepare_build.py\": \"e3b817339919a8429eb9fcff956ff01cd9f296e3\",\n    \"Diagnostics/VisionRuntime/source/build-xcframework.sh\": \"c25a1ef28c188fc7366075fa49755154cd189619\",\n    \"scripts/verify_combined_runtime.py\": \"fbe9c3594243e9aecb7b006e1b40b262a992decc\"\n  },\n  \"changedPaths\": [\n    \".github/workflows/build10-candidate.yml\",\n    \"Diagnostics/CombinedRuntime/prepare_build.py\",\n    \"scripts/ci_combined_runtime.sh\",\n    \"scripts/ci_macos.sh\",\n    \"scripts/ci_native_inference.sh\",\n    \"scripts/tests/test_combined_recipe.py\",\n    \"scripts/verify_build10_runtime_reuse.py\"\n  ],\n  \"recipeDifference\": \"complete xcodebuild version capture only\",\n  \"scope\": \"Exact cache provenance only; ordinary archive/platform/symbol and IPA checks remain required.\"\n}\n"
+  },
+  "limitations": [
+    "No physical device or SideStore signing acceptance",
+    "No live authenticated sync; peer SPI off",
+    "No generic autonomy acceptance",
+    "Frozen broad vision9/10; counting remains unreliable",
+    "No newly rerun full UI suite",
+    "App/test/native source equivalence verified, tests executed on03b9 not final package40844",
+    "Process termination may orphan private model snapshot"
+  ]
+}

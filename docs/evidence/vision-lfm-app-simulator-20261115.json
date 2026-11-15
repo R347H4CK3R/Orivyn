@@ -1,0 +1,27 @@
+{
+  "run": 43682659679,
+  "job": 132716426627,
+  "testedSource": "f8663e9e3d2a71d0c6c3bd5a8623b08ffa9cc7bb",
+  "artifact": 14149767705,
+  "artifactSHA256": "f8833e02610c84820954fa80ee049cf40b7517deb468591556426ba97239ed2a",
+  "files": {
+    "combined-runtime/app-source-commit.txt": "f8663e9e3d2a71d0c6c3bd5a8623b08ffa9cc7bb\n",
+    "production-inference/outcomes.txt": "vision=0\n",
+    "production-inference/source-commit.txt": "f8663e9e3d2a71d0c6c3bd5a8623b08ffa9cc7bb\n",
+    "production-inference/vision/outcomes.txt": "xcodebuild=0\nlog=0\nattachments=0\nsummary=0\nverifier=0\nmarker=0\n",
+    "production-inference/vision/test-summary.json": "{\n  \"devicesAndConfigurations\" : [\n    {\n      \"device\" : {\n        \"architecture\" : \"arm64\",\n        \"deviceId\" : \"54E17A43-0D26-4F2A-A8A3-1F1F13CE79A9\",\n        \"deviceName\" : \"iPhone 16 Plus\",\n        \"modelName\" : \"iPhone 16 Plus\",\n        \"osBuildNumber\" : \"23A8464\",\n        \"osVersion\" : \"26.0.1\",\n        \"platform\" : \"iOS Simulator\"\n      },\n      \"expectedFailures\" : 0,\n      \"failedTests\" : 0,\n      \"passedTests\" : 1,\n      \"skippedTests\" : 0,\n      \"testPlanConfiguration\" : {\n        \"configurationId\" : \"1\",\n        \"configurationName\" : \"Test Scheme Action\"\n      }\n    }\n  ],\n  \"environmentDescription\" : \"JarvisEVO · Built with macOS 15.8.2\",\n  \"expectedFailures\" : 0,\n  \"failedTests\" : 0,\n  \"finishTime\" : 1794723036.728,\n  \"passedTests\" : 1,\n  \"result\" : \"Passed\",\n  \"skippedTests\" : 0,\n  \"startTime\" : 1794722822.208,\n  \"statistics\" : [\n\n  ],\n  \"testFailures\" : [\n\n  ],\n  \"title\" : \"Test - JarvisEVO\",\n  \"topInsights\" : [\n\n  ],\n  \"totalTestCount\" : 1\n}\n",
+    "production-inference/xcode-version.txt": "Xcode 26.3\nBuild version 17C529\n"
+  },
+  "resultCandidates": [
+    "production-inference/vision/attachments/317A2CD7-1FE6-4437-9408-B9F217BB21FE.txt"
+  ],
+  "actualResult": {
+    "production-inference/vision/attachments/317A2CD7-1FE6-4437-9408-B9F217BB21FE.txt": "scope=iOS simulator CPU production runtime smoke\nmodelRevision=36fc16bc95133424921bcc3da009e83b2f23ffb5\nmodelSHA256=5436b6e50a2d0c8c3b1f3b4c5f37fd8d75512e56590a55f5a989ad40170a8c37\nprojectorSHA256=2cddba98b98390c011c606c416de2e63dcfdd3b21452bf71ad6aab59fa52d2ee\nelapsedSeconds=35.74020004272461\ncloseAcknowledged=true\nactualAnswer=A red square is visible.",
+    "testLines": [
+      "    /Applications/Xcode_26.3.app/Contents/Developer/usr/bin/xcodebuild test -project JarvisEVO.xcodeproj -scheme JarvisEVO -destination \"platform=iOS Simulator,id=54E17A43-0D26-4F2A-A8A3-1F1F13CE79A9\" -destination-timeout 120 -derivedDataPath /Users/runner/work/_temp/orivyn-inference-derived -parallel-testing-enabled NO -enableCodeCoverage NO \"-only-testing:JarvisEVOTests/ProductionVisionRuntimeTests/testRequiredProductionPNGInferenceAndRelease\" -test-timeouts-enabled YES -default-test-execution-time-allowance 300 -maximum-test-execution-time-allowance 600 -resultBundlePath /Users/runner/work/Orivyn/Orivyn/artifacts/production-inference/vision/ProductionVision.xcresult \"ORIVYN_NATIVE_FEATURES=ORIVYN_NATIVE_VISION ORIVYN_NATIVE_TOOLS\" CODE_SIGNING_ALLOWED=NO",
+      "Test Case '-[JarvisEVOTests.ProductionVisionRuntimeTests testRequiredProductionPNGInferenceAndRelease]' started.",
+      "ORIVYN_PRODUCTION_VISION_REQUIRED_GATE_COMPLETED",
+      "Test Case '-[JarvisEVOTests.ProductionVisionRuntimeTests testRequiredProductionPNGInferenceAndRelease]' passed (39.455 seconds)."
+    ]
+  }
+}
