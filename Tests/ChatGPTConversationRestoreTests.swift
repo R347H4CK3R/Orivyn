@@ -19,6 +19,57 @@ final class ChatGPTConversationRestoreTests: XCTestCase {
         XCTAssertEqual(result.omittedMessages, 0)
     }
 
+    func testNullAssistantRoutingFieldsMatchAbsentFields() throws {
+        for channel: Any? in [nil, NSNull(), "final"] {
+            for recipient: Any? in [nil, NSNull(), "all"] {
+                var value = record()
+                var mapping = value["mapping"] as! [String: [String: Any]]
+                var message = mapping["leaf"]!["message"] as! [String: Any]
+                message["author"] = ["role": "assistant"]
+                message["status"] = "finished_successfully"
+                message["channel"] = channel
+                message["recipient"] = recipient
+                mapping["leaf"]!["message"] = message
+                value["mapping"] = mapping
+                let result = try ChatGPTConversationRestore.convert(JSONSerialization.data(withJSONObject: value), identities: [:])
+                XCTAssertEqual(result.conversation?.messages.map(\.content), ["Saved question"])
+                XCTAssertEqual(result.conversation?.messages.first?.state, .complete)
+                XCTAssertEqual(result.omittedMessages, 0)
+            }
+        }
+    }
+
+    func testNullRoutingDoesNotExposeInternalOrMalformedAssistantMessages() throws {
+        let cases: [(Any, Any)] = [("analysis", NSNull()), ("commentary", NSNull()),
+            (NSNull(), "python"), (true, NSNull()), (NSNull(), 1), ("", "all"), ("final", "")]
+        for (channel, recipient) in cases {
+            var value = record()
+            var mapping = value["mapping"] as! [String: [String: Any]]
+            var message = mapping["leaf"]!["message"] as! [String: Any]
+            message["author"] = ["role": "assistant"]
+            message["channel"] = channel; message["recipient"] = recipient
+            mapping["leaf"]!["message"] = message; value["mapping"] = mapping
+            let result = try ChatGPTConversationRestore.convert(JSONSerialization.data(withJSONObject: value), identities: [:])
+            XCTAssertEqual(result.conversation?.messages.count, 0)
+            XCTAssertEqual(result.omittedMessages, 1)
+        }
+    }
+
+    func testNullRoutingDoesNotExposeHiddenOrPrivateAssistantMessages() throws {
+        for flag in ["is_visually_hidden_from_conversation", "is_user_system_message", "is_do_not_remember"] {
+            var value = record()
+            var mapping = value["mapping"] as! [String: [String: Any]]
+            var message = mapping["leaf"]!["message"] as! [String: Any]
+            message["author"] = ["role": "assistant"]
+            message["channel"] = NSNull(); message["recipient"] = NSNull()
+            message["metadata"] = [flag: true]
+            mapping["leaf"]!["message"] = message; value["mapping"] = mapping
+            let result = try ChatGPTConversationRestore.convert(JSONSerialization.data(withJSONObject: value), identities: [:])
+            XCTAssertEqual(result.conversation?.messages.count, 0)
+            XCTAssertEqual(result.omittedMessages, 1)
+        }
+    }
+
     func testRejectsInvalidAndOversizedRecords() throws {
         for data in [Data("[]".utf8), Data("{}".utf8), Data(repeating: 32, count: 16_000_001)] {
             XCTAssertThrowsError(try ChatGPTConversationRestore.convert(data, identities: [:]))

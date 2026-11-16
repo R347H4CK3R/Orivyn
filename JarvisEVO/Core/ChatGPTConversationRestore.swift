@@ -53,8 +53,10 @@ enum ChatGPTConversationRestore {
             guard metadata?["is_visually_hidden_from_conversation"] as? Bool != true,
                   metadata?["is_user_system_message"] as? Bool != true else { continue }
             if role == .assistant {
-                guard message["channel"] == nil || message["channel"] as? String == "final",
-                      message["recipient"] == nil || message["recipient"] as? String == "all" else { continue }
+                // JSON null is an unset optional routing field, not an internal channel.
+                // Non-null unknown/malformed routing still fails closed.
+                guard message["channel"] == nil || message["channel"] is NSNull || message["channel"] as? String == "final",
+                      message["recipient"] == nil || message["recipient"] is NSNull || message["recipient"] as? String == "all" else { continue }
             }
             guard let content = message["content"] as? [String: Any],
                   let type = content["content_type"] as? String, ["text", "multimodal_text"].contains(type),

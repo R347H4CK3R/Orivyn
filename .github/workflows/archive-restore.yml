@@ -1,4 +1,4 @@
-name: Verify repaired task controls and exact connected-plugin proposals
+name: Verify build 17 restore null-routing compatibility
 on:
   push:
     branches: [recovery/chatgpt-restore-20261116]
@@ -39,7 +39,7 @@ jobs:
           key: ${{ steps.combined-cache.outputs.cache-primary-key }}
       - name: Actual ZIP picker, reviewed restore and persistent history
         run: bash scripts/ci_archive_restore.sh
-      - name: Package build 16 only after exact native acceptance passes
+      - name: Package build 17 only after exact native acceptance passes
         run: bash scripts/ci_package_only.sh
       - uses: actions/upload-artifact@v4
         if: always()
