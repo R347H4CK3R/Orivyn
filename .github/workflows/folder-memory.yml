@@ -20,12 +20,24 @@ jobs:
         with:
           persist-credentials: false
       - name: Select Xcode 26.1
+        id: xcode
         run: |
           test -d /Applications/Xcode_26.1.app
           sudo xcode-select -s /Applications/Xcode_26.1.app/Contents/Developer
+          echo "identity=$(xcodebuild -version | shasum -a 256 | awk '{print $1}')" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache/restore@v4
+        id: combined-cache
+        with:
+          path: .cache/orivyn-combined
+          key: combined-v1-${{ runner.os }}-${{ runner.arch }}-${{ steps.xcode.outputs.identity }}-${{ hashFiles('Diagnostics/CombinedRuntime/prepare_build.py', 'Diagnostics/CombinedRuntime/simulator-slices.sh', 'Diagnostics/CombinedRuntime/build-ios-combined.sh', 'Diagnostics/CombinedRuntime/native-bridges.cmake', 'Diagnostics/VisionRuntime/prepare_build.py', 'Diagnostics/VisionRuntime/source/build-xcframework.sh', 'Diagnostics/NativeTools/*.cpp', 'Diagnostics/NativeTools/*.h', 'Diagnostics/VisionProof/Bridge/*.cpp', 'Diagnostics/VisionProof/Bridge/*.h', 'scripts/verify_combined_runtime.py', 'scripts/ci_combined_runtime.sh') }}
       - name: Build and verify combined runtime
         run: bash scripts/ci_combined_runtime.sh
-      - name: Native import, pagination and actual picker cancellation
+      - uses: actions/cache/save@v4
+        if: steps.combined-cache.outputs.cache-hit != 'true'
+        with:
+          path: .cache/orivyn-combined
+          key: ${{ steps.combined-cache.outputs.cache-primary-key }}
+      - name: Native import, pagination and actual folder selection
         run: bash scripts/ci_folder_memory.sh
       - uses: actions/upload-artifact@v4
         if: always()

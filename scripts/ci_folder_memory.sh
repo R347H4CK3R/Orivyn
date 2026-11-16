@@ -16,6 +16,7 @@ python3 scripts/generate_project.py
 xcrun simctl list devices available -j > "$A/simulators.json"
 SIM=$(python3 scripts/select_reviewed_runtime.py "$A/simulators.json")
 python3 scripts/boot_ci_simulator.py --simulator "$SIM" --timeout 300 --evidence "$A/boot.json"
+FOLDER_MEMORY_SIMULATOR="$SIM" bash Diagnostics/FolderMemory/prepare_fixture.sh > "$A/provider-fixture.log" 2>&1
 set +e
 xcodebuild test -project JarvisEVO.xcodeproj -scheme JarvisEVO -derivedDataPath "$RUNNER_TEMP/orivyn-folder-memory-derived" \
  -destination "platform=iOS Simulator,id=$SIM" -destination-timeout 120 -parallel-testing-enabled NO \
@@ -36,8 +37,8 @@ test "$status" = 0
 python3 - "$A/summary.json" <<'PY'
 import json,sys
 s=json.load(open(sys.argv[1]))
-expected={'totalTestCount':21,'passedTests':21,'failedTests':0,'skippedTests':0}
+expected={'totalTestCount':22,'passedTests':22,'failedTests':0,'skippedTests':0}
 for k,v in expected.items():
  assert type(s.get(k)) is int and s[k]==v,(k,s.get(k),v)
-print('21 required native/simulator tests passed without skips; no physical-device acceptance claim.')
+print('22 required native/simulator tests passed without skips; no physical-device acceptance claim.')
 PY
