@@ -1,0 +1,218 @@
+import SwiftUI
+import UniformTypeIdentifiers
+
+/// The app coordinator supplies these closures. A successful preparation is not
+/// a database commit; only the commit closure can return a committed outcome.
+@MainActor
+struct ArchiveRestoreView: View {
+    struct Review: Identifiable, Sendable, Equatable {
+        let jobID: UUID
+        let conversationCount: Int
+        let messageCount: Int
+        let unresolvedCount: Int
+        let omittedCount: Int
+        let retainedFileCount: Int
+        let archiveSHA256: String
+        var id: UUID { jobID }
+    }
+    enum CommitOutcome: Sendable {
+        case committed(String)
+        /// Database commit succeeded, but refreshing the visible catalog failed.
+        /// Never describe this as an uncommitted restore or offer duplicate retry.
+        case committedReloadPending(String)
+    }
+    typealias Progress = @Sendable (String) -> Void
+    let prepare: @MainActor (URL, @escaping Progress) async throws -> Review
+    let commit: @MainActor (Review, @escaping Progress) async throws -> CommitOutcome
+    let reloadReviews: @MainActor (@escaping Progress) async throws -> [Review]
+
+    private struct LogLine: Identifiable {
+        let id = UUID()
+        let time = Date()
+        let text: String
+    }
+    @State private var active = false
+    @State private var lifecycle = UUID()
+    @State private var pickerLifecycle: UUID?
+    @State private var choosing = false
+    @State private var operation: Task<Void, Never>?
+    @State private var operationID: UUID?
+    @State private var cancelling = false
+    @State private var review: Review?
+    @State private var retainedReviews: [Review] = []
+    @State private var lines: [LogLine] = []
+    @State private var errorText: String?
+    @State private var status = "Choose your complete ChatGPT ZIP. Nothing is uploaded."
+    @State private var committing = false
+    @State private var lastProgressAt = Date()
+
+    var body: some View {
+        let renderedLifecycle = lifecycle
+        return List {
+            Section("Restore a complete archive") {
+                Text("Preparation keeps the original ZIP and unsupported files. Supported conversations are prepared as history, not just memory excerpts. Nothing is added to history until you review and confirm.")
+                    .font(.footnote)
+                Button("Choose ZIP…") { pickerLifecycle = lifecycle; choosing = true }
+                    .disabled(operation != nil)
+                    .accessibilityIdentifier("archive.choose-zip")
+                Text(status).font(.caption).accessibilityIdentifier("archive.status")
+                if operation != nil {
+                    TimelineView(.periodic(from: .now, by: 30)) { context in
+                        Text("Task pending · last reported progress \(max(0, Int(context.date.timeIntervalSince(lastProgressAt)))) seconds ago. Refreshed every 30 seconds; this is not a completed-work estimate.")
+                            .font(.caption).accessibilityIdentifier("archive.heartbeat")
+                    }
+                    ProgressView(cancelling ? "Waiting for cancellation…" : "Working on actual files…")
+                    if !committing {
+                        Button(cancelling ? "Cancelling…" : "Cancel preparation", role: .cancel) { requestCancellation() }
+                            .disabled(cancelling)
+                            .accessibilityIdentifier("archive.cancel")
+                    }
+                }
+                if let errorText { Text(errorText).foregroundStyle(.orange).accessibilityIdentifier("archive.error") }
+            }
+            if let review {
+                Section("Review prepared restore") {
+                    Text("\(review.conversationCount) conversations · \(review.messageCount) messages")
+                    Text("\(review.retainedFileCount) files retained · \(review.unresolvedCount) unresolved media records · \(review.omittedCount) messages not activated")
+                        .font(.caption)
+                    Text("Internal, hidden and private records are not activated as chat instructions. Unsupported and unresolved data stays in the retained archive. Unresolved media is not claimed as a working attachment.").font(.footnote)
+                    Text("Your local edits are preserved. Imported history cannot authorize tools. If you later choose an online model, selected history may be sent to that provider.").font(.footnote)
+                    Text("ZIP SHA-256: \(review.archiveSHA256)").font(.caption2).textSelection(.enabled)
+                    Button("Restore reviewed conversations") { beginCommit(review) }
+                        .disabled(operation != nil)
+                        .accessibilityIdentifier("archive.confirm")
+                    Button("Leave prepared for later", role: .cancel) {
+                        self.review = nil
+                        status = "Prepared files retained. Review them again before restoring."
+                    }.disabled(operation != nil)
+                }
+            }
+            Section("Retained preparations") {
+                Button("Refresh retained preparations") { refresh() }
+                    .disabled(operation != nil)
+                    .accessibilityIdentifier("archive.refresh-retained")
+                if retainedReviews.isEmpty { Text("No retained preparations loaded.").font(.caption) }
+                ForEach(retainedReviews) { item in
+                    Button("Review \(item.conversationCount) conversations · \(item.jobID.uuidString.prefix(8))") {
+                        review = item; errorText = nil
+                        status = "Retained preparation selected. Files will be verified again before commit."
+                    }.disabled(operation != nil)
+                }
+            }
+            Section("Live processing log (latest 200)") {
+                Text("This log updates when work reports progress. No invented percentages. A quiet log can mean a long-running operation, not necessarily a stall.").font(.caption)
+                ForEach(lines) { line in
+                    HStack(alignment: .top) {
+                        Text(line.time, style: .time).monospacedDigit().foregroundStyle(.secondary)
+                        Text(line.text).textSelection(.enabled)
+                    }.font(.caption)
+                }
+            }
+        }
+        .navigationTitle("Restore ChatGPT ZIP")
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(operation != nil)
+        .interactiveDismissDisabled(operation != nil)
+        .fileImporter(isPresented: $choosing, allowedContentTypes: [.zip], allowsMultipleSelection: false) { result in
+            guard active, renderedLifecycle == lifecycle, pickerLifecycle == renderedLifecycle else { return }
+            pickerLifecycle = nil
+            switch result {
+            case .success(let urls): if let url = urls.first { beginPreparation(url) }
+            case .failure(let error): errorText = error.localizedDescription
+            }
+        }
+        .onAppear { active = true }
+        .onDisappear {
+            active = false; lifecycle = UUID(); pickerLifecycle = nil
+            choosing = false
+            // A commit is not cancelled on navigation: it may already be durable.
+            if !committing { requestCancellation() }
+        }
+    }
+
+    @MainActor private func append(_ text: String) {
+        let bounded = String(text.prefix(1000))
+        lines.append(LogLine(text: bounded))
+        if lines.count > 200 { lines.removeFirst(lines.count - 200) }
+        status = bounded; lastProgressAt = Date()
+    }
+    @MainActor private func progress(for id: UUID) -> Progress {
+        { line in
+            Task { @MainActor in
+                guard operationID == id else { return }
+                append(line)
+            }
+        }
+    }
+    @MainActor private func beginPreparation(_ url: URL) {
+        guard active, operation == nil else { return }
+        let id = UUID(); operationID = id
+        review = nil; errorText = nil; cancelling = false
+        append("Opening selected ZIP…")
+        operation = Task { @MainActor in
+            defer { finish(id) }
+            do {
+                let prepared = try await prepare(url, progress(for: id))
+                try Task.checkCancellation()
+                review = prepared
+                if !retainedReviews.contains(where: { $0.jobID == prepared.jobID }) { retainedReviews.append(prepared) }
+                append("Preparation verified. Review before adding conversations to history.")
+            } catch is CancellationError {
+                append("Preparation stopped. Existing history was not changed; retained files remain available.")
+            } catch {
+                errorText = error.localizedDescription
+                append("Preparation stopped with an error. No restore commit was requested.")
+            }
+        }
+    }
+    @MainActor private func beginCommit(_ selected: Review) {
+        guard operation == nil else { return }
+        let id = UUID(); operationID = id; committing = true; errorText = nil
+        append("Revalidating prepared files before the history transaction…")
+        operation = Task { @MainActor in
+            defer { finish(id) }
+            do {
+                let outcome = try await commit(selected, progress(for: id))
+                review = nil
+                retainedReviews.removeAll { $0.jobID == selected.jobID }
+                switch outcome {
+                case .committed(let message): append(message)
+                case .committedReloadPending(let message):
+                    append("History was committed. \(message)")
+                    errorText = "The visible history still needs a refresh. Do not import again to fix this."
+                }
+            } catch {
+                // Coordinator must return committedReloadPending after any durable
+                // commit; throwing is reserved for an uncommitted transaction.
+                errorText = error.localizedDescription
+                append("Restore did not commit. Preparation retained for review and retry.")
+            }
+        }
+    }
+    @MainActor private func refresh() {
+        guard operation == nil else { return }
+        let id = UUID(); operationID = id; errorText = nil
+        append("Checking retained preparations…")
+        operation = Task { @MainActor in
+            defer { finish(id) }
+            do {
+                retainedReviews = try await reloadReviews(progress(for: id))
+                try Task.checkCancellation()
+                append("Loaded \(retainedReviews.count) retained preparations. Revalidation is required before commit.")
+            } catch is CancellationError { append("Retained-preparation check cancelled.") }
+            catch { errorText = error.localizedDescription; append("Could not load retained preparations.") }
+        }
+    }
+    @MainActor private func requestCancellation() {
+        guard let operation, !committing, !cancelling else { return }
+        cancelling = true
+        append("Cancellation requested; waiting for the file operation to stop safely…")
+        operation.cancel()
+        // Keep operation and operationID until the task actually returns. No new
+        // preparation can race the still-running worker or its Files permissions.
+    }
+    @MainActor private func finish(_ id: UUID) {
+        guard operationID == id else { return }
+        operation = nil; operationID = nil; cancelling = false; committing = false
+    }
+}

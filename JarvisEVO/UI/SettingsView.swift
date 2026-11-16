@@ -51,6 +51,12 @@ struct SettingsView: View {
                     NavigationLink { TextExportView(model: model) } label: {
                         Label("Export selected text…", systemImage: "checklist")
                     }.accessibilityIdentifier("settings.export-text")
+                    NavigationLink {
+                        ArchiveRestoreView(prepare: { url, progress in try await model.prepareArchiveRestore(url, progress: progress) },
+                            commit: { review, progress in try await model.commitArchiveRestore(review, progress: progress) },
+                            reloadReviews: { progress in try await model.retainedArchiveReviews(progress: progress) })
+                    } label: { Label("Import complete ChatGPT ZIP", systemImage: "archivebox") }
+                        .disabled(model.isGenerating).accessibilityIdentifier("settings.import-chatgpt-zip")
                     NavigationLink { HistoryImportView(model: model) } label: { Label("Import conversation backup", systemImage: "square.and.arrow.down") }.disabled(model.isGenerating)
                 } header: { Text("Your data") } footer: {
                     Text("Backups include conversation text, extracted attachment text, and saved memories. Original files, projects, favorites, response preferences and API keys are not included. Keep backups private. Add missing only preserves matching local records. Replacement import overwrites matching conversations and memories, even when the backup is older. Export current data before replacing.")

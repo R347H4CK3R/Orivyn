@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Build exact preservation source/tests in a disposable Swift package; no private data."""
-import pathlib, sys, subprocess, shutil, json, zipfile, hashlib
+import pathlib, sys, subprocess, shutil, json, zipfile, hashlib, runpy
 root=pathlib.Path(__file__).resolve().parents[2]
 out=pathlib.Path(sys.argv[2]).resolve();out.mkdir(parents=True,exist_ok=False)
 for directory in ['Sources/Preservation','Tests/PreservationTests']:(out/directory).mkdir(parents=True)
@@ -13,6 +13,8 @@ if len(sys.argv) > 3:
  extractor = pathlib.Path(sys.argv[3]).resolve()
  shutil.copytree(extractor, out/'ArchiveExtraction', ignore=shutil.ignore_patterns('.build', '.swiftpm'))
  shutil.copyfile(root/'Diagnostics/ArchivePreservation/ArchivePipelineIntegrationTests.swift',out/'Tests/PreservationTests/ArchivePipelineIntegrationTests.swift')
+ shutil.copyfile(root/'Diagnostics/ArchivePreservation/ArchiveRestoreServiceTests.swift',out/'Tests/PreservationTests/ArchiveRestoreServiceTests.swift')
+ shutil.copyfile(root/'JarvisEVO/Services/ArchiveRestoreService.swift',out/'Sources/Preservation/ArchiveRestoreService.swift')
  for name in ['Conversation.swift','MemoryNote.swift','ImageOCRResult.swift','OCRLineEvidence.swift','ChatGPTConversationRestore.swift','ChatGPTRecordStream.swift']:
   shutil.copyfile(root/'JarvisEVO/Core'/name,out/'Sources/Preservation'/name)
  fixtures=out/'Tests/PreservationTests/Fixtures'; fixtures.mkdir()
@@ -27,9 +29,19 @@ if len(sys.argv) > 3:
  extra_dependency = ', .package(path: "ArchiveExtraction")'
  extra_test_dependency = ', .product(name: "ArchiveExtraction", package: "ArchiveExtraction")'
  resources = ', resources: [.copy("Fixtures")]'
+sqlite_dependency = ''; sqlite_target = ''
+if len(sys.argv) > 4:
+ sqlite_source = pathlib.Path(sys.argv[4]).resolve()
+ for name in runpy.run_path(str(root/'scripts/run_persistence_tests.py'))['SOURCES']:
+  shutil.copyfile(root/name, out/'Sources/Preservation'/pathlib.Path(name).name)
+ sqlite_dir = out/'Sources/SQLite3'; (sqlite_dir/'include').mkdir(parents=True)
+ shutil.copyfile(sqlite_source/'sqlite3.c',sqlite_dir/'sqlite3.c')
+ shutil.copyfile(sqlite_source/'sqlite3.h',sqlite_dir/'include/sqlite3.h')
+ sqlite_dependency = ', "SQLite3"'
+ sqlite_target = '.target(name:"SQLite3",publicHeadersPath:"include",cSettings:[.define("SQLITE_THREADSAFE",to:"1")],linkerSettings:[.linkedLibrary("dl"),.linkedLibrary("m")]),'
 (out/'Package.swift').write_text(f'''// swift-tools-version: 6.0
 import PackageDescription
-let package = Package(name: "Preservation", dependencies: [.package(url: "https://github.com/apple/swift-crypto.git", exact: "3.0.0"){extra_dependency}], targets: [.target(name: "Preservation", dependencies: [.product(name: "Crypto", package: "swift-crypto")]), .testTarget(name: "PreservationTests", dependencies: [.target(name: "Preservation"){extra_test_dependency}]{resources})])
+let package = Package(name: "Preservation", dependencies: [.package(url: "https://github.com/apple/swift-crypto.git", exact: "3.0.0"){extra_dependency}], targets: [{sqlite_target}.target(name: "Preservation", dependencies: [.product(name: "Crypto", package: "swift-crypto"){extra_test_dependency}{sqlite_dependency}]), .testTarget(name: "PreservationTests", dependencies: [.target(name: "Preservation"){extra_test_dependency}]{resources})])
 ''')
 (out/'SOURCE-MANIFEST.json').write_text(json.dumps([{'path':str(p.relative_to(out)),'sha256':hashlib.sha256(p.read_bytes()).hexdigest()} for p in sorted(out.rglob('*')) if p.is_file()],indent=2)+'\n')
 sys.exit(subprocess.call([sys.argv[1],'test','--jobs','2','--package-path',str(out)]))

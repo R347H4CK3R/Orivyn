@@ -72,3 +72,33 @@ sources. A fourth integration test verifies the synthetic archive's two selected
 messages become ordinary conversation models with expected roles/states while
 original ZIP bytes remain unchanged. Thirteen total tests pass. This is still
 component preparation, not database activation or app-level restore acceptance.
+
+## Durable coordinator and SQLite proof
+
+The fourth-argument mode now also snapshots `ArchiveRestoreService`, which writes
+bounded durable preparation state, a verified original ZIP, extracted files and
+SHA-bound plan/inventory. Recovery lists healthy reviews independently of orphaned
+jobs. Activation revalidates the exact decoded bytes and all inventory files.
+
+Add a fifth argument pointing to an official SQLite amalgamation directory
+containing `sqlite3.c` and `sqlite3.h` to exercise the actual production database:
+
+```
+python Diagnostics/ArchivePreservation/run.py /path/to/swift /new/scratch/proof Packages/ArchiveExtraction /path/to/sqlite-amalgamation
+```
+
+Twenty synthetic tests pass on Linux Swift 6.0.3: nine preservation, four pipeline,
+and seven coordinator tests. The latter include durable review recovery,
+corruption rejection, plan substitution during verification, orphan isolation,
+actual SQLite activation and receipt/history reopening, and stale preparation
+rejection after history erasure. The database receipt is authoritative once the
+transaction commits, even if subsequent UI reload or filesystem status fails.
+
+Settings exposes a ZIP picker, review/confirmation and retained preparations;
+timestamped progress and a 30-second last-progress display do not invent progress.
+These Apple UI/Files-provider integrations have only source syntax checks here,
+not Xcode typechecking or device tests. Missing or ambiguous metadata fails closed.
+Media references remain retained but unlinked until the actual export mapping
+schema can be validated. Attachment association has a separately tested primitive,
+not an invented mapping. Unsupported records and all original ZIP bytes remain
+preserved. This is not full-backup acceptance or a production-ready release.

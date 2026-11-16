@@ -17,6 +17,8 @@ settings:
     Debug:
       SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) DEBUG $(ORIVYN_NATIVE_FEATURES)"
 packages:
+  ArchiveExtraction:
+    path: Packages/ArchiveExtraction
   LlamaRuntime:
     path: Packages/LlamaRuntime
 targets:
@@ -40,6 +42,8 @@ targets:
     dependencies:
       - sdk: libsqlite3.tbd
       - sdk: JavaScriptCore.framework
+      - package: ArchiveExtraction
+        product: ArchiveExtraction
       - package: LlamaRuntime
         product: LlamaRuntime
   JarvisEVOTests:

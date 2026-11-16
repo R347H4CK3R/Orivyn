@@ -59,6 +59,7 @@ private final class DatabaseHandle: @unchecked Sendable {
             }
             try migrateTextLineageIfEligible()
             try migrateTextSenderIfEligible()
+            try execute("CREATE TABLE IF NOT EXISTS archive_restore_receipts (job TEXT PRIMARY KEY, archive TEXT NOT NULL UNIQUE, epoch TEXT NOT NULL, payload BLOB NOT NULL, receipt BLOB NOT NULL);")
             try execute("COMMIT")
         } catch { try? execute("ROLLBACK"); throw error }
         #if os(iOS)
@@ -142,6 +143,14 @@ enum DatabaseError: LocalizedError {
     var errorDescription: String? { switch self { case .operation(let text): text } }
 }
 
+struct ArchiveRestoreReceipt: Codable, Equatable, Sendable {
+    let jobID: UUID
+    let archiveSHA256: String
+    let epoch: UUID
+    let writtenConversations: Int
+    let preservedConversations: Int
+}
+
 actor SQLiteConversationStore {
     private let database: DatabaseHandle
     private let encoder = JSONEncoder()
@@ -149,6 +158,93 @@ actor SQLiteConversationStore {
     private let transient = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
 
     init(url: URL) throws { database = try DatabaseHandle(url: url) }
+
+    /// Commits only a fully prepared, explicitly reviewed text restore. The caller
+    /// owns archive/plan SHA verification and Files permissions. Exact canonical
+    /// bytes bind replay; attachments require a separate ownership-proof API.
+    /// A returned receipt means COMMIT succeeded even if the caller's later reload fails.
+    func applyArchiveRestore(jobID: UUID, archiveSHA256: String, expectedEpoch: UUID, conversations: [Conversation]) throws -> ArchiveRestoreReceipt {
+        try Task.checkCancellation()
+        guard archiveSHA256.count == 64,
+              archiveSHA256.utf8.allSatisfy({ (48...57).contains($0) || (97...102).contains($0) }),
+              conversations.count <= ConversationBackup.maximumRecordsPerCollection,
+              Set(conversations.map(\.id)).count == conversations.count else { throw ConversationError.invalidBackup }
+        for conversation in conversations {
+            try validate(conversation)
+            guard conversation.messages.allSatisfy({ $0.attachments.isEmpty && $0.state != .streaming }) else { throw ConversationError.unsafeAttachment }
+        }
+        let canonical = JSONEncoder(); canonical.outputFormatting = [.sortedKeys]
+        let payload = try canonical.encode(conversations)
+        guard payload.count <= ConversationBackup.maximumBytes else { throw ConversationError.tooLarge }
+        try Task.checkCancellation()
+        try database.execute("BEGIN IMMEDIATE")
+        do {
+            guard try textReceiveEpoch() == expectedEpoch else { throw DatabaseError.operation("This archive restore predates local history erasure. Prepare and review it again.") }
+            let prior: ArchiveRestoreReceipt? = try withStatement("SELECT job,archive,epoch,payload,receipt FROM archive_restore_receipts WHERE job=? OR archive=?") { statement in
+                bind(jobID.uuidString, to: 1, in: statement); bind(archiveSHA256, to: 2, in: statement)
+                let status = sqlite3_step(statement)
+                if status == SQLITE_DONE { return nil }
+                guard status == SQLITE_ROW else { throw DatabaseError.operation("Could not inspect archive restore receipt.") }
+                let receipt = try decoder.decode(ArchiveRestoreReceipt.self, from: blob(statement, at: 4))
+                guard let jobColumn = sqlite3_column_text(statement, 0),
+                      let archiveColumn = sqlite3_column_text(statement, 1),
+                      let epochColumn = sqlite3_column_text(statement, 2),
+                      String(cString: jobColumn) == receipt.jobID.uuidString,
+                      String(cString: archiveColumn) == receipt.archiveSHA256,
+                      String(cString: epochColumn) == receipt.epoch.uuidString,
+                      receipt.archiveSHA256 == archiveSHA256, receipt.epoch == expectedEpoch,
+                      receipt.writtenConversations >= 0, receipt.preservedConversations >= 0,
+                      receipt.writtenConversations <= conversations.count,
+                      receipt.preservedConversations == conversations.count - receipt.writtenConversations,
+                      blob(statement, at: 3) == payload else { throw DatabaseError.operation("Archive restore identity is already bound to a different reviewed plan.") }
+                guard sqlite3_step(statement) == SQLITE_DONE else { throw DatabaseError.operation("Archive restore identities conflict.") }
+                return receipt
+            }
+            if let prior { try Task.checkCancellation(); try database.execute("COMMIT"); return prior }
+            let retained = try withStatement("SELECT COALESCE(SUM(length(payload)),0),COUNT(*) FROM archive_restore_receipts") { statement in
+                guard sqlite3_step(statement) == SQLITE_ROW, sqlite3_column_int64(statement, 1) < 1000 else { throw DatabaseError.operation("Archive receipt capacity reached.") }
+                return sqlite3_column_int64(statement, 0)
+            }
+            guard retained >= 0, retained <= Int64(ConversationBackup.maximumBytes - payload.count) else { throw DatabaseError.operation("Archive receipt capacity reached.") }
+            let localIDs = Set(try list(includeArchived: true).map(\.id))
+            let additions = conversations.filter { !localIDs.contains($0.id) }
+            guard localIDs.count + additions.count <= ConversationBackup.maximumRecordsPerCollection else { throw ConversationError.backupRecordLimit }
+            for conversation in additions { try Task.checkCancellation(); try writeConversation(conversation) }
+            let receipt = ArchiveRestoreReceipt(jobID: jobID, archiveSHA256: archiveSHA256, epoch: expectedEpoch,
+                writtenConversations: additions.count, preservedConversations: conversations.count - additions.count)
+            try withStatement("INSERT INTO archive_restore_receipts(job,archive,epoch,payload,receipt) VALUES(?,?,?,?,?)") { statement in
+                bind(jobID.uuidString, to: 1, in: statement); bind(archiveSHA256, to: 2, in: statement)
+                bind(expectedEpoch.uuidString, to: 3, in: statement); bind(payload, to: 4, in: statement)
+                bind(try canonical.encode(receipt), to: 5, in: statement); try requireDone(statement)
+            }
+            try Task.checkCancellation()
+            try database.execute("COMMIT")
+            return receipt
+        } catch { try? database.execute("ROLLBACK"); throw error }
+    }
+
+    /// Historical commit evidence, not a claim that the UI has reloaded the rows.
+    func archiveRestoreReceipt(jobID: UUID) throws -> ArchiveRestoreReceipt? {
+        try withStatement("SELECT job,archive,epoch,receipt FROM archive_restore_receipts WHERE job=?") { statement in
+            bind(jobID.uuidString, to: 1, in: statement)
+            let status = sqlite3_step(statement)
+            if status == SQLITE_DONE { return nil }
+            guard status == SQLITE_ROW else { throw DatabaseError.operation("Could not read archive restore receipt.") }
+            let receipt = try decoder.decode(ArchiveRestoreReceipt.self, from: blob(statement, at: 3))
+            guard let jobColumn = sqlite3_column_text(statement, 0),
+                  let archiveColumn = sqlite3_column_text(statement, 1),
+                  let epochColumn = sqlite3_column_text(statement, 2),
+                  String(cString: jobColumn) == receipt.jobID.uuidString,
+                  String(cString: archiveColumn) == receipt.archiveSHA256,
+                  String(cString: epochColumn) == receipt.epoch.uuidString,
+                  receipt.jobID == jobID, receipt.writtenConversations >= 0,
+                  receipt.preservedConversations >= 0,
+                  receipt.writtenConversations <= ConversationBackup.maximumRecordsPerCollection,
+                  receipt.preservedConversations <= ConversationBackup.maximumRecordsPerCollection - receipt.writtenConversations
+            else { throw DatabaseError.operation("Archive receipt identity is invalid.") }
+            return receipt
+        }
+    }
 
     func list(includeArchived: Bool = false, query: String = "") throws -> [Conversation] {
         let sql = "SELECT payload FROM conversations WHERE (? = 1 OR archived = 0) AND (? = '' OR instr(lower(search), lower(?)) > 0) ORDER BY updated DESC"
@@ -255,6 +351,9 @@ actor SQLiteConversationStore {
     /// Runs inside the caller's erasure transaction. Missing receive metadata must
     /// not prevent user erasure. Do not recreate it: receives still fail closed.
     private func invalidateTextReceivesForErasure() throws {
+        if try tableExists("archive_restore_receipts") {
+            try database.execute("DELETE FROM archive_restore_receipts")
+        }
         if try tableExists("text_receive_receipts") {
             // Real failures still roll back: otherwise private receipt text could remain.
             try database.execute("DELETE FROM text_receive_receipts")

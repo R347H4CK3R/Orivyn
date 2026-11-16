@@ -205,8 +205,10 @@ final class AppModel {
         if verifiedReadOwner == id { verifiedReadOwner = nil }
     }
 
+    private(set) var archiveJobsDirectory: URL?
     private(set) var verifiedReadDirectory: URL?
     func configureLocalWork(directory: URL) {
+        archiveJobsDirectory = directory.appendingPathComponent("ArchiveRestoreJobs", isDirectory: true)
         verifiedReadDirectory = directory.appendingPathComponent("VerifiedLocalTasks", isDirectory: true)
         localAgentDirectory = directory.appendingPathComponent("LocalAgentTasks", isDirectory: true)
         virtualDesktopDirectory = directory.appendingPathComponent("VirtualDesktopCheckpoints", isDirectory: true)
@@ -1141,6 +1143,84 @@ final class AppModel {
             statusMessage = summary.description
             requestAttachmentCleanup()
         } catch { report(error) }
+    }
+
+    private func archiveRoot() throws -> URL {
+        guard let root = archiveJobsDirectory else { throw ArchiveRestoreService.Failure.invalidJob }
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        return root.resolvingSymlinksInPath()
+    }
+    private func runArchiveWork<T: Sendable>(_ body: @escaping @Sendable () throws -> T) async throws -> T {
+        let worker = Task.detached(priority: .utility, operation: body)
+        return try await withTaskCancellationHandler {
+            let value = try await worker.value
+            try Task.checkCancellation(); return value
+        } onCancel: { worker.cancel() }
+    }
+    private func archiveViewReview(_ value: ArchiveRestoreService.Review) -> ArchiveRestoreView.Review {
+        .init(jobID: value.jobID, conversationCount: value.conversationCount, messageCount: value.messageCount,
+              unresolvedCount: value.unresolvedCount, omittedCount: value.omittedCount,
+              retainedFileCount: value.retainedFileCount, archiveSHA256: value.archiveSHA256)
+    }
+    private func archiveServiceReview(_ value: ArchiveRestoreView.Review) -> ArchiveRestoreService.Review {
+        .init(jobID: value.jobID, conversationCount: value.conversationCount, messageCount: value.messageCount,
+              unresolvedCount: value.unresolvedCount, omittedCount: value.omittedCount,
+              retainedFileCount: value.retainedFileCount, archiveSHA256: value.archiveSHA256)
+    }
+    func prepareArchiveRestore(_ url: URL, progress: @escaping ArchiveRestoreView.Progress) async throws -> ArchiveRestoreView.Review {
+        guard !isGenerating, beginHistoryChange() else { throw TextSnapshotError.busy }
+        defer { finishHistoryChange() }
+        progress("Releasing local model memory before archive preparation")
+        await resourceReleaser.unload()
+        try Task.checkCancellation()
+        let root = try archiveRoot(), epoch = try await store.textReceiveEpoch()
+        let review = try await ArchiveRestoreFileReader.read(url) { selected in
+            try ArchiveRestoreService.prepare(source: selected, jobsRoot: root, expectedEpoch: epoch, progress: progress)
+        }
+        return archiveViewReview(review)
+    }
+    func retainedArchiveReviews(progress: @escaping ArchiveRestoreView.Progress) async throws -> [ArchiveRestoreView.Review] {
+        if peerHistoryNeedsReload {
+            try await recoverPeerHistoryReceive()
+            progress("Committed history reloaded; history editing is available again.")
+        }
+        let root = try archiveRoot()
+        let retained = try await runArchiveWork { try ArchiveRestoreService.inspectRetainedJobs(jobsRoot: root) }
+        if !retained.incompleteJobs.isEmpty {
+            progress("\(retained.incompleteJobs.count) incomplete/damaged preparations retained. They were not imported; choose the original ZIP again to retry safely.")
+        }
+        return retained.reviews.map(archiveViewReview)
+    }
+    func commitArchiveRestore(_ value: ArchiveRestoreView.Review, progress: @escaping ArchiveRestoreView.Progress) async throws -> ArchiveRestoreView.CommitOutcome {
+        guard !isGenerating, beginHistoryChange() else { throw TextSnapshotError.busy }
+        var releaseHistory = true
+        defer { if releaseHistory { finishHistoryChange() } }
+        progress("Releasing local model memory before restore verification")
+        await resourceReleaser.unload()
+        try Task.checkCancellation()
+        let root = try archiveRoot(), review = archiveServiceReview(value)
+        let plan = try await runArchiveWork { try ArchiveRestoreService.verifyForCommit(review: review, jobsRoot: root, progress: progress) }
+        try Task.checkCancellation()
+        progress("Committing reviewed conversations atomically. Existing local records are preserved.")
+        let receipt = try await store.applyArchiveRestore(jobID: review.jobID, archiveSHA256: review.archiveSHA256,
+            expectedEpoch: plan.expectedEpoch, conversations: plan.conversations)
+        // From this point the receipt is authoritative: failures cannot be reported as rollback.
+        var pending: [String] = []
+        do { try await runArchiveWork { try ArchiveRestoreService.markCommitted(review: review, jobsRoot: root) } }
+        catch { pending.append("Recovery status could not be refreshed; the database receipt is saved.") }
+        attachmentHistoryIsLoaded = false; peerHistoryNeedsReload = true
+        do {
+            conversations = try await store.list(includeArchived: true)
+            conversationRevision = UUID()
+            attachmentHistoryIsLoaded = true; peerHistoryNeedsReload = false
+        } catch {
+            releaseHistory = false
+            pending.append("History editing is locked until reload succeeds. Refresh retained preparations or reopen the app to retry.")
+        }
+        let result = "Restore receipt verified: \(receipt.writtenConversations) added, \(receipt.preservedConversations) existing conversations preserved. \(review.unresolvedCount) media references remain unlinked; original files are retained."
+        statusMessage = result
+        if !pending.isEmpty { return .committedReloadPending(result + " " + pending.joined(separator: " ")) }
+        return .committed(result)
     }
 
     /// Review is additive; reuse the SQLite transaction so a failed write adds nothing.
