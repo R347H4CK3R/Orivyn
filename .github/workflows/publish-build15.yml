@@ -1,3 +1,4 @@
+# Explicit push on the matching draft-publication branch; gates unchanged.
 name: Stage verified Orivyn build 15 draft preview
 on:
   push:
