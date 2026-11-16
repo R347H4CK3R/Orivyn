@@ -1,4 +1,4 @@
-name: Verify synthetic ZIP restoration and native archive components
+name: Verify integrated ZIP restoration and conversational tool behavior
 on:
   push:
     branches: [recovery/chatgpt-restore-20261116]

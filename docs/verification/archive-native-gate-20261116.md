@@ -29,3 +29,10 @@ never supplied to CI. No IPA or completed 1.0 release was produced by this gate.
 Mac-hosted ArchiveExtraction package tests also passed 17/17. The candidate fixes
 URL directory-hint equality without accepting symlink/noncanonical roots, and
 selects the Files ZIP cell instead of its text label. Native rerun is required.
+
+Final integrated gate also includes one deterministic capability-inventory test
+and one pinned actual-model semantic test (three synthetic prompts), raising the
+required native/simulator count to 75. The integrated portable suite passes 531
+tests with the previously documented Linux URLProtocol redirect exclusion.
+An attempted rerun with a mistyped exclusion hit that unsupported Foundation
+callback; the corrected run passed. No native semantic pass is inferred.

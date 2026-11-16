@@ -2,6 +2,14 @@ import XCTest
 @testable import JarvisEVO
 
 final class ChatResponsePolicyTests: XCTestCase {
+    func testPolicyNamesOnlySupportedDirectReadsAndReviewedPlugins() {
+        let prompt = ChatResponsePolicy.instructions
+        for tool in ["list installed models", "show app information", "search saved memory"] {
+            XCTAssertTrue(prompt.contains(tool))
+        }
+        XCTAssertTrue(prompt.contains("Plugin calls require exact-call review"))
+        XCTAssertFalse(prompt.contains("Chat does not automatically call device tools"))
+    }
     func testWritingCodeIsNotExecutionAndRepliesDoNotEcho() {
         let prompt = ChatResponsePolicy.instructions
         XCTAssertTrue(prompt.contains("write Python"))
