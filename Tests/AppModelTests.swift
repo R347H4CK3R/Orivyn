@@ -544,7 +544,7 @@ final class AppModelTests: XCTestCase {
         let binding = NormalChatReceiptBinding(context: .init(conversationID: conversationID,
             conversationRevision: model.pluginResultConversationContext,
             providerRevision: model.pluginProposalProviderContext), assistantID: assistantID)
-        let action = try LocalCompletionContract.Action(value: .object(["name": .string("list_models"), "arguments": .object([:])]))
+        let action = try NormalChatToolAction(value: .object(["name": .string("list_models"), "arguments": .object([:])]))
         try await model.recordNormalChatReceipt(.init(operationID: UUID(), phase: .started, action: action, result: nil), binding: binding)
         let saved = try await store.load(id: conversationID)
         XCTAssertTrue(saved?.messages.last?.content.contains("App-recorded local read receipt") == true)

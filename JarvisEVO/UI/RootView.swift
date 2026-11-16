@@ -483,7 +483,7 @@ struct RootView: View {
                     .accessibilityIdentifier("composer.localTask.notice")
             }
             if model.automaticLocalChatReadsAvailable {
-                Text("On-device assistant may read saved memories, app info and installed models. Read receipts appear in chat.")
+                Text("On-device assistant may read saved memories, app info and installed models, and calculate explicit arithmetic. Receipts appear in chat.")
                     .font(.caption2).foregroundStyle(.secondary)
                     .accessibilityIdentifier("composer.localReads.notice")
             }

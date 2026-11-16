@@ -12,7 +12,7 @@ class LocalReadDisclosureTests(unittest.TestCase):
         match = re.search(r'if model\.automaticLocalChatReadsAvailable \{([^}]+)\}', source)
         self.assertIsNotNone(match, 'Local-read scope must be visible under the model eligibility guard')
         body = match.group(1)
-        self.assertIn('On-device assistant may read saved memories, app info and installed models. Read receipts appear in chat.', body)
+        self.assertIn('On-device assistant may read saved memories, app info and installed models, and calculate explicit arithmetic. Receipts appear in chat.', body)
         self.assertIn('.accessibilityIdentifier("composer.localReads.notice")', body)
         self.assertEqual(source.count('composer.localReads.notice'), 1)
         self.assertNotIn('Button(', body, 'This is scope disclosure, not a second execution/consent control')

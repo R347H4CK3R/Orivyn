@@ -613,7 +613,7 @@ final class AppModel {
         // Required acknowledgement barrier: no next model/tool step on save error.
         try await persist(binding.context.conversationID)
         try validateNormalChatOrigin(binding)
-        statusMessage = "Local read " + event.phase.rawValue + ": " + event.action.name
+        statusMessage = (event.action.name == "calculate" ? "Local calculation " : "Local read ") + event.phase.rawValue + ": " + event.action.name
     }
 
     func send() {
@@ -687,7 +687,7 @@ final class AppModel {
                 guard let self else { throw CancellationError() }
                 try await self.validateNormalChatOrigin(binding)
                 let result = try await LocalReadTools.executeAsync(name: action.name,
-                    arguments: action.arguments, model: self, resultByteLimit: 4096)
+                    arguments: action.arguments, model: self, resultByteLimit: 4096, trustedGoal: turn.goal)
                 try await self.validateNormalChatOrigin(binding)
                 return result
             },
@@ -717,7 +717,7 @@ final class AppModel {
                 })
         }
         statusMessage = proposalGeneration == nil
-            ? "Thinking on device; local read receipts will appear in chat."
+            ? "Thinking on device; local tool receipts will appear in chat."
             : "Checking connected tools on device; any suggested call requires your review."
         submit(text: draft, attachments: [], conversationID: conversationID, provider: selected, providerID: selected.id,
             preparedAssistant: { binding.assistantID = $0; self.pluginProposalGeneration = proposalGeneration })

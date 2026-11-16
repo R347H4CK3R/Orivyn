@@ -66,7 +66,7 @@
     {
       "id": "calculator",
       "status": "conditional",
-      "detail": "Deterministic approximate on-device arithmetic, not code execution. Calculator requires explicit input and Calculate. Reviewed local tasks accept only an expression matching the original user request, not inferred word problems. This is not an automatic direct-chat tool."
+      "detail": "Deterministic approximate on-device arithmetic, not code execution. Calculator requires explicit input and Calculate. Reviewed local tasks accept only an expression matching the original user request, not inferred word problems. Normal local-model chat may call the same exact-request arithmetic tool and records independently checked approximate results."
     },
     {
       "id": "saved-memory",
@@ -76,7 +76,7 @@
     {
       "id": "local-tasks",
       "status": "conditional",
-      "detail": "The local task panel and saved-chat cards support explicit proposal, scope review, Run and recovery. An installed local model is required for model decisions. Recorded read evidence is separate from unverified model answers. Fresh normal chat with a selected or Automatic-prepared installed local model can choose up to three app-info, installed-model or saved-memory reads and continue from recorded results. No remote, plugin, write or general agent capability is implied."
+      "detail": "The local task panel and saved-chat cards support explicit proposal, scope review, Run and recovery. An installed local model is required for model decisions. Recorded read evidence is separate from unverified model answers. Fresh normal chat with a selected or Automatic-prepared installed local model can choose up to three app-info, installed-model, saved-memory or exact-request arithmetic calls and continue from recorded results. No remote, plugin, write or general agent capability is implied."
     },
     {
       "id": "archive-restore",

@@ -90,7 +90,7 @@ extension LocalAgentGrammar {
 
 extension LocalAgentGrammar {
     /// Normal chat can answer immediately and has only the advertised three
-    /// local reads. Generic-agent conversation/calculator/result paging rules
+    /// local reads plus exact-goal arithmetic. Conversation/result paging rules
     /// are deliberately unreachable from this root.
     static func normalChat(_ source: String) throws -> String {
         guard source.hasPrefix("root ::= tool | read-result | answer\n") else { throw LocalAgentError.invalidState }
@@ -98,7 +98,7 @@ extension LocalAgentGrammar {
         guard let index = lines.firstIndex(where: { $0.hasPrefix("tool-body ::= ") }),
               let limit = lines.firstIndex(where: { $0.hasPrefix("limit ::= ") }) else { throw LocalAgentError.invalidState }
         let alternatives = lines[index].dropFirst("tool-body ::= ".count).components(separatedBy: " | ")
-        let names = DirectChatRead.allCases.map(\.rawValue)
+        let names = NormalChatToolAction.allowedNames
         let retained = alternatives.filter { candidate in
             names.contains { candidate.hasPrefix("\"\\\"" + $0 + "\\\"\"") }
         }

@@ -4,6 +4,7 @@ Requires an already-installed Swift6 toolchain; does not download or dispatch CI
 """
 import argparse, hashlib, json, os, pathlib, subprocess, sys
 SOURCES = [
+ 'JarvisEVO/Core/NormalChatToolAction.swift',
  'JarvisEVO/Core/ChatPluginProposal.swift',
  'JarvisEVO/Core/NormalChatLocalAgent.swift',
  'JarvisEVO/Core/NaturalLocalReadIntent.swift',

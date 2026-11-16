@@ -237,7 +237,7 @@ final class ProductionNormalChatLocalAgentTests: XCTestCase {
             return object?["tool"]?.stringValue == "search_memory" && object?["phase"]?.stringValue == "succeeded"
                 && object?["result"]?.stringValue?.contains(marker) == true
         }, "Only a production persisted read receipt proves tool dispatch")
-        let answerBoundary = "[Model-generated answer; interpretation is unverified. App-recorded receipts above describe actual reads.]\n"
+        let answerBoundary = "[Model-generated answer; interpretation is unverified. App-recorded receipts above describe actual local operations.]\n"
         XCTAssertTrue(visible.contains(answerBoundary))
         let finalAnswer = try XCTUnwrap(visible.components(separatedBy: answerBoundary).last)
         XCTAssertTrue(finalAnswer.contains(marker), "Marker in receipt alone is not a grounded model answer")
@@ -262,7 +262,7 @@ private struct ObservedNormalChatModel: AIProvider {
 private actor NormalChatModelJournal {
     let url: URL
     var events: [NormalChatReadEvent] = []
-    var reads: [LocalCompletionContract.Action] = []
+    var reads: [NormalChatToolAction] = []
     var requests: [String] = []
     init(url: URL) { self.url = url }
     func beforeModel(_ request: GenerationRequest) throws {
@@ -273,7 +273,7 @@ private actor NormalChatModelJournal {
         }
         requests.append(request.systemPrompt + request.messages.map(\.content).joined(separator: "\n"))
     }
-    func beforeRead(_ action: LocalCompletionContract.Action) throws {
+    func beforeRead(_ action: NormalChatToolAction) throws {
         guard let last = events.last, last.phase == .started, last.action == action else { throw LocalAgentError.storage }
         let persisted = try String(contentsOf: url, encoding: .utf8)
         guard persisted.contains(try last.rendered()) else { throw LocalAgentError.storage }
@@ -292,7 +292,7 @@ private actor NormalChatModelJournal {
         try handle.close()
         events = next
     }
-    func snapshot() -> (events: [NormalChatReadEvent], reads: [LocalCompletionContract.Action], requests: [String]) {
+    func snapshot() -> (events: [NormalChatReadEvent], reads: [NormalChatToolAction], requests: [String]) {
         (events, reads, requests)
     }
 }
