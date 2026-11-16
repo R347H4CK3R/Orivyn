@@ -49,6 +49,31 @@ final class PluginToolProposalTests: XCTestCase {
             "<think>private</think>{\"unsupported\":true}"
         ] { XCTAssertThrowsError(try PluginToolProposal.parse(raw, tools: catalog())) }
     }
+    func testDuplicateCatalogRejectedAtSharedPromptAndParserBoundary() throws {
+        let tool = try catalog()[0]
+        let duplicate = [tool, tool]
+        XCTAssertThrowsError(try PluginToolProposal.prompt(goal: "find hello", tools: duplicate)) {
+            XCTAssertEqual($0 as? MCPClientFailure, MCPClientFailure(.unknownTool))
+        }
+        for output in [#"{"tool":"notes.search","arguments":{"query":"hello"}}"#, #"{"unsupported":true}"#] {
+            XCTAssertThrowsError(try PluginToolProposal.parse(output, tools: duplicate)) {
+                XCTAssertEqual($0 as? MCPClientFailure, MCPClientFailure(.unknownTool))
+            }
+        }
+    }
+    func testDirectParserRejectsCatalogBeyondPromptBound() throws {
+        let tool = try catalog()[0]
+        XCTAssertThrowsError(try PluginToolProposal.parse(#"{"unsupported":true}"#, tools: Array(repeating: tool, count: 65))) {
+            XCTAssertEqual($0 as? MCPClientFailure, MCPClientFailure(.invalidArguments))
+        }
+    }
+    func testDuplicateCatalogRejectsBeforeDirectGeneration() async throws {
+        let tool = try catalog()[0]
+        do {
+            _ = try await PluginToolProposal.generate(goal: "find hello", tools: [tool, tool], provider: NeverRequestedProposalProvider())
+            XCTFail("Ambiguous catalog accepted")
+        } catch { XCTAssertEqual(error as? MCPClientFailure, MCPClientFailure(.unknownTool)) }
+    }
     func testBoundedInputAndEmptyCatalog() throws {
         XCTAssertThrowsError(try PluginToolProposal.prompt(goal: String(repeating: "x", count: 4097), tools: catalog()))
         XCTAssertThrowsError(try PluginToolProposal.prompt(goal: "search", tools: []))
@@ -64,5 +89,13 @@ private struct ProposalProvider: AIProvider {
             for piece in pieces { c.yield(piece) }
             c.finish()
         }
+    }
+}
+
+private struct NeverRequestedProposalProvider: AIProvider {
+    let id = "must-not-run"; let displayName = "Must not run"
+    func stream(_ request: GenerationRequest) async throws -> AsyncThrowingStream<String, Error> {
+        XCTFail("Duplicate catalog reached model inference")
+        throw MCPClientFailure(.invalidArguments)
     }
 }

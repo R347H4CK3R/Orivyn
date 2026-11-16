@@ -14,4 +14,11 @@ class ChatTaskAccessibilityTests(unittest.TestCase):
         self.assertIn('.accessibilityIdentifier("chat.task.inspect.', source)
         self.assertIn('.accessibilityIdentifier("chat.task.evidence.', source)
 
+    def test_form_task_buttons_do_not_share_automatic_row_action(self):
+        source = (ROOT / "JarvisEVO/UI/LocalAgentView.swift").read_text()
+        controls = source.split('Button(task.status == "interrupted" ? "Resume" : "Run")', 1)[1].split('Button("Archive task")', 1)[0]
+        self.assertIn('.buttonStyle(.borderless)', controls)
+        self.assertIn('session.stop(cancelTask: true)', controls)
+        self.assertIn('session.stop(cancelTask: false)', controls)
+
 if __name__ == "__main__": unittest.main()

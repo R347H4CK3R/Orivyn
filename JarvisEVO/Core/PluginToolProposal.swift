@@ -24,6 +24,7 @@ struct PluginToolProposal: Equatable, Sendable {
     }
 
     static func parse(_ text: String, tools: [MCPToolDefinition]) throws -> Self? {
+        try validateUniqueCatalogNames(tools)
         let value = try MCPJSONValue.parse(Data(text.utf8), maximumBytes: 16_384)
         guard let object = value.objectValue else { throw MCPClientFailure(.invalidArguments) }
         if object == ["unsupported": .bool(true)] { return nil }
@@ -37,7 +38,16 @@ struct PluginToolProposal: Equatable, Sendable {
         return Self(name: tool.name, arguments: arguments)
     }
 
+    private static func validateUniqueCatalogNames(_ tools: [MCPToolDefinition]) throws {
+        // Every entry point must reject ambiguous schemas before inference or parsing.
+        // Use the same byte-exact identity as the proposal's tool lookup.
+        guard tools.count <= 64 else { throw MCPClientFailure(.invalidArguments) }
+        let names = tools.map { Data($0.name.utf8) }
+        guard Set(names).count == names.count else { throw MCPClientFailure(.unknownTool) }
+    }
+
     static func prompt(goal: String, tools: [MCPToolDefinition]) throws -> String {
+        try validateUniqueCatalogNames(tools)
         guard !goal.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
               goal.utf8.count <= 4096, !tools.isEmpty, tools.count <= 64 else {
             throw MCPClientFailure(.invalidArguments)

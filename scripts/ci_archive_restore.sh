@@ -8,7 +8,7 @@ test "${RUNNER_ENVIRONMENT:-}" = github-hosted
 A="$PWD/artifacts/archive-restore"; mkdir -p "$A"
 git rev-parse HEAD > "$A/source-commit.txt"
 printf '%s\n' 'Actual synthetic ZIP selection through the iOS Files provider, review, transactional commit and relaunch history; retained preparation recovery; native core tests. No physical-device or user-archive verification. No release publication.' > "$A/SCOPE.txt"
-# Separate macOS package gate; its count is not part of the 194 simulator tests.
+# Separate macOS package gate; its count is not part of the 209 simulator tests.
 swift test --jobs 2 --package-path Packages/ArchiveExtraction > "$A/extractor-package.log" 2>&1
 python3 scripts/materialize_guest.py Fixtures/maintained.img.gz JarvisEVO/Resources/VMAssets/maintained.img
 command -v xcodegen >/dev/null || brew install xcodegen
@@ -75,6 +75,7 @@ xcodebuild test -project JarvisEVO.xcodeproj -scheme JarvisEVO -derivedDataPath 
  -only-testing:JarvisEVOTests/AppModelTests/testNoConnectedCatalogCannotExposeNormalChatPluginProposal \
  -only-testing:JarvisEVOTests/ProductionNormalChatLocalAgentTests \
  -only-testing:JarvisEVOTests/ProductionNormalChatCalculatorTests \
+ -only-testing:JarvisEVOTests/ProductionChatPluginProposalTests \
  -only-testing:JarvisEVOUITests/ChatLocalTaskUITests \
  -only-testing:JarvisEVOUITests/ChatPluginSuggestionUITests \
  -only-testing:JarvisEVOTests/AppModelTests/testNaturalLocalQuestionUsesRealReadWithoutSelectedModel \
@@ -109,8 +110,8 @@ test "$status" = 0
 python3 - "$A/summary.json" <<'PY'
 import json,sys
 s=json.load(open(sys.argv[1]))
-expected={'totalTestCount':200,'passedTests':200,'failedTests':0,'skippedTests':0}
+expected={'totalTestCount':209,'passedTests':209,'failedTests':0,'skippedTests':0}
 for k,v in expected.items():
  assert type(s.get(k)) is int and s[k]==v,(k,s.get(k),v)
-print('200 required native/simulator tests passed without skips. Physical device and private archive remain unverified.')
+print('209 required native/simulator tests passed without skips. Physical device and private archive remain unverified.')
 PY

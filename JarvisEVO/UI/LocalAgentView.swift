@@ -136,6 +136,9 @@ struct LocalAgentView: View {
                             Button("Cancel task", role: .destructive) { session.stop(cancelTask: true) }
                                 .disabled(session.isPreparingReadPlan || ["answered", "failed", "cancelled"].contains(task.status))
                         }
+                        // Form's automatic row action can invoke every button in this HStack.
+                        // Keep Run/Resume, Pause, and destructive Cancel as independent actions.
+                        .buttonStyle(.borderless)
                         Button("Archive task") { confirmArchive = true }
                             .disabled(!session.canManageSavedTasks).accessibilityIdentifier("agent.archive")
                         ForEach(task.history) { event in

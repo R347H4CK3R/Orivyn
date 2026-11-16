@@ -1,4 +1,4 @@
-name: Verify exact user approval grounding and bounded model calculation
+name: Verify repaired task controls and exact connected-plugin proposals
 on:
   push:
     branches: [recovery/chatgpt-restore-20261116]
@@ -39,6 +39,8 @@ jobs:
           key: ${{ steps.combined-cache.outputs.cache-primary-key }}
       - name: Actual ZIP picker, reviewed restore and persistent history
         run: bash scripts/ci_archive_restore.sh
+      - name: Package build 16 only after exact native acceptance passes
+        run: bash scripts/ci_package_only.sh
       - uses: actions/upload-artifact@v4
         if: always()
         with:
