@@ -78,7 +78,11 @@ jobs:
           assert all(a['state']=='uploaded' and a['size']>0 for a in assets)
           ipa=next(a for a in assets if a['name'].endswith('.ipa'))
           assert ipa['size']==37233593 and ipa['digest']=='sha256:984b3e015a490e7843c969c486f8ab7861623c3eafacc61d7a01929905a43dd0'
-          assert ipa['browser_download_url']=='https://github.com/R347H4CK3R/Orivyn/releases/download/orivyn-v0.1.1-build15/Orivyn-0.1.1-build15-unsigned.ipa'
+          # Observed exact draft prefix differs from the public tag URL.
+          assert r['id']==446483450
+          assert {a['name']:a['id'] for a in assets}=={'Orivyn-0.1.1-build15-unsigned.ipa':752879053,'SHA256SUMS':752879055,'verified-ipa.json':752879056}
+          draft_prefix='https://github.com/R347H4CK3R/Orivyn/releases/download/untagged-f042fea0caeeb43c3e56/'
+          assert all(a['browser_download_url']==draft_prefix+a['name'] for a in assets)
           old=json.load(open('build14-before.json'));assert old['draft'] is False and old['tag_name']=='orivyn-v0.1.1-build14'
           assert len({a['id'] for a in assets})==3 and all(type(a['id']) is int and a['id']>0 for a in assets)
           PY
@@ -128,10 +132,13 @@ jobs:
           before=json.load(open('draft-before.json'));r=json.load(open('public-release.json'))
           assert r['id']==before['id'] and r['tag_name']==before['tag_name'] and r['draft'] is False and r['prerelease'] is True
           def identities(release):
-              return sorted((a['id'],a['name'],a['size'],a['digest'],a['state'],a['browser_download_url']) for a in release['assets'])
+              return sorted((a['id'],a['name'],a['size'],a['digest'],a['state']) for a in release['assets'])
           assert identities(r)==identities(before)
+          public_prefix='https://github.com/R347H4CK3R/Orivyn/releases/download/orivyn-v0.1.1-build15/'
+          assert all(asset['browser_download_url']==public_prefix+asset['name'] for asset in r['assets'])
           a=json.load(open('build14-before.json'));b=json.load(open('build14-after.json'))
           assert a['id']==b['id'] and a['tag_name']==b['tag_name'] and a['draft']==b['draft'] and identities(a)==identities(b)
+          assert sorted((x['id'],x['browser_download_url']) for x in a['assets'])==sorted((x['id'],x['browser_download_url']) for x in b['assets'])
           datetime.datetime.strptime(r['published_at'],'%Y-%m-%dT%H:%M:%SZ')
           pathlib.Path('catalog-publication.json').write_text(json.dumps({'releaseId':r['id'],'tag':r['tag_name'],'published_at':r['published_at'],'sourceCommit':'595330ac155fa7dbaec7e61d5c673a69b07056bd','size':37233593,'sha256':'984b3e015a490e7843c969c486f8ab7861623c3eafacc61d7a01929905a43dd0'},indent=2)+'\n')
           PY
