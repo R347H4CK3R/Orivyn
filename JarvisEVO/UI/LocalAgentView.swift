@@ -176,7 +176,7 @@ struct LocalAgentView: View {
                     ForEach(session.records) { task in
                         Button { session.select(id: task.id) } label: {
                             VStack(alignment: .leading) { Text(task.goal).lineLimit(2); Text(task.status).font(.caption).foregroundStyle(.secondary) }
-                        }.disabled(!session.canManageSavedTasks)
+                        }.disabled(!session.canManageSavedTasks).accessibilityIdentifier("agent.saved.\(task.id)")
                     }
                 }
             }

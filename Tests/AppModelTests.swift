@@ -474,6 +474,57 @@ final class AppModelTests: XCTestCase {
         XCTAssertFalse(model.activeConversation?.messages.last?.content.contains("Completed local read") == true)
     }
 
+    func testNaturalLocalQuestionUsesRealReadWithoutSelectedModel() async throws {
+        let (model, store, source) = try await fixture()
+        model.draft = "What models do I have and what can Orivyn do?"
+        model.send()
+        try await waitFor { !model.isGenerating }
+        let saved = try await store.load(id: XCTUnwrap(model.selectedConversationID))
+        XCTAssertEqual(saved?.messages.last?.state, .complete)
+        XCTAssertTrue(saved?.messages.last?.content.contains("1/2: list_models") == true)
+        XCTAssertTrue(saved?.messages.last?.content.contains("2/2: get_app_info") == true)
+        let called = await source.hasSubscriber; XCTAssertFalse(called)
+    }
+
+    func testNaturalLocalReadStopsOnConversationRevisionRoundTrip() async throws {
+        let (model, store, source) = try await fixture()
+        model.draft = "What models do I have?"
+        model.send()
+        let original = try XCTUnwrap(model.selectedConversationID)
+        model.selectedConversationID = UUID()
+        model.selectedConversationID = original
+        try await waitFor { !model.isGenerating }
+        let saved = try await store.load(id: original)
+        XCTAssertEqual(saved?.messages.last?.state, .interrupted)
+        XCTAssertFalse(saved?.messages.last?.content.contains("Completed local read") == true)
+        let called = await source.hasSubscriber; XCTAssertFalse(called)
+    }
+
+    func testNaturalLocalReadStopsOnProviderRevisionChange() async throws {
+        let (model, store, source) = try await fixture()
+        model.draft = "What can this app do?"
+        model.send()
+        let original = try XCTUnwrap(model.selectedConversationID)
+        model.replaceProviders([ProviderOption(id: "replacement", title: "Synthetic", detail: "",
+            provider: ControlledProvider(source: source))])
+        try await waitFor { !model.isGenerating }
+        let saved = try await store.load(id: original)
+        XCTAssertEqual(saved?.messages.last?.state, .interrupted)
+        XCTAssertFalse(saved?.messages.last?.content.contains("Completed local read") == true)
+        let called = await source.hasSubscriber; XCTAssertFalse(called)
+    }
+
+    func testCodingRequestWithLocalReadKeywordsStillUsesConversationProvider() async throws {
+        let (model, _, source) = try await fixture()
+        model.draft = "Write Python to list installed models"
+        model.send()
+        try await waitFor { await source.hasSubscriber }
+        await source.emit("print('synthetic code')")
+        await source.finish()
+        try await waitFor { !model.isGenerating }
+        XCTAssertEqual(model.activeConversation?.messages.last?.content, "print('synthetic code')")
+    }
+
     func testHistoricalLocalCommandDoesNotExecuteForUnrelatedCurrentMessage() async throws {
         let (model, store, source) = try await fixture()
         let history = Conversation(messages: [ChatMessage(role: .user, content: "list installed models")])

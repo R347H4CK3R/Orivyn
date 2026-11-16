@@ -16,7 +16,7 @@ struct RootViewRegressionFixtureHost: View {
         guard arguments.contains("--uitesting"),
               let index = arguments.firstIndex(of: "--root-view-fixture"),
               arguments.indices.contains(index + 1),
-              ["voice-ownership", "history-scroll", "model-download", "unavailable-provider"].contains(arguments[index + 1]) else { return nil }
+              ["voice-ownership", "history-scroll", "model-download", "unavailable-provider", "chat-local-tasks"].contains(arguments[index + 1]) else { return nil }
         return arguments[index + 1]
     }
 
@@ -29,6 +29,14 @@ struct RootViewRegressionFixtureHost: View {
                     if mode == "model-download" {
                         ModelManagerView(model: fixture.model)
                     } else if mode == "unavailable-provider" {
+                        RootView(model: fixture.model)
+                    } else if mode == "chat-local-tasks" {
+                        Text("SYNTHETIC TASK RECORDS · NO LOCAL MODEL · NO TOOL EXECUTION")
+                            .font(.caption2).accessibilityIdentifier("fixture.chatTasks.notice")
+                        HStack {
+                            Button("Origin chat A") { fixture.model.selectConversation(fixture.historyA) }.accessibilityIdentifier("fixture.history.a")
+                            Button("Other chat B") { fixture.model.selectConversation(fixture.historyB) }.accessibilityIdentifier("fixture.history.b")
+                        }.font(.caption)
                         RootView(model: fixture.model)
                     } else if mode == "voice-ownership" {
                         HStack {
@@ -93,11 +101,11 @@ private final class RootViewRegressionFixture {
         let attachments = try AttachmentService(directory: root.appendingPathComponent("Attachments"))
         let models = try LocalModelStore(root: root.appendingPathComponent("Models"))
         let defaults = UserDefaults(suiteName: "JarvisEVO.RootFixture." + identifier)!
-        let a = history("A", rows: 24, updated: Date(timeIntervalSince1970: 3))
+        let a = history("A", rows: mode == "chat-local-tasks" ? 1 : 24, updated: Date(timeIntervalSince1970: 3))
         let b = history("B", rows: 12, updated: Date(timeIntervalSince1970: 2))
         let short = Conversation(title: "Controlled short fixture", updatedAt: Date(timeIntervalSince1970: 1),
                                  messages: [ChatMessage(role: .assistant, content: "FIXTURE SHORT TRANSCRIPT")])
-        if mode == "history-scroll" { for conversation in [a, b, short] { try await store.save(conversation) } }
+        if mode == "history-scroll" || mode == "chat-local-tasks" { for conversation in [a, b, short] { try await store.save(conversation) } }
         let model = AppModel(store: store, attachmentService: attachments, modelStore: models, defaults: defaults)
         await model.bootstrap()
         if mode == "model-download" { model.beginControlledModelDownloadFixture() }
@@ -108,8 +116,43 @@ private final class RootViewRegressionFixture {
         } else {
             model.replaceProviders([ProviderOption(id: "root-ui-fixture", title: "Controlled UI fixture", detail: "Not an AI model", provider: RootViewFixtureProvider(tokens: tokens))])
         }
-        if mode == "history-scroll" { model.selectConversation(a.id) }
+        if mode == "history-scroll" || mode == "chat-local-tasks" { model.selectConversation(a.id) }
+        if mode == "chat-local-tasks" {
+            model.configureLocalWork(directory: root)
+            guard let directory = model.localAgentDirectory else { throw LocalAgentError.unavailable }
+            try seedChatTasks(directory: directory, origin: a.id)
+            model.draft = "Keep this synthetic draft"
+        }
         return RootViewRegressionFixture(model: model, audio: RootViewFixtureAudio(), tokens: tokens, histories: [a.id, b.id, short.id])
+    }
+
+    /// Synthetic records travel through the production reducer and atomic store.
+    /// No task runner, inference provider or native tool is invoked by setup.
+    private static func seedChatTasks(directory: URL, origin: UUID) throws {
+        let core = try LocalAgentCore(), store = try LocalAgentStore(directory: directory)
+        for (id, goal, completed) in [
+            ("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaa01", "Synthetic answered task", true),
+            ("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaa02", "Synthetic interrupted task", false)
+        ] {
+            let request: MCPJSONValue = .object(["id": .string(id), "goal": .string(goal),
+                "contract": .object(["schema": .integer(1), "steps": .array([
+                    .object(["name": .string("get_app_info"), "arguments": .object([:])])])])])
+            let input = String(decoding: try request.encoded(maximumBytes: 4096), as: UTF8.self)
+            var state = try core.call("createContract", [input])
+            state = try core.call("acceptDecision", [state, #"{"type":"tool","name":"get_app_info","arguments":{}}"#])
+            if completed {
+                let operation = try core.snapshot(state).pending
+                guard let operation else { throw LocalAgentError.invalidState }
+                let evidence: MCPJSONValue = .object(["app": .string("SYNTHETIC LOCAL EVIDENCE - NO TOOL EXECUTED"),
+                    "assistant": .string("Fixture"), "repository": .string(""), "repositoryAccess": .string("none"), "capabilities": .array([])])
+                let result: MCPJSONValue = .object(["operationID": .string(operation.operationID),
+                    "result": .string(String(decoding: try evidence.encoded(maximumBytes: 4096), as: UTF8.self))])
+                state = try core.call("recordResult", [state, String(decoding: try result.encoded(maximumBytes: 4096), as: UTF8.self)])
+                state = try core.call("acceptDecision", [state, #"{"type":"answer","text":"SYNTHETIC MODEL ANSWER - NOT INFERENCE"}"#])
+            } else { state = try core.call("recover", [state]) }
+            try store.bindOrigin(id: id, conversationID: origin)
+            try store.save(state, id: id)
+        }
     }
 
     private static func history(_ name: String, rows: Int, updated: Date) -> Conversation {
