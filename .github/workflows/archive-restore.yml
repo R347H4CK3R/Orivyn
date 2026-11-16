@@ -1,4 +1,4 @@
-name: Verify build 17 restore null-routing compatibility
+name: Verify build 17 restore compatibility and exact review denial
 on:
   push:
     branches: [recovery/chatgpt-restore-20261116]
