@@ -14,6 +14,7 @@ if len(sys.argv) > 3:
  shutil.copytree(extractor, out/'ArchiveExtraction', ignore=shutil.ignore_patterns('.build', '.swiftpm'))
  shutil.copyfile(root/'Diagnostics/ArchivePreservation/ArchivePipelineIntegrationTests.swift',out/'Tests/PreservationTests/ArchivePipelineIntegrationTests.swift')
  shutil.copyfile(root/'Diagnostics/ArchivePreservation/ArchiveRestoreServiceTests.swift',out/'Tests/PreservationTests/ArchiveRestoreServiceTests.swift')
+ shutil.copyfile(root/'JarvisEVO/Services/ArchiveRestoreRecovery.swift',out/'Sources/Preservation/ArchiveRestoreRecovery.swift')
  shutil.copyfile(root/'JarvisEVO/Services/ArchiveRestoreService.swift',out/'Sources/Preservation/ArchiveRestoreService.swift')
  for name in ['Conversation.swift','MemoryNote.swift','ImageOCRResult.swift','OCRLineEvidence.swift','ChatGPTConversationRestore.swift','ChatGPTRecordStream.swift']:
   shutil.copyfile(root/'JarvisEVO/Core'/name,out/'Sources/Preservation'/name)

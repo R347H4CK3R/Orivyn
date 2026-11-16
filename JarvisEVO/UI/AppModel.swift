@@ -1187,9 +1187,16 @@ final class AppModel {
         let root = try archiveRoot()
         let retained = try await runArchiveWork { try ArchiveRestoreService.inspectRetainedJobs(jobsRoot: root) }
         if !retained.incompleteJobs.isEmpty {
-            progress("\(retained.incompleteJobs.count) incomplete/damaged preparations retained. They were not imported; choose the original ZIP again to retry safely.")
+            progress("\(retained.incompleteJobs.count) incomplete/damaged preparations retained. Import status could not be determined from preparation files; originals are retained.")
         }
-        return retained.reviews.map(archiveViewReview)
+        let recovered = try await ArchiveRestoreRecovery.reconcile(retained.reviews,
+            isCommitted: { hash in try await self.store.archiveRestoreReceipt(archiveSHA256: hash) != nil },
+            markCommitted: { review in
+                try await self.runArchiveWork { try ArchiveRestoreService.markCommitted(review: review, jobsRoot: root) }
+            })
+        if !recovered.committedJobs.isEmpty { progress("Recovered \(recovered.committedJobs.count) committed preparations from database receipts; no duplicate import is needed.") }
+        if !recovered.maintenancePending.isEmpty { progress("\(recovered.maintenancePending.count) committed preparation markers still need maintenance. History is already saved.") }
+        return recovered.ready.map(archiveViewReview)
     }
     func commitArchiveRestore(_ value: ArchiveRestoreView.Review, progress: @escaping ArchiveRestoreView.Progress) async throws -> ArchiveRestoreView.CommitOutcome {
         guard !isGenerating, beginHistoryChange() else { throw TextSnapshotError.busy }
@@ -1206,6 +1213,7 @@ final class AppModel {
             expectedEpoch: plan.expectedEpoch, conversations: plan.conversations)
         // From this point the receipt is authoritative: failures cannot be reported as rollback.
         var pending: [String] = []
+        var reloadFailed = false
         do { try await runArchiveWork { try ArchiveRestoreService.markCommitted(review: review, jobsRoot: root) } }
         catch { pending.append("Recovery status could not be refreshed; the database receipt is saved.") }
         attachmentHistoryIsLoaded = false; peerHistoryNeedsReload = true
@@ -1215,11 +1223,13 @@ final class AppModel {
             attachmentHistoryIsLoaded = true; peerHistoryNeedsReload = false
         } catch {
             releaseHistory = false
+            reloadFailed = true
             pending.append("History editing is locked until reload succeeds. Refresh retained preparations or reopen the app to retry.")
         }
         let result = "Restore receipt verified: \(receipt.writtenConversations) added, \(receipt.preservedConversations) existing conversations preserved. \(review.unresolvedCount) media references remain unlinked; original files are retained."
         statusMessage = result
-        if !pending.isEmpty { return .committedReloadPending(result + " " + pending.joined(separator: " ")) }
+        if reloadFailed { return .committedReloadPending(result + " " + pending.joined(separator: " ")) }
+        if !pending.isEmpty { return .committedMaintenancePending(result + " " + pending.joined(separator: " ")) }
         return .committed(result)
     }
 

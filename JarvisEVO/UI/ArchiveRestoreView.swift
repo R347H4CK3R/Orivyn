@@ -17,6 +17,8 @@ struct ArchiveRestoreView: View {
     }
     enum CommitOutcome: Sendable {
         case committed(String)
+        /// History is current; only the retained preparation marker needs repair.
+        case committedMaintenancePending(String)
         /// Database commit succeeded, but refreshing the visible catalog failed.
         /// Never describe this as an uncommitted restore or offer duplicate retry.
         case committedReloadPending(String)
@@ -177,12 +179,15 @@ struct ArchiveRestoreView: View {
                 retainedReviews.removeAll { $0.jobID == selected.jobID }
                 switch outcome {
                 case .committed(let message): append(message)
+                case .committedMaintenancePending(let message):
+                    append(message)
+                    errorText = "History is restored and available. Preparation-marker maintenance is pending; refresh retained preparations to retry."
                 case .committedReloadPending(let message):
                     append("History was committed. \(message)")
                     errorText = "The visible history still needs a refresh. Do not import again to fix this."
                 }
             } catch {
-                // Coordinator must return committedReloadPending after any durable
+                // Coordinator must return a committed outcome after any durable
                 // commit; throwing is reserved for an uncommitted transaction.
                 errorText = error.localizedDescription
                 append("Restore did not commit. Preparation retained for review and retry.")

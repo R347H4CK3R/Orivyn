@@ -223,6 +223,26 @@ actor SQLiteConversationStore {
         } catch { try? database.execute("ROLLBACK"); throw error }
     }
 
+    /// Recovers the canonical receipt when a retry has a different coordinator job ID.
+    func archiveRestoreReceipt(archiveSHA256: String) throws -> ArchiveRestoreReceipt? {
+        guard archiveSHA256.count == 64,
+              archiveSHA256.utf8.allSatisfy({ (48...57).contains($0) || (97...102).contains($0) })
+        else { throw DatabaseError.operation("Archive SHA-256 is invalid.") }
+        let jobID: UUID? = try withStatement("SELECT job FROM archive_restore_receipts WHERE archive=?") { statement in
+            bind(archiveSHA256, to: 1, in: statement)
+            let status = sqlite3_step(statement)
+            if status == SQLITE_DONE { return nil }
+            guard status == SQLITE_ROW, let column = sqlite3_column_text(statement, 0),
+                  let job = UUID(uuidString: String(cString: column))
+            else { throw DatabaseError.operation("Archive receipt identity is invalid.") }
+            return job
+        }
+        guard let jobID else { return nil }
+        guard let receipt = try archiveRestoreReceipt(jobID: jobID), receipt.archiveSHA256 == archiveSHA256
+        else { throw DatabaseError.operation("Archive receipt identity is invalid.") }
+        return receipt
+    }
+
     /// Historical commit evidence, not a claim that the UI has reloaded the rows.
     func archiveRestoreReceipt(jobID: UUID) throws -> ArchiveRestoreReceipt? {
         try withStatement("SELECT job,archive,epoch,receipt FROM archive_restore_receipts WHERE job=?") { statement in

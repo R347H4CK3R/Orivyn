@@ -66,6 +66,28 @@ final class ArchiveRestoreServiceTests: XCTestCase {
         }
     }
 
+    func testReceiptReconciliationHidesCommittedJobsDespiteMarkerFailure() async throws {
+        let committed = ArchiveRestoreService.Review(jobID: UUID(), conversationCount: 1, messageCount: 1,
+            unresolvedCount: 0, omittedCount: 0, retainedFileCount: 1, archiveSHA256: "committed")
+        let ready = ArchiveRestoreService.Review(jobID: UUID(), conversationCount: 1, messageCount: 1,
+            unresolvedCount: 0, omittedCount: 0, retainedFileCount: 1, archiveSHA256: "ready")
+        let result = try await ArchiveRestoreRecovery.reconcile([committed, ready],
+            isCommitted: { $0 == "committed" }, markCommitted: { _ in throw CocoaError(.fileWriteNoPermission) })
+        XCTAssertEqual(result.ready, [ready])
+        XCTAssertEqual(result.committedJobs, [committed.jobID])
+        XCTAssertEqual(result.maintenancePending, [committed.jobID])
+    }
+    func testReceiptLookupFailureDoesNotOfferUnknownJobForRetry() async throws {
+        let review = ArchiveRestoreService.Review(jobID: UUID(), conversationCount: 1, messageCount: 1,
+            unresolvedCount: 0, omittedCount: 0, retainedFileCount: 1, archiveSHA256: "unknown")
+        do {
+            _ = try await ArchiveRestoreRecovery.reconcile([review],
+                isCommitted: { _ in throw CocoaError(.fileReadCorruptFile) },
+                markCommitted: { _ in XCTFail("Unknown receipt must not update marker") })
+            XCTFail("Unknown receipt state must fail closed")
+        } catch { }
+    }
+
     #if canImport(SQLite3)
     func testPreparedZIPCommitsThroughActualSQLiteAndReceiptSurvivesReopen() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
@@ -81,7 +103,14 @@ final class ArchiveRestoreServiceTests: XCTestCase {
         let receipt = try await store.applyArchiveRestore(jobID: review.jobID, archiveSHA256: review.archiveSHA256,
             expectedEpoch: plan.expectedEpoch, conversations: plan.conversations)
         XCTAssertEqual(receipt.writtenConversations, 1)
-        try ArchiveRestoreService.markCommitted(review: review, jobsRoot: jobs)
+        // Simulate process death after DB commit but before filesystem marking.
+        let crashedReviews = try ArchiveRestoreService.listReadyReviews(jobsRoot: jobs)
+        XCTAssertEqual(crashedReviews.count, 1)
+        let reconciliation = try await ArchiveRestoreRecovery.reconcile(crashedReviews,
+            isCommitted: { try await store.archiveRestoreReceipt(archiveSHA256: $0) != nil },
+            markCommitted: { try ArchiveRestoreService.markCommitted(review: $0, jobsRoot: jobs) })
+        XCTAssertTrue(reconciliation.ready.isEmpty)
+        XCTAssertEqual(reconciliation.committedJobs, [review.jobID])
         XCTAssertTrue(try ArchiveRestoreService.listReadyReviews(jobsRoot: jobs).isEmpty)
         let reopened = try SQLiteConversationStore(url: databaseURL)
         let rows = try await reopened.list(includeArchived: true)

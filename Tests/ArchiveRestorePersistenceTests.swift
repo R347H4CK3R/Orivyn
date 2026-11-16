@@ -101,4 +101,22 @@ final class ArchiveRestorePersistenceTests: XCTestCase {
         XCTAssertEqual(sqlite3_exec(db, "UPDATE archive_restore_receipts SET receipt=X'" + hex + "'", nil, nil, nil), SQLITE_OK)
         do { _ = try await store.applyArchiveRestore(jobID: job, archiveSHA256: sha, expectedEpoch: epoch, conversations: [incoming]); XCTFail("Corrupt receipt identity") } catch { }
     }
+    func testArchiveLookupRecoversCanonicalReceiptAndRejectsMalformedHash() async throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".sqlite")
+        defer { try? FileManager.default.removeItem(at: url) }
+        let store = try SQLiteConversationStore(url: url); let epoch = try await store.textReceiveEpoch()
+        let missing = try await store.archiveRestoreReceipt(archiveSHA256: sha); XCTAssertNil(missing)
+        let receipt = try await store.applyArchiveRestore(jobID: UUID(), archiveSHA256: sha, expectedEpoch: epoch, conversations: [Conversation(title: "Original")])
+        let reopened = try SQLiteConversationStore(url: url)
+        let recovered = try await reopened.archiveRestoreReceipt(archiveSHA256: sha); XCTAssertEqual(recovered, receipt)
+        for invalid in ["", String(repeating: "a", count: 63), String(repeating: "a", count: 65), String(repeating: "A", count: 64), String(repeating: "g", count: 64)] {
+            do { _ = try await reopened.archiveRestoreReceipt(archiveSHA256: invalid); XCTFail("Invalid digest accepted") } catch { }
+        }
+        let corrupt = ArchiveRestoreReceipt(jobID: UUID(), archiveSHA256: sha, epoch: epoch, writtenConversations: 1, preservedConversations: 0)
+        let hex = try JSONEncoder().encode(corrupt).map { String(format: "%02x", $0) }.joined()
+        var db: OpaquePointer?; XCTAssertEqual(sqlite3_open(url.path, &db), SQLITE_OK); defer { sqlite3_close(db) }
+        XCTAssertEqual(sqlite3_exec(db, "UPDATE archive_restore_receipts SET receipt=X'" + hex + "'", nil, nil, nil), SQLITE_OK)
+        do { _ = try await reopened.archiveRestoreReceipt(archiveSHA256: sha); XCTFail("Corrupt receipt accepted") } catch { }
+    }
+
 }

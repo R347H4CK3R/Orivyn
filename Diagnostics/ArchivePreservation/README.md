@@ -102,3 +102,13 @@ Media references remain retained but unlinked until the actual export mapping
 schema can be validated. Attachment association has a separately tested primitive,
 not an invented mapping. Unsupported records and all original ZIP bytes remain
 preserved. This is not full-backup acceptance or a production-ready release.
+
+Crash reconciliation now consults validated SQLite receipts by archive digest,
+including canonical receipts from a different preparation of the same archive.
+Confirmed commits are not offered for duplicate import even if marker repair
+fails. Unknown/corrupt receipt lookup fails closed. The UI distinguishes pending
+filesystem-marker maintenance from a failed history reload; only the latter
+retains the history mutation lock. Twenty-two integration tests now pass, including
+simulated interruption between SQLite commit and marker update, maintenance
+failure, and receipt-read failure. The independent SQLite suite passes 151 tests.
+Apple UI/typechecking/device verification is still outstanding.
