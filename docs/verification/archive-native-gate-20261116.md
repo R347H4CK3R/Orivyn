@@ -89,3 +89,27 @@ probe should verify the omitted question without discarding existing checks.
 
 Actual user archive/media association, physical-device behavior and general
 external autonomous orchestration remain outside this evidence.
+
+## Combined checkpoint 0a7449e2: native gate 43825291078
+
+Run https://github.com/R347H4CK3R/Orivyn/actions/runs/43825291078 passed
+135/135 selected native/simulator tests, zero failures/skips, on iPhone 16 Plus
+iOS 26.1 simulator; separate macOS extractor package passed 17/17. This includes
+actual Files ZIP selection/review/commit/relaunch/cancellation and scripted
+chat-task origin/recovery boundaries. It predates the later natural-language
+aliases, capability detail schema and forthcoming model-selected chat loop.
+
+Retained artifact 14208450965, 8,043,688 bytes, SHA-256
+18c83a8f0d9162048721e0f52bfe62f2f998d4f32a915690f156eae6bc178062,
+was downloaded and checksum-verified. summary.json confirms the exact counts.
+Manual review of the four retained pinned-model answers found correct square(n)
+Python code, Paris, the exact three-tool inventory and denial of automatic email
+or iPhone build/publication. The fourth answer denied execution without exact-call
+review, but imprecisely described authorization as coming from the system/provider
+rather than clearly naming Orivyn's user review. The test passed its narrow oracle;
+this wording is not proof of a fully correct permission explanation and is carried
+forward for clarification. Earlier 124/125 failure evidence remains unchanged.
+
+These synthetic checks do not verify the user's private archive, actual attachment
+associations, physical iPhone installation, broad autonomous capabilities or newer
+commits. No IPA or catalog release was produced by this gate.
