@@ -12,6 +12,7 @@ final class SelfKnowledgePromptTests: XCTestCase {
         XCTAssertTrue(prompt.contains("self-repair [notAvailable]"))
         XCTAssertTrue(prompt.contains("unverified on iPhone"))
         XCTAssertTrue(prompt.contains("Build: 42"))
+        XCTAssertFalse(prompt.contains("(private)"), "Repository visibility is not an access capability")
         XCTAssertFalse(prompt.contains("No verified guest operating system is integrated"))
     }
     func testMissingMetadataDoesNotAdvertiseConditionalTools() {

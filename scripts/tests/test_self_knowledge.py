@@ -24,5 +24,6 @@ class SelfKnowledgeManifestTests(unittest.TestCase):
         capabilities = {c['id']: c for c in self.manifest()['capabilities']}
         for key in ['visual-understanding', 'virtual-machine', 'self-repair']:
             self.assertEqual(capabilities[key]['status'], 'notAvailable')
-        self.assertIn('private', self.manifest()['repositoryAccess'])
+        self.assertIn('does not grant this chat automatic source access', self.manifest()['repositoryAccess'])
+        self.assertNotIn('repository is private', self.manifest()['repositoryAccess'])
         self.assertIn('not source code', self.manifest()['repositoryAccess'])

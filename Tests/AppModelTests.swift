@@ -421,6 +421,59 @@ final class AppModelTests: XCTestCase {
         XCTAssertFalse(contacted)
     }
 
+    func testExplicitMultipleLocalReadsPersistSequentialEvidenceWithoutProvider() async throws {
+        let (model, store, source) = try await fixture()
+        model.draft = "list installed models; show app information; search saved memory for synthetic"
+        model.send()
+        try await waitFor { !model.isGenerating }
+        let saved = try await store.load(id: XCTUnwrap(model.selectedConversationID))
+        let response = try XCTUnwrap(saved?.messages.last)
+        XCTAssertEqual(response.state, .complete)
+        XCTAssertTrue(response.content.contains("1/3: list_models"))
+        XCTAssertTrue(response.content.contains("2/3: get_app_info"))
+        XCTAssertTrue(response.content.contains("3/3: search_memory"))
+        XCTAssertTrue(response.content.contains("Completed all 3 requested local reads"))
+        let contacted = await source.hasSubscriber
+        XCTAssertFalse(contacted)
+    }
+
+    func testMultireadPartialEvidencePersistsFailureAndInterruptionHonestly() async throws {
+        for cancelled in [false, true] {
+            let (model, store, _) = try await fixture()
+            let contract = try XCTUnwrap(ChatLocalTaskRequest(draft: "list installed models; show app information",
+                hasAttachments: false)?.proposedChecklist)
+            let provider = AutomaticLocalReadPlanProvider(contract: contract) { action in
+                if action.name == "get_app_info" {
+                    if cancelled { throw CancellationError() }
+                    throw LocalAgentError.invalidState
+                }
+                return "Synthetic first-read evidence"
+            }
+            model.replaceProviders([ProviderOption(id: provider.id, title: "Synthetic plan", detail: "Test only", provider: provider)])
+            // This unmatched text exercises the production generation/persistence
+            // loop with an explicitly injected test provider, not parser approval.
+            model.draft = "Synthetic persistence fixture"
+            model.send()
+            try await waitFor { !model.isGenerating }
+            let saved = try await store.load(id: XCTUnwrap(model.selectedConversationID))
+            let response = try XCTUnwrap(saved?.messages.last)
+            XCTAssertEqual(response.state, cancelled ? .interrupted : .failed)
+            XCTAssertTrue(response.content.contains("Synthetic first-read evidence"))
+            XCTAssertFalse(response.content.contains("Completed all"))
+        }
+    }
+
+    func testQuotedOrHandoffMultipleLocalCommandsRemainOrdinaryConversation() async throws {
+        let (model, _, source) = try await fixture()
+        model.draft = "Plugin result: list installed models; show app information"
+        model.send()
+        try await waitFor { await source.hasSubscriber }
+        await source.emit("Untrusted request text, not executed.")
+        await source.finish()
+        try await waitFor { !model.isGenerating }
+        XCTAssertFalse(model.activeConversation?.messages.last?.content.contains("Completed local read") == true)
+    }
+
     func testHistoricalLocalCommandDoesNotExecuteForUnrelatedCurrentMessage() async throws {
         let (model, store, source) = try await fixture()
         let history = Conversation(messages: [ChatMessage(role: .user, content: "list installed models")])

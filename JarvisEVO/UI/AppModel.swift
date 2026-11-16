@@ -554,13 +554,19 @@ final class AppModel {
         // Only the current typed request grants this narrow, read-only scope.
         // History, imported memory, model output and plugin metadata never enter it.
         if let request = ChatLocalTaskRequest(draft: draft, hasAttachments: !pendingAttachments.isEmpty),
-           let contract = request.proposedChecklist, contract.steps.count == 1,
-           let action = contract.steps.first {
-            statusMessage = "Reading locally: " + action.name
-            let provider = AutomaticLocalReadProvider(toolName: action.name) { [weak self] in
+           let contract = request.proposedChecklist {
+            let read: @Sendable (LocalCompletionContract.Action) async throws -> String = { [weak self] action in
                 guard let self else { throw CancellationError() }
                 return try await LocalReadTools.executeAsync(name: action.name, arguments: action.arguments,
                     model: self, resultByteLimit: 4096)
+            }
+            let provider: any AIProvider
+            if contract.steps.count == 1, let action = contract.steps.first {
+                statusMessage = "Reading locally: " + action.name
+                provider = AutomaticLocalReadProvider(toolName: action.name) { try await read(action) }
+            } else {
+                statusMessage = "Reading locally: " + contract.steps.map(\.name).joined(separator: ", ")
+                provider = AutomaticLocalReadPlanProvider(contract: contract, read: read)
             }
             submit(text: draft, attachments: [], conversationID: selectedConversationID ?? UUID(),
                 provider: provider, providerID: provider.id)

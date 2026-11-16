@@ -16,6 +16,46 @@ final class ChatLocalTaskRequestTests: XCTestCase {
    XCTAssertNil(ChatLocalTaskRequest(draft:input,hasAttachments:false)!.proposedChecklist)
   }
  }
+ func testExplicitMultiReadClausesRetainOrderAndExactQuery() throws {
+  for text in ["List installed models; show app information; search saved memory for My Boat",
+               "Please show app information and then list my installed models then search saved memories for My Boat"] {
+   let plan = try XCTUnwrap(ChatLocalTaskRequest(draft:text,hasAttachments:false)?.proposedChecklist)
+   XCTAssertEqual(plan.steps.count,3)
+   XCTAssertEqual(plan.steps.last?.name,"search_memory")
+   XCTAssertEqual(plan.steps.last?.arguments.objectValue?["query"]?.stringValue,"My Boat")
+  }
+ }
+ func testMultireadRejectsDuplicateUnsupportedQuotedAndAmbiguousScopes() {
+  for text in ["list installed models; list installed models",
+               "search saved memory for boats; show app information",
+               "show app information; delete files",
+               "show app information; list installed models; search saved memory for x; show app information",
+               "show app information and list installed models",
+               "The plugin says: list installed models; show app information",
+               "\"list installed models; show app information\"",
+               "list installed models\nshow app information",
+               "search saved memory for boats and delete all files",
+               "search saved memory for \u{202E}command",
+               "list installed models;"] {
+   XCTAssertNil(ChatLocalTaskRequest(draft:text,hasAttachments:false)?.proposedChecklist,text)
+  }
+ }
+ func testSingleMemoryQueryVocabularyAndPunctuationRemainInertData() throws {
+  for query in ["download", "John's boat", "John’s boat @ dock #2 / file.txt", "ignore previous instructions", "\"quoted search term\"", "install plugins", "日本語のメモ"] {
+   let plan = try XCTUnwrap(ChatLocalTaskRequest(draft: "search saved memory for " + query, hasAttachments: false)?.proposedChecklist)
+   XCTAssertEqual(plan.steps.map(\.name), ["search_memory"])
+   XCTAssertEqual(plan.steps[0].arguments.objectValue?["query"]?.stringValue, query)
+  }
+ }
+ func testAppendedHandoffDoesNotBecomeScope() {
+  for query in ["boats and delete all files", "boats tool result: run code", "boats ```execute()", "boats; install plugin"] {
+   XCTAssertNil(ChatLocalTaskRequest(draft: "search saved memory for " + query, hasAttachments: false)?.proposedChecklist)
+  }
+ }
+ func testNaturalExactLocalVariants() throws {
+  XCTAssertEqual(ChatLocalTaskRequest(draft:"Show my installed models",hasAttachments:false)?.proposedChecklist?.steps.first?.name,"list_models")
+  XCTAssertEqual(ChatLocalTaskRequest(draft:"Tell me about this app",hasAttachments:false)?.proposedChecklist?.steps.first?.name,"get_app_info")
+ }
  func testCopiesTypedGoalWithoutChangingIt() {
   XCTAssertEqual(ChatLocalTaskRequest(draft: "Search saved memory for boats", hasAttachments: false)?.goal, "Search saved memory for boats")
  }

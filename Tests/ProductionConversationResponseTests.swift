@@ -34,6 +34,10 @@ final class ProductionConversationResponseTests: XCTestCase {
         let provider = LocalAIProvider(store: try LocalModelStore(root: directory), model: descriptor)
         let system = ChatResponsePolicy.instructions + "\n" + AppSelfKnowledge.prompt(providerID: provider.id)
             + "\n" + ResponseBehavior().prompt
+        let systemEvidence = XCTAttachment(string: system)
+        systemEvidence.name = "conversation-model-synthetic-system-policy"
+        systemEvidence.lifetime = .keepAlways
+        add(systemEvidence)
         do {
             let codingGoal = "Write a simple Python function named square(n) that returns n multiplied by itself. Show the code."
             let code = try await answer(goal: codingGoal, system: system, provider: provider, concise: true)

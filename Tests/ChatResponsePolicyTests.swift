@@ -10,6 +10,23 @@ final class ChatResponsePolicyTests: XCTestCase {
         XCTAssertTrue(prompt.contains("Plugin calls require exact-call review"))
         XCTAssertFalse(prompt.contains("Chat does not automatically call device tools"))
     }
+    func testCapabilityInventoryIsExplicitAndDoesNotClaimDeviceOrFileAccess() {
+        let prompt = ChatResponsePolicy.instructions
+        XCTAssertTrue(prompt.contains("DIRECT LOCAL READS (complete list)"))
+        for name in ["list_models", "get_app_info", "search_memory"] {
+            XCTAssertTrue(prompt.contains(name))
+        }
+        XCTAssertTrue(prompt.contains("Not general filesystem access or device/user information"))
+    }
+    func testEveryAdvertisedReadMatchesAnActualTypedRequest() throws {
+        let requests = ["list installed models", "show app information", "search saved memory for cedar"]
+        let names = try requests.map { request in
+            let parsed = try XCTUnwrap(ChatLocalTaskRequest(draft: request, hasAttachments: false))
+            return try XCTUnwrap(parsed.proposedChecklist?.steps.first?.name)
+        }
+        XCTAssertEqual(Set(names), Set(DirectChatRead.allCases.map(\.rawValue)))
+        XCTAssertEqual(names.count, 3)
+    }
     func testWritingCodeIsNotExecutionAndRepliesDoNotEcho() {
         let prompt = ChatResponsePolicy.instructions
         XCTAssertTrue(prompt.contains("write Python"))

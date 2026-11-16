@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import UniformTypeIdentifiers
 
 /// The app coordinator supplies these closures. A successful preparation is not
@@ -33,6 +34,8 @@ struct ArchiveRestoreView: View {
         let time = Date()
         let text: String
     }
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var lifetime = ArchiveRestoreLifetime()
     @State private var active = false
     @State private var lifecycle = UUID()
     @State private var pickerLifecycle: UUID?
@@ -50,11 +53,15 @@ struct ArchiveRestoreView: View {
 
     var body: some View {
         let renderedLifecycle = lifecycle
+        let renderedLifetime = lifetime
         return List {
             Section("Restore a complete archive") {
                 Text("Preparation keeps the original ZIP and unsupported files. Supported conversations are prepared as history, not just memory excerpts. Nothing is added to history until you review and confirm.")
                     .font(.footnote)
-                Button("Choose ZIP…") { pickerLifecycle = lifecycle; choosing = true }
+                Button("Choose ZIP…") {
+                    pickerLifecycle = lifecycle; choosing = true
+                    append("Presenting ZIP picker…")
+                }
                     .disabled(operation != nil)
                     .accessibilityIdentifier("archive.choose-zip")
                 Text(status).font(.caption).accessibilityIdentifier("archive.status")
@@ -113,23 +120,44 @@ struct ArchiveRestoreView: View {
         }
         .navigationTitle("Restore ChatGPT ZIP")
         .navigationBarTitleDisplayMode(.inline)
-        .navigationBarBackButtonHidden(operation != nil)
-        .interactiveDismissDisabled(operation != nil)
+        .navigationBarBackButtonHidden(operation != nil || choosing)
+        .interactiveDismissDisabled(operation != nil || choosing)
         .fileImporter(isPresented: $choosing, allowedContentTypes: [.zip], allowsMultipleSelection: false) { result in
-            guard active, renderedLifecycle == lifecycle, pickerLifecycle == renderedLifecycle else { return }
+            guard active, renderedLifetime.isValid, renderedLifetime === lifetime,
+                  renderedLifecycle == lifecycle, pickerLifecycle == renderedLifecycle else { return }
             pickerLifecycle = nil
+            append("ZIP picker returned a result.")
             switch result {
             case .success(let urls): if let url = urls.first { beginPreparation(url) }
             case .failure(let error): errorText = error.localizedDescription
             }
         }
-        .onAppear { active = true }
-        .onDisappear {
-            active = false; lifecycle = UUID(); pickerLifecycle = nil
-            choosing = false
-            // A commit is not cancelled on navigation: it may already be durable.
-            if !committing { requestCancellation() }
+        .background(ArchiveRestoreLifetimeObserver(lifetime: renderedLifetime).frame(width: 0, height: 0))
+        .onAppear { activateLifetime() }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .background { invalidateLifetime(reason: "App backgrounded") }
+            else if phase == .active { activateLifetime() }
         }
+        .onDisappear {
+            // A covering document picker may hide its host. Do not tear down the
+            // presentation we just requested. True hierarchy removal is separately
+            // revoked synchronously by the observer's dismantleUIView callback.
+            if choosing {
+                append("Restore view covered while ZIP picker is presented.")
+            } else { invalidateLifetime(reason: "Restore view left") }
+        }
+    }
+
+    @MainActor private func activateLifetime() {
+        if !lifetime.isValid { lifetime = ArchiveRestoreLifetime(); lifecycle = UUID() }
+        active = true
+    }
+    @MainActor private func invalidateLifetime(reason: String) {
+        lifetime.invalidate()
+        active = false; lifecycle = UUID(); pickerLifecycle = nil; choosing = false
+        append(reason + "; pending picker callbacks invalidated.")
+        // A commit may already be durable and is not cancelled here.
+        if !committing { requestCancellation() }
     }
 
     @MainActor private func append(_ text: String) {
@@ -220,4 +248,18 @@ struct ArchiveRestoreView: View {
         guard operationID == id else { return }
         operation = nil; operationID = nil; cancelling = false; committing = false
     }
+}
+
+/// Unlike onDisappear, dismantling represents removal of this view hierarchy,
+/// not merely another controller covering it. The non-observable reference token
+/// is revoked synchronously, without mutating SwiftUI state during dismantling.
+private struct ArchiveRestoreLifetimeObserver: UIViewRepresentable {
+    let lifetime: ArchiveRestoreLifetime
+    final class Witness: UIView { var lifetime: ArchiveRestoreLifetime? }
+    func makeUIView(context: Context) -> Witness {
+        let view = Witness(); view.isUserInteractionEnabled = false; view.lifetime = lifetime
+        return view
+    }
+    func updateUIView(_ view: Witness, context: Context) { view.lifetime = lifetime }
+    static func dismantleUIView(_ view: Witness, coordinator: ()) { view.lifetime?.invalidate() }
 }
