@@ -49,15 +49,15 @@ final class MemoryContextBuilderTests: XCTestCase {
         _ = MemoryContextBuilder.build(notes: notes, query: "note", maximumBytes: 128)
         XCTAssertEqual(notes, before)
     }
-    func testScanAndQueryCapsAreDisclosed() {
+    func testFullLibraryScanAndQueryCapAreDisclosed() {
         let notes = (0..<501).map { MemoryNote(content: $0 == 500 ? "unscannedneedle" : "plain \($0)") }
         let result = MemoryContextBuilder.build(notes: notes, query: "unscannedneedle " + String(repeating: "x", count: 5000))
-        XCTAssertEqual(result.scannedCount, 500)
+        XCTAssertEqual(result.scannedCount, 501)
         XCTAssertEqual(result.totalCount, 501)
-        XCTAssertTrue(result.scanLimited)
+        XCTAssertFalse(result.scanLimited)
         XCTAssertTrue(result.queryTruncated)
         XCTAssertTrue(result.truncated)
-        XCTAssertFalse(result.text.contains("unscannedneedle"))
+        XCTAssertTrue(result.text.contains("unscannedneedle"))
     }
     func testRelevantPassageNearEndSurvivesExcerptBudget() {
         let text = String(repeating: "unrelated context ", count: 140) + "My passport appointment is Tuesday at noon."

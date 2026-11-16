@@ -12,7 +12,7 @@ class LocalAgentContract(unittest.TestCase):
   p=ROOT/'JarvisEVO/Services/LocalAgentSession.swift'
   self.assertTrue(p.exists(),'Native local-agent session missing')
   s=p.read_text();self.assertIn('selectedLocalAgentProvider',s)
-  self.assertLess(s.index('try persist(next)'),s.index('try executeLocalTool('))
+  self.assertLess(s.index('try persist(next)'),s.index('try await executeLocalTool('))
   self.assertIn('await model.finishLocalAgentWork(id:',s)
  def test_internal_agent_uses_shared_json_request_without_changing_chat_preference(self):
   session=(ROOT/'JarvisEVO/Services/LocalAgentSession.swift').read_text()
@@ -39,7 +39,7 @@ class LocalAgentContract(unittest.TestCase):
   s=(ROOT/'JarvisEVO/Services/VerifiedLocalReadSession.swift').read_text()
   self.assertNotIn('GenerationRequest',s)
   self.assertNotIn('provider.stream',s)
-  self.assertLess(s.index('try persist(next)'),s.index('try LocalReadTools.execute('))
+  self.assertLess(s.index('try persist(next)'),s.index('try await LocalReadTools.executeAsync('))
   self.assertIn('model.beginVerifiedReads',s)
   self.assertIn('model.endVerifiedReads',s)
  def test_reload_does_not_recover_another_sessions_live_work(self):

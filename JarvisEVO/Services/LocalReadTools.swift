@@ -49,19 +49,7 @@ enum LocalReadTools {
                   let query = args["query"]?.stringValue,
                   !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, query.utf8.count <= 256,
                   let limit = args["limit"]?.integerValue, (1...10).contains(limit) else { throw LocalAgentError.invalidState }
-            let matchingMemories = model.memories.prefix(500).filter {
-                $0.content.range(of: query, options: [.caseInsensitive, .diacriticInsensitive]) != nil
-            }
-            let memories = matchingMemories.prefix(Int(limit)).map { note in
-                MCPJSONValue.object(["id": .string(note.id.uuidString),
-                    "excerpt": .string(LocalSearchExcerpt.excerpt(text: note.content, query: query)),
-                    "excerptMayBeTruncated": .bool(note.content.utf8.count > 160)])
-            }
-            object = .object(["memories": .array(memories),
-                "totalMatchesInWindow": .integer(Int64(matchingMemories.count)),
-                "resultsLimited": .bool(matchingMemories.count > Int(limit)),
-                "searchedMemories": .integer(Int64(min(500, model.memories.count))),
-                "searchLimited": .bool(model.memories.count > 500)])
+            object = try memoryResult(notes: model.memories, query: query, limit: Int(limit))
         default: throw LocalAgentError.invalidState
         }
         let data: Data
@@ -80,5 +68,48 @@ enum LocalReadTools {
         }
         guard let text = String(data: data, encoding: .utf8) else { throw LocalAgentError.invalidState }
         return text
+    }
+
+    /// Production sessions use this entry point so large imported libraries do
+    /// not block MainActor. The immutable snapshot remains consistent during read.
+    static func executeAsync(name: String, arguments: MCPJSONValue, model: AppModel,
+                             resultByteLimit: Int? = nil, trustedGoal: String? = nil,
+                             authorizedConversationIDs: Set<UUID> = [], reviewedPlan: LocalReadPlan? = nil) async throws -> String {
+        guard name == "search_memory" else {
+            return try execute(name: name, arguments: arguments, model: model, resultByteLimit: resultByteLimit,
+                               trustedGoal: trustedGoal, authorizedConversationIDs: authorizedConversationIDs, reviewedPlan: reviewedPlan)
+        }
+        guard let args = arguments.objectValue, Set(args.keys) == Set(["query", "limit"]),
+              let query = args["query"]?.stringValue, let limit = args["limit"]?.integerValue,
+              (1...10).contains(limit) else { throw LocalAgentError.invalidState }
+        let notes = model.memories
+        try Task.checkCancellation()
+        let task = Task.detached(priority: .userInitiated) {
+            try memoryResult(notes: notes, query: query, limit: Int(limit))
+        }
+        let object = try await withTaskCancellationHandler {
+            let result = try await task.value
+            try Task.checkCancellation()
+            return result
+        } onCancel: { task.cancel() }
+        let data: Data
+        if let resultByteLimit {
+            data = try LocalToolResultBudget.encode(object, collection: "memories", maximumBytes: resultByteLimit)
+        } else { data = try object.encoded(maximumBytes: 16_384) }
+        return String(decoding: data, as: UTF8.self)
+    }
+
+    nonisolated private static func memoryResult(notes: [MemoryNote], query: String, limit: Int) throws -> MCPJSONValue {
+        let result = try MemorySearch.phrase(notes, query: query, limit: limit)
+        let memories = result.notes.map { note in
+            MCPJSONValue.object(["id": .string(note.id.uuidString),
+                "excerpt": .string(LocalSearchExcerpt.excerpt(text: note.content, query: query)),
+                "excerptMayBeTruncated": .bool(note.content.utf8.count > 160)])
+        }
+        return .object(["memories": .array(memories),
+            "totalMatchesInWindow": .integer(Int64(result.matchCount)),
+            "resultsLimited": .bool(result.matchCount > limit),
+            "searchedMemories": .integer(Int64(result.scannedCount)),
+            "searchLimited": .bool(false)])
     }
 }

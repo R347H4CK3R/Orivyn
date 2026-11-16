@@ -23,6 +23,29 @@ enum MemoryContextBuilder {
         let shortened: Bool
     }
 
+    /// Scan a value snapshot away from the UI actor. Cancellation never returns
+    /// a partial selection as though it were a completed search.
+    static func buildAsync(notes: [MemoryNote], query: String, maximumBytes: Int = 1024,
+                           maximumNotes: Int = 8) async throws -> Selection {
+        try Task.checkCancellation()
+        let task = Task.detached(priority: .userInitiated) {
+            let result = build(notes: notes, query: query, maximumBytes: maximumBytes, maximumNotes: maximumNotes)
+            try Task.checkCancellation()
+            return result
+        }
+        return try await withTaskCancellationHandler {
+            let result = try await task.value
+            try Task.checkCancellation()
+            return result
+        } onCancel: { task.cancel() }
+    }
+
+    private static func precedes(_ lhs: Candidate, _ rhs: Candidate) -> Bool {
+        if lhs.score != rhs.score { return lhs.score > rhs.score }
+        if lhs.date != rhs.date { return lhs.date > rhs.date }
+        return lhs.index < rhs.index
+    }
+
     /// Caller limits may reduce, never expand, the built-in 1,024-byte/eight-note cap.
     static func build(notes: [MemoryNote], query: String, maximumBytes: Int = 1024,
                       maximumNotes: Int = 8) -> Selection {
@@ -37,20 +60,25 @@ enum MemoryContextBuilder {
         var candidates: [Candidate] = []
         var scanned = 0
         var shortenedScan = false
-        for (index, note) in notes.prefix(500).enumerated() {
+        for (index, note) in notes.enumerated() {
+            if index % 64 == 0 && Task.isCancelled { break }
             scanned += 1
-            let bounded = prefix(note.content, bytes: 4096)
+            let bounded = prefix(note.content, bytes: 32_768)
             shortenedScan = shortenedScan || bounded.shortened
             let content = bounded.text.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !content.isEmpty else { continue }
             let overlap = words(content).intersection(queryWords).count
-            candidates.append(Candidate(index: index, text: content, date: note.createdAt,
-                                        score: overlap, shortened: bounded.shortened))
-        }
-        candidates.sort {
-            if $0.score != $1.score { return $0.score > $1.score }
-            if $0.date != $1.date { return $0.date > $1.date }
-            return $0.index < $1.index
+            let candidate = Candidate(index: index, text: content, date: note.createdAt,
+                                      score: overlap, shortened: bounded.shortened)
+            // Keep only the best eight (or caller's smaller limit), rather than
+            // accumulating/sorting the entire imported library.
+            if noteLimit > 0 {
+                let insertion = candidates.firstIndex { precedes(candidate, $0) } ?? candidates.endIndex
+                if insertion < noteLimit {
+                    candidates.insert(candidate, at: insertion)
+                    if candidates.count > noteLimit { candidates.removeLast() }
+                }
+            }
         }
         var output = ""
         var used = disclaimer.utf8.count

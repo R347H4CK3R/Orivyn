@@ -6,7 +6,9 @@ class MemoryToolContract(unittest.TestCase):
  def test_native_memory_read_is_bounded_and_explicit(self):
   s=(ROOT/'JarvisEVO/Services/LocalReadTools.swift').read_text()
   self.assertIn('case "search_memory":',s)
-  self.assertIn('model.memories.prefix(500)',s)
+  self.assertNotIn('model.memories.prefix(500)',s)
+  self.assertIn('MemorySearch.phrase',s)
+  self.assertIn('Task.detached',s)
   self.assertIn('"searchedMemories"',s)
   ui=(ROOT/'JarvisEVO/UI/VerifiedLocalReadView.swift').read_text()
   self.assertIn('Toggle("Search saved memory"',ui)

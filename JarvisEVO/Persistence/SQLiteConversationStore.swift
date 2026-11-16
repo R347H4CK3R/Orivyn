@@ -717,6 +717,22 @@ actor SQLiteConversationStore {
 
     /// Merges a complete validated snapshot transactionally. Attachments remain local references.
     @discardableResult
+    /// Actor isolation keeps deduplication and the existing transaction contiguous.
+    func importMemoryNotes(_ incoming: [MemoryNote]) throws -> BackupImportSummary {
+        try Task.checkCancellation()
+        guard incoming.count <= ConversationBackup.maximumRecordsPerCollection, incoming.allSatisfy({ $0.content.count <= 4000 && $0.content.utf8.count <= 32_768 }) else {
+            throw ConversationError.tooLarge
+        }
+        let existing = try memories()
+        var seen = Set(existing.map(\.content))
+        let additions = incoming.filter { seen.insert($0.content).inserted }
+        guard existing.count + additions.count <= ConversationBackup.maximumRecordsPerCollection else {
+            throw ConversationError.backupRecordLimit
+        }
+        let data = try encoder.encode(ConversationBackup(conversations: [], memories: additions))
+        return try importData(data, policy: .preserveLocal)
+    }
+
     func importData(_ data: Data, policy: BackupImportPolicy = .replaceMatching) throws -> BackupImportSummary {
         try importData(data, policy: policy, receive: nil)
     }

@@ -272,7 +272,11 @@ struct MemoryView: View {
     @Bindable var model: AppModel
     @State private var editor: MemoryEditorItem?
     @State private var query = ""
-    private var matchingMemories: [MemoryNote] { MemorySearch.matches(model.memories, query: query) }
+    @State private var searchTask: Task<Void, Never>?
+    @State private var searchGeneration = UUID()
+    @State private var page: MemorySearch.Page?
+    @State private var offset = 0
+    @State private var searchError: String?
     var body: some View {
         List {
             Section {
@@ -280,11 +284,23 @@ struct MemoryView: View {
                     .font(.footnote).foregroundStyle(.secondary)
                 if let summary = model.lastMemoryContextSummary { Text(summary).font(.caption).foregroundStyle(.secondary) }
                 Button { editor = MemoryEditorItem(id: nil, content: "") } label: { Label("Add a memory", systemImage: "plus") }
+                NavigationLink { FolderMemoryImportView(model: model) } label: { Label("Import a folder", systemImage: "folder.badge.plus") }
+                    .disabled(model.isGenerating)
             }
             Section("Saved notes") {
                 if model.memories.isEmpty { Text("No saved memories yet.").foregroundStyle(.secondary) }
-                if !model.memories.isEmpty && matchingMemories.isEmpty { Text(query.utf8.count > 1024 ? "Search is limited to 1,024 bytes." : "No matching memories.").foregroundStyle(.secondary) }
-                ForEach(matchingMemories) { memory in
+                if searchTask != nil { ProgressView("Searching saved notes…") }
+                if let searchError { Text(searchError).foregroundStyle(.secondary) }
+                if let page {
+                    Text("\(page.totalMatches) matching notes · showing \(page.notes.count), starting at \(page.notes.isEmpty ? 0 : offset + 1)").font(.caption)
+                    if page.totalMatches == 0 && !model.memories.isEmpty { Text("No matching memories.").foregroundStyle(.secondary) }
+                    HStack {
+                        Button("Previous") { offset = max(0, offset - 200); search(reset: false) }.disabled(offset == 0)
+                        Spacer()
+                        Button("Next") { offset += 200; search(reset: false) }.disabled(offset + page.notes.count >= page.totalMatches)
+                    }
+                }
+                ForEach(page?.notes ?? []) { memory in
                     Button { editor = MemoryEditorItem(id: memory.id, content: memory.content) } label: {
                         Text(memory.content).foregroundStyle(.primary).lineLimit(4)
                     }
@@ -296,8 +312,29 @@ struct MemoryView: View {
         }
         .navigationTitle("Saved memory")
         .searchable(text: $query, prompt: "Search saved notes")
+        .onAppear { search(reset: true) }
+        .onChange(of: query) { _, _ in search(reset: true) }
+        .onChange(of: model.memories) { _, _ in search(reset: true) }
+        .onDisappear { searchGeneration = UUID(); searchTask?.cancel(); searchTask = nil }
         .sheet(item: $editor) { item in
             MemoryEditor(content: item.content) { text in await model.saveMemory(id: item.memoryID, content: text) }
+        }
+    }
+    private func search(reset: Bool) {
+        searchTask?.cancel()
+        let identity = UUID(); searchGeneration = identity
+        if reset { offset = 0 }
+        page = nil; searchError = nil
+        let snapshot = model.memories, text = query, start = offset
+        searchTask = Task {
+            do {
+                try await Task.sleep(for: .milliseconds(150))
+                let result = try await MemorySearch.pageAsync(snapshot, query: text, offset: start)
+                guard identity == searchGeneration, !Task.isCancelled else { return }
+                page = result
+            } catch is CancellationError { }
+            catch { if identity == searchGeneration { searchError = text.utf8.count > 1024 ? "Search is limited to 1,024 bytes." : error.localizedDescription } }
+            if identity == searchGeneration { searchTask = nil }
         }
     }
 }

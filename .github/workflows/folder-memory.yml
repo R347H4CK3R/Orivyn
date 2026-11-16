@@ -1,0 +1,36 @@
+name: Verify selected folder memory import
+on:
+  push:
+    branches: [ci/folder-memory-20261116]
+    paths: ['.github/workflows/folder-memory.yml']
+permissions:
+  contents: read
+concurrency:
+  group: folder-memory-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  native-folder-import:
+    if: github.event.repository.private == false
+    runs-on: macos-15
+    timeout-minutes: 90
+    env:
+      ORIVYN_NATIVE_FEATURES: 'ORIVYN_NATIVE_VISION ORIVYN_NATIVE_TOOLS ORIVYN_NATIVE_TRANSCRIPT'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Select Xcode 26.1
+        run: |
+          test -d /Applications/Xcode_26.1.app
+          sudo xcode-select -s /Applications/Xcode_26.1.app/Contents/Developer
+      - name: Build and verify combined runtime
+        run: bash scripts/ci_combined_runtime.sh
+      - name: Native import, pagination and actual picker cancellation
+        run: bash scripts/ci_folder_memory.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Orivyn-folder-memory-evidence
+          path: artifacts
+          retention-days: 7
+          if-no-files-found: error

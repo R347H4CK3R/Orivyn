@@ -13,7 +13,7 @@ main=out/'Smoke.swift';main.write_text('''import Foundation
  var memories: [MemoryNote] = []
 }
 @main struct Smoke {
- @MainActor static func main() throws {
+ @MainActor static func main() async throws {
   let model = AppModel(), id = UUID(uuidString:"abcdefab-1234-1234-1234-123456789abc")!
   model.conversations = [Conversation(id:id,messages:[ChatMessage(role:.user,content:"orchid " + String(repeating:"🦊",count:200))])]
   let search = try LocalReadTools.execute(name:"search_conversations",arguments:.object(["query":.string("orchid"),"limit":.integer(1)]),model:model,resultByteLimit:4096)
@@ -29,6 +29,20 @@ main=out/'Smoke.swift';main.write_text('''import Foundation
   rejects { try LocalReadTools.execute(name:"read_conversation",arguments:args,model:model,authorizedConversationIDs:ids) }
   try Data(search.utf8).write(to:URL(fileURLWithPath:CommandLine.arguments[1]))
   try Data(result.utf8).write(to:URL(fileURLWithPath:CommandLine.arguments[2]))
+  model.memories = (0..<10_000).map { MemoryNote(content: $0 == 9999 ? "late orchid memory" : "unrelated note") }
+  let memoryArguments: MCPJSONValue = .object(["query": .string("orchid"), "limit": .integer(1)])
+  let memory = try await LocalReadTools.executeAsync(name: "search_memory", arguments: memoryArguments, model: model)
+  let memoryObject = try MCPJSONValue.parse(Data(memory.utf8)).objectValue!
+  precondition(memoryObject["searchedMemories"] == .integer(10_000))
+  precondition(memoryObject["searchLimited"] == .bool(false))
+  precondition(memory.contains("late orchid memory"))
+  let canceled = Task { @MainActor in
+   try await LocalReadTools.executeAsync(name: "search_memory", arguments: memoryArguments, model: model)
+  }
+  canceled.cancel()
+  do { _ = try await canceled.value; fatalError("Canceled search returned successful evidence") }
+  catch is CancellationError {}
+  print("PASS actual async memory dispatcher: late 10,000th note found; cancellation rejected")
   print("PASS actual LocalReadTools search -> authorized page; denied absent provenance, tiny budget and deleted conversation")
  }
 }

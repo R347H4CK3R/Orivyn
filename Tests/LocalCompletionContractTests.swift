@@ -104,7 +104,7 @@ final class LocalCompletionContractTests: XCTestCase {
     func testMemorySchemasAndEmptySearch() throws {
         let contract = try plan([memory])
         XCTAssertTrue(try LocalCompletionPolicy.derive(contract: contract, history: [event(contract.steps[0], memoryResult)]).canAnswer)
-        for raw in [memoryResult.replacingOccurrences(of: "\"totalMatchesInWindow\":0", with: "\"totalMatchesInWindow\":1"), memoryResult.replacingOccurrences(of: "\"searchLimited\":false", with: "\"searchLimited\":true"), memoryResult.replacingOccurrences(of: "\"resultsLimited\":false", with: "\"resultsLimited\":true"), memoryResult.replacingOccurrences(of: "\"searchedMemories\":0", with: "\"searchedMemories\":501")] {
+        for raw in [memoryResult.replacingOccurrences(of: "\"totalMatchesInWindow\":0", with: "\"totalMatchesInWindow\":1"), memoryResult.replacingOccurrences(of: "\"searchLimited\":false", with: "\"searchLimited\":true"), memoryResult.replacingOccurrences(of: "\"resultsLimited\":false", with: "\"resultsLimited\":true"), memoryResult.replacingOccurrences(of: "\"searchedMemories\":0", with: "\"searchedMemories\":9007199254740992")] {
             XCTAssertThrowsError(try LocalCompletionPolicy.derive(contract: contract, history: [event(contract.steps[0], raw)]))
         }
     }

@@ -702,10 +702,11 @@ final class AppModel {
                 didPersist = true
                 self.isSavingSubmittedTurn = false
                 try self.validateGeneration(voiceTicket)
-                let memoryContext = MemoryContextBuilder.build(
+                let memoryContext = try await MemoryContextBuilder.buildAsync(
                     notes: self.memories,
                     query: conversation.messages.last(where: { $0.role == .user })?.content ?? "",
                     maximumBytes: providerID == "remote" ? 1024 : 512)
+                try self.validateGeneration(voiceTicket)
                 self.lastMemoryContextSummary = memoryContext.totalCount == 0 ? nil :
                     "Latest prepared context selected \(memoryContext.includedCount) of \(memoryContext.totalCount) saved notes; scanned \(memoryContext.scannedCount)."
                     + (memoryContext.truncated ? " Some context was omitted or shortened; all original notes remain saved." : "")
@@ -1140,6 +1141,20 @@ final class AppModel {
             statusMessage = summary.description
             requestAttachmentCleanup()
         } catch { report(error) }
+    }
+
+    /// Review is additive; reuse the SQLite transaction so a failed write adds nothing.
+    @discardableResult
+    func importFolderMemories(_ incoming: [MemoryNote]) async -> Bool {
+        guard !isGenerating, beginHistoryChange() else { return false }
+        defer { finishHistoryChange() }
+        do {
+            try Task.checkCancellation()
+            let summary = try await store.importMemoryNotes(incoming)
+            memories = try await store.memories()
+            statusMessage = summary.description
+            return true
+        } catch { report(error); return false }
     }
 
     @discardableResult

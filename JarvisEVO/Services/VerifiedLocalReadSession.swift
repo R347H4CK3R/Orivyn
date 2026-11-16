@@ -122,7 +122,9 @@ final class VerifiedLocalReadSession {
                     let next = try core.call("next", [current])
                     try persist(next) // Commit pending identity before reading app state.
                     guard let pending = try core.snapshot(next).pending else { break }
-                    let output = try LocalReadTools.execute(name: pending.name, arguments: pending.arguments, model: model)
+                    let output = try await LocalReadTools.executeAsync(name: pending.name, arguments: pending.arguments, model: model)
+                    try Task.checkCancellation()
+                    guard model.verifiedReadOwner == owner else { throw CancellationError() }
                     let envelope = try MCPJSONValue.object(["operationID": .string(pending.operationID), "resultJSON": .string(output)]).encoded(maximumBytes: 32_768)
                     guard let result = String(data: envelope, encoding: .utf8) else { throw LocalAgentError.invalidState }
                     try persist(core.call("record", [next, result]))

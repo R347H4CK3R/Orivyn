@@ -146,7 +146,7 @@ struct LocalCompletionPolicy: Equatable, Sendable {
             }
         case "search_memory":
             _ = try LocalCompletionContract.object(value, keys: ["memories", "totalMatchesInWindow", "resultsLimited", "searchedMemories", "searchLimited"] + extras)
-            let searched = try count("searchedMemories", maximum: 500)
+            let searched = try count("searchedMemories")
             let total = try count("totalMatchesInWindow", maximum: searched)
             guard let limit = action.arguments.objectValue?["limit"]?.integerValue,
                   let memories = object["memories"]?.arrayValue, omissions <= limit,

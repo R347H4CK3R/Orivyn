@@ -253,7 +253,7 @@ final class LocalAgentSession {
                     status = pending.name == "calculate"
                         ? "Calculating locally · step \(accepted.steps)/6"
                         : "Reading locally: \(pending.name) · step \(accepted.steps)/6"
-                    let result = try executeLocalTool(pending)
+                    let result = try await executeLocalTool(pending)
                     try checkOwner(identity)
                     let encoded = try MCPJSONValue.object(["operationID": .string(pending.operationID), "result": .string(result)]).encoded(maximumBytes: 32_768)
                     guard let resultText = String(data: encoded, encoding: .utf8) else { throw LocalAgentError.invalidState }
@@ -305,7 +305,7 @@ final class LocalAgentSession {
         } catch { self.error = error.localizedDescription }
     }
 
-    private func executeLocalTool(_ pending: LocalAgentSnapshot.Intent) throws -> String {
+    private func executeLocalTool(_ pending: LocalAgentSnapshot.Intent) async throws -> String {
         guard let snapshot else { throw LocalAgentError.invalidState }
         if snapshot.version == 3 {
             guard let contract=snapshot.completionContract else { throw LocalAgentError.invalidState }
@@ -313,7 +313,7 @@ final class LocalAgentSession {
         } else if snapshot.version == 2, let plan=snapshot.readPlan {
             try LocalReadWorkflowPolicy.derive(plan:plan,history:snapshot.history,conversations:model.conversations).validate(pending)
         } else if snapshot.version != 1 { throw LocalAgentError.invalidState }
-        return try LocalReadTools.execute(name: pending.name, arguments: pending.arguments, model: model, resultByteLimit: 4096, trustedGoal: snapshot.goal, authorizedConversationIDs: LocalConversationRead.authorizedIDs(history: snapshot.history), reviewedPlan:snapshot.readPlan)
+        return try await LocalReadTools.executeAsync(name: pending.name, arguments: pending.arguments, model: model, resultByteLimit: 4096, trustedGoal: snapshot.goal, authorizedConversationIDs: LocalConversationRead.authorizedIDs(history: snapshot.history), reviewedPlan:snapshot.readPlan)
     }
 
 }

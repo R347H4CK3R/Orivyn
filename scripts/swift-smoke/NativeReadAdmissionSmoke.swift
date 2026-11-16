@@ -42,7 +42,7 @@ struct VerifiedLocalPlanSnapshot { let id: String; let status: String; let compl
     func endVerifiedReads(id: UUID) { verifiedReadOwner = nil }
 }
 @MainActor enum LocalReadTools {
-    static func execute(name: String, arguments: MCPJSONValue, model: AppModel) throws -> String { fatalError("No read may execute during suggestion") }
+    static func executeAsync(name: String, arguments: MCPJSONValue, model: AppModel) async throws -> String { fatalError("No read may execute during suggestion") }
 }
 @main struct NativeReadAdmissionSmoke {
     @MainActor static func main() async throws {

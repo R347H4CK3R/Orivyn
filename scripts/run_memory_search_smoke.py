@@ -5,12 +5,13 @@ import argparse, hashlib, json, os, pathlib, subprocess
 def main():
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('--swiftc',required=True);p.add_argument('--node',required=True);p.add_argument('--output',required=True,type=pathlib.Path);p.add_argument('--module-cache',required=True);a=p.parse_args()
  root=pathlib.Path(__file__).resolve().parents[1];out=a.output.resolve();out.mkdir(parents=True,exist_ok=False)
- names=['MemoryNote','LocalSearchExcerpt','LocalAgentError','MCPTypes','MCPToolSchema','LocalToolResultBudget'];manifest=[];sources=[]
+ names=['MemorySearch','MemoryNote','LocalSearchExcerpt','LocalAgentError','MCPTypes','MCPToolSchema','LocalToolResultBudget'];manifest=[];sources=[]
  for name in names:
   f=root/f'JarvisEVO/Core/{name}.swift';data=f.read_bytes();dest=out/f.name;dest.write_bytes(data);sources.append(str(dest));manifest.append({'source':str(f.relative_to(root)),'sha256':hashlib.sha256(data).hexdigest()})
  f=root/'JarvisEVO/Services/LocalReadTools.swift';raw=f.read_text();start=raw.index('        case "search_memory":');end=raw.index('\n        default:',start+1);branch=raw[start:end]
  (out/'ExactBranch.swift.txt').write_text(branch);manifest.append({'source':str(f.relative_to(root)),'sha256':hashlib.sha256(raw.encode()).hexdigest(),'extractedBranchSHA256':hashlib.sha256(branch.encode()).hexdigest()})
- (out/'MemoryBranch.swift').write_text('import Foundation\nstruct ModelScaffold { let memories: [MemoryNote] }\nenum MemoryBranch { static func execute(arguments: MCPJSONValue, model: ModelScaffold) throws -> MCPJSONValue { let object: MCPJSONValue\nswitch "search_memory" {\n'+branch+'\ndefault: throw LocalAgentError.invalidState\n}\nreturn object\n}}\n');sources.append(str(out/'MemoryBranch.swift'))
+ helper = raw[raw.index('    nonisolated private static func memoryResult'):raw.rfind('}')].replace('nonisolated private static', 'static')
+ (out/'MemoryBranch.swift').write_text('import Foundation\nstruct ModelScaffold { let memories: [MemoryNote] }\nenum MemoryBranch { static func execute(arguments: MCPJSONValue, model: ModelScaffold) throws -> MCPJSONValue { let object: MCPJSONValue\nswitch "search_memory" {\n'+branch+'\ndefault: throw LocalAgentError.invalidState\n}\nreturn object\n}\n'+helper+'}\n');sources.append(str(out/'MemoryBranch.swift'))
  (out/'main.swift').write_text('''import Foundation
 func check(_ ok: Bool, _ reason: String) { if !ok { fatalError(reason) } }
 func search(_ query: String, _ notes: [MemoryNote], _ limit: Int64 = 3) throws -> MCPJSONValue {
@@ -27,9 +28,9 @@ check(capped.objectValue?["totalMatchesInWindow"] == .integer(5),"Missing bounde
 check(capped.objectValue?["resultsLimited"] == .bool(true),"Silently omitted matching memories")
 check(result.objectValue?["resultsLimited"] == .bool(false),"Incorrect truncation flag")
 let bounded = try search("needle", (0..<500).map { _ in MemoryNote(content:"unrelated") } + [MemoryNote(content:"needle")])
-check(bounded.objectValue?["searchLimited"] == .bool(true),"Search boundary missing")
-check(bounded.objectValue?["searchedMemories"] == .integer(500),"Unbounded scan")
-check(bounded.objectValue?["memories"] == .array([]),"Exceeded scan budget")
+check(bounded.objectValue?["searchLimited"] == .bool(false),"Full search incorrectly limited")
+check(bounded.objectValue?["searchedMemories"] == .integer(501),"Search did not scan full library")
+check(bounded.objectValue?["memories"] != .array([]),"Late matching memory omitted")
 let unicode = try search("cafe", [MemoryNote(content:"Café choice")])
 check(unicode.objectValue?["memories"] != .array([]),"Diacritic matching failed")
 for arguments: MCPJSONValue in [.object(["query":.string("x"),"limit":.integer(11)]),.object(["query":.string("x"),"limit":.integer(1),"extra":.bool(true)]),.object(["query":.string(" "),"limit":.integer(1)])] {

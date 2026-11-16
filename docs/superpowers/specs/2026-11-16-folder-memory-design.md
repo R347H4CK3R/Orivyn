@@ -1,0 +1,11 @@
+# Selected folder to saved memory
+
+Chris requested import of a folder shown in iPhone Files (1,116 items, with matching 2.44 GB ZIP). The screenshot does not reveal its contents. Existing app imports only its own backup JSON; saved memory accepts manual notes. Implementation reuses saved notes and their untrusted-context semantics.
+
+Selected approach: an on-device folder picker, off-main bounded scan of UTF-8 .txt/.md and a recognized ChatGPT conversations.json export. Skip media and arbitrary JSON. Present notes/counts/skips and warnings, then require Add to saved memory. Import additive, atomic through existing backup transaction, exact-content deduplicated. Never choose Downloads automatically or upload source files. Original files remain untouched. Each note retains a source label and conversation speaker role. Imported statements are archive context, not verified facts or agent authority.
+
+Alternatives: manually select conversations.json (less discoverable, existing backup parser incompatible); decompress giant ZIP in app (unnecessary memory/storage pressure when extracted folder already exists); indiscriminate recursive ingestion (private credentials/binary noise, unsafe). Folder approach is the engineering choice under Chris's instruction to work autonomously.
+
+Bounds: 20,000 directory entries, 16 MB per eligible text file or streamed conversation, 1 GB streamed conversations.json, 40 MB combined note UTF-8, 10,000 notes, 3,600 characters per chunk. Reaching a bound aborts preview, not silent partial success. Unsupported files skipped with count; supported unreadable/malformed files listed. Symbolic links never followed, descriptor-based relative traversal. iOS file-provider reads coordinated and scoped; ChatGPT arrays parsed incrementally one conversation at a time; cancellation leaves memory untouched. Review cancel discards prepared notes. Search must not silently exclude notes after the old first-500 cap; separate full-library bounded-result work addresses retrieval.
+
+Verification: Foundation tests for Unicode split preservation, parser roles/malformed formats, duplicate idempotence, file/link handling and limits; native UI/build remains separately unverified until CI/device test. No release version bump or publication in this branch.

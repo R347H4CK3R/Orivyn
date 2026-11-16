@@ -74,7 +74,7 @@ function completionResult(a,raw){
   if(!Array.isArray(r.models)||r.models.length+omitted!==Math.min(r.totalInstalled,10)||r.truncated!==(r.totalInstalled>10))bad('completion model counts');
   for(const m of r.models){object(m,['id','name']);text(m.id,4096,true);text(m.name,4096,true);}
  }else{
-  object(r,['memories','totalMatchesInWindow','resultsLimited','searchedMemories','searchLimited',...keys]);integer(r.searchedMemories,0,500);integer(r.totalMatchesInWindow,0,r.searchedMemories);boolean(r.resultsLimited);boolean(r.searchLimited);
+  object(r,['memories','totalMatchesInWindow','resultsLimited','searchedMemories','searchLimited',...keys]);integer(r.searchedMemories,0,Number.MAX_SAFE_INTEGER);integer(r.totalMatchesInWindow,0,r.searchedMemories);boolean(r.resultsLimited);boolean(r.searchLimited);
   if(!Array.isArray(r.memories)||r.memories.length+omitted!==Math.min(r.totalMatchesInWindow,a.arguments.limit)||r.resultsLimited!==(r.totalMatchesInWindow>a.arguments.limit)||(r.searchLimited&&r.searchedMemories!==500))bad('completion memory counts');
   const ids=new Set();for(const m of r.memories){object(m,['id','excerpt','excerptMayBeTruncated']);if(typeof m.id!=='string'||!UUID.test(m.id)||ids.has(m.id.toLowerCase()))bad('completion memory identity');ids.add(m.id.toLowerCase());text(m.excerpt,160,true);boolean(m.excerptMayBeTruncated);}
  }

@@ -73,3 +73,4 @@ test('legacy plans gain report references without mutation or authenticity claim
  assert.equal(A().recover(raw),raw);assert.match(report.limitations.join(' '),/not authenticity/);
  assert.match(report.limitations.join(' '),/not external citations/);
 });
+test('full-library memory read retains counts beyond500',()=>{const s=A().next(A().create(JSON.stringify({appInfo:false,installedModels:false,searchQuery:null,memoryQuery:'late'}),id));const value={memories:[],searchedMemories:10000,searchLimited:false,totalMatchesInWindow:0,resultsLimited:false};const done=record(s,value);assert.equal(obj(done).status,'complete');assert.equal(A().recover(done),done);});
