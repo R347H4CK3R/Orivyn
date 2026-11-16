@@ -1,6 +1,6 @@
 """Packaging and source-order checks, NOT native behavior verification."""
 from pathlib import Path
-import unittest, hashlib, json
+import unittest, hashlib, json, tempfile, importlib.util
 ROOT = Path(__file__).resolve().parents[2]
 class VMIntegrationContract(unittest.TestCase):
     def test_session_waits_for_preparation_and_runtime_before_releasing_lease(self):
@@ -22,11 +22,20 @@ class VMIntegrationContract(unittest.TestCase):
         manifest=json.loads((ROOT/'docs/virtual-desktop/asset-manifest.json').read_text())
         self.assertEqual(len(manifest),15)
         native=(ROOT/'JarvisEVO/Services/VirtualDesktop/AssetCatalog.swift').read_text()
-        for entry in manifest:
-            data=(ROOT/'JarvisEVO/Resources/VMAssets'/entry['name']).read_bytes()
-            self.assertEqual(len(data),entry['bytes'],entry['name'])
-            self.assertEqual(hashlib.sha256(data).hexdigest(),entry['sha256'],entry['name'])
-            self.assertIn(entry['sha256'],native)
+        # Clean checkouts intentionally omit the generated disk. Exercise the
+        # production pinned materializer in temporary storage, never skip bytes.
+        spec=importlib.util.spec_from_file_location('guest_materializer',ROOT/'scripts/materialize_guest.py')
+        materializer=importlib.util.module_from_spec(spec);spec.loader.exec_module(materializer)
+        with tempfile.TemporaryDirectory() as tmp:
+            guest=Path(tmp)/'maintained.img'
+            materializer.materialize(ROOT/'Fixtures/maintained.img.gz',guest)
+            for entry in manifest:
+                asset=ROOT/'JarvisEVO/Resources/VMAssets'/entry['name']
+                if entry['name']=='maintained.img' and not asset.exists(): asset=guest
+                self.assertEqual(asset.stat().st_size,entry['bytes'],entry['name'])
+                with asset.open('rb') as stream:
+                    self.assertEqual(hashlib.file_digest(stream,'sha256').hexdigest(),entry['sha256'],entry['name'])
+                self.assertIn(entry['sha256'],native)
         html=(ROOT/'JarvisEVO/Resources/VMAssets/index.html').read_text()
         self.assertIn("default-src 'none'",html)
         self.assertIn("worker-src 'none'",html)

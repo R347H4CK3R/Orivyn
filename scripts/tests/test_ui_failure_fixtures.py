@@ -9,9 +9,13 @@ class UIFailureFixtureContract(unittest.TestCase):
         self.assertIn('provider: nil',fixture)
         self.assertIn('launchUnavailableProviderFixture()',tests)
         self.assertNotIn('throw XCTSkip',tests)
-    def test_import_selects_policy_then_cancels_real_picker(self):
+    def test_import_opens_dedicated_page_then_cancels_real_picker(self):
         tests=(ROOT/'UITests/JarvisEVOUITests.swift').read_text()
-        self.assertIn('app.buttons["Add missing only (keep local)"]',tests)
+        self.assertIn('app.navigationBars["Import backup"]',tests)
+        self.assertIn('app.buttons["history.import-file"]',tests)
+        self.assertIn('chooseFile.tap()',tests)
+        self.assertIn('XCTAssertEqual(savedRows.allElementsBoundByIndex.map(\\.label), savedLabels,',tests)
+        self.assertIn('XCTAssertEqual(composer.value as? String, "Keep this draft during import")',tests)
         self.assertIn('reveal(importButton',tests)
         self.assertIn('NSPredicate(format: "exists == false")', tests)
         self.assertIn('app.navigationBars["FullDocumentManagerViewControllerNavigationBar"]', tests)

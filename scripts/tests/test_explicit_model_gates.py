@@ -62,7 +62,7 @@ class PipelineTests(unittest.TestCase):
                 p=root/name;p.parent.mkdir(parents=True,exist_ok=True);p.write_text(text)
                 if executable:p.chmod(0o755)
             put('scripts/ci_native_inference.sh',(ROOT/'scripts/ci_native_inference.sh').read_text())
-            for name in ['materialize_guest.py','download_test_model.py','boot_ci_simulator.py']:put('scripts/'+name,'pass\n')
+            for name in ['materialize_guest.py','download_test_model.py','boot_ci_simulator.py','generate_project.py']:put('scripts/'+name,'pass\n')
             put('scripts/bootstrap_llama.sh','exit 0\n')
             for name in ['xcodegen','git','xcodebuild']:put('bin/'+name,'#!/bin/sh\necho mock\n',True)
             put('bin/xcrun','#!/bin/sh\necho \'{"devices":{"iOS-26":[{"name":"iPhone 16 Plus","udid":"12345678-1234-1234-1234-123456789abc","isAvailable":true}]}}\'\n',True)
