@@ -65,7 +65,7 @@ enum ChatGPTConversationRestore {
             guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || hasUnresolved else { continue }
             guard text.utf8.count <= 1_000_000 else { throw Failure.limit }
             guard let externalMessage = message["id"] as? String, !externalMessage.isEmpty else { throw Failure.invalidRecord }
-            let messageID = try identity(externalMessage, key: "message:" + externalID + ":" + externalMessage, map: identities)
+            let messageID = try identity(externalMessage, key: legacyMessageKey(conversationID: externalID, messageID: externalMessage), map: identities)
             guard messageIDs.insert(messageID).inserted else { throw Failure.invalidRecord }
             let attachments = metadata?["attachments"] as? [Any] ?? []
             guard attachments.count <= 2048 else { throw Failure.limit }
@@ -101,6 +101,11 @@ enum ChatGPTConversationRestore {
     private static func excluded(_ record: [String: Any]) -> Bool {
         let metadata = record["metadata"] as? [String: Any]
         return record["is_do_not_remember"] as? Bool == true || metadata?["is_do_not_remember"] as? Bool == true
+    }
+    /// Versioned byte-length framing prevents ("a:b", "c") from aliasing ("a", "b:c").
+    /// The coordinator must persist this exact key with its chosen UUID before commit.
+    static func legacyMessageKey(conversationID: String, messageID: String) -> String {
+        "message:v1:\(conversationID.utf8.count):\(conversationID):\(messageID.utf8.count):\(messageID)"
     }
     private static func identity(_ source: String, key: String, map: [String: UUID]) throws -> UUID {
         if let id = UUID(uuidString: source) { return id }

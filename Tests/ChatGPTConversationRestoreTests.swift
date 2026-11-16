@@ -130,4 +130,19 @@ final class ChatGPTConversationRestoreTests: XCTestCase {
         mapping["leaf"]!["message"] = message; value["mapping"] = mapping
         XCTAssertThrowsError(try ChatGPTConversationRestore.convert(JSONSerialization.data(withJSONObject: value), identities: [:]))
     }
+
+    func testLegacyMessageTupleDoesNotAliasAcrossConversations() throws {
+        let firstID = UUID(uuidString: "00000000-0000-0000-0000-000000000003")!
+        let secondID = UUID(uuidString: "00000000-0000-0000-0000-000000000004")!
+        let mappings = ["conversation:a:b": conversationID, "conversation:a": conversationID,
+                        "message:v1:3:a:b:1:c": firstID, "message:v1:1:a:3:b:c": secondID]
+        for (conversation, messageID, expected) in [("a:b", "c", firstID), ("a", "b:c", secondID)] {
+            var value = record(); value["id"] = conversation
+            var nodes = value["mapping"] as! [String: [String: Any]]
+            var message = nodes["leaf"]!["message"] as! [String: Any]
+            message["id"] = messageID; nodes["leaf"]!["message"] = message; value["mapping"] = nodes
+            let result = try ChatGPTConversationRestore.convert(JSONSerialization.data(withJSONObject: value), identities: mappings)
+            XCTAssertEqual(result.conversation?.messages.first?.id, expected)
+        }
+    }
 }
