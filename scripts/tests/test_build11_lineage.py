@@ -4,8 +4,8 @@ ROOT=Path(__file__).resolve().parents[2]
 class Build11LineageTests(unittest.TestCase):
  def test_preview_version_and_identity(self):
   s=(ROOT/'project.yml').read_text()
-  self.assertIn('CURRENT_PROJECT_VERSION: 17',s) # Current preview; historical build-11 provenance stays pinned below.
-  self.assertIn('MARKETING_VERSION: 0.1.1',s)
+  self.assertIn('CURRENT_PROJECT_VERSION: 18',s) # Current preview; historical build-11 provenance stays pinned below.
+  self.assertIn('MARKETING_VERSION: 0.1.2',s)
   self.assertIn('app.jarvisevo.ios',s)
  def test_provenance_keeps_archive_and_compiled_input_gates(self):
   s=(ROOT/'scripts/verify_build11_runtime_reuse.py').read_text()

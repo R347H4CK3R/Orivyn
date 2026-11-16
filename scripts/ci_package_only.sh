@@ -4,6 +4,9 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 ARTIFACTS="artifacts/package-only"
 mkdir -p "$ARTIFACTS"
+# Fail closed when publication metadata cannot be checked. Never reuse a marketing version.
+curl --fail --silent --show-error --location --retry 2 https://raw.githubusercontent.com/R347H4CK3R/Orivyn-Distribution/main/source.json -o "$ARTIFACTS/published-source.json"
+python3 scripts/release_version_guard.py --project project.yml --source "$ARTIFACTS/published-source.json"
 git rev-parse HEAD > "$ARTIFACTS/source-commit.txt"
 git status --short > "$ARTIFACTS/source-status-before.txt"
 test ! -s "$ARTIFACTS/source-status-before.txt" || { echo 'Refusing a dirty source checkout.' >&2; exit 2; }
@@ -32,6 +35,7 @@ IPA_NAME=$(python3 scripts/ipa_filename.py "$APP/Info.plist")
 IPA_PATH="$PWD/$ARTIFACTS/$IPA_NAME"
 (cd "$PACKAGE" && zip -qr "$IPA_PATH" Payload)
 python3 scripts/verify_ipa.py "$IPA_PATH" --output "$ARTIFACTS/ipa-verification.json"
+python3 scripts/release_version_guard.py --project project.yml --source "$ARTIFACTS/published-source.json" --ipa "$IPA_PATH"
 (cd "$ARTIFACTS" && shasum -a 256 "$IPA_NAME" > SHA256SUMS)
 python3 - <<'PY'
 import json,pathlib

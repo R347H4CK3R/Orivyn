@@ -12,6 +12,9 @@ RUN_ID="$(date -u +%Y%m%dT%H%M%SZ)-$$"
 ARTIFACTS="artifacts/$RUN_ID"
 PACKAGE="build/package-$RUN_ID"
 mkdir -p "$ARTIFACTS"
+# Fail closed when publication metadata cannot be checked. Never reuse a marketing version.
+curl --fail --silent --show-error --location --retry 2 https://raw.githubusercontent.com/R347H4CK3R/Orivyn-Distribution/main/source.json -o "$ARTIFACTS/published-source.json"
+python3 scripts/release_version_guard.py --project project.yml --source "$ARTIFACTS/published-source.json"
 printf '%s\n' "$NATIVE_TEST_GROUP" > "$ARTIFACTS/test-group.txt"
 printf '%s\n' "$TEST_SELECTION" > "$ARTIFACTS/test-selection.txt"
 export ARTIFACTS
@@ -58,5 +61,6 @@ IPA_NAME=$(python3 scripts/ipa_filename.py "$APP/Info.plist")
 IPA_PATH="$PWD/$ARTIFACTS/$IPA_NAME"
 (cd "$PACKAGE" && zip -qr "$IPA_PATH" Payload)
 python3 scripts/verify_ipa.py "$IPA_PATH" --output "$ARTIFACTS/ipa-verification.json"
+python3 scripts/release_version_guard.py --project project.yml --source "$ARTIFACTS/published-source.json" --ipa "$IPA_PATH"
 (cd "$ARTIFACTS" && shasum -a 256 "$IPA_NAME" > SHA256SUMS)
 echo 'Build and package checks completed. Model/device/fidelity acceptance gates remain independent.'

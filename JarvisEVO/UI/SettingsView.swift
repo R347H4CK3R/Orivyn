@@ -80,8 +80,11 @@ struct SettingsView: View {
                     NavigationLink { RepositoryInspectionView() } label: { Label("Inspect private source", systemImage: "doc.text.magnifyingglass") }
                     NavigationLink { SuggestionView() } label: { Label("Send a suggestion", systemImage: "lightbulb") }
                 }
-                Section {
-                    LabeledContent("Version", value: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0")
+                Section("Installed release") {
+                    LabeledContent("Version", value: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "unknown")
+                    LabeledContent("Build", value: Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "unknown")
+                    Text(Bundle.main.object(forInfoDictionaryKey: "OrivynReleaseNotes") as? String ?? "Release notes unavailable for this build.")
+                        .font(.footnote).foregroundStyle(.secondary)
                 }
             }
             .navigationTitle("Settings").navigationBarTitleDisplayMode(.inline)

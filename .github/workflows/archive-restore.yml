@@ -1,7 +1,7 @@
-name: Verify build 17 restore compatibility and exact review denial
+name: Verify build 18 SideStore version and release metadata
 on:
   push:
-    branches: [recovery/chatgpt-restore-20261116]
+    branches: [fix/build18-version]
     paths: ['.github/workflows/archive-restore.yml']
 permissions:
   contents: read
@@ -19,6 +19,10 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+      - name: Test release metadata enforcement
+        run: |
+          python3 -m unittest discover -s scripts/tests -p test_release_version_guard.py -v
+          python3 -m unittest discover -s scripts/tests -p test_release_info.py -v
       - name: Select Xcode 26.1
         id: xcode
         run: |
@@ -39,7 +43,7 @@ jobs:
           key: ${{ steps.combined-cache.outputs.cache-primary-key }}
       - name: Actual ZIP picker, reviewed restore and persistent history
         run: bash scripts/ci_archive_restore.sh
-      - name: Package build 17 only after exact native acceptance passes
+      - name: Package build 18 only after exact native acceptance passes
         run: bash scripts/ci_package_only.sh
       - uses: actions/upload-artifact@v4
         if: always()

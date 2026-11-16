@@ -7,9 +7,11 @@
 	<key>OrivynFeedbackRepositoryURL</key>
 	<string>https://github.com/R347H4CK3R/Orivyn</string>
 	<key>CFBundleShortVersionString</key>
-	<string>0.1.1</string>
+	<string>0.1.2</string>
 	<key>CFBundleVersion</key>
-	<string>5</string>
+	<string>18</string>
+	<key>OrivynReleaseNotes</key>
+	<string>Version 0.1.2 build 18 advances the app version so SideStore can recognize the update. Settings now shows the installed build and these release notes. Retains build 17 restore handling for visible assistant replies with null routing fields. This unfinished unsigned preview does not add broader autonomy or sync. Physical-device and full private-backup acceptance remain unverified. Preserve existing app data and signing identity when updating.</string>
 	<key>CFBundleURLTypes</key>
 	<array><dict>
 		<key>CFBundleURLName</key><string>app.jarvisevo.ios.compose</string>
