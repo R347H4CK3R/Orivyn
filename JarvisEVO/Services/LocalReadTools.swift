@@ -22,11 +22,8 @@ enum LocalReadTools {
         switch name {
         case "get_app_info":
             guard arguments.objectValue?.isEmpty == true else { throw LocalAgentError.invalidState }
-            let capabilities = AppSelfKnowledge.load()?.capabilities.prefix(24).map { MCPJSONValue.object(["id": .string($0.id), "status": .string($0.status.rawValue)]) } ?? []
-            object = .object(["app": .string("Orivyn"), "assistant": .string("Jarvis"),
-                "repository": .string("https://github.com/R347H4CK3R/Orivyn"),
-                "repositoryAccess": .string("This tool reads bundled metadata, not repository source. A repository URL does not grant chat source access."),
-                "capabilities": .array(capabilities)])
+            return String(decoding: try AppSelfKnowledge.toolResult(metadata: AppSelfKnowledge.load(),
+                maximumBytes: resultByteLimit ?? 4096), as: UTF8.self)
         case "list_models":
             guard arguments.objectValue?.isEmpty == true else { throw LocalAgentError.invalidState }
             let models = model.installedModels.prefix(10).map { MCPJSONValue.object(["id": .string(String($0.id.prefix(96))), "name": .string(String($0.name.prefix(96)))]) }

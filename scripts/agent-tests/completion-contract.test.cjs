@@ -26,3 +26,13 @@ test('context overflow preserves results and cannot become forged completed answ
 test('v1 and v2 remain unchanged and cannot smuggle a contract',()=>{const v1=api.create('legacy',id);assert.equal(JSON.parse(v1).version,1);assert.throws(()=>api.recover(JSON.stringify({...JSON.parse(v1),completionContract:{schema:1,steps:[info]}})));const v2=api.createReviewed(JSON.stringify({goal:'search',id,plan:{schema:1,kind:'conversation_search',query:'Cedar'}}));assert.equal(JSON.parse(v2).version,2);assert.throws(()=>api.completionPolicy(v2));});
 test('approval preserves exact goal bytes including surrounding whitespace',()=>{const goal='  original\n';assert.equal(JSON.parse(start([info],goal)).goal,goal);});
 test('full-library memory counts beyond 500 survive completion and recovery',()=>{const r={...memoryResult,searchedMemories:10000};const s=record(start([memory]),memory,r);assert.notEqual(JSON.parse(s).status,'failed');assert.equal(api.recover(s),s);assert.equal(policy(s).canAnswer,true);});
+test('capability detail is bounded optional backward-compatible evidence',()=>{
+ for(const capability of [{id:'voice',status:'conditional'}, {id:'voice',status:'conditional',detail:'Requires device permission; not proof of a running session.'}]){
+  const result={...infoResult,capabilities:[capability]}; const s=record(start([info]),info,result);
+  assert.equal(policy(s).canAnswer,true);assert.equal(api.recover(s),s);
+ }
+ for(const detail of ['', 'bad\u0000detail', 'x'.repeat(1025), 12]){
+  assert.equal(JSON.parse(record(start([info]),info,{...infoResult,capabilities:[{id:'voice',status:'conditional',detail}]})).status,'failed');
+ }
+ assert.equal(JSON.parse(record(start([info]),info,{...infoResult,capabilities:[{id:'voice',status:'conditional',detail:'Requires permission',execute:true}]})).status,'failed');
+});

@@ -66,7 +66,22 @@
     {
       "id": "calculator",
       "status": "conditional",
-      "detail": "Deterministic on-device arithmetic in the Calculator screen: +, -, multiplication, division, parentheses and decimals. Uses approximate floating-point values, no code execution. Review the expression and tap Calculate; native interface verification is pending."
+      "detail": "Deterministic approximate on-device arithmetic, not code execution. Calculator requires explicit input and Calculate. Reviewed local tasks accept only an expression matching the original user request, not inferred word problems. This is not an automatic direct-chat tool."
+    },
+    {
+      "id": "saved-memory",
+      "status": "conditional",
+      "detail": "Local memory notes can be searched from a supported direct chat request. Only bounded excerpts are returned; imported text remains untrusted data, not permission. This does not recreate another service's private reasoning."
+    },
+    {
+      "id": "local-tasks",
+      "status": "conditional",
+      "detail": "The local task panel and saved-chat cards support explicit proposal, scope review, Run and recovery. An installed local model is required for model decisions. Recorded read evidence is separate from unverified model answers. General model-selected chat orchestration is not available."
+    },
+    {
+      "id": "archive-restore",
+      "status": "conditional",
+      "detail": "The ChatGPT ZIP restore screen prepares and preserves an archive locally, then requires review before committing supported conversation records. Retained or unresolved assets are not proof every attachment works. Private-archive contents and physical-device behavior remain unverified; no upload or hidden reasoning import is implied."
     }
   ]
 }

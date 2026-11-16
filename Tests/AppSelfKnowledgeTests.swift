@@ -9,6 +9,20 @@ final class AppSelfKnowledgeTests: XCTestCase {
         XCTAssertTrue(value.repositoryAccess.contains("not source code"))
         XCTAssertEqual(value.capabilities.first { $0.id == "self-repair" }?.status, .notAvailable)
     }
+    func testActualBundledToolMetadataPreservesDetailWithinBudget() throws {
+        let metadata = try XCTUnwrap(AppSelfKnowledge.load())
+        let data = try AppSelfKnowledge.toolResult(metadata: metadata, maximumBytes: 4096)
+        XCTAssertLessThanOrEqual(data.count, 4096)
+        let result = try XCTUnwrap(MCPJSONValue.parse(data).objectValue)
+        let items = try XCTUnwrap(result["capabilities"]?.arrayValue)
+        XCTAssertFalse(items.isEmpty)
+        for (index, item) in items.enumerated() {
+            XCTAssertEqual(item.objectValue?["detail"]?.stringValue, metadata.capabilities[index].detail)
+        }
+        let omitted = metadata.capabilities.count - items.count
+        XCTAssertEqual(result["omittedItems"]?.integerValue ?? 0, Int64(omitted))
+        if omitted > 0 { XCTAssertEqual(result["resultTruncated"], .bool(true)) }
+    }
     func testRuntimeIdentityAndProviderAreIncludedWithoutFabricatedVersion() {
         let text = AppSelfKnowledge.prompt(bundle: Bundle(for: Self.self), providerID: "local:test")
         XCTAssertTrue(text.contains("local:test"))

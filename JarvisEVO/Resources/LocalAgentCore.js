@@ -68,7 +68,7 @@ function completionResult(a,raw){
  if(a.name==='get_app_info'){
   object(r,['app','assistant','repository','repositoryAccess','capabilities',...keys]);for(const k of ['app','assistant','repository','repositoryAccess'])text(r[k],1024,true);
   if(!Array.isArray(r.capabilities)||r.capabilities.length+omitted>24)bad('completion capabilities');
-  for(const c of r.capabilities){object(c,['id','status']);text(c.id,256,true);if(!['available','conditional','notAvailable'].includes(c.status))bad('completion capability status');}
+  for(const c of r.capabilities){const hasDetail=Object.prototype.hasOwnProperty.call(c,'detail');object(c,['id','status',...(hasDetail?['detail']:[])]);if(hasDetail)text(c.detail,1024,false);text(c.id,256,true);if(!['available','conditional','notAvailable'].includes(c.status))bad('completion capability status');}
  }else if(a.name==='list_models'){
   object(r,['models','totalInstalled','truncated',...keys]);integer(r.totalInstalled,0,Number.MAX_SAFE_INTEGER);boolean(r.truncated);
   if(!Array.isArray(r.models)||r.models.length+omitted!==Math.min(r.totalInstalled,10)||r.truncated!==(r.totalInstalled>10))bad('completion model counts');

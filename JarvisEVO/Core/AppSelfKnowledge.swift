@@ -24,6 +24,28 @@ struct AppSelfKnowledge: Decodable, Sendable {
         return value
     }
 
+    /// Product facts are data, not execution authority. Keep each prerequisite
+    /// intact; budget pressure omits whole capabilities with explicit counts.
+    static func toolResult(metadata: Self?, maximumBytes: Int = 4096) throws -> Data {
+        let capabilities = metadata?.capabilities ?? []
+        guard capabilities.count <= 24 else { throw LocalAgentError.outputBound }
+        let items: [MCPJSONValue] = try capabilities.map { capability in
+            guard !capability.id.isEmpty, capability.id.utf8.count <= 256,
+                  !capability.detail.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                  capability.detail.utf8.count <= 1024,
+                  !(capability.id + capability.detail).unicodeScalars.contains(where: {
+                      $0.value < 32 && ![9, 10, 13].contains($0.value)
+                  }) else { throw LocalAgentError.invalidState }
+            return .object(["id": .string(capability.id), "status": .string(capability.status.rawValue),
+                            "detail": .string(capability.detail)])
+        }
+        let result: MCPJSONValue = .object(["app": .string("Orivyn"), "assistant": .string("Jarvis"),
+            "repository": .string("https://github.com/R347H4CK3R/Orivyn"),
+            "repositoryAccess": .string("This tool reads bundled metadata, not repository source. A repository URL does not grant chat source access."),
+            "capabilities": .array(items)])
+        return try LocalToolResultBudget.encode(result, collection: "capabilities", maximumBytes: maximumBytes)
+    }
+
     static func load(bundle: Bundle = .main) -> Self? {
         guard let url = bundle.url(forResource: "OrivynCapabilities", withExtension: "json"),
               let data = try? Data(contentsOf: url) else { return nil }

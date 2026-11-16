@@ -130,7 +130,12 @@ struct LocalCompletionPolicy: Equatable, Sendable {
             guard let capabilities = object["capabilities"]?.arrayValue, omissions <= 24,
                   capabilities.count <= 24 - Int(omissions) else { throw LocalAgentError.invalidState }
             for capability in capabilities {
-                let fields = try LocalCompletionContract.object(capability, keys: ["id", "status"])
+                let hasDetail = capability.objectValue?["detail"] != nil
+                let fields = try LocalCompletionContract.object(capability, keys: ["id", "status"] + (hasDetail ? ["detail"] : []))
+                if hasDetail {
+                    guard let detail = fields["detail"]?.stringValue,
+                          LocalCompletionContract.validText(detail, maximum: 1024, empty: false) else { throw LocalAgentError.invalidState }
+                }
                 try string(fields["id"], maximum: 256)
                 guard let status = fields["status"]?.stringValue, ["available", "conditional", "notAvailable"].contains(status) else { throw LocalAgentError.invalidState }
             }
