@@ -14,7 +14,7 @@ final class ArchiveAttachmentAssociationTests: XCTestCase {
     let digest = "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
     let assetID = UUID(uuidString: "00000000-0000-0000-0000-000000000123")!
     func fixture(_ body: (URL) throws -> Void) throws {
-        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let root = FileManager.default.temporaryDirectory.resolvingSymlinksInPath().appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: root.appendingPathComponent("assets"), withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }
         try Data("abc".utf8).write(to: root.appendingPathComponent("assets/a.bin"))

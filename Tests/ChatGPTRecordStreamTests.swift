@@ -3,7 +3,7 @@ import XCTest
 
 final class ChatGPTRecordStreamTests: XCTestCase {
     func withFile<T>(_ text: String, body: (FileHandle) throws -> T) throws -> T {
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let url = FileManager.default.temporaryDirectory.resolvingSymlinksInPath().appendingPathComponent(UUID().uuidString)
         try Data(text.utf8).write(to: url)
         defer { try? FileManager.default.removeItem(at: url) }
         let handle = try FileHandle(forReadingFrom: url); defer { try? handle.close() }

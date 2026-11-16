@@ -5,7 +5,7 @@ import SQLite3
 final class ArchiveRestorePersistenceTests: XCTestCase {
     let sha = String(repeating: "a", count: 64)
     func testAdditiveCommitReceiptAndReplayPreserveLocalEdits() async throws {
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".sqlite")
+        let url = FileManager.default.temporaryDirectory.resolvingSymlinksInPath().appendingPathComponent(UUID().uuidString + ".sqlite")
         defer { try? FileManager.default.removeItem(at: url) }
         let store = try SQLiteConversationStore(url: url)
         let epoch = try await store.textReceiveEpoch()
@@ -20,7 +20,7 @@ final class ArchiveRestorePersistenceTests: XCTestCase {
         let recovered = try await reopened.archiveRestoreReceipt(jobID: job); XCTAssertEqual(recovered, receipt)
     }
     func testSecondWriteFailureRollsBackConversationsAndReceipt() async throws {
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".sqlite")
+        let url = FileManager.default.temporaryDirectory.resolvingSymlinksInPath().appendingPathComponent(UUID().uuidString + ".sqlite")
         defer { try? FileManager.default.removeItem(at: url) }
         let store = try SQLiteConversationStore(url: url); let epoch = try await store.textReceiveEpoch(); let job = UUID()
         var db: OpaquePointer?; XCTAssertEqual(sqlite3_open(url.path, &db), SQLITE_OK); defer { sqlite3_close(db) }
@@ -30,7 +30,7 @@ final class ArchiveRestorePersistenceTests: XCTestCase {
         let receipt = try await store.archiveRestoreReceipt(jobID: job); XCTAssertNil(receipt)
     }
     func testDeletionClearsReceiptAndInvalidatesPendingEpoch() async throws {
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".sqlite")
+        let url = FileManager.default.temporaryDirectory.resolvingSymlinksInPath().appendingPathComponent(UUID().uuidString + ".sqlite")
         defer { try? FileManager.default.removeItem(at: url) }
         let store = try SQLiteConversationStore(url: url); let epoch = try await store.textReceiveEpoch(); let job = UUID()
         let incoming = Conversation(title: "Erase")
@@ -42,7 +42,7 @@ final class ArchiveRestorePersistenceTests: XCTestCase {
     }
 
     func testIdentityCannotBeReboundToDifferentPayloadOrArchive() async throws {
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".sqlite")
+        let url = FileManager.default.temporaryDirectory.resolvingSymlinksInPath().appendingPathComponent(UUID().uuidString + ".sqlite")
         defer { try? FileManager.default.removeItem(at: url) }
         let store = try SQLiteConversationStore(url: url); let epoch = try await store.textReceiveEpoch(); let job = UUID()
         let incoming = Conversation(title: "Original")
@@ -55,7 +55,7 @@ final class ArchiveRestorePersistenceTests: XCTestCase {
         let rows = try await store.list(includeArchived: true); XCTAssertEqual(rows.count, 1)
     }
     func testExistingLocalConversationIsPreservedInFirstImport() async throws {
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".sqlite")
+        let url = FileManager.default.temporaryDirectory.resolvingSymlinksInPath().appendingPathComponent(UUID().uuidString + ".sqlite")
         defer { try? FileManager.default.removeItem(at: url) }
         let store = try SQLiteConversationStore(url: url); let epoch = try await store.textReceiveEpoch()
         let local = Conversation(title: "Local"); try await store.save(local)
@@ -65,7 +65,7 @@ final class ArchiveRestorePersistenceTests: XCTestCase {
         let retained = try await store.load(id: local.id); XCTAssertEqual(retained, local)
     }
     func testReceiptWriteFailureRollsBackConversationWrites() async throws {
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".sqlite")
+        let url = FileManager.default.temporaryDirectory.resolvingSymlinksInPath().appendingPathComponent(UUID().uuidString + ".sqlite")
         defer { try? FileManager.default.removeItem(at: url) }
         let store = try SQLiteConversationStore(url: url); let epoch = try await store.textReceiveEpoch(); let job = UUID()
         var db: OpaquePointer?; XCTAssertEqual(sqlite3_open(url.path, &db), SQLITE_OK); defer { sqlite3_close(db) }
@@ -75,7 +75,7 @@ final class ArchiveRestorePersistenceTests: XCTestCase {
         let receipt = try await store.archiveRestoreReceipt(jobID: job); XCTAssertNil(receipt)
     }
     func testCancelledTaskCannotCommitAndUnverifiedAttachmentsAreRejected() async throws {
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".sqlite")
+        let url = FileManager.default.temporaryDirectory.resolvingSymlinksInPath().appendingPathComponent(UUID().uuidString + ".sqlite")
         defer { try? FileManager.default.removeItem(at: url) }
         let store = try SQLiteConversationStore(url: url); let epoch = try await store.textReceiveEpoch(); let job = UUID()
         let task = Task {
@@ -90,7 +90,7 @@ final class ArchiveRestorePersistenceTests: XCTestCase {
     }
 
     func testCorruptedReceiptIdentityFailsClosedOnReplay() async throws {
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".sqlite")
+        let url = FileManager.default.temporaryDirectory.resolvingSymlinksInPath().appendingPathComponent(UUID().uuidString + ".sqlite")
         defer { try? FileManager.default.removeItem(at: url) }
         let store = try SQLiteConversationStore(url: url); let epoch = try await store.textReceiveEpoch(); let job = UUID()
         let incoming = Conversation(title: "Original")
@@ -102,7 +102,7 @@ final class ArchiveRestorePersistenceTests: XCTestCase {
         do { _ = try await store.applyArchiveRestore(jobID: job, archiveSHA256: sha, expectedEpoch: epoch, conversations: [incoming]); XCTFail("Corrupt receipt identity") } catch { }
     }
     func testArchiveLookupRecoversCanonicalReceiptAndRejectsMalformedHash() async throws {
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".sqlite")
+        let url = FileManager.default.temporaryDirectory.resolvingSymlinksInPath().appendingPathComponent(UUID().uuidString + ".sqlite")
         defer { try? FileManager.default.removeItem(at: url) }
         let store = try SQLiteConversationStore(url: url); let epoch = try await store.textReceiveEpoch()
         let missing = try await store.archiveRestoreReceipt(archiveSHA256: sha); XCTAssertNil(missing)

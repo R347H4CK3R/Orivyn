@@ -1,0 +1,27 @@
+name: ArchiveFixture
+options:
+  deploymentTarget:
+    iOS: '26.0'
+settings:
+  base:
+    SWIFT_VERSION: '6.0'
+    TARGETED_DEVICE_FAMILY: '1'
+    CODE_SIGNING_ALLOWED: NO
+targets:
+  ArchiveFixture:
+    type: application
+    platform: iOS
+    sources: [FixtureApp]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.orivyn.archive-import-fixture
+        INFOPLIST_FILE: FixtureApp/Info.plist
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        MARKETING_VERSION: 1.0.0
+        CURRENT_PROJECT_VERSION: 1
+schemes:
+  ArchiveFixture:
+    build:
+      targets:
+        ArchiveFixture: all
