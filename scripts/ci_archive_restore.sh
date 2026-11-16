@@ -74,6 +74,7 @@ xcodebuild test -project JarvisEVO.xcodeproj -scheme JarvisEVO -derivedDataPath 
  -only-testing:JarvisEVOTests/ChatPluginProposalTests \
  -only-testing:JarvisEVOTests/AppModelTests/testNoConnectedCatalogCannotExposeNormalChatPluginProposal \
  -only-testing:JarvisEVOTests/ProductionNormalChatLocalAgentTests \
+ -only-testing:JarvisEVOTests/ProductionNormalChatCalculatorTests \
  -only-testing:JarvisEVOUITests/ChatLocalTaskUITests \
  -only-testing:JarvisEVOUITests/ChatPluginSuggestionUITests \
  -only-testing:JarvisEVOTests/AppModelTests/testNaturalLocalQuestionUsesRealReadWithoutSelectedModel \
@@ -108,8 +109,8 @@ test "$status" = 0
 python3 - "$A/summary.json" <<'PY'
 import json,sys
 s=json.load(open(sys.argv[1]))
-expected={'totalTestCount':194,'passedTests':194,'failedTests':0,'skippedTests':0}
+expected={'totalTestCount':200,'passedTests':200,'failedTests':0,'skippedTests':0}
 for k,v in expected.items():
  assert type(s.get(k)) is int and s[k]==v,(k,s.get(k),v)
-print('194 required native/simulator tests passed without skips. Physical device and private archive remain unverified.')
+print('200 required native/simulator tests passed without skips. Physical device and private archive remain unverified.')
 PY

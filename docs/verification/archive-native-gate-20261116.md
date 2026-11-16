@@ -125,3 +125,15 @@ Failures are not waived:
 - All three newly added chat-task UI tests failed (two could not find the expected scroll container).
 
 The synthetic ZIP picker/restore tests passed again. This result does not verify normal-chat tool use, physical iPhone behavior, private archive assets, or a new release. Follow-up diagnosis must distinguish product defects from test selection/fixture issues and retain the existing limits and assertions unless a separately reviewed correction is justified.
+
+## Repaired orchestration gate: 191/194, three failures retained
+
+Run `43835300082`, source `68ca689664e43d63ae4595f07acd64598474d1db` (tree `0f5f20328e3bf8a523fccb69f11bf5b0322220aa`) completed with **191/194 passed, three failures, zero skips**. Artifact `14211224833` SHA-256 `e8b423ddb51895a2812bc5dd53a2b322c89dc22002e8fce017f069ab953d38ca` retained.
+
+Manual attachment review confirms real pinned-model memory queries selected concrete topic terms, dispatched real reads, and answered using unpredictable Cedar/Birch markers. The actual AppModel Automatic path selected the installed Q4 without download and persisted successful receipts. The fresh coding turn returned `print(2 + 2)` with no tool reads. The prior context-budget rejection and durable checklist resume failure are resolved on this source. Synthetic ZIP restore, cross-chat task exclusion and both new plugin review presentation tests passed. These are bounded fixture results, not general autonomy, private archive or physical-device verification.
+
+Remaining failures:
+- The fourth conversational probe incorrectly claimed a connected plugin call could run without exact-call review when allowed by capabilities/policies. The strict oracle correctly rejected this. Actual broker approval enforcement remains separate and unchanged; model prose is wrong and must be repaired.
+- Two task UI state assertions expected a bare state; observed accessibility labels are `State, interrupted` and `State, answered`. Actual remaining state/evidence checks still need to complete after a reviewed accessibility correction.
+
+The older Python-function response is valid but verbose and paraphrases its request. Passing the limited code oracle does not prove universal concise/no-echo behavior. This run excludes the subsequent bounded-arithmetic source checkpoint and its actual-model calculator test. No IPA/release was produced.

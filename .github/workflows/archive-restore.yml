@@ -1,4 +1,4 @@
-name: Verify repaired model queries and exact plugin review presentation
+name: Verify exact user approval grounding and bounded model calculation
 on:
   push:
     branches: [recovery/chatgpt-restore-20261116]

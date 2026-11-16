@@ -10,7 +10,7 @@ class AssistantIdentityTests(unittest.TestCase):
         self.assertEqual(info['CFBundleDisplayName'], 'Orivyn')
         source = (ROOT / 'JarvisEVO/Core/ChatResponsePolicy.swift').read_text()
         self.assertIn('ChatResponsePolicy.instructions', (ROOT / 'JarvisEVO/UI/AppModel.swift').read_text())
-        self.assertTrue('You are Jarvis in Orivyn' in source, 'Missing requested Jarvis assistant identity')
+        self.assertTrue("Jarvis, Orivyn's general-purpose assistant" in source, 'Missing requested Jarvis assistant identity')
         self.assertFalse('You are Orivyn, a helpful personal assistant.' in source, 'Obsolete assistant identity remains')
 
     def test_capability_copy_matches_real_tools_and_retains_limits(self):
@@ -24,8 +24,9 @@ class AssistantIdentityTests(unittest.TestCase):
     def test_actionable_help_does_not_pretend_tools_ran(self):
         source = (ROOT / 'JarvisEVO/Core/ChatResponsePolicy.swift').read_text()
         self.assertIn('ChatResponsePolicy.instructions', (ROOT / 'JarvisEVO/UI/AppModel.swift').read_text())
-        self.assertIn('Answer directly; write Python/code, explain, debug, draft and analyze.', source)
-        self.assertIn('Offer relevant reviewed tools, not invented features.', source)
+        self.assertIn('write Python/code and useful text directly.', source)
+        self.assertIn('may propose one tool from its schemas locally, never execute it', source)
+        self.assertIn('Plugin calls require exact-call review by the user', source)
         self.assertIn('Do not invent tools or claim actions without recorded results.', source)
         self.assertTrue('Writing code as text is different from executing it' in source)
 

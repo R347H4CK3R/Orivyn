@@ -27,6 +27,7 @@ final class ChatLocalTaskUITests: XCTestCase {
         reveal(button, in: app.scrollViews["chat.task.records"])
         button.tap()
         XCTAssertTrue(app.textViews["agent.goal"].waitForExistence(timeout: 5))
+        capture(app, "Opened saved task " + id)
     }
     func testSavedAnswerInspectionPreservesChatDraftAndEvidence() {
         let app = launch()
@@ -37,7 +38,7 @@ final class ChatLocalTaskUITests: XCTestCase {
         let form = app.collectionViews.firstMatch
         let answer = app.staticTexts["agent.answer"]
         reveal(app.staticTexts["agent.state.value"], in: form)
-        XCTAssertEqual(app.staticTexts["agent.state.value"].label, "answered")
+        XCTAssertEqual(app.staticTexts["agent.state.value"].label, "State, answered")
         reveal(app.buttons["agent.run"], in: form)
         XCTAssertFalse(app.buttons["agent.run"].isEnabled)
         reveal(answer, in: form)
@@ -59,15 +60,15 @@ final class ChatLocalTaskUITests: XCTestCase {
         let resume = app.buttons["agent.run"]
         reveal(resume, in: form)
         XCTAssertEqual(resume.label, "Resume")
-        XCTAssertEqual(app.staticTexts["agent.state.value"].label, "interrupted")
+        XCTAssertEqual(app.staticTexts["agent.state.value"].label, "State, interrupted")
         XCTAssertFalse(app.staticTexts["agent.answer"].exists)
         XCTAssertTrue(resume.isEnabled); resume.tap()
         let error = app.staticTexts["agent.error"]
         reveal(error, in: form)
         XCTAssertEqual(error.label, "Select an installed local model first. Local tasks never switch to an online endpoint.")
         reveal(resume, in: form)
-        XCTAssertEqual(app.staticTexts["agent.state.value"].label, "interrupted")
-        XCTAssertEqual(app.staticTexts["agent.steps.value"].label, "1/6")
+        XCTAssertEqual(app.staticTexts["agent.state.value"].label, "State, interrupted")
+        XCTAssertEqual(app.staticTexts["agent.steps.value"].label, "Read-only tool steps, 1/6")
         XCTAssertFalse(app.staticTexts["agent.answer"].exists)
         app.buttons["chat.task.close"].tap()
         XCTAssertEqual(app.textViews["composer.input"].value as? String, "Keep this synthetic draft")
