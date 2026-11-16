@@ -23,6 +23,40 @@ final class ArchiveAttachmentAssociationTests: XCTestCase {
     func reference(_ sourceID: String, message: UUID = UUID()) throws -> ArchiveAttachmentAssociation.Reference {
         .init(messageID: message, source: "contentPart", originalJSON: try JSONSerialization.data(withJSONObject: ["asset_pointer": sourceID]))
     }
+    func testDirectoryHintsDoNotChangePhysicalRootOrEvidenceIdentity() throws {
+        try fixture { root in
+            for verifiedHint in [false, true] {
+                let input = URL(fileURLWithPath: root.path, isDirectory: verifiedHint)
+                let file = try ArchiveAttachmentAssociation.verify(root: input, relativePath: "assets/a.bin", bytes: 3, sha256: digest)
+                for plannedHint in [false, true] {
+                    let plan = try ArchiveAttachmentAssociation.plan(
+                        root: URL(fileURLWithPath: root.path, isDirectory: plannedHint),
+                        references: [try reference("exact")],
+                        mappings: [.init(sourceID: "exact", relativePath: "assets/a.bin")],
+                        files: [file], identities: ["exact": assetID])
+                    XCTAssertEqual(plan.copies.count, 1)
+                    XCTAssertTrue(plan.unresolved.isEmpty)
+                }
+            }
+        }
+    }
+    func testDirectoryHintNormalizationDoesNotAcceptLinkedOrNoncanonicalRoots() throws {
+        try fixture { root in
+            let alias = root.appendingPathComponent("alias")
+            try FileManager.default.createSymbolicLink(at: alias, withDestinationURL: root.appendingPathComponent("assets"))
+            for hint in [false, true] {
+                for candidate in [alias.path, alias.path + "/..", root.path + "/assets/.."] {
+                    let invalidRoot = URL(fileURLWithPath: candidate, isDirectory: hint)
+                    XCTAssertThrowsError(try ArchiveAttachmentAssociation.verify(
+                        root: invalidRoot, relativePath: "a.bin", bytes: 3, sha256: digest))
+                    // Planning does no file opening, so this specifically checks
+                    // the root boundary rather than a missing relative file.
+                    XCTAssertThrowsError(try ArchiveAttachmentAssociation.plan(
+                        root: invalidRoot, references: [], mappings: [], files: [], identities: [:]))
+                }
+            }
+        }
+    }
     func testExactMappingProducesOwnedCopyPlanNotGuessedAppAttachment() throws {
         try fixture { root in
             let file = try ArchiveAttachmentAssociation.verify(root: root, relativePath: "assets/a.bin", bytes: 3, sha256: digest)

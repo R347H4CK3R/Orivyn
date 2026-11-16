@@ -8,8 +8,9 @@ class AssistantIdentityTests(unittest.TestCase):
     def test_assistant_name_is_jarvis_while_application_remains_orivyn(self):
         info = plistlib.loads((ROOT / 'JarvisEVO/Info.plist').read_bytes())
         self.assertEqual(info['CFBundleDisplayName'], 'Orivyn')
-        source = (ROOT / 'JarvisEVO/UI/AppModel.swift').read_text()
-        self.assertTrue('You are Jarvis, the assistant in Orivyn.' in source, 'Missing requested Jarvis assistant identity')
+        source = (ROOT / 'JarvisEVO/Core/ChatResponsePolicy.swift').read_text()
+        self.assertIn('ChatResponsePolicy.instructions', (ROOT / 'JarvisEVO/UI/AppModel.swift').read_text())
+        self.assertTrue('You are Jarvis in Orivyn' in source, 'Missing requested Jarvis assistant identity')
         self.assertFalse('You are Orivyn, a helpful personal assistant.' in source, 'Obsolete assistant identity remains')
 
     def test_capability_copy_matches_real_tools_and_retains_limits(self):
@@ -21,11 +22,12 @@ class AssistantIdentityTests(unittest.TestCase):
         self.assertNotIn('image generation, scheduled actions, external account integrations and cloud sync are not available', source)
 
     def test_actionable_help_does_not_pretend_tools_ran(self):
-        source = (ROOT / 'JarvisEVO/UI/AppModel.swift').read_text()
-        self.assertTrue('Do the useful parts of the request first' in source)
-        self.assertTrue('review in the real Email, Calendar, Calculator, Browser, Location or Reminder screen' in source)
-        self.assertTrue('Opening a review does not send, save or execute it' in source)
-        self.assertTrue('Do not claim to browse, run code' in source)
+        source = (ROOT / 'JarvisEVO/Core/ChatResponsePolicy.swift').read_text()
+        self.assertIn('ChatResponsePolicy.instructions', (ROOT / 'JarvisEVO/UI/AppModel.swift').read_text())
+        self.assertTrue('do the useful part first' in source)
+        self.assertTrue('offer the relevant reviewed tool screen' in source)
+        self.assertTrue('without a recorded result' in source)
+        self.assertTrue('Writing code as text is different from executing it' in source)
 
     def test_generated_image_storage_requests_complete_protection_without_downgrade(self):
         # Source contract only: Simulator cannot enforce the physical lock boundary.

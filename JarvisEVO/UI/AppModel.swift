@@ -536,6 +536,21 @@ final class AppModel {
 
     func send() {
         guard canSend else { return }
+        // Only the current typed request grants this narrow, read-only scope.
+        // History, imported memory, model output and plugin metadata never enter it.
+        if let request = ChatLocalTaskRequest(draft: draft, hasAttachments: !pendingAttachments.isEmpty),
+           let contract = request.proposedChecklist, contract.steps.count == 1,
+           let action = contract.steps.first {
+            statusMessage = "Reading locally: " + action.name
+            let provider = AutomaticLocalReadProvider(toolName: action.name) { [weak self] in
+                guard let self else { throw CancellationError() }
+                return try await LocalReadTools.executeAsync(name: action.name, arguments: action.arguments,
+                    model: self, resultByteLimit: 4096)
+            }
+            submit(text: draft, attachments: [], conversationID: selectedConversationID ?? UUID(),
+                provider: provider, providerID: provider.id)
+            return
+        }
         if automaticModelsEnabled { prepareAutomaticSend(); return }
         if selectedProviderID == "remote" && network.isOnline == false {
             guard let local = providers.first(where: { $0.id != "remote" && $0.isAvailable }) else {
@@ -713,19 +728,23 @@ final class AppModel {
                     "Latest prepared context selected \(memoryContext.includedCount) of \(memoryContext.totalCount) saved notes; scanned \(memoryContext.scannedCount)."
                     + (memoryContext.truncated ? " Some context was omitted or shortened; all original notes remain saved." : "")
 
-                let system = "You are Jarvis, the assistant in Orivyn. Do the useful parts of the request first: explain, draft, analyze or provide concrete steps. When an action needs a device tool, suggest review in the real Email, Calendar, Calculator, Browser, Location or Reminder screen. Opening a review does not send, save or execute it. Be clear about uncertainty and limitations. Do not claim to browse, run code, or take actions that you cannot perform. All configured providers receive text only. Image attachments supply OCR text, never image pixels. Do not infer objects, people, colors, layout, or other visual contents from an image attachment. " + AppSelfKnowledge.prompt(providerID: providerID) + "\n" + self.workspace.behavior.prompt + (memoryContext.text.isEmpty ? "" : "\n" + memoryContext.text)
+                let system = ChatResponsePolicy.instructions + "\n" + AppSelfKnowledge.prompt(providerID: providerID) + "\n" + self.workspace.behavior.prompt + (memoryContext.text.isEmpty ? "" : "\n" + memoryContext.text)
                 let request = GenerationRequest(messages: Array(conversation.messages.dropLast()), systemPrompt: system, maxTokens: 1024, temperature: 0.7, conciseQwen3: self.conciseQwen3)
                 let stream = try await provider.stream(request)
                 var checkpoint = Date()
+                var answerStream = ChatAnswerStream()
                 for try await token in stream {
                     try self.validateGeneration(voiceTicket)
-                    self.updateMessage(conversationID: conversationID, messageID: assistantID) { $0.content += token }
+                    let visible = answerStream.append(token)
+                    self.updateMessage(conversationID: conversationID, messageID: assistantID) { $0.content += visible }
                     if Date().timeIntervalSince(checkpoint) >= 0.25 {
                         try await self.persist(conversationID)
                         checkpoint = Date()
                     }
                 }
                 try self.validateGeneration(voiceTicket)
+                let suffix = answerStream.finish()
+                self.updateMessage(conversationID: conversationID, messageID: assistantID) { $0.content += suffix }
                 guard let answer = self.conversations.first(where: { $0.id == conversationID })?.messages.first(where: { $0.id == assistantID })?.content else {
                     throw ConversationError.messageNotFound
                 }

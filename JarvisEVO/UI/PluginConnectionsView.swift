@@ -2,6 +2,7 @@ import SwiftUI
 
 struct PluginConnectionsSection: View {
     @Bindable var broker: PluginBroker
+    var model: AppModel? = nil
     let onAdd: () -> Void
     let onConnect: (PluginConnectionRecord) -> Void
     let onRemove: (PluginConnectionRecord) -> Void
@@ -21,6 +22,9 @@ struct PluginConnectionsSection: View {
                     Text(record.endpoint).font(.caption).foregroundStyle(.secondary)
                     if broker.activeConnection?.id == record.id && broker.canReviewTools {
                         Text("Connected · catalog reviewed").font(.caption).accessibilityIdentifier("plugin.connected")
+                        if let model {
+                            NavigationLink("Describe a task") { PluginTaskProposalView(broker: broker, model: model) }
+                        }
                         ForEach(broker.tools) { tool in
                             NavigationLink(tool.title ?? tool.name) { PluginToolCallView(broker: broker, tool: tool) }
                         }
@@ -128,7 +132,12 @@ struct PluginConnectionForm: View {
 struct PluginToolCallView: View {
     @Bindable var broker: PluginBroker
     let tool: MCPToolDefinition
-    @State private var arguments = "{}"
+    @State private var arguments: String
+    init(broker: PluginBroker, tool: MCPToolDefinition, initialArguments: String = "{}") {
+        self.broker = broker
+        self.tool = tool
+        _arguments = State(initialValue: initialArguments)
+    }
     @State private var error: String?
     @State private var executionTask: Task<Void, Never>?
     var body: some View {
@@ -214,4 +223,81 @@ struct PluginExecutionLogView: View {
 private func pluginJSON(_ value: MCPJSONValue) -> String {
     guard let data = try? value.encoded(maximumBytes: 1_048_576), let text = String(data: data, encoding: .utf8) else { return "JSON could not be displayed safely." }
     return text
+}
+
+/// Chooses from already-discovered tools. It never installs code or executes calls.
+private struct PluginTaskProposalView: View {
+    @Bindable var broker: PluginBroker
+    @Bindable var model: AppModel
+    @State private var goal = ""
+    @State private var proposed: PluginToolProposal?
+    @State private var catalogID: UUID?
+    @State private var failure: String?
+    @State private var task: Task<Void, Never>?
+    @State private var attempt: UUID?
+    @Environment(\.scenePhase) private var scenePhase
+
+    var body: some View {
+        Form {
+            Section("Describe the task") {
+                TextField("What should this plugin do?", text: $goal, axis: .vertical)
+                    .disabled(task != nil)
+                Text("Drafting sends this goal and the connected tool schemas to your selected model. A remote model receives that text. Chats, memory, files, location and plugin tokens are not included. Nothing runs until you review the exact call.")
+                    .font(.footnote).foregroundStyle(.secondary)
+                Button("Find a tool and draft arguments") { draftProposal() }
+                    .disabled(task != nil || !broker.canReviewTools || model.isGenerating || model.selectedProvider?.provider == nil || goal.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || goal.utf8.count > 4096)
+                if task != nil {
+                    ProgressView("Choosing from connected tools…")
+                    Button("Cancel") { cancel() }
+                }
+            }
+            if let proposed, catalogID == broker.proposalCatalogID, broker.canReviewTools,
+               let tool = broker.tools.first(where: { $0.name == proposed.name }) {
+                Section("Suggested call · not executed") {
+                    Text(proposed.name)
+                    Text(pluginJSON(proposed.arguments)).font(.caption.monospaced())
+                    NavigationLink("Review exact call") {
+                        PluginToolCallView(broker: broker, tool: tool, initialArguments: pluginJSON(proposed.arguments))
+                    }
+                }
+            }
+            if let failure { Section { Text(failure).foregroundStyle(.secondary) } }
+        }.navigationTitle("Plugin task")
+            .onChange(of: goal) { _, _ in proposed = nil; failure = nil }
+            .onChange(of: model.selectedProviderID) { _, _ in cancel() }
+            .onChange(of: broker.proposalCatalogID) { _, _ in cancel() }
+            .onChange(of: scenePhase) { _, phase in if phase != .active { cancel() } }
+            .onDisappear {
+                if let attempt { model.revokeHeavyWork(id: attempt) }
+                attempt = nil; task?.cancel(); task = nil
+            }
+    }
+
+    private func cancel() {
+        if let attempt { model.revokeHeavyWork(id: attempt) }
+        attempt = nil; task?.cancel(); task = nil; proposed = nil; catalogID = nil
+    }
+    private func draftProposal() {
+        guard broker.canReviewTools, !model.isGenerating, let provider = model.selectedProvider?.provider else { return }
+        proposed = nil; failure = nil
+        let id = UUID(), revision = broker.proposalCatalogID
+        let selected = model.selectedProviderID, tools = broker.tools, submitted = goal
+        attempt = id
+        task = Task {
+            do {
+                try await model.beginHeavyWork(id: id, kind: .localAgent)
+                try Task.checkCancellation()
+                let result = try await PluginToolProposal.generate(goal: submitted, tools: tools, provider: provider)
+                guard attempt == id, !Task.isCancelled, broker.canReviewTools,
+                      broker.proposalCatalogID == revision, model.selectedProviderID == selected,
+                      model.heavyWorkLease?.id == id, model.heavyWorkLease?.phase == .ready else { throw CancellationError() }
+                proposed = result; catalogID = revision
+                if result == nil { failure = "No supported call was identified in this connection. Choose another connected plugin or use its manual tool review. Nothing was executed." }
+            } catch {
+                if attempt == id && !Task.isCancelled { failure = "A valid tool proposal could not be prepared. Use manual tool review or revise the request. Nothing was executed." }
+            }
+            await model.finishLocalAgentWork(id: id)
+            if attempt == id { task = nil; attempt = nil }
+        }
+    }
 }

@@ -1,7 +1,7 @@
 import Foundation
 
-/// A navigation payload, not a task, approval, or model instruction.
-/// Call only with the user's current composer text, never retrieved content.
+/// A bounded parser for the user's current composer text, never retrieved content.
+/// It is not a model instruction or approval for unrelated operations.
 struct ChatLocalTaskRequest: Identifiable, Sendable {
     let id = UUID()
     let goal: String
@@ -15,8 +15,9 @@ struct ChatLocalTaskRequest: Identifiable, Sendable {
         goal = draft
     }
 
-    /// Deterministic proposal from a directly typed request. Still requires
-    /// existing checklist review, approval and Run; never grants permission.
+    /// Deterministic scope from a directly typed request. Ordinary chat may
+    /// perform this exact local read; the manual checklist still uses its review.
+    /// Never grants permission for a model-selected or unrelated operation.
     var proposedChecklist: LocalCompletionContract? {
         let text = goal.trimmingCharacters(in: .whitespacesAndNewlines)
         let lower = text.lowercased()

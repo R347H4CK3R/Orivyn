@@ -28,6 +28,14 @@ xcodebuild test -project JarvisEVO.xcodeproj -scheme JarvisEVO -derivedDataPath 
  -only-testing:JarvisEVOTests/ArchivePreservationTests \
  -only-testing:JarvisEVOTests/ArchiveAttachmentAssociationTests \
  -only-testing:JarvisEVOTests/ArchiveRestorePersistenceTests \
+ -only-testing:JarvisEVOTests/ChatResponsePolicyTests \
+ -only-testing:JarvisEVOTests/AutomaticLocalReadProviderTests \
+ -only-testing:JarvisEVOTests/PluginToolProposalTests \
+ -only-testing:JarvisEVOTests/AppModelTests/testChatPersistsOnlyAnswerAndProvidesCodingPolicy \
+ -only-testing:JarvisEVOTests/AppModelTests/testReasoningOnlyResponseIsFailedNotCompleted \
+ -only-testing:JarvisEVOTests/AppModelTests/testExplicitLocalReadPersistsWithoutCallingSelectedProvider \
+ -only-testing:JarvisEVOTests/AppModelTests/testHistoricalLocalCommandDoesNotExecuteForUnrelatedCurrentMessage \
+ -only-testing:JarvisEVOTests/AppModelTests/testAmbiguousLocalCommandRemainsOrdinaryConversation \
  -only-testing:JarvisEVOUITests/ArchiveRestoreUITests \
  -resultBundlePath "$A/Tests.xcresult" CODE_SIGNING_ALLOWED=NO > "$A/xcodebuild.log" 2>&1
 status=$?
@@ -40,8 +48,8 @@ test "$status" = 0
 python3 - "$A/summary.json" <<'PY'
 import json,sys
 s=json.load(open(sys.argv[1]))
-expected={'totalTestCount':51,'passedTests':51,'failedTests':0,'skippedTests':0}
+expected={'totalTestCount':73,'passedTests':73,'failedTests':0,'skippedTests':0}
 for k,v in expected.items():
  assert type(s.get(k)) is int and s[k]==v,(k,s.get(k),v)
-print('51 required native/simulator tests passed without skips. Physical device and private archive remain unverified.')
+print('73 required native/simulator tests passed without skips. Physical device and private archive remain unverified.')
 PY

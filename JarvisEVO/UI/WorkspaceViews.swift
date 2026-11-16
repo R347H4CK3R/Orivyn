@@ -25,7 +25,7 @@ struct OrivynWorkspaceView: View {
             LocalSpaceView(model: model, imagesOnly: section == .images, openChat: openChat).id(section)
         case .projects: LocalProjectsView(model: model, openChat: openChat)
         case .customize: CustomizeWorkspaceView(model: model, openModels: openModels)
-        case .plugins: IntegrationCatalogView(broker: model.plugins, setupError: model.pluginSetupError)
+        case .plugins: IntegrationCatalogView(model: model, broker: model.plugins, setupError: model.pluginSetupError)
         case .studio:
             CapabilityNoticeView(title: "Local tasks and code", icon: "chevron.left.forwardslash.chevron.right",
                 detail: "Run bounded read-only tasks on your iPhone, or ask your model to explain and write code. Code still needs testing; Orivyn does not claim to build or publish its own fixes.") {
@@ -282,7 +282,7 @@ struct CustomizeWorkspaceView: View {
         Form {
             if let error = model.workspace.loadError { Section { Text(error).foregroundStyle(.red) } }
             Section {
-                NavigationLink { IntegrationCatalogView(broker: model.plugins, setupError: model.pluginSetupError).navigationTitle("Plugins") } label: { row("Plugins", icon: "puzzlepiece.extension", color: .mint, detail: "Local tools") }
+                NavigationLink { IntegrationCatalogView(model: model, broker: model.plugins, setupError: model.pluginSetupError).navigationTitle("Plugins") } label: { row("Plugins", icon: "puzzlepiece.extension", color: .mint, detail: "Local tools") }
                 NavigationLink { MemoryView(model: model) } label: { row("Memory", icon: "book.closed", color: .orange, detail: "\(model.memories.count) notes") }
                 NavigationLink { BehaviorEditorView(workspace: model.workspace) } label: { row("Behavior", icon: "sparkle", color: .cyan, detail: model.workspace.behavior.style) }
             }
@@ -362,6 +362,7 @@ struct BehaviorEditorView: View {
 }
 
 struct IntegrationCatalogView: View {
+    var model: AppModel? = nil
     var broker: PluginBroker?
     var setupError: String?
     @State private var query = ""
@@ -376,7 +377,7 @@ struct IntegrationCatalogView: View {
                 Text("Connections in the reference recording belong to another app and do not transfer to Orivyn. No account data, credentials or permissions have been copied.").font(.footnote).foregroundStyle(.secondary)
             }
             if let broker {
-                PluginConnectionsSection(broker: broker,
+                PluginConnectionsSection(broker: broker, model: model,
                     onAdd: { pluginPresentation = PluginConnectionPresentation() },
                     onConnect: { pluginPresentation = PluginConnectionPresentation(saved: $0) },
                     onRemove: { removingPlugin = $0 })

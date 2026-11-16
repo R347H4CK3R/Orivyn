@@ -36,6 +36,7 @@ final class PluginBroker {
     private var activeExecution: UUID?
     private var client: (any PluginMCPClient)?
     private var catalogRevision = UUID()
+    var proposalCatalogID: UUID { catalogRevision }
     private var gate = PluginReviewGate()
     private var pendingToken: String?
     var isBusy: Bool { operationID != nil }

@@ -17,8 +17,8 @@ Three UI scenarios are required:
 3. Preparation survives relaunch without activating history; retained review must
    be selected and explicitly committed before its conversation appears.
 
-The simulator gate requires exactly **51 passed, zero failed, zero skipped**:
-48 core/preservation/association/SQLite tests and three UI tests. A separate
+The simulator gate requires exactly **73 passed, zero failed, zero skipped**:
+50 core/preservation/association/SQLite tests, 15 conversation/tool component tests, five AppModel routing/persistence tests and three UI tests. A separate
 `swift test` invocation runs the ArchiveExtraction package on macOS and is not
 added to the simulator result count. All package tests must pass.
 

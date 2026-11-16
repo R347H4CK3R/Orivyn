@@ -131,9 +131,15 @@ enum ArchiveAttachmentAssociation {
         return parts
     }
     private static func canonicalRoot(_ root: URL) throws -> URL {
-        guard root.isFileURL, !root.path.contains("\0"), root.standardizedFileURL == root,
-              root.resolvingSymlinksInPath() == root else { throw Failure.invalidPath }
-        return root
+        // URL equality includes representation details (notably the directory
+        // hint/trailing slash), which Foundation may change when resolving a
+        // directory on Darwin. Validate the physical path instead, then return
+        // one representation for exact evidence-root equality in plan().
+        let physicalPath = root.path
+        guard root.isFileURL, !physicalPath.contains("\0"),
+              root.standardizedFileURL.path == physicalPath,
+              root.resolvingSymlinksInPath().path == physicalPath else { throw Failure.invalidPath }
+        return URL(fileURLWithPath: physicalPath, isDirectory: true)
     }
     private static func unchanged(_ a: stat, _ b: stat) -> Bool {
         guard a.st_dev == b.st_dev, a.st_ino == b.st_ino, a.st_size == b.st_size else { return false }

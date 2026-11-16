@@ -192,15 +192,15 @@ final class AppModelTests: XCTestCase {
         model.draft = "Test preferences"; model.send()
         try await waitFor { await source.hasSubscriber }
         let request = await source.lastRequest
-        XCTAssertTrue(request?.systemPrompt.contains("You are Jarvis, the assistant in Orivyn.") == true)
+        XCTAssertTrue(request?.systemPrompt.contains("You are Jarvis in Orivyn") == true)
         XCTAssertTrue(request?.systemPrompt.contains("Bundled capability knowledge schema 1") == true)
         XCTAssertTrue(request?.systemPrompt.contains("self-repair [notAvailable]") == true)
         XCTAssertTrue(request?.systemPrompt.contains("https://github.com/R347H4CK3R/Orivyn") == true)
         XCTAssertTrue(request?.systemPrompt.contains("Use concise explanations.") == true)
         XCTAssertTrue(request?.systemPrompt.contains("Style: Efficient") == true)
-        XCTAssertTrue(request?.systemPrompt.contains("Do not claim to browse, run code") == true)
-        XCTAssertTrue(request?.systemPrompt.contains("Do the useful parts of the request first") == true)
-        XCTAssertTrue(request?.systemPrompt.contains("Opening a review does not send, save or execute it") == true)
+        XCTAssertTrue(request?.systemPrompt.contains("Do not invent tools") == true)
+        XCTAssertTrue(request?.systemPrompt.contains("do the useful part first") == true)
+        XCTAssertTrue(request?.systemPrompt.contains("without a recorded result") == true)
         model.stop(); try await waitFor { !model.isGenerating }
     }
 
@@ -372,6 +372,80 @@ final class AppModelTests: XCTestCase {
         XCTAssertNil(model.attachmentService.url(for: attachment))
         let remaining = try await store.list(includeArchived: true)
         XCTAssertTrue(remaining.isEmpty)
+    }
+
+    func testChatPersistsOnlyAnswerAndProvidesCodingPolicy() async throws {
+        let (model, store, source) = try await fixture()
+        model.draft = "Write a simple Python script"
+        model.send()
+        try await waitFor { await source.hasSubscriber }
+        let request = await source.lastRequest
+        XCTAssertTrue(request?.systemPrompt.contains("write Python") == true)
+        let id = try XCTUnwrap(model.selectedConversationID)
+        await source.emit("<thi")
+        await source.emit("nk>private analysis</thi")
+        await source.emit("nk>\nprint('Hello')")
+        await source.finish()
+        try await waitFor { !model.isGenerating }
+        let saved = try await store.load(id: id)
+        XCTAssertEqual(model.activeConversation?.messages.last?.content, "\nprint('Hello')")
+        XCTAssertEqual(saved?.messages.last?.content, "\nprint('Hello')")
+        XCTAssertEqual(saved?.messages.last?.state, .complete)
+    }
+
+    func testReasoningOnlyResponseIsFailedNotCompleted() async throws {
+        let (model, store, source) = try await fixture()
+        model.draft = "Write Python"
+        model.send()
+        try await waitFor { await source.hasSubscriber }
+        let id = try XCTUnwrap(model.selectedConversationID)
+        await source.emit("<think>unfinished internal output")
+        await source.finish()
+        try await waitFor { !model.isGenerating }
+        let saved = try await store.load(id: id)
+        XCTAssertEqual(saved?.messages.last?.content, "")
+        XCTAssertEqual(saved?.messages.last?.state, .failed)
+    }
+
+    func testExplicitLocalReadPersistsWithoutCallingSelectedProvider() async throws {
+        let (model, store, source) = try await fixture()
+        model.draft = "list installed models"
+        model.send()
+        try await waitFor { !model.isGenerating }
+        let id = try XCTUnwrap(model.selectedConversationID)
+        let saved = try await store.load(id: id)
+        XCTAssertEqual(saved?.messages.first?.content, "list installed models")
+        XCTAssertEqual(saved?.messages.last?.state, .complete)
+        XCTAssertTrue(saved?.messages.last?.content.contains("Completed local read: list_models") == true)
+        let contacted = await source.hasSubscriber
+        XCTAssertFalse(contacted)
+    }
+
+    func testHistoricalLocalCommandDoesNotExecuteForUnrelatedCurrentMessage() async throws {
+        let (model, store, source) = try await fixture()
+        let history = Conversation(messages: [ChatMessage(role: .user, content: "list installed models")])
+        try await store.save(history)
+        await model.bootstrap()
+        model.replaceProviders([ProviderOption(id: "controlled-test", title: "Test provider", detail: "Test only",
+            provider: ControlledProvider(source: source))])
+        model.selectedConversationID = history.id
+        model.draft = "Explain what a model is"
+        model.send()
+        try await waitFor { await source.hasSubscriber }
+        await source.emit("Explanation")
+        await source.finish()
+        try await waitFor { !model.isGenerating }
+        XCTAssertEqual(model.activeConversation?.messages.last?.content, "Explanation")
+    }
+
+    func testAmbiguousLocalCommandRemainsOrdinaryConversation() async throws {
+        let (model, _, source) = try await fixture()
+        model.draft = "list installed models and delete one"
+        model.send()
+        try await waitFor { await source.hasSubscriber }
+        await source.finish()
+        try await waitFor { !model.isGenerating }
+        XCTAssertFalse(model.activeConversation?.messages.last?.content.contains("Completed local read") == true)
     }
 
     private func fixture() async throws -> (AppModel, SQLiteConversationStore, ControlledTokenSource) {

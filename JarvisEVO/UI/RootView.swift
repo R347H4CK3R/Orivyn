@@ -454,7 +454,7 @@ struct RootView: View {
                     .accessibilityIdentifier("composer.localTask.notice")
             }
             if chatChecklistRequest != nil {
-                Text("Send opens a proposed local checklist for this request. Review it before approving and running; nothing executes automatically.")
+                Text("Send performs this read locally without contacting a model. Its result is saved in this chat and may be included if you continue with a remote model.")
                     .font(.caption2).foregroundStyle(.secondary)
                     .accessibilityIdentifier("composer.localTask.routeNotice")
             }
@@ -543,11 +543,7 @@ struct RootView: View {
                     }.accessibilityLabel("Start voice conversation").accessibilityIdentifier("composer.voice").disabled(audioBusy || attachmentsBusy)
                 } else {
                     Button {
-                        if let request = chatChecklistRequest {
-                            prepareNavigation(); reviewingLocalTask = request
-                        } else {
-                            stopAudio(); followsTranscript = true; model.send(); composerFocused = false
-                        }
+                        stopAudio(); followsTranscript = true; model.send(); composerFocused = false
                     } label: {
                         Image(systemName: "arrow.up").font(.system(size: 17, weight: .semibold)).foregroundStyle(Color(uiColor: .systemBackground))
                             .frame(width: 32, height: 32).background(model.canSend ? Color.primary : Color.secondary.opacity(0.25), in: Circle()).frame(width: 44, height: 44)

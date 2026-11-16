@@ -105,7 +105,18 @@ final class ArchiveRestoreUITests: XCTestCase {
         XCTAssertTrue(onMyPhone.waitForExistence(timeout: 10), app.debugDescription)
         onMyPhone.tap()
         tapLocation("Archive Fixture", app)
-        tapLocation("Synthetic ChatGPT Backup.zip", app)
+        // Files exposes a filename StaticText separately from its selectable tile.
+        // The first native run tapped that label without selecting the document.
+        // Select the containing file cell, not an arbitrary descendant label.
+        let file = app.cells.containing(.staticText, identifier: "Synthetic ChatGPT Backup.zip").firstMatch
+        XCTAssertTrue(file.waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertTrue(file.isEnabled, "Synthetic ZIP tile must be selectable: \(app.debugDescription)")
+        XCTAssertTrue(file.isHittable, "Synthetic ZIP tile must be visible: \(app.debugDescription)")
+        attachHierarchy(app, "Files ZIP tile before selection")
+        screenshot(app, "Files ZIP tile before selection")
+        file.tap()
+        attachHierarchy(app, "Files ZIP tile after selection")
+        screenshot(app, "Files ZIP tile after selection")
         waitAbsent(navigation, timeout: 15)
     }
     private func tapLocation(_ name: String, _ app: XCUIApplication) {
@@ -157,6 +168,10 @@ final class ArchiveRestoreUITests: XCTestCase {
     private func waitAbsent(_ element: XCUIElement, timeout: TimeInterval = 10) {
         let absent = NSPredicate(format: "exists == false")
         XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: absent, object: element)], timeout: timeout), .completed)
+    }
+    private func attachHierarchy(_ app: XCUIApplication, _ name: String) {
+        let attachment = XCTAttachment(string: app.debugDescription)
+        attachment.name = name; attachment.lifetime = .keepAlways; add(attachment)
     }
     private func screenshot(_ app: XCUIApplication, _ name: String) {
         let attachment = XCTAttachment(screenshot: app.screenshot())
