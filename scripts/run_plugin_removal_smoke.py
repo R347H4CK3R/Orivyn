@@ -3,7 +3,7 @@
 Uses real Foundation file writes and Observation; no real credentials or network, no iOS verification.
 """
 import argparse, hashlib, json, os, pathlib, subprocess
-SOURCES = ['JarvisEVO/Core/PluginConnectionRemoval.swift','JarvisEVO/Services/PluginBroker.swift','JarvisEVO/Core/PluginExecution.swift',
+SOURCES = ['JarvisEVO/Core/PluginResultDraft.swift','JarvisEVO/Core/PluginConnectionRemoval.swift','JarvisEVO/Services/PluginBroker.swift','JarvisEVO/Core/PluginExecution.swift',
  'JarvisEVO/Core/MCPTypes.swift','JarvisEVO/Core/MCPToolSchema.swift',
  'JarvisEVO/Services/PluginPersistence.swift','scripts/swift-smoke/PluginRemovalSmoke.swift']
 def main():

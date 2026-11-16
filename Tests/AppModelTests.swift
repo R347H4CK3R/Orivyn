@@ -448,6 +448,49 @@ final class AppModelTests: XCTestCase {
         XCTAssertFalse(model.activeConversation?.messages.last?.content.contains("Completed local read") == true)
     }
 
+    func testSuccessfulPluginHandoffPreservesDraftAndAttachmentWithoutSending() async throws {
+        let (model, _, source) = try await fixture()
+        let client = PluginResultAppClient()
+        model.configurePlugins(directory: root.appendingPathComponent("Plugins"), clientFactory: { _, _ in client })
+        let broker = try XCTUnwrap(model.plugins)
+        try await broker.connect(endpointText: "https://example.invalid/mcp", token: "")
+        try broker.installConnection(rememberToken: false)
+        let file = root.appendingPathComponent("plugin-success-attachment.txt")
+        try Data("Synthetic attachment".utf8).write(to: file)
+        model.pendingAttachments = [try model.attachmentService.importFile(at: file)]
+        model.draft = "My unsent draft"
+        let attachments = model.pendingAttachments, history = model.conversations
+        let review = try broker.prepareReview(toolName: "fixture.read", argumentText: "{}")
+        try await broker.execute(reviewID: review.id, conversationContext: model.pluginResultConversationContext)
+        // Editing in the same conversation before explicit handoff is preserved, not overwritten.
+        model.draft += " with a later edit"
+        try model.addPluginResultToDraft(executionID: XCTUnwrap(broker.completedResult).executionID)
+        XCTAssertTrue(model.draft.hasPrefix("My unsent draft with a later edit\n\n"))
+        XCTAssertTrue(model.draft.contains("Synthetic server result"))
+        XCTAssertEqual(model.pendingAttachments, attachments)
+        XCTAssertEqual(model.conversations, history)
+        XCTAssertFalse(model.isGenerating)
+        let hasSubscriber = await source.hasSubscriber; XCTAssertFalse(hasSubscriber)
+        let calls = await client.calls; XCTAssertEqual(calls, 1)
+    }
+
+    func testPluginHandoffContextInvalidatesOnConversationRoundTripAndFailurePreservesComposer() async throws {
+        let (model, _, _) = try await fixture()
+        let original = model.pluginResultConversationContext
+        let selected = model.selectedConversationID
+        model.draft = "Unsent user text"
+        let file = root.appendingPathComponent("plugin-preserved-attachment.txt")
+        try Data("Synthetic attachment to preserve".utf8).write(to: file)
+        model.pendingAttachments = [try model.attachmentService.importFile(at: file)]
+        let attachments = model.pendingAttachments
+        model.selectedConversationID = UUID()
+        model.selectedConversationID = selected
+        XCTAssertNotEqual(model.pluginResultConversationContext, original)
+        XCTAssertThrowsError(try model.addPluginResultToDraft(executionID: UUID()))
+        XCTAssertEqual(model.draft, "Unsent user text")
+        XCTAssertEqual(model.pendingAttachments, attachments)
+    }
+
     private func fixture() async throws -> (AppModel, SQLiteConversationStore, ControlledTokenSource) {
         let store = try SQLiteConversationStore(url: root.appendingPathComponent("test.sqlite"))
         let attachmentService = try AttachmentService(directory: root.appendingPathComponent("Attachments"))
@@ -486,3 +529,17 @@ private actor ControlledTokenSource {
     func finish() { pair.continuation.finish() }
 }
 
+
+private actor PluginResultAppClient: PluginMCPClient {
+    private(set) var calls = 0
+    func initialize() async throws -> MCPServerInfo { .init(name: "Synthetic", version: "1") }
+    func listTools() async throws -> [MCPToolDefinition] {
+        [.init(name: "fixture.read", inputSchema: try MCPToolSchema(json: .object(["type": .string("object")])))]
+    }
+    func callTool(named: String, arguments: MCPJSONValue) async throws -> MCPToolCallResult {
+        calls += 1
+        return .init(content: [.text("Synthetic server result")], structuredContent: nil, isError: false)
+    }
+    func cancelCurrentOperation() async {}
+    func close() async {}
+}

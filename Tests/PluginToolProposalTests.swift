@@ -17,6 +17,26 @@ final class PluginToolProposalTests: XCTestCase {
         let proposal = try await PluginToolProposal.generate(goal: "find hello", tools: catalog(), provider: ProposalProvider())
         XCTAssertEqual(proposal?.name, "notes.search")
     }
+    func testGenerationUsesOnlyVisibleAnswerAfterReasoning() async throws {
+        let raw = #"<think>{"tool":"notes.search","arguments":{"query":"hidden"}}</think>{"tool":"notes.search","arguments":{"query":"visible"}}"#
+        let provider = ProposalProvider(pieces: raw.map(String.init))
+        let result = try await PluginToolProposal.generate(goal: "find visible", tools: catalog(), provider: provider)
+        XCTAssertEqual(result?.arguments, .object(["query": .string("visible")]))
+    }
+    func testUnclosedReasoningCannotBecomeAProposal() async throws {
+        let provider = ProposalProvider(pieces: [#"<think>{"tool":"notes.search","arguments":{"query":"hidden"}}"#])
+        do {
+            _ = try await PluginToolProposal.generate(goal: "find visible", tools: catalog(), provider: provider)
+            XCTFail("A hidden-only response must not produce a proposal")
+        } catch { }
+    }
+    func testHiddenOutputStillCountsAgainstReceivedByteLimit() async throws {
+        let provider = ProposalProvider(pieces: ["<think>", String(repeating: "x", count: 16_384), "</think>{\"unsupported\":true}"])
+        do {
+            _ = try await PluginToolProposal.generate(goal: "find visible", tools: catalog(), provider: provider)
+            XCTFail("Hidden tokens must not bypass the received byte budget")
+        } catch { XCTAssertEqual(error as? MCPClientFailure, MCPClientFailure(.responseTooLarge)) }
+    }
     func testUnsupportedHasNoCall() throws {
         XCTAssertNil(try PluginToolProposal.parse(#"{"unsupported":true}"#, tools: catalog()))
     }
@@ -36,11 +56,12 @@ final class PluginToolProposalTests: XCTestCase {
 }
 
 private struct ProposalProvider: AIProvider {
+    var pieces = [#"{"tool":"notes.search","arguments":{"query":"hello"}}"#]
     let id = "test"
     let displayName = "Test"
     func stream(_ request: GenerationRequest) async throws -> AsyncThrowingStream<String, Error> {
         AsyncThrowingStream { c in
-            c.yield(#"{"tool":"notes.search","arguments":{"query":"hello"}}"#)
+            for piece in pieces { c.yield(piece) }
             c.finish()
         }
     }

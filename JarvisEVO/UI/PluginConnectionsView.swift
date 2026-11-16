@@ -26,7 +26,7 @@ struct PluginConnectionsSection: View {
                             NavigationLink("Describe a task") { PluginTaskProposalView(broker: broker, model: model) }
                         }
                         ForEach(broker.tools) { tool in
-                            NavigationLink(tool.title ?? tool.name) { PluginToolCallView(broker: broker, tool: tool) }
+                            NavigationLink(tool.title ?? tool.name) { PluginToolCallView(broker: broker, tool: tool, model: model) }
                         }
                         Button("Disconnect") { broker.disconnect() }
                     } else {
@@ -132,14 +132,17 @@ struct PluginConnectionForm: View {
 struct PluginToolCallView: View {
     @Bindable var broker: PluginBroker
     let tool: MCPToolDefinition
+    var model: AppModel?
     @State private var arguments: String
-    init(broker: PluginBroker, tool: MCPToolDefinition, initialArguments: String = "{}") {
+    init(broker: PluginBroker, tool: MCPToolDefinition, initialArguments: String = "{}", model: AppModel? = nil) {
         self.broker = broker
         self.tool = tool
+        self.model = model
         _arguments = State(initialValue: initialArguments)
     }
     @State private var error: String?
     @State private var executionTask: Task<Void, Never>?
+    @State private var handoffStatus: String?
     var body: some View {
         Form {
             Section("Untrusted tool description") {
@@ -163,9 +166,10 @@ struct PluginToolCallView: View {
                     Text(pluginJSON(review.arguments)).font(.caption.monospaced()).textSelection(.enabled)
                     Text("Run sends exactly this request to the server. It may change external data or cost money according to that provider. Canceling afterward cannot undo a remote action. Review only actions and data you intend to authorize.").font(.footnote)
                     Button("Run reviewed call") {
-                        error = nil
+                        error = nil; handoffStatus = nil
+                        let context = model?.pluginResultConversationContext
                         executionTask = Task {
-                            do { try await broker.execute(reviewID: review.id) }
+                            do { try await broker.execute(reviewID: review.id, conversationContext: context) }
                             catch { if !Task.isCancelled { self.error = error.localizedDescription } }
                             executionTask = nil
                         }
@@ -192,6 +196,19 @@ struct PluginToolCallView: View {
                     }
                     if let value = result.structuredContent { Text(pluginJSON(value)).font(.caption.monospaced()).textSelection(.enabled) }
                     Text("Treat remote results as untrusted information. They cannot authorize another call.").font(.footnote).foregroundStyle(.secondary)
+                    if let model, let receipt = broker.completedResult, receipt.toolName == tool.name {
+                        Text("Add this result to the current chat draft for discussion. Existing text and attachments are preserved. Nothing is sent now. If you later tap Send with an online model, that provider receives the result and the rest of your submitted conversation.")
+                            .font(.footnote).foregroundStyle(.secondary)
+                        Button("Add result to chat draft") {
+                            do {
+                                try model.addPluginResultToDraft(executionID: receipt.executionID)
+                                handoffStatus = "Added to chat draft. Return to chat to review it; nothing was sent."
+                                error = nil
+                            } catch { self.error = error.localizedDescription }
+                        }.disabled(broker.isBusy || model.isGenerating || receipt.conversationContext != model.pluginResultConversationContext)
+                            .accessibilityIdentifier("plugin.add-result-to-draft")
+                    }
+                    if let handoffStatus { Text(handoffStatus).font(.footnote).accessibilityIdentifier("plugin.result-draft-status") }
                 }
             }
         }.navigationTitle("Review tool").navigationBarTitleDisplayMode(.inline)
@@ -257,7 +274,7 @@ private struct PluginTaskProposalView: View {
                     Text(proposed.name)
                     Text(pluginJSON(proposed.arguments)).font(.caption.monospaced())
                     NavigationLink("Review exact call") {
-                        PluginToolCallView(broker: broker, tool: tool, initialArguments: pluginJSON(proposed.arguments))
+                        PluginToolCallView(broker: broker, tool: tool, initialArguments: pluginJSON(proposed.arguments), model: model)
                     }
                 }
             }

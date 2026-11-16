@@ -84,7 +84,7 @@ final class PluginBrokerTests: XCTestCase {
         let review = try broker.prepareReview(toolName: "workspace.write", argumentText: "{}")
         do { try await broker.execute(reviewID: review.id); XCTFail("Expected uncertainty") } catch { }
         XCTAssertEqual(broker.journal.records.first?.state, .unknown)
-        XCTAssertNil(broker.lastResult)
+        XCTAssertNil(broker.lastResult); XCTAssertNil(broker.completedResult)
         let calls = await client.calls; XCTAssertEqual(calls, 1)
     }
 
@@ -155,7 +155,7 @@ final class PluginBrokerTests: XCTestCase {
         await client.releaseCall()
         do { try await task.value; XCTFail("Late success must not replace unknown") } catch { }
         XCTAssertEqual(broker.journal.records.first?.state, .unknown)
-        XCTAssertNil(broker.lastResult); XCTAssertFalse(broker.isBusy)
+        XCTAssertNil(broker.lastResult); XCTAssertNil(broker.completedResult); XCTAssertFalse(broker.isBusy)
         let calls = await client.calls; XCTAssertEqual(calls, 1)
     }
 
@@ -194,6 +194,38 @@ final class PluginBrokerTests: XCTestCase {
         XCTAssertFalse(broker.isBusy)
         XCTAssertEqual(try Data(contentsOf: journalFile.appendingPathComponent("preserved-running.json")), durableBefore)
         let calls = await client.calls; XCTAssertEqual(calls, 1)
+    }
+
+    func testCompletedResultRequiresSameConversationAndAppendsWithoutReplay() async throws {
+        let client = ControlledPluginClient()
+        let broker = try PluginBroker(directory: root, clientFactory: { _, _ in client })
+        try await broker.connect(endpointText: "https://example.invalid/mcp", token: "")
+        try broker.installConnection(rememberToken: false)
+        let context = UUID()
+        let review = try broker.prepareReview(toolName: "workspace.write", argumentText: "{}")
+        try await broker.execute(reviewID: review.id, conversationContext: context)
+        let result = try XCTUnwrap(broker.completedResult)
+        XCTAssertThrowsError(try broker.consumeResultDraft(executionID: result.executionID, conversationContext: UUID(), currentDraft: "preserve"))
+        XCTAssertNotNil(broker.completedResult)
+        let draft = try broker.consumeResultDraft(executionID: result.executionID, conversationContext: context, currentDraft: "preserve")
+        XCTAssertTrue(draft.hasPrefix("preserve\n\n"))
+        XCTAssertTrue(draft.contains("not independently verified"))
+        XCTAssertThrowsError(try broker.consumeResultDraft(executionID: result.executionID, conversationContext: context, currentDraft: draft))
+        let calls = await client.calls; XCTAssertEqual(calls, 1)
+    }
+    func testDisconnectInvalidatesCompletedHandoffAndResultIsNotPersisted() async throws {
+        let client = ControlledPluginClient()
+        let broker = try PluginBroker(directory: root, clientFactory: { _, _ in client })
+        try await broker.connect(endpointText: "https://example.invalid/mcp", token: "")
+        try broker.installConnection(rememberToken: false)
+        let context = UUID(), review = try broker.prepareReview(toolName: "workspace.write", argumentText: "{}")
+        try await broker.execute(reviewID: review.id, conversationContext: context)
+        let result = try XCTUnwrap(broker.completedResult)
+        broker.disconnect()
+        XCTAssertThrowsError(try broker.consumeResultDraft(executionID: result.executionID, conversationContext: context, currentDraft: "keep"))
+        XCTAssertNil(try PluginBroker(directory: root).completedResult)
+        let log = try String(contentsOf: root.appendingPathComponent("plugin-executions.json"), encoding: .utf8)
+        XCTAssertFalse(log.contains("Server-reported result; not independent proof"))
     }
 
     private func waitUntil(_ predicate: @escaping () async -> Bool) async throws {

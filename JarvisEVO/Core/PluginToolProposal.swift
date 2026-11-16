@@ -10,13 +10,16 @@ struct PluginToolProposal: Equatable, Sendable {
         let request = GenerationRequest(messages: [ChatMessage(role: .user, content: instruction)],
             systemPrompt: "Return only a proposed JSON tool call for human review. Nothing executes.",
             maxTokens: 768, temperature: 0, conciseQwen3: true)
-        var response = ""
+        var response = "", receivedBytes = 0
+        var answer = ChatAnswerStream()
         for try await token in try await provider.stream(request) {
             try Task.checkCancellation()
-            guard response.utf8.count + token.utf8.count <= 16_384 else { throw MCPClientFailure(.responseTooLarge) }
-            response += token
+            guard token.utf8.count <= 16_384 - receivedBytes else { throw MCPClientFailure(.responseTooLarge) }
+            receivedBytes += token.utf8.count
+            response += answer.append(token)
         }
         try Task.checkCancellation()
+        response += answer.finish()
         return try parse(response, tools: tools)
     }
 
