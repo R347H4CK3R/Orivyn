@@ -39,3 +39,36 @@ identified the missing parent fsync; it is now included and regression suite rer
 
 This is not Apple-native compilation, physical-device testing, real 2.44 GB archive
 verification, a power-loss fault-injection test, or integration of the full app.
+
+## Optional preserve → extract component proof
+
+Pass the actual ArchiveExtraction package as a fourth argument:
+
+```
+python Diagnostics/ArchivePreservation/run.py /path/to/swift /new/scratch/proof /path/to/Packages/ArchiveExtraction
+```
+
+The harness snapshots that package (excluding build output), writes a SHA-256
+source manifest, and generates deterministic synthetic stored/deflated ZIPs with
+Python's standard zipfile module. No private archive or exported user data is used.
+Three component tests verify: exact extracted bytes plus unchanged original files
+and preserved SHA-256 before/after; corruption rejected by pre-extraction
+revalidation; CRC failure retaining source, preserved ZIP and partial extraction.
+The combined suite passes 12 tests (9 preservation + 3 integration) on Linux.
+These tests orchestrate the calls directly; they do not prove a production
+coordinator, Files-provider UI, crash recovery, database import or device behavior.
+The integration test lives under Diagnostics, not the auto-included app Tests tree.
+
+The valid ZIP also contains a deterministic two-message conversations.json export
+(user + final assistant, explicit UUIDs/timestamps/selected ancestry). This fixture
+is ready for the caller's separate streaming/conversion proof; the three tests here
+only inspect JSON structure and extracted bytes, not restored app conversations.
+The final 12-test component run used extractor commit
+cb9e3632f3ff7b1a878bd0c301f0520a85c35716, including its capacity preflight.
+
+The integrated proof additionally snapshots production Conversation, MemoryNote,
+ImageOCRResult/OCRLineEvidence, ChatGPTRecordStream and ChatGPTConversationRestore
+sources. A fourth integration test verifies the synthetic archive's two selected
+messages become ordinary conversation models with expected roles/states while
+original ZIP bytes remain unchanged. Thirteen total tests pass. This is still
+component preparation, not database activation or app-level restore acceptance.
