@@ -16,7 +16,7 @@ struct RootViewRegressionFixtureHost: View {
         guard arguments.contains("--uitesting"),
               let index = arguments.firstIndex(of: "--root-view-fixture"),
               arguments.indices.contains(index + 1),
-              ["voice-ownership", "history-scroll", "model-download", "unavailable-provider", "chat-local-tasks"].contains(arguments[index + 1]) else { return nil }
+              ["voice-ownership", "history-scroll", "model-download", "unavailable-provider", "chat-local-tasks", "plugin-suggestion"].contains(arguments[index + 1]) else { return nil }
         return arguments[index + 1]
     }
 
@@ -29,6 +29,15 @@ struct RootViewRegressionFixtureHost: View {
                     if mode == "model-download" {
                         ModelManagerView(model: fixture.model)
                     } else if mode == "unavailable-provider" {
+                        RootView(model: fixture.model)
+                    } else if mode == "plugin-suggestion" {
+                        Text("SYNTHETIC PLUGIN PROPOSAL · NO MODEL OR NETWORK")
+                            .font(.caption2).accessibilityIdentifier("fixture.plugin.notice")
+                        Text("Tool calls: \(fixture.pluginCalls) · Checks: \(fixture.pluginChecks)").accessibilityIdentifier("fixture.plugin.calls")
+                        Button("Check tool calls") { Task { await fixture.refreshPluginCalls() } }
+                            .accessibilityIdentifier("fixture.plugin.check")
+                        Button("Other chat B") { fixture.model.selectConversation(fixture.historyB) }
+                            .accessibilityIdentifier("fixture.history.b")
                         RootView(model: fixture.model)
                     } else if mode == "chat-local-tasks" {
                         Text("SYNTHETIC TASK RECORDS · NO LOCAL MODEL · NO TOOL EXECUTION")
@@ -81,6 +90,13 @@ private final class RootViewRegressionFixture {
     let historyB: UUID
     let shortHistory: UUID
     var streamState = "idle"
+    var pluginCalls = 0
+    var pluginChecks = 0
+    private var pluginClient: PluginPresentationFixtureClient?
+    func refreshPluginCalls() async {
+        pluginCalls = await pluginClient?.calls ?? -1
+        pluginChecks += 1
+    }
     private let audio: RootViewFixtureAudio
     private let tokens: RootViewFixtureTokens
     private var work: Task<Void, Never>?
@@ -105,7 +121,7 @@ private final class RootViewRegressionFixture {
         let b = history("B", rows: 12, updated: Date(timeIntervalSince1970: 2))
         let short = Conversation(title: "Controlled short fixture", updatedAt: Date(timeIntervalSince1970: 1),
                                  messages: [ChatMessage(role: .assistant, content: "FIXTURE SHORT TRANSCRIPT")])
-        if mode == "history-scroll" || mode == "chat-local-tasks" { for conversation in [a, b, short] { try await store.save(conversation) } }
+        if mode == "history-scroll" || mode == "chat-local-tasks" || mode == "plugin-suggestion" { for conversation in [a, b, short] { try await store.save(conversation) } }
         let model = AppModel(store: store, attachmentService: attachments, modelStore: models, defaults: defaults)
         await model.bootstrap()
         if mode == "model-download" { model.beginControlledModelDownloadFixture() }
@@ -116,14 +132,31 @@ private final class RootViewRegressionFixture {
         } else {
             model.replaceProviders([ProviderOption(id: "root-ui-fixture", title: "Controlled UI fixture", detail: "Not an AI model", provider: RootViewFixtureProvider(tokens: tokens))])
         }
-        if mode == "history-scroll" || mode == "chat-local-tasks" { model.selectConversation(a.id) }
+        if mode == "history-scroll" || mode == "chat-local-tasks" || mode == "plugin-suggestion" { model.selectConversation(a.id) }
         if mode == "chat-local-tasks" {
             model.configureLocalWork(directory: root)
             guard let directory = model.localAgentDirectory else { throw LocalAgentError.unavailable }
             try seedChatTasks(directory: directory, origin: a.id)
             model.draft = "Keep this synthetic draft"
         }
-        return RootViewRegressionFixture(model: model, audio: RootViewFixtureAudio(), tokens: tokens, histories: [a.id, b.id, short.id])
+        let fixture = RootViewRegressionFixture(model: model, audio: RootViewFixtureAudio(), tokens: tokens, histories: [a.id, b.id, short.id])
+        if mode == "plugin-suggestion" {
+            model.automaticModelsEnabled = false
+            let client = PluginPresentationFixtureClient()
+            fixture.pluginClient = client
+            model.configurePlugins(directory: root.appendingPathComponent("Plugins"), clientFactory: { _, _ in client })
+            guard let broker = model.plugins else { throw CancellationError() }
+            try await broker.connect(endpointText: "https://example.invalid/mcp", token: "")
+            try broker.installConnection(rememberToken: false)
+            model.draft = "Find the synthetic query"
+            try model.beginPluginPresentationFixture()
+            let deadline = ContinuousClock.now + .seconds(10)
+            while model.isGenerating && ContinuousClock.now < deadline { try await Task.sleep(for: .milliseconds(20)) }
+            guard !model.isGenerating, model.pendingPluginProposal != nil else { throw CancellationError() }
+            model.draft = "Preserve this synthetic draft"
+            await fixture.refreshPluginCalls()
+        }
+        return fixture
     }
 
     /// Synthetic records travel through the production reducer and atomic store.

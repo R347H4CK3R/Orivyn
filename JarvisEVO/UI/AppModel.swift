@@ -33,6 +33,29 @@ final class AppModel {
         // Existing attachments and history are deliberately untouched. No Send here.
     }
 
+    private var storedPluginProposal: PendingChatPluginProposal?
+    private var pluginProposalGeneration: UUID?
+    var pendingPluginProposal: PendingChatPluginProposal? {
+        guard let value = storedPluginProposal, let broker = plugins, broker.canReviewTools,
+              value.isCurrent(conversation: conversationRevision, provider: providerRevision,
+                  connection: broker.activeConnection?.id, catalog: broker.proposalCatalogID,
+                  generation: pluginProposalGeneration),
+              let assistant = activeConversation?.messages.first(where: { $0.id == value.assistantID }),
+              assistant.role == .assistant, assistant.state == .complete || assistant.state == .streaming
+        else { return nil }
+        return value
+    }
+    func dismissPluginProposal(id: UUID) {
+        if storedPluginProposal?.id == id { storedPluginProposal = nil }
+    }
+    func pluginProposalReviewRoute(id: UUID) -> ChatPluginReviewRoute? {
+        guard !isGenerating, !isPreparingAutomaticModel,
+              let value = pendingPluginProposal, value.id == id, let broker = plugins,
+              let tool = broker.tools.first(where: { $0.name.utf8.elementsEqual(value.proposal.name.utf8) }),
+              (try? tool.inputSchema.validate(value.proposal.arguments)) != nil else { return nil }
+        return .init(id: value.id, tool: tool, arguments: value.proposal.arguments, request: value.request)
+    }
+
     private var isExternalComposerDraft = false
     var draft = "" {
         didSet {
@@ -672,9 +695,52 @@ final class AppModel {
                 guard let self else { throw CancellationError() }
                 try await self.recordNormalChatReceipt(event, binding: binding)
             })
-        statusMessage = "Thinking on device; local read receipts will appear in chat."
-        submit(text: draft, attachments: [], conversationID: conversationID, provider: provider, providerID: provider.id,
-            preparedAssistant: { binding.assistantID = $0 })
+        var selected: any AIProvider = provider
+        var proposalGeneration: UUID?
+        if let broker = plugins, broker.canReviewTools, let connection = broker.activeConnection,
+           (try? ChatPluginCatalog.validate(broker.tools, goal: turn.goal)) != nil,
+           let request = PluginChatRequest(goal: turn.goal, conversation: conversationRevision,
+               provider: providerRevision, connection: connection.id, catalog: broker.proposalCatalogID) {
+            let generation = UUID()
+            proposalGeneration = generation
+            selected = ChatPluginProposalProvider(goal: turn.goal, tools: broker.tools, model: local, makeFallback: {
+                    var fresh = provider
+                    fresh.deadline = .now.advanced(by: .seconds(120))
+                    return fresh
+                },
+                validateContext: { [weak self] in
+                    guard let self else { throw CancellationError() }
+                    try await self.validateChatPluginProposal(request: request, generation: generation, binding: binding)
+                }, publish: { [weak self] proposal in
+                    guard let self else { throw CancellationError() }
+                    try await self.publishChatPluginProposal(proposal, request: request, generation: generation, binding: binding)
+                })
+        }
+        statusMessage = proposalGeneration == nil
+            ? "Thinking on device; local read receipts will appear in chat."
+            : "Checking connected tools on device; any suggested call requires your review."
+        submit(text: draft, attachments: [], conversationID: conversationID, provider: selected, providerID: selected.id,
+            preparedAssistant: { binding.assistantID = $0; self.pluginProposalGeneration = proposalGeneration })
+    }
+
+    private func validateChatPluginProposal(request: PluginChatRequest, generation: UUID,
+                                           binding: NormalChatReceiptBinding) throws {
+        try validateNormalChatOrigin(binding)
+        guard pluginProposalGeneration == generation, let broker = plugins, broker.canReviewTools,
+              request.matches(conversation: conversationRevision, provider: providerRevision,
+                  connection: broker.activeConnection?.id, catalog: broker.proposalCatalogID)
+        else { throw CancellationError() }
+    }
+    private func publishChatPluginProposal(_ proposal: PluginToolProposal, request: PluginChatRequest,
+                                          generation: UUID, binding: NormalChatReceiptBinding) throws {
+        try validateChatPluginProposal(request: request, generation: generation, binding: binding)
+        guard let assistantID = binding.assistantID, let broker = plugins,
+              let tool = broker.tools.first(where: { $0.name.utf8.elementsEqual(proposal.name.utf8) })
+        else { throw CancellationError() }
+        try tool.inputSchema.validate(proposal.arguments)
+        storedPluginProposal = .init(id: UUID(), proposal: proposal, request: request,
+            assistantID: assistantID, generationID: generation, createdAt: Date())
+        statusMessage = "Connected-tool proposal prepared, not executed."
     }
 
     private func prepareAutomaticSend() {
@@ -775,6 +841,8 @@ final class AppModel {
                         voiceTicket: VoiceTurnTicket? = nil,
                         preparedAssistant: ((UUID) -> Void)? = nil) -> Task<Result<String, any Error>, Never> {
         guard !isInferenceAdmissionBlocked else { return Task { .failure(LocalHeavyWorkError.busy) } }
+        storedPluginProposal = nil
+        pluginProposalGeneration = nil
         let submittedExternalOrigin = isExternalComposerDraft
         let content = text.trimmingCharacters(in: .whitespacesAndNewlines)
         let message = ChatMessage(id: UUID(), role: .user, content: content.isEmpty ? "Please review the attached file." : content,
@@ -838,7 +906,7 @@ final class AppModel {
                 self.isSavingSubmittedTurn = false
                 try self.validateGeneration(voiceTicket)
                 let currentGoal = conversation.messages.last(where: { $0.role == .user })?.content ?? ""
-                let toolOwnsMemoryReads = ["normal-chat-local-agent", "automatic-local-read", "automatic-local-read-plan"].contains(providerID)
+                let toolOwnsMemoryReads = ["chat-plugin-proposal", "normal-chat-local-agent", "automatic-local-read", "automatic-local-read-plan"].contains(providerID)
                 let memoryContext = try await MemoryContextBuilder.buildAsync(
                     notes: toolOwnsMemoryReads || NormalChatLocalTurn.disallowsReads(currentGoal) ? [] : self.memories,
                     query: currentGoal,
@@ -1669,3 +1737,32 @@ final class NormalChatReceiptBinding {
         self.context = context; self.assistantID = assistantID
     }
 }
+
+#if DEBUG
+extension AppModel {
+    /// Presentation-only fixture. Does not assign pending state or weaken production guards.
+    func beginPluginPresentationFixture() throws {
+        guard RootViewRegressionFixtureHost.requestedMode == "plugin-suggestion",
+              let turn = normalChatTurnForDraft,
+              let conversationID = selectedConversationID, let broker = plugins,
+              broker.canReviewTools, let connection = broker.activeConnection,
+              let request = PluginChatRequest(goal: turn.goal, conversation: conversationRevision,
+                  provider: providerRevision, connection: connection.id, catalog: broker.proposalCatalogID)
+        else { throw CancellationError() }
+        let binding = NormalChatReceiptBinding(context: .init(conversationID: conversationID,
+            conversationRevision: conversationRevision, providerRevision: providerRevision))
+        let generation = UUID()
+        let provider = ChatPluginProposalProvider(goal: request.goal, tools: broker.tools,
+            model: PluginPresentationFixtureModel(), makeFallback: { PluginPresentationFixtureModel() },
+            validateContext: { [weak self] in
+                guard let self else { throw CancellationError() }
+                try await self.validateChatPluginProposal(request: request, generation: generation, binding: binding)
+            }, publish: { [weak self] proposal in
+                guard let self else { throw CancellationError() }
+                try await self.publishChatPluginProposal(proposal, request: request, generation: generation, binding: binding)
+            })
+        submit(text: request.goal, attachments: [], conversationID: conversationID, provider: provider, providerID: provider.id,
+               preparedAssistant: { binding.assistantID = $0; self.pluginProposalGeneration = generation })
+    }
+}
+#endif

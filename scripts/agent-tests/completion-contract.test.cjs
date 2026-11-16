@@ -36,3 +36,22 @@ test('capability detail is bounded optional backward-compatible evidence',()=>{
  }
  assert.equal(JSON.parse(record(start([info]),info,{...infoResult,capabilities:[{id:'voice',status:'conditional',detail:'Requires permission',execute:true}]})).status,'failed');
 });
+
+test('bundled prerequisite details fit reviewed checklist without discarding whole evidence',()=>{
+ const fs=require('node:fs');
+ const metadata=JSON.parse(fs.readFileSync(require.resolve('../../JarvisEVO/Resources/OrivynCapabilities.json'),'utf8'));
+ const source=fs.readFileSync(require.resolve('../../JarvisEVO/Services/LocalAgentSession.swift'),'utf8');
+ // Read the actual session's narrow override. Absence reproduces the old 4096-byte path.
+ const limit=Number(source.match(/let checklistInfoLimit = (\d+)/)?.[1]||4096);
+ const r={app:'Orivyn',assistant:'Jarvis',repository:'https://github.com/R347H4CK3R/Orivyn',repositoryAccess:'This tool reads bundled metadata, not repository source. A repository URL does not grant chat source access.',capabilities:[...metadata.capabilities]};
+ while(Buffer.byteLength(JSON.stringify(r))>limit){assert.ok(r.capabilities.length);r.capabilities.pop();r.resultTruncated=true;r.omittedItems=metadata.capabilities.length-r.capabilities.length;}
+ assert.ok(r.capabilities.length>0); assert.equal(r.capabilities.length+r.omittedItems,metadata.capabilities.length);
+ for(const entry of r.capabilities) assert.deepEqual(entry,metadata.capabilities.find(x=>x.id===entry.id));
+ let s=record(start(),info,r);assert.equal(JSON.parse(s).status,'ready');
+ s=api.recover(s);assert.deepEqual(policy(s).actions,[models]);
+ s=record(s,models,{models:[{id:'completion-fixture',name:'Synthetic metadata'}],totalInstalled:1,truncated:false});
+ assert.ok(Buffer.byteLength(api.prompt(s))<=3500);
+ s=api.acceptDecision(s,answer);assert.equal(JSON.parse(s).status,'answered');
+ assert.deepEqual(JSON.parse(s).history.map(x=>x.name),['get_app_info','list_models']);
+ assert.match(source,/snapshot.version == 3 && pending.name == "get_app_info" \? checklistInfoLimit : 4096/);
+});

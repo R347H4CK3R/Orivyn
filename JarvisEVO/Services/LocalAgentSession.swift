@@ -349,7 +349,14 @@ final class LocalAgentSession {
         } else if snapshot.version == 2, let plan=snapshot.readPlan {
             try LocalReadWorkflowPolicy.derive(plan:plan,history:snapshot.history,conversations:model.conversations).validate(pending)
         } else if snapshot.version != 1 { throw LocalAgentError.invalidState }
-        return try await LocalReadTools.executeAsync(name: pending.name, arguments: pending.arguments, model: model, resultByteLimit: 4096, trustedGoal: snapshot.goal, authorizedConversationIDs: LocalConversationRead.authorizedIDs(history: snapshot.history), reviewedPlan:snapshot.readPlan)
+        // A checklist must carry every prior result in its unchanged 3,500-byte
+        // prompt. Reserve room for the contract and subsequent ordinary reads.
+        // The shared encoder omits whole capability records with explicit counts;
+        // retained prerequisite details are never shortened. Other consumers keep
+        // their 4,096-byte budget. Larger cumulative evidence still fails closed.
+        let checklistInfoLimit = 1024
+        let resultLimit = snapshot.version == 3 && pending.name == "get_app_info" ? checklistInfoLimit : 4096
+        return try await LocalReadTools.executeAsync(name: pending.name, arguments: pending.arguments, model: model, resultByteLimit: resultLimit, trustedGoal: snapshot.goal, authorizedConversationIDs: LocalConversationRead.authorizedIDs(history: snapshot.history), reviewedPlan:snapshot.readPlan)
     }
 
 }

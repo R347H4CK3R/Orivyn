@@ -8,7 +8,7 @@ test "${RUNNER_ENVIRONMENT:-}" = github-hosted
 A="$PWD/artifacts/archive-restore"; mkdir -p "$A"
 git rev-parse HEAD > "$A/source-commit.txt"
 printf '%s\n' 'Actual synthetic ZIP selection through the iOS Files provider, review, transactional commit and relaunch history; retained preparation recovery; native core tests. No physical-device or user-archive verification. No release publication.' > "$A/SCOPE.txt"
-# Separate macOS package gate; its count is not part of the 180 simulator tests.
+# Separate macOS package gate; its count is not part of the 194 simulator tests.
 swift test --jobs 2 --package-path Packages/ArchiveExtraction > "$A/extractor-package.log" 2>&1
 python3 scripts/materialize_guest.py Fixtures/maintained.img.gz JarvisEVO/Resources/VMAssets/maintained.img
 command -v xcodegen >/dev/null || brew install xcodegen
@@ -39,7 +39,7 @@ ARCHIVE_RESTORE_SIMULATOR="$SIM" bash Diagnostics/ArchiveRestore/prepare_fixture
 set +e
 xcodebuild test -project JarvisEVO.xcodeproj -scheme JarvisEVO -derivedDataPath "$RUNNER_TEMP/orivyn-archive-restore-derived" \
  -destination "platform=iOS Simulator,id=$SIM" -destination-timeout 120 -parallel-testing-enabled NO \
- -test-timeouts-enabled YES -default-test-execution-time-allowance 180 -maximum-test-execution-time-allowance 750 \
+ -test-timeouts-enabled YES -default-test-execution-time-allowance 194 -maximum-test-execution-time-allowance 750 \
  -only-testing:JarvisEVOTests/ChatGPTConversationRestoreTests \
  -only-testing:JarvisEVOTests/ChatGPTRecordStreamTests \
  -only-testing:JarvisEVOTests/ArchivePreservationTests \
@@ -71,8 +71,11 @@ xcodebuild test -project JarvisEVO.xcodeproj -scheme JarvisEVO -derivedDataPath 
  -only-testing:JarvisEVOTests/AppModelTests/testQuotedOrHandoffMultipleLocalCommandsRemainOrdinaryConversation \
  -only-testing:JarvisEVOTests/NaturalLocalReadTests \
  -only-testing:JarvisEVOTests/NormalChatLocalAgentTests \
+ -only-testing:JarvisEVOTests/ChatPluginProposalTests \
+ -only-testing:JarvisEVOTests/AppModelTests/testNoConnectedCatalogCannotExposeNormalChatPluginProposal \
  -only-testing:JarvisEVOTests/ProductionNormalChatLocalAgentTests \
  -only-testing:JarvisEVOUITests/ChatLocalTaskUITests \
+ -only-testing:JarvisEVOUITests/ChatPluginSuggestionUITests \
  -only-testing:JarvisEVOTests/AppModelTests/testNaturalLocalQuestionUsesRealReadWithoutSelectedModel \
  -only-testing:JarvisEVOTests/AppModelTests/testNaturalLocalReadStopsOnConversationRevisionRoundTrip \
  -only-testing:JarvisEVOTests/AppModelTests/testNaturalLocalReadStopsOnProviderRevisionChange \
@@ -105,8 +108,8 @@ test "$status" = 0
 python3 - "$A/summary.json" <<'PY'
 import json,sys
 s=json.load(open(sys.argv[1]))
-expected={'totalTestCount':180,'passedTests':180,'failedTests':0,'skippedTests':0}
+expected={'totalTestCount':194,'passedTests':194,'failedTests':0,'skippedTests':0}
 for k,v in expected.items():
  assert type(s.get(k)) is int and s[k]==v,(k,s.get(k),v)
-print('180 required native/simulator tests passed without skips. Physical device and private archive remain unverified.')
+print('194 required native/simulator tests passed without skips. Physical device and private archive remain unverified.')
 PY

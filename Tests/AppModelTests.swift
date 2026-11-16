@@ -20,6 +20,15 @@ final class AppModelTests: XCTestCase {
         try? FileManager.default.removeItem(at: root)
     }
 
+    func testNoConnectedCatalogCannotExposeNormalChatPluginProposal() async throws {
+        let (model, _, _) = try await fixture()
+        model.draft = "Find a note"
+        XCTAssertNil(model.pendingPluginProposal)
+        XCTAssertNil(model.pluginProposalReviewRoute(id: UUID()))
+        model.dismissPluginProposal(id: UUID())
+        XCTAssertNil(model.pendingPluginProposal)
+    }
+
     func testMemorySaveReportsFailureAndStableIDRetryDoesNotDuplicate() async throws {
         let (model, store, _) = try await fixture()
         let id = UUID()

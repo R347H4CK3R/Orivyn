@@ -19,6 +19,8 @@ final class ChatLocalTaskUITests: XCTestCase {
         let group = app.descendants(matching: .any).matching(identifier: "chat.task.list").firstMatch
         XCTAssertTrue(group.waitForExistence(timeout: 5))
         XCTAssertTrue(group.isHittable); group.tap()
+        capture(app, "Expanded task card hierarchy")
+        XCTAssertTrue(app.scrollViews["chat.task.records"].waitForExistence(timeout: 5))
     }
     private func inspect(_ app: XCUIApplication, _ id: String) {
         let button = app.buttons["chat.task.inspect." + id]

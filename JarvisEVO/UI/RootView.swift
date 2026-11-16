@@ -265,6 +265,7 @@ struct RootView: View {
             VStack(spacing: 0) {
                 if model.activeConversation?.messages.isEmpty != false { welcome }
                 else { transcript }
+                ChatPluginSuggestionView(model: model)
                 if let origin = model.selectedConversationID {
                     ChatLocalTasksView(model: model, conversationID: origin).id(origin)
                 }

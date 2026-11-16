@@ -24,9 +24,9 @@ class AssistantIdentityTests(unittest.TestCase):
     def test_actionable_help_does_not_pretend_tools_ran(self):
         source = (ROOT / 'JarvisEVO/Core/ChatResponsePolicy.swift').read_text()
         self.assertIn('ChatResponsePolicy.instructions', (ROOT / 'JarvisEVO/UI/AppModel.swift').read_text())
-        self.assertTrue('do the useful part first' in source)
-        self.assertTrue('offer the relevant reviewed tool screen' in source)
-        self.assertTrue('without a recorded result' in source)
+        self.assertIn('Answer directly; write Python/code, explain, debug, draft and analyze.', source)
+        self.assertIn('Offer relevant reviewed tools, not invented features.', source)
+        self.assertIn('Do not invent tools or claim actions without recorded results.', source)
         self.assertTrue('Writing code as text is different from executing it' in source)
 
     def test_generated_image_storage_requests_complete_protection_without_downgrade(self):

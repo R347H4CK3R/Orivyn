@@ -2,11 +2,20 @@ import XCTest
 @testable import JarvisEVO
 
 final class ChatResponsePolicyTests: XCTestCase {
+    func testBuiltInPolicyStaysCompactWithoutTruncatingUserPreferences() {
+        // Byte ceiling is a regression alarm, not a substitute for the native tokenizer gate.
+        XCTAssertLessThanOrEqual(ChatResponsePolicy.instructions.utf8.count, 1900)
+        for boundary in ["three", "Attachments", "external", "no-tools", "remote", "Automatic", "OCR"] {
+            XCTAssertTrue(ChatResponsePolicy.instructions.contains(boundary))
+        }
+    }
     func testPolicyNamesOnlySupportedDirectReadsAndReviewedPlugins() {
         let prompt = ChatResponsePolicy.instructions
         for tool in ["list installed models", "show app information", "search saved memory"] {
             XCTAssertTrue(prompt.contains(tool))
         }
+        XCTAssertTrue(prompt.contains("may propose one tool from its schemas locally, never execute it"))
+        XCTAssertTrue(prompt.contains("With a connected catalog and concrete local model, fresh chat"))
         XCTAssertTrue(prompt.contains("Plugin calls require exact-call review"))
         XCTAssertTrue(prompt.contains("by you in Orivyn's review screen"))
         XCTAssertTrue(prompt.contains("Provider authentication is not your approval to execute"))

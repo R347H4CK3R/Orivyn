@@ -113,3 +113,15 @@ forward for clarification. Earlier 124/125 failure evidence remains unchanged.
 These synthetic checks do not verify the user's private archive, actual attachment
 associations, physical iPhone installation, broad autonomous capabilities or newer
 commits. No IPA or catalog release was produced by this gate.
+
+## Expanded normal-chat gate: failed, not release-ready
+
+Run `43831489212`, source `50cfa819f97c4985357c07ccfd5f2350d328f8ca` (local exact tree `3995e5e053ce4116ad81bcac0aba9651305c2a4a`) completed with **173/180 simulator tests passed, seven failures, zero skips**. Native compilation succeeded. Retained artifact `14210225499` SHA-256 `5b53bf95b2b774e105a1920cca6461475d63fa4d7bdd9db2d26ee2b37b45c059` contains exact summary, test log and attachments.
+
+Failures are not waived:
+- Both new real-model normal-chat tests searched the literal instruction placeholder `1..256 UTF-8 bytes`, obtained no matches, and repeated the same call. The duplicate/budget guard stopped execution correctly. The Automatic fixture did select the pinned Q4 model without downloading; answer generation failed.
+- The earlier conversational model probe rejected the expanded system policy at the existing local context budget before producing an answer.
+- One durable chat-task resume test timed out.
+- All three newly added chat-task UI tests failed (two could not find the expected scroll container).
+
+The synthetic ZIP picker/restore tests passed again. This result does not verify normal-chat tool use, physical iPhone behavior, private archive assets, or a new release. Follow-up diagnosis must distinguish product defects from test selection/fixture issues and retain the existing limits and assertions unless a separately reviewed correction is justified.

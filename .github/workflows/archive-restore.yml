@@ -1,4 +1,4 @@
-name: Verify actual local chat orchestration and Automatic selection
+name: Verify repaired model queries and exact plugin review presentation
 on:
   push:
     branches: [recovery/chatgpt-restore-20261116]

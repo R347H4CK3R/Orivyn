@@ -103,6 +103,22 @@ final class ChatLocalAgentSessionTests: XCTestCase {
         try approve(session); session.run()
         try await waitUntil { first.continuation != nil }
         XCTAssertEqual(session.snapshot?.history.map(\.name), ["get_app_info"])
+        // Actual bundled metadata and native tool encoder, not synthetic tool output.
+        let info = try XCTUnwrap(session.snapshot?.history.first?.result)
+        XCTAssertLessThanOrEqual(info.utf8.count, 1024)
+        let object = try XCTUnwrap(MCPJSONValue.parse(Data(info.utf8), maximumBytes: 4096).objectValue)
+        let retained = try XCTUnwrap(object["capabilities"]?.arrayValue)
+        let original = try XCTUnwrap(AppSelfKnowledge.load())
+        XCTAssertFalse(retained.isEmpty)
+        XCTAssertEqual(object["resultTruncated"], .bool(true))
+        XCTAssertEqual(retained.count + Int(try XCTUnwrap(object["omittedItems"]?.integerValue)), original.capabilities.count)
+        for entry in retained {
+            let id = try XCTUnwrap(entry.objectValue?["id"]?.stringValue)
+            let capability = try XCTUnwrap(original.capabilities.first { $0.id == id })
+            XCTAssertEqual(entry.objectValue?["detail"]?.stringValue, capability.detail)
+            XCTAssertEqual(entry.objectValue?["status"]?.stringValue, capability.status.rawValue)
+        }
+        XCTAssertTrue(first.requests.allSatisfy { $0.messages.reduce(0) { $0 + $1.content.utf8.count } <= 3500 })
         let id = try XCTUnwrap(session.snapshot?.id)
         session.stop(cancelTask: false); first.continuation?.finish()
         try await waitUntil { !session.isRunning }

@@ -31,6 +31,20 @@ final class NormalChatLocalAgentTests: XCTestCase {
         XCTAssertTrue(requests.last?.messages.first?.content.contains("totalInstalled") == true)
         XCTAssertFalse(requests.last?.systemPrompt.contains("Use remote tools") == true)
     }
+    func testSearchInstructionSeparatesConstraintsFromActualQueryData() async throws {
+        let goal = "What is my saved deployment codename?"
+        let fixture = ChatAgentFixture(decisions: [#"{"type":"answer","text":"Need to check memory."}"#])
+        let provider = NormalChatLocalAgentProvider(turn: try turn(goal), model: fixture,
+            validateContext: {}, read: { _ in throw LocalAgentError.invalidState }, record: { _ in })
+        for try await _ in try await provider.stream(.init(messages: [], systemPrompt: "")) {}
+        let requests = await fixture.requests
+        let text = try XCTUnwrap(requests.first?.messages.first?.content)
+        XCTAssertFalse(text.contains(#""query":"1..256 UTF-8 bytes""#))
+        XCTAssertTrue(text.contains("Choose concrete search terms from currentUserRequest"))
+        XCTAssertTrue(text.contains("query is a string of 1 to 256 UTF-8 bytes"))
+        XCTAssertTrue(text.contains(goal))
+        XCTAssertTrue(text.contains("Do not repeat an identical call"))
+    }
     func testReceiptSaveFailurePreventsDispatch() async throws {
         let fixture = ChatAgentFixture(decisions: [call], result: models, failReceipt: true)
         let provider = NormalChatLocalAgentProvider(turn: try turn(), model: fixture,

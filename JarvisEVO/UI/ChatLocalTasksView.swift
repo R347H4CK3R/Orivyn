@@ -30,7 +30,7 @@ struct ChatLocalTasksView: View {
             }
             if let failure { Text(failure).font(.caption).foregroundStyle(.orange) }
             if !records.isEmpty {
-                DisclosureGroup("Local tasks in this conversation (\(records.count))") {
+                DisclosureGroup {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 12) {
                             ForEach(records) { record in
@@ -42,23 +42,30 @@ struct ChatLocalTasksView: View {
                                         Text(answer).textSelection(.enabled)
                                     }
                                     ForEach(record.history) { event in
-                                        DisclosureGroup("\(event.name): \(event.outcome)") {
+                                        DisclosureGroup {
                                             Text(event.result ?? "No result recorded.").font(.caption.monospaced()).textSelection(.enabled)
                                                 .accessibilityIdentifier("chat.task.evidence.\(event.operationID)")
+                                        } label: {
+                                            Text("\(event.name): \(event.outcome)")
+                                                .accessibilityIdentifier("chat.task.operation.\(event.operationID)")
                                         }
-                                        .accessibilityIdentifier("chat.task.operation.\(event.operationID)")
                                     }
                                     Button(["ready", "interrupted", "running"].contains(record.status) ? "Review / resume task" : "Inspect task") {
                                         review = Review(goal: record.goal, context: context, taskID: record.id)
                                     }.disabled(!model.canBeginHeavyWork)
                                         .accessibilityIdentifier("chat.task.inspect.\(record.id)")
-                                }.accessibilityIdentifier("chat.task.card.\(record.id)")
+                                }
                             }
                         }
                     }.frame(maxHeight: 210).accessibilityIdentifier("chat.task.records")
                     Text("Recorded local evidence only. An interrupted running stage is recovered when opened; resume is explicit. These cards are not sent to chat models.").font(.caption2)
                     Button("Refresh task status") { reload() }
-                }.accessibilityIdentifier("chat.task.list")
+                } label: {
+                    // Container identifiers propagate over child controls on iOS 26.
+                    // Identify only the header so records and action IDs remain distinct.
+                    Text("Local tasks in this conversation (\(records.count))")
+                        .accessibilityIdentifier("chat.task.list")
+                }
             }
         }.padding(.horizontal).padding(.vertical, 4)
         .sheet(item: $review, onDismiss: reload) { item in
