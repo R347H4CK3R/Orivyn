@@ -1,0 +1,124 @@
+name: Stage verified Orivyn build 15 draft preview
+on:
+  push:
+    branches: [codex/publish-build15-20261116]
+    paths: ['.github/workflows/publish-build15.yml']
+permissions:
+  contents: write
+  actions: read
+jobs:
+  publish:
+    if: github.event.repository.private == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 595330ac155fa7dbaec7e61d5c673a69b07056bd
+          persist-credentials: false
+      - name: Require exact successful package and host checks
+        run: |
+          gh api repos/$GH_REPO/actions/runs/43774891616 > package-run.json
+          gh api repos/$GH_REPO/actions/runs/43774891616/jobs > package-jobs.json
+          python3 - <<'PYGATE'
+          import json
+          r=json.load(open('package-run.json'))
+          assert r['head_sha']=='595330ac155fa7dbaec7e61d5c673a69b07056bd' and r['conclusion']=='success'
+          jobs=json.load(open('package-jobs.json'))['jobs']
+          assert len(jobs)==1 and jobs[0]['name']=='candidate' and jobs[0]['conclusion']=='success'
+          for expected in ['Run exact production recovery filesystem tests on Darwin','Build and verify combined native runtime','Portable package and graph regressions','Exact-source checklist UI and real-model acceptance','Release device build and actual IPA resource validation']:
+              steps=[s for s in jobs[0]['steps'] if s['name']==expected]
+              assert len(steps)==1 and steps[0]['conclusion']=='success'
+          PYGATE
+      - name: Retrieve and verify exact package
+        run: |
+          gh run download 43774891616 --name Orivyn-build15-package-evidence --dir candidate
+          python3 - <<'PY'
+          import pathlib,subprocess,json
+          paths=list(pathlib.Path('candidate').rglob('*.ipa'))
+          assert len(paths)==1,paths
+          subprocess.run(['python3','scripts/verify_ipa.py',str(paths[0]),'--output','verified-ipa.json'],check=True)
+          v=json.load(open('verified-ipa.json'))
+          assert v['build']=='15' and v['version']=='0.1.1' and v['bundle_identifier']=='app.jarvisevo.ios'
+          assert v['sha256']=='984b3e015a490e7843c969c486f8ab7861623c3eafacc61d7a01929905a43dd0' and v['size']==37233593
+          expected=json.load(open(paths[0].parent/'ipa-verification.json'))
+          assert v==expected
+          scope=json.load(open(paths[0].parent/'SCOPE.json'))
+          assert scope['source_commit']=='595330ac155fa7dbaec7e61d5c673a69b07056bd'
+          assert scope['device_build']=='passed' and scope['ipa_structure_check']=='passed'
+          assert scope['native_features']==['ORIVYN_NATIVE_VISION','ORIVYN_NATIVE_TOOLS','ORIVYN_NATIVE_TRANSCRIPT']
+          assert not (paths[0].parent/'source-status-before.txt').read_text().strip()
+          assert (paths[0].parent/'SHA256SUMS').read_text().strip()==v['sha256']+'  '+paths[0].name
+          pathlib.Path('ipa-path.txt').write_text(str(paths[0]))
+          PY
+      - name: Independently require exact checklist acceptance artifacts
+        run: |
+          set -euo pipefail
+          ROOT=candidate/completion-acceptance
+          test "$(cat "$ROOT/source-commit.txt")" = 595330ac155fa7dbaec7e61d5c673a69b07056bd
+          python3 - <<'PYACCEPT'
+          import pathlib,json,subprocess,hashlib
+          root=pathlib.Path('candidate/completion-acceptance')
+          assert (root/'phase-status.txt').read_text().splitlines()==['ui=0','real_model=0']
+          for phase in ('approval','relaunch'):
+              bundle=root/phase/'Tests.xcresult'
+              assert bundle.is_dir() and not bundle.is_symlink()
+              info=bundle/'Info.plist'
+              assert info.is_file() and not info.is_symlink()
+              subprocess.run(['python3','Diagnostics/NativeTools/verify_simulator_result.py',str(root/phase/'summary.json')],check=True)
+          subprocess.run(['python3','scripts/verify_completion_model_evidence.py',str(root/'real-model')],check=True)
+          result=subprocess.run(['python3','scripts/verify_completion_ui_state.py',str(root/'approval/tasks'),str(root/'relaunch/tasks')],check=True,capture_output=True,text=True)
+          assert json.loads(result.stdout)==json.loads((root/'verified-task.json').read_text())
+          expected={'UITests/LocalCompletionUITests.swift','Tests/ProductionCompletionContractTests.swift','scripts/seed_completion_ui.py','JarvisEVO/UI/LocalAgentView.swift','JarvisEVO/Services/LocalAgentSession.swift'}
+          seen=set()
+          for line in (root/'source-hashes.txt').read_text().splitlines():
+              digest,name=line.split(None,1); name=name.strip()
+              assert name in expected and name not in seen
+              assert hashlib.sha256(pathlib.Path(name).read_bytes()).hexdigest()==digest
+              seen.add(name)
+          assert seen==expected
+          PYACCEPT
+      - name: Stage labeled unfinished draft preview
+        run: |
+          set -euo pipefail
+          IPA="$(cat ipa-path.txt)"
+          sha256sum "$IPA" | sed 's|  .*/|  |' > SHA256SUMS
+          cat > release-notes.md <<'NOTES'
+          Orivyn 0.1.1 build 15 — unfinished unsigned iOS 26+ preview.
+
+          Adds an explicit manually reviewed read-only checklist for bundled app information, installed-model listing and exact saved-memory search. The user reviews the concrete scope, approves it, then separately presses Run. Review and approval alone do not dispatch tools. This is a bounded checklist, not general autonomous planning.
+
+          Exact-source evidence (simulator execution separate from Release IPA compilation): Release iOS device compilation and unsigned IPA/resource checks; combined runtime compilation; 19 synthetic Darwin recovery tests; scoped portable regressions. Two actual iPhone16Plus/iOS26.1 Simulator UI tests verified manual review/discard/approval, retained ready state on relaunch and no automatic execution. A separate actual Qwen3 Q4 model test used programmatic review/approval and explicit Run, performed app-info then the exact memory search and answered with an unpredictable stored marker. The UI test did not press Run; the model test did not automate UI approval. Together these are separate scoped checks, not a single full physical-device end-to-end test.
+
+          The package-only SCOPE records native/UI tests as not_run for that packaging step; the separate acceptance step above executed the simulator tests on the exact same source. The newly requested folder-import feature is not included in build15.
+
+          Acceptance and package evidence: https://github.com/R347H4CK3R/Orivyn/actions/runs/43774891616. Earlier failed attempts remain evidence, not passes. Existing aggregate Python failures remain disclosed; only the named scoped gates are claimed passing.
+
+          Retains backup replacement confirmation, preserve-local default and conservative model recovery. General autonomous requests can still answer prematurely. Broad vision remains experimental; automatic live sync remains disabled. Physical-device installation, signing refresh, resource/thermal behavior and broad app acceptance are unverified. No model weights are bundled. Optional remote providers may charge. This is not completed 1.0.0 and is not an OpenAI product.
+
+          SideStore or another compatible installer must sign the IPA. Preserve existing app data and signing identity. Required third-party notices remain bundled. This workflow creates a DRAFT prerelease only. Keep build14 catalog entries live until the verified draft is explicitly published and anonymously downloadable.
+
+          Exact package source: 595330ac155fa7dbaec7e61d5c673a69b07056bd
+          Successful gate: https://github.com/R347H4CK3R/Orivyn/actions/runs/43774891616
+          File: Orivyn-0.1.1-build15-unsigned.ipa
+          Size: 37233593 bytes
+          SHA-256: 984b3e015a490e7843c969c486f8ab7861623c3eafacc61d7a01929905a43dd0
+          NOTES
+          # Create an exact lightweight tag atomically; fail if another tag already exists.
+          gh api --method POST repos/$GH_REPO/git/refs -f ref=refs/tags/orivyn-v0.1.1-build15 -f sha=595330ac155fa7dbaec7e61d5c673a69b07056bd > created-tag.json
+          python3 - <<'PYTAG'
+          import json
+          tag=json.load(open('created-tag.json'))
+          assert tag['ref']=='refs/tags/orivyn-v0.1.1-build15'
+          assert tag['object']['type']=='commit' and tag['object']['sha']=='595330ac155fa7dbaec7e61d5c673a69b07056bd'
+          PYTAG
+          gh release create orivyn-v0.1.1-build15 --verify-tag "$IPA" SHA256SUMS verified-ipa.json --target 595330ac155fa7dbaec7e61d5c673a69b07056bd --title "Orivyn 0.1.1 build 15 — unfinished preview" --notes-file release-notes.md --prerelease --draft
+          gh release view orivyn-v0.1.1-build15 --json isDraft,isPrerelease,tagName > draft-status.json
+          python3 - <<'PYDRAFT'
+          import json
+          r=json.load(open('draft-status.json'))
+          assert r['isDraft'] is True and r['isPrerelease'] is True and r['tagName']=='orivyn-v0.1.1-build15'
+          PYDRAFT
