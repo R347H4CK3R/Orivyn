@@ -9,6 +9,7 @@ struct GenerationRequest: Sendable {
     var nativeTranscriptInput: NativeTranscriptInput? = nil
     /// Internal local-agent mode only; nil preserves normal chat sampling.
     var localAgentRequiresTool: Bool? = nil
+    var normalChatReadOnly: Bool = false
     var localReadPlanKind: String? = nil
     var localReadPlanProposal: Bool { localReadPlanKind != nil }
     var localCompletionPolicy: LocalCompletionPolicy? = nil
@@ -28,6 +29,7 @@ struct GenerationRequest: Sendable {
              maxTokens: 384, temperature: 0, localAgentRequiresTool: requiresTool, localAgentConversationIDs: conversationIDs, conciseQwen3: true)
     }
     func validateInternalModes() throws {
+        guard !normalChatReadOnly || localAgentRequiresTool == false else { throw LocalAgentError.invalidState }
         let count = [nativeTranscriptInput != nil, localReadPlanProposal, localReadWorkflowPolicy != nil, localCompletionPolicy != nil, localAgentRequiresTool != nil, nativeReadGoal != nil].filter { $0 }.count
         guard count <= 1, localReadPlanKind.map({ ["conversation_read","conversation_search"].contains($0) }) ?? true else { throw LocalAgentError.invalidState }
     }

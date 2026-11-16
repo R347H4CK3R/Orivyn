@@ -117,6 +117,33 @@ final class AutomaticModelRouterTests: XCTestCase {
         XCTAssertFalse(decision.needsDownload)
     }
 
+    func testVerifiedInstalledQ4ReasoningModelServesGeneralChatOffline() throws {
+        let model = try descriptor("qwen3-1.7b-q4_k_m")
+        let decision = try AutomaticModelRouter.route(text: "Look through my saved notes for Cedar acceptance", installed: [model], environment: environment(memory: 6_000_000_000, storage: nil, network: .offline))
+        XCTAssertEqual(decision.model, model)
+        XCTAssertEqual(decision.purpose, "General chat")
+        XCTAssertFalse(decision.needsDownload)
+    }
+
+    func testInstalledQ4ReasoningStillHonorsRAMAndCodingBoundaries() throws {
+        let model = try descriptor("qwen3-1.7b-q4_k_m")
+        let general = try descriptor(generalID)
+        let lowRAM = try AutomaticModelRouter.route(text: "Hello", installed: [model, general], environment: environment(memory: 5_999_999_999, network: .offline))
+        XCTAssertEqual(lowRAM.model, general)
+        let coding = try AutomaticModelRouter.route(text: "Write a Python function", installed: [model], environment: environment())
+        XCTAssertEqual(coding.model.id, coderID)
+        XCTAssertTrue(coding.needsDownload)
+    }
+
+    func testInstalledQ4ReasoningRequiresExactCatalogIdentity() throws {
+        let model = try descriptor("qwen3-1.7b-q4_k_m")
+        for candidate in [changed(model, hash: String(repeating: "a", count: 64)), changed(model, size: model.byteCount - 1), changed(model, fileName: "other.gguf")] {
+            let decision = try AutomaticModelRouter.route(text: "Hello", installed: [candidate], environment: environment())
+            XCTAssertEqual(decision.model.id, generalID)
+            XCTAssertTrue(decision.needsDownload)
+        }
+    }
+
     func testExperimentalReasoningModelsDoNotBecomeAutomaticCandidates() throws {
         let models = try ["qwen3-0.6b-q8_0", "qwen3-1.7b-q8_0"].map(descriptor)
         let decision = try AutomaticModelRouter.route(text: "Reason step by step about this puzzle", installed: models, environment: environment(memory: 8_000_000_000))

@@ -1,4 +1,4 @@
-name: Verify chat-bound tasks and explicit approval semantics
+name: Verify actual local chat orchestration and Automatic selection
 on:
   push:
     branches: [recovery/chatgpt-restore-20261116]

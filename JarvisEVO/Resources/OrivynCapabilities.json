@@ -76,7 +76,7 @@
     {
       "id": "local-tasks",
       "status": "conditional",
-      "detail": "The local task panel and saved-chat cards support explicit proposal, scope review, Run and recovery. An installed local model is required for model decisions. Recorded read evidence is separate from unverified model answers. General model-selected chat orchestration is not available."
+      "detail": "The local task panel and saved-chat cards support explicit proposal, scope review, Run and recovery. An installed local model is required for model decisions. Recorded read evidence is separate from unverified model answers. Fresh normal chat with a selected or Automatic-prepared installed local model can choose up to three app-info, installed-model or saved-memory reads and continue from recorded results. No remote, plugin, write or general agent capability is implied."
     },
     {
       "id": "archive-restore",

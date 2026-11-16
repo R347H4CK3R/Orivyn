@@ -29,11 +29,16 @@ final class AppModel {
         guard !isGenerating, let plugins else { throw PluginResultDraftError.stale }
         draft = try plugins.consumeResultDraft(executionID: executionID,
             conversationContext: conversationRevision, currentDraft: draft)
+        isExternalComposerDraft = true
         // Existing attachments and history are deliberately untouched. No Send here.
     }
 
+    private var isExternalComposerDraft = false
     var draft = "" {
-        didSet { if oldValue != draft { composerDidChange() } }
+        didSet {
+            if draft.isEmpty { isExternalComposerDraft = false }
+            if oldValue != draft { composerDidChange() }
+        }
     }
     var pendingAttachments: [ChatAttachment] = [] {
         didSet { if oldValue != pendingAttachments { composerDidChange() } }
@@ -356,6 +361,7 @@ final class AppModel {
         // Validate the complete replacement before mutation; preserve attachments and provider.
         let combined = try IncomingTextRequest.appending(text, to: draft)
         draft = combined
+        isExternalComposerDraft = true
     }
 
     /// Capture before an asynchronous Photos/camera transfer, then pass back to the add method.
@@ -549,12 +555,49 @@ final class AppModel {
         if let ticket { try validateVoiceContext(ticket) }
     }
 
+    var currentDirectLocalReadContract: LocalCompletionContract? {
+        guard !isExternalComposerDraft else { return nil }
+        return ChatLocalTaskRequest(draft: draft, hasAttachments: !pendingAttachments.isEmpty)?.proposedChecklist
+            ?? NaturalLocalReadIntent(currentText: draft, hasAttachments: !pendingAttachments.isEmpty)?.contract
+    }
+    private var normalChatTurnForDraft: NormalChatLocalTurn? {
+        guard currentDirectLocalReadContract == nil else { return nil }
+        return NormalChatLocalTurn(goal: draft, hasAttachments: !pendingAttachments.isEmpty,
+                                   isExternalDraft: isExternalComposerDraft)
+    }
+    var automaticLocalChatReadsAvailable: Bool {
+        guard normalChatTurnForDraft != nil else { return false }
+        if automaticModelsEnabled { return automaticProviderFactory == nil }
+        return selectedProvider?.provider is LocalAIProvider
+    }
+
+    func validateNormalChatOrigin(_ binding: NormalChatReceiptBinding) throws {
+        try Task.checkCancellation()
+        guard !isInferenceAdmissionBlocked,
+              binding.context.matches(conversationID: selectedConversationID,
+                  conversationRevision: conversationRevision, providerRevision: providerRevision),
+              generatingConversationID == binding.context.conversationID,
+              let assistantID = binding.assistantID,
+              let message = conversations.first(where: { $0.id == binding.context.conversationID })?.messages.last,
+              message.id == assistantID, message.role == .assistant, message.state == .streaming else { throw CancellationError() }
+    }
+
+    func recordNormalChatReceipt(_ event: NormalChatReadEvent, binding: NormalChatReceiptBinding) async throws {
+        try validateNormalChatOrigin(binding)
+        guard let assistantID = binding.assistantID else { throw CancellationError() }
+        let rendered = try event.rendered()
+        updateMessage(conversationID: binding.context.conversationID, messageID: assistantID) { $0.content += rendered }
+        // Required acknowledgement barrier: no next model/tool step on save error.
+        try await persist(binding.context.conversationID)
+        try validateNormalChatOrigin(binding)
+        statusMessage = "Local read " + event.phase.rawValue + ": " + event.action.name
+    }
+
     func send() {
         guard canSend else { return }
         // Only the current typed request grants this narrow, read-only scope.
         // History, imported memory, model output and plugin metadata never enter it.
-        let directContract = ChatLocalTaskRequest(draft: draft, hasAttachments: !pendingAttachments.isEmpty)?.proposedChecklist
-            ?? NaturalLocalReadIntent(currentText: draft, hasAttachments: !pendingAttachments.isEmpty)?.contract
+        let directContract = currentDirectLocalReadContract
         if let contract = directContract {
             let conversationID = selectedConversationID ?? UUID()
             selectedConversationID = conversationID
@@ -586,6 +629,11 @@ final class AppModel {
                 provider: provider, providerID: provider.id)
             return
         }
+        if !automaticModelsEnabled, let local = selectedProvider?.provider as? LocalAIProvider,
+           let turn = normalChatTurnForDraft {
+            submitNormalLocalChat(turn: turn, local: local)
+            return
+        }
         if automaticModelsEnabled { prepareAutomaticSend(); return }
         if selectedProviderID == "remote" && network.isOnline == false {
             guard let local = providers.first(where: { $0.id != "remote" && $0.isAvailable }) else {
@@ -600,6 +648,33 @@ final class AppModel {
             return
         }
         submit(text: draft, attachments: pendingAttachments, conversationID: selectedConversationID ?? UUID(), provider: provider, providerID: selectedProviderID)
+    }
+
+    private func submitNormalLocalChat(turn: NormalChatLocalTurn, local: LocalAIProvider) {
+        let conversationID = selectedConversationID ?? UUID()
+        selectedConversationID = conversationID
+        let binding = NormalChatReceiptBinding(context: .init(conversationID: conversationID,
+            conversationRevision: conversationRevision, providerRevision: providerRevision))
+        let provider = NormalChatLocalAgentProvider(turn: turn, model: local,
+            validateContext: { [weak self] in
+                guard let self else { throw CancellationError() }
+                try await self.validateNormalChatOrigin(binding)
+            },
+            read: { [weak self] action in
+                guard let self else { throw CancellationError() }
+                try await self.validateNormalChatOrigin(binding)
+                let result = try await LocalReadTools.executeAsync(name: action.name,
+                    arguments: action.arguments, model: self, resultByteLimit: 4096)
+                try await self.validateNormalChatOrigin(binding)
+                return result
+            },
+            record: { [weak self] event in
+                guard let self else { throw CancellationError() }
+                try await self.recordNormalChatReceipt(event, binding: binding)
+            })
+        statusMessage = "Thinking on device; local read receipts will appear in chat."
+        submit(text: draft, attachments: [], conversationID: conversationID, provider: provider, providerID: provider.id,
+            preparedAssistant: { binding.assistantID = $0 })
     }
 
     private func prepareAutomaticSend() {
@@ -645,8 +720,12 @@ final class AppModel {
                 self.clearAutomaticOwnership(ticket.id)
                 self.automaticDecision = decision
                 self.statusMessage = "Automatic: \(decision.model.name) · \(decision.purpose) · on this iPhone"
-                self.submit(text: self.draft, attachments: self.pendingAttachments,
-                    conversationID: self.selectedConversationID ?? UUID(), provider: provider, providerID: decision.model.id)
+                if let local = provider as? LocalAIProvider, let turn = self.normalChatTurnForDraft {
+                    self.submitNormalLocalChat(turn: turn, local: local)
+                } else {
+                    self.submit(text: self.draft, attachments: self.pendingAttachments,
+                        conversationID: self.selectedConversationID ?? UUID(), provider: provider, providerID: decision.model.id)
+                }
             } catch {
                 guard self.automaticTicket?.id == ticket.id else { return }
                 self.clearAutomaticOwnership(ticket.id)
@@ -693,8 +772,10 @@ final class AppModel {
 
     @discardableResult
     private func submit(text: String, attachments: [ChatAttachment], conversationID: UUID, provider: any AIProvider, providerID: String,
-                        voiceTicket: VoiceTurnTicket? = nil) -> Task<Result<String, any Error>, Never> {
+                        voiceTicket: VoiceTurnTicket? = nil,
+                        preparedAssistant: ((UUID) -> Void)? = nil) -> Task<Result<String, any Error>, Never> {
         guard !isInferenceAdmissionBlocked else { return Task { .failure(LocalHeavyWorkError.busy) } }
+        let submittedExternalOrigin = isExternalComposerDraft
         let content = text.trimmingCharacters(in: .whitespacesAndNewlines)
         let message = ChatMessage(id: UUID(), role: .user, content: content.isEmpty ? "Please review the attached file." : content,
                                   createdAt: Date(), state: .complete, attachments: attachments)
@@ -708,6 +789,7 @@ final class AppModel {
         let assistant = ChatMessage(id: UUID(), role: .assistant, content: "", createdAt: Date(), state: .streaming, attachments: [])
         conversation.messages.append(assistant)
         upsert(conversation)
+        preparedAssistant?(assistant.id)
         applyingOwnedComposerUpdate {
             draft = ""
             pendingAttachments = []
@@ -716,12 +798,13 @@ final class AppModel {
         }
         voiceTicket?.acceptedComposerContext = attachmentImportEpoch
         return startGeneration(conversationID: conversation.id, assistantID: assistant.id, provider: provider, providerID: providerID,
-                               restoringDraftOnSaveFailure: message, voiceTicket: voiceTicket)
+                               restoringDraftOnSaveFailure: message, restoringDraftExternalOrigin: submittedExternalOrigin, voiceTicket: voiceTicket)
     }
 
     @discardableResult
     private func startGeneration(conversationID: UUID, assistantID: UUID, provider: any AIProvider, providerID: String,
                                  restoringDraftOnSaveFailure original: ChatMessage? = nil,
+                                 restoringDraftExternalOrigin: Bool = false,
                                  voiceTicket: VoiceTurnTicket? = nil) -> Task<Result<String, any Error>, Never> {
         guard !isInferenceAdmissionBlocked else { return Task { .failure(LocalHeavyWorkError.busy) } }
         // Capture the actual turn provider, not a picker preference that Automatic preserves
@@ -754,9 +837,11 @@ final class AppModel {
                 didPersist = true
                 self.isSavingSubmittedTurn = false
                 try self.validateGeneration(voiceTicket)
+                let currentGoal = conversation.messages.last(where: { $0.role == .user })?.content ?? ""
+                let toolOwnsMemoryReads = ["normal-chat-local-agent", "automatic-local-read", "automatic-local-read-plan"].contains(providerID)
                 let memoryContext = try await MemoryContextBuilder.buildAsync(
-                    notes: self.memories,
-                    query: conversation.messages.last(where: { $0.role == .user })?.content ?? "",
+                    notes: toolOwnsMemoryReads || NormalChatLocalTurn.disallowsReads(currentGoal) ? [] : self.memories,
+                    query: currentGoal,
                     maximumBytes: providerID == "remote" ? 1024 : 512)
                 try self.validateGeneration(voiceTicket)
                 self.lastMemoryContextSummary = memoryContext.totalCount == 0 ? nil :
@@ -798,6 +883,7 @@ final class AppModel {
                        self.draft.isEmpty, self.pendingAttachments.isEmpty, self.attachmentImportJobs.isEmpty {
                         self.applyingOwnedComposerUpdate {
                             self.draft = original.content
+                            self.isExternalComposerDraft = restoringDraftExternalOrigin
                             self.pendingAttachments = original.attachments
                         }
                         if let index = self.conversations.firstIndex(where: { $0.id == conversationID }) {
@@ -1573,3 +1659,13 @@ private struct AutomaticPreparationTicket {
 
 
 
+
+/// Ephemeral origin binding; never decoded from chat text, imports or receipts.
+@MainActor
+final class NormalChatReceiptBinding {
+    let context: ChatLocalTaskContext
+    var assistantID: UUID?
+    init(context: ChatLocalTaskContext, assistantID: UUID? = nil) {
+        self.context = context; self.assistantID = assistantID
+    }
+}

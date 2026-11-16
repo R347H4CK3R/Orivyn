@@ -8,6 +8,8 @@ final class ChatResponsePolicyTests: XCTestCase {
             XCTAssertTrue(prompt.contains(tool))
         }
         XCTAssertTrue(prompt.contains("Plugin calls require exact-call review"))
+        XCTAssertTrue(prompt.contains("by you in Orivyn's review screen"))
+        XCTAssertTrue(prompt.contains("Provider authentication is not your approval to execute"))
         XCTAssertFalse(prompt.contains("Chat does not automatically call device tools"))
     }
     func testCapabilityInventoryIsExplicitAndDoesNotClaimDeviceOrFileAccess() {

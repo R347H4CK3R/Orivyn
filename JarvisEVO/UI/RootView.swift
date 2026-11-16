@@ -481,7 +481,12 @@ struct RootView: View {
                     .font(.caption2).foregroundStyle(.secondary)
                     .accessibilityIdentifier("composer.localTask.notice")
             }
-            if chatChecklistRequest != nil {
+            if model.automaticLocalChatReadsAvailable {
+                Text("On-device assistant may read saved memories, app info and installed models. Read receipts appear in chat.")
+                    .font(.caption2).foregroundStyle(.secondary)
+                    .accessibilityIdentifier("composer.localReads.notice")
+            }
+            if model.currentDirectLocalReadContract != nil {
                 Text("Send performs this read locally without contacting a model. Its result is saved in this chat and may be included if you continue with a remote model.")
                     .font(.caption2).foregroundStyle(.secondary)
                     .accessibilityIdentifier("composer.localTask.routeNotice")
@@ -591,12 +596,6 @@ struct RootView: View {
         }
         .padding(.top, 12).padding(.bottom, 10)
         .background { LinearGradient(colors: [Color(uiColor: .systemBackground).opacity(0), Color(uiColor: .systemBackground)], startPoint: .top, endPoint: .bottom) }
-    }
-
-    private var chatChecklistRequest: ChatLocalTaskRequest? {
-        guard let request = ChatLocalTaskRequest(draft: model.draft, hasAttachments: !model.pendingAttachments.isEmpty),
-              request.proposedChecklist != nil else { return nil }
-        return request
     }
 
     private var composerHeight: CGFloat {

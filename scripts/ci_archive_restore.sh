@@ -8,7 +8,7 @@ test "${RUNNER_ENVIRONMENT:-}" = github-hosted
 A="$PWD/artifacts/archive-restore"; mkdir -p "$A"
 git rev-parse HEAD > "$A/source-commit.txt"
 printf '%s\n' 'Actual synthetic ZIP selection through the iOS Files provider, review, transactional commit and relaunch history; retained preparation recovery; native core tests. No physical-device or user-archive verification. No release publication.' > "$A/SCOPE.txt"
-# Separate macOS package gate; its count is not part of the 135 simulator tests.
+# Separate macOS package gate; its count is not part of the 180 simulator tests.
 swift test --jobs 2 --package-path Packages/ArchiveExtraction > "$A/extractor-package.log" 2>&1
 python3 scripts/materialize_guest.py Fixtures/maintained.img.gz JarvisEVO/Resources/VMAssets/maintained.img
 command -v xcodegen >/dev/null || brew install xcodegen
@@ -24,7 +24,7 @@ p=pathlib.Path('JarvisEVO.xcodeproj/xcshareddata/xcschemes/JarvisEVO.xcscheme')
 tree=ET.parse(p); action=tree.getroot().find('TestAction'); assert action is not None
 env=action.find('EnvironmentVariables')
 if env is None: env=ET.SubElement(action,'EnvironmentVariables')
-values={'ORIVYN_REQUIRE_CONVERSATION_MODEL':'1','ORIVYN_PRODUCTION_MODEL_ID':'qwen3-1.7b-q4_k_m','ORIVYN_CONVERSATION_MODEL_DIR':str(pathlib.Path(sys.argv[1]).resolve())}
+values={'ORIVYN_REQUIRE_NORMAL_CHAT_MODEL':'1','ORIVYN_REQUIRE_CONVERSATION_MODEL':'1','ORIVYN_PRODUCTION_MODEL_ID':'qwen3-1.7b-q4_k_m','ORIVYN_CONVERSATION_MODEL_DIR':str(pathlib.Path(sys.argv[1]).resolve())}
 for key,value in values.items():
  for old in list(env):
   if old.get('key')==key: env.remove(old)
@@ -69,6 +69,30 @@ xcodebuild test -project JarvisEVO.xcodeproj -scheme JarvisEVO -derivedDataPath 
  -only-testing:JarvisEVOTests/AppModelTests/testExplicitMultipleLocalReadsPersistSequentialEvidenceWithoutProvider \
  -only-testing:JarvisEVOTests/AppModelTests/testMultireadPartialEvidencePersistsFailureAndInterruptionHonestly \
  -only-testing:JarvisEVOTests/AppModelTests/testQuotedOrHandoffMultipleLocalCommandsRemainOrdinaryConversation \
+ -only-testing:JarvisEVOTests/NaturalLocalReadTests \
+ -only-testing:JarvisEVOTests/NormalChatLocalAgentTests \
+ -only-testing:JarvisEVOTests/ProductionNormalChatLocalAgentTests \
+ -only-testing:JarvisEVOUITests/ChatLocalTaskUITests \
+ -only-testing:JarvisEVOTests/AppModelTests/testNaturalLocalQuestionUsesRealReadWithoutSelectedModel \
+ -only-testing:JarvisEVOTests/AppModelTests/testNaturalLocalReadStopsOnConversationRevisionRoundTrip \
+ -only-testing:JarvisEVOTests/AppModelTests/testNaturalLocalReadStopsOnProviderRevisionChange \
+ -only-testing:JarvisEVOTests/AppModelTests/testCodingRequestWithLocalReadKeywordsStillUsesConversationProvider \
+ -only-testing:JarvisEVOTests/AppModelTests/testNormalChatReceiptAcknowledgementWritesSQLiteBeforeReturning \
+ -only-testing:JarvisEVOTests/AppModelTests/testNormalChatReceiptRejectsConversationAndProviderABA \
+ -only-testing:JarvisEVOTests/AppModelTests/testExternalIncomingTextNeverAutoExecutesEvenExactReadCommand \
+ -only-testing:JarvisEVOTests/AppModelTests/testNormalChatCaptionRequiresConcreteLocalProviderAndFreshEligibleDraft \
+ -only-testing:JarvisEVOTests/AppModelTests/testInitialSaveFailureRetainsExternalOriginForRetry \
+ -only-testing:JarvisEVOTests/AppModelTests/testExplicitNoMemoryRequestDoesNotAttachSavedMemoryContext \
+ -only-testing:JarvisEVOTests/AppSelfKnowledgeTests/testActualBundledToolMetadataPreservesDetailWithinBudget \
+ -only-testing:JarvisEVOTests/AutomaticPreparationTests/testAutomaticConcreteLocalProviderEntersAgentRouteWithoutSecondPreparation \
+ -only-testing:JarvisEVOTests/AutomaticPreparationTests/testAutomaticNonlocalFactoryKeepsOrdinaryProviderWithoutLocalReceipts \
+ -only-testing:JarvisEVOTests/SelfKnowledgePromptTests/testToolResultPreservesWholePrerequisitesAndReportsOmissions \
+ -only-testing:JarvisEVOTests/SelfKnowledgePromptTests/testToolResultRejectsOversizedPrerequisiteRatherThanCuttingIt \
+ -only-testing:JarvisEVOTests/SelfKnowledgePromptTests/testCapabilityDetailsAreOptionalBoundedAndStrict \
+ -only-testing:JarvisEVOTests/AutomaticModelRouterTests/testVerifiedInstalledQ4ReasoningModelServesGeneralChatOffline \
+ -only-testing:JarvisEVOTests/AutomaticModelRouterTests/testInstalledQ4ReasoningStillHonorsRAMAndCodingBoundaries \
+ -only-testing:JarvisEVOTests/AutomaticModelRouterTests/testInstalledQ4ReasoningRequiresExactCatalogIdentity \
+ -only-testing:JarvisEVOTests/RootFixtureAvailabilityTests/testControlledRootFixtureRequiresBothFlagsAndAnExplicitKnownMode \
  -only-testing:JarvisEVOUITests/ArchiveRestoreUITests \
  -resultBundlePath "$A/Tests.xcresult" CODE_SIGNING_ALLOWED=NO > "$A/xcodebuild.log" 2>&1
 status=$?
@@ -81,8 +105,8 @@ test "$status" = 0
 python3 - "$A/summary.json" <<'PY'
 import json,sys
 s=json.load(open(sys.argv[1]))
-expected={'totalTestCount':135,'passedTests':135,'failedTests':0,'skippedTests':0}
+expected={'totalTestCount':180,'passedTests':180,'failedTests':0,'skippedTests':0}
 for k,v in expected.items():
  assert type(s.get(k)) is int and s[k]==v,(k,s.get(k),v)
-print('135 required native/simulator tests passed without skips. Physical device and private archive remain unverified.')
+print('180 required native/simulator tests passed without skips. Physical device and private archive remain unverified.')
 PY

@@ -525,6 +525,116 @@ final class AppModelTests: XCTestCase {
         XCTAssertEqual(model.activeConversation?.messages.last?.content, "print('synthetic code')")
     }
 
+    func testNormalChatReceiptAcknowledgementWritesSQLiteBeforeReturning() async throws {
+        let (model, store, source) = try await fixture()
+        model.draft = "Synthetic ordinary conversation"
+        model.send()
+        try await waitFor { await source.hasSubscriber }
+        let conversationID = try XCTUnwrap(model.selectedConversationID)
+        let assistantID = try XCTUnwrap(model.activeConversation?.messages.last?.id)
+        let binding = NormalChatReceiptBinding(context: .init(conversationID: conversationID,
+            conversationRevision: model.pluginResultConversationContext,
+            providerRevision: model.pluginProposalProviderContext), assistantID: assistantID)
+        let action = try LocalCompletionContract.Action(value: .object(["name": .string("list_models"), "arguments": .object([:])]))
+        try await model.recordNormalChatReceipt(.init(operationID: UUID(), phase: .started, action: action, result: nil), binding: binding)
+        let saved = try await store.load(id: conversationID)
+        XCTAssertTrue(saved?.messages.last?.content.contains("App-recorded local read receipt") == true)
+        XCTAssertTrue(saved?.messages.last?.content.contains("started") == true)
+        await source.emit("Synthetic answer")
+        await source.finish()
+        try await waitFor { !model.isGenerating }
+        XCTAssertTrue(model.activeConversation?.messages.last?.content.contains("App-recorded local read receipt") == true)
+    }
+
+    func testNormalChatReceiptRejectsConversationAndProviderABA() async throws {
+        let (model, _, source) = try await fixture()
+        model.draft = "Synthetic ordinary conversation"
+        model.send()
+        try await waitFor { await source.hasSubscriber }
+        let conversationID = try XCTUnwrap(model.selectedConversationID)
+        let binding = NormalChatReceiptBinding(context: .init(conversationID: conversationID,
+            conversationRevision: model.pluginResultConversationContext,
+            providerRevision: model.pluginProposalProviderContext), assistantID: model.activeConversation?.messages.last?.id)
+        model.selectedConversationID = UUID()
+        model.selectedConversationID = conversationID
+        XCTAssertThrowsError(try model.validateNormalChatOrigin(binding))
+        let providerBinding = NormalChatReceiptBinding(context: .init(conversationID: conversationID,
+            conversationRevision: model.pluginResultConversationContext,
+            providerRevision: model.pluginProposalProviderContext), assistantID: model.activeConversation?.messages.last?.id)
+        let original = model.selectedProviderID
+        model.selectedProviderID = "another"
+        model.selectedProviderID = original
+        XCTAssertThrowsError(try model.validateNormalChatOrigin(providerBinding))
+        await source.finish()
+        try await waitFor { !model.isGenerating }
+    }
+
+    func testExternalIncomingTextNeverAutoExecutesEvenExactReadCommand() async throws {
+        let (model, _, source) = try await fixture()
+        try model.acceptIncomingText("list installed models")
+        model.send()
+        try await waitFor { await source.hasSubscriber }
+        await source.emit("Imported text is discussion data.")
+        await source.finish()
+        try await waitFor { !model.isGenerating }
+        XCTAssertFalse(model.activeConversation?.messages.last?.content.contains("Completed local read") == true)
+        XCTAssertFalse(model.automaticLocalChatReadsAvailable)
+    }
+
+    func testNormalChatCaptionRequiresConcreteLocalProviderAndFreshEligibleDraft() async throws {
+        let (model, _, _) = try await fixture()
+        model.draft = "Help me choose a useful setup"
+        XCTAssertFalse(model.automaticLocalChatReadsAvailable)
+        let local = LocalAIProvider(store: model.modelStore)
+        model.replaceProviders([ProviderOption(id: local.id, title: "Local", detail: "", provider: local)])
+        XCTAssertTrue(model.automaticLocalChatReadsAvailable)
+        model.automaticModelsEnabled = true
+        XCTAssertTrue(model.automaticLocalChatReadsAvailable)
+        model.automaticModelsEnabled = false
+        try model.acceptIncomingText("External text")
+        XCTAssertFalse(model.automaticLocalChatReadsAvailable)
+        model.draft = ""
+        model.draft = "A new typed request"
+        XCTAssertTrue(model.automaticLocalChatReadsAvailable)
+        model.draft = "without accessing my memories, answer this"
+        XCTAssertFalse(model.automaticLocalChatReadsAvailable)
+    }
+
+    func testInitialSaveFailureRetainsExternalOriginForRetry() async throws {
+        let (model, _, source) = try await fixture()
+        var connection: OpaquePointer?
+        XCTAssertEqual(sqlite3_open(root.appendingPathComponent("test.sqlite").path, &connection), SQLITE_OK)
+        defer { sqlite3_close(connection) }
+        XCTAssertEqual(sqlite3_exec(connection, "CREATE TRIGGER fail_conversation BEFORE INSERT ON conversations BEGIN SELECT RAISE(ABORT, 'injected failure'); END;", nil, nil, nil), SQLITE_OK)
+        try model.acceptIncomingText("list installed models")
+        model.send()
+        try await waitFor { !model.isGenerating }
+        XCTAssertEqual(model.draft, "list installed models")
+        XCTAssertNil(model.currentDirectLocalReadContract)
+        XCTAssertFalse(model.automaticLocalChatReadsAvailable)
+        XCTAssertEqual(sqlite3_exec(connection, "DROP TRIGGER fail_conversation", nil, nil, nil), SQLITE_OK)
+        model.send()
+        try await waitFor { await source.hasSubscriber }
+        await source.emit("External text stayed data.")
+        await source.finish()
+        try await waitFor { !model.isGenerating }
+        XCTAssertFalse(model.activeConversation?.messages.last?.content.contains("Completed local read") == true)
+    }
+
+    func testExplicitNoMemoryRequestDoesNotAttachSavedMemoryContext() async throws {
+        let (model, _, source) = try await fixture()
+        let saved = await model.saveMemory(content: "Secret espresso preference: synthetic-only")
+        XCTAssertTrue(saved)
+        model.draft = "Without accessing my memories, write a poem about espresso"
+        model.send()
+        try await waitFor { await source.hasSubscriber }
+        let request = await source.lastRequest
+        XCTAssertFalse(request?.systemPrompt.contains("synthetic-only") == true)
+        await source.emit("A synthetic poem")
+        await source.finish()
+        try await waitFor { !model.isGenerating }
+    }
+
     func testHistoricalLocalCommandDoesNotExecuteForUnrelatedCurrentMessage() async throws {
         let (model, store, source) = try await fixture()
         let history = Conversation(messages: [ChatMessage(role: .user, content: "list installed models")])

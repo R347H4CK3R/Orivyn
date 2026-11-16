@@ -167,6 +167,40 @@ final class AutomaticPreparationTests: XCTestCase {
         let calls = await source.count; XCTAssertEqual(calls, 1)
     }
 
+    func testAutomaticConcreteLocalProviderEntersAgentRouteWithoutSecondPreparation() async throws {
+        let store = try SQLiteConversationStore(url: root.appendingPathComponent("local-auto.sqlite"))
+        let attachments = try AttachmentService(directory: root.appendingPathComponent("LocalAttachments"))
+        let models = try LocalModelStore(root: root.appendingPathComponent("LocalModels"))
+        let prep = ControlledAutomaticPreparer()
+        let model = AppModel(store: store, attachmentService: attachments, modelStore: models,
+            defaults: defaults, automaticPreparer: prep)
+        model.automaticModelsEnabled = true
+        model.draft = "Help me choose what is available"
+        XCTAssertTrue(model.automaticLocalChatReadsAvailable)
+        model.send()
+        try await waitFor { prep.count == 1 }
+        prep.complete(0)
+        try await waitFor { !model.isPreparingAutomaticModel && !model.isGenerating }
+        XCTAssertEqual(prep.count, 1)
+        // This synthetic preparation deliberately has no installed model bytes.
+        // Concrete verification must fail, not fabricate reads or download again.
+        XCTAssertEqual(model.activeConversation?.messages.last?.state, .failed)
+        XCTAssertTrue(model.statusMessage?.contains("Thinking on device") == true)
+        XCTAssertFalse(model.activeConversation?.messages.last?.content.contains("succeeded") == true)
+    }
+
+    func testAutomaticNonlocalFactoryKeepsOrdinaryProviderWithoutLocalReceipts() async throws {
+        let (model, prep, source) = try fixture()
+        model.draft = "Help me choose what is available"
+        XCTAssertFalse(model.automaticLocalChatReadsAvailable)
+        model.send()
+        try await waitFor { prep.count == 1 }
+        prep.complete(0)
+        try await waitFor { !model.isPreparingAutomaticModel && !model.isGenerating }
+        let count = await source.count; XCTAssertEqual(count, 1)
+        XCTAssertEqual(model.activeConversation?.messages.last?.content, "Test response")
+    }
+
     private func fixture() throws -> (AppModel, ControlledAutomaticPreparer, AutoReplySource) {
         let store = try SQLiteConversationStore(url: root.appendingPathComponent("test.sqlite"))
         let attachments = try AttachmentService(directory: root.appendingPathComponent("Attachments"))

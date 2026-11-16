@@ -192,6 +192,7 @@ actor LlamaEngine: LocalResourceReleasing {
         else if let kind=request.localReadPlanKind { decisionGrammar = try LocalAgentGrammar.readPlanProposal(kind:kind) }
         else if let policy = request.localCompletionPolicy { decisionGrammar = try LocalAgentGrammar.completion(policy) }
         else if let policy = request.localReadWorkflowPolicy { decisionGrammar = try LocalAgentGrammar.reviewed(policy) }
+        else if request.normalChatReadOnly { decisionGrammar = try LocalAgentGrammar.normalChat(LocalAgentGrammar.load(requireTool: false)) }
         else if let requireTool = request.localAgentRequiresTool { decisionGrammar = try LocalAgentGrammar.load(requireTool:requireTool,conversationIDs:request.localAgentConversationIDs) }
         else { decisionGrammar = nil }
         if let grammar = decisionGrammar {

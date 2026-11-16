@@ -38,7 +38,15 @@ enum AutomaticModelRouter {
             throw AutomaticRoutingError.insufficientMemory
         }
         let candidates = LocalModelCatalog.entries.filter { entry in
-            entry.purpose == purpose && entry.meetsRAMGuidance(physicalMemory: environment.physicalMemory) &&
+            // This exact installed Q4 candidate passed native conversational probes.
+            // Do not generalize to experimental Reasoning entries or expand downloads.
+            let verifiedGeneralReasoning = !coding && entry.purpose == "Reasoning" &&
+                entry.id == "qwen3-1.7b-q4_k_m" &&
+                entry.descriptor.fileName == "Qwen3-1.7B-Q4_K_M.gguf" &&
+                entry.descriptor.byteCount == 1_282_439_264 &&
+                entry.descriptor.sha256 == "d2387ca2dbfee2ffabce7120d3770dadca0b293052bc2f0e138fdc940d9bc7b5"
+            return (entry.purpose == purpose || verifiedGeneralReasoning) &&
+                entry.meetsRAMGuidance(physicalMemory: environment.physicalMemory) &&
                 (!coding || entry.descriptor.byteCount >= minimumCodingBytes)
         }
         let matching = candidates.filter { entry in

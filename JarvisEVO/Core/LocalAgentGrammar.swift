@@ -87,3 +87,25 @@ extension LocalAgentGrammar {
         return lines.joined(separator:"\n")
     }
 }
+
+extension LocalAgentGrammar {
+    /// Normal chat can answer immediately and has only the advertised three
+    /// local reads. Generic-agent conversation/calculator/result paging rules
+    /// are deliberately unreachable from this root.
+    static func normalChat(_ source: String) throws -> String {
+        guard source.hasPrefix("root ::= tool | read-result | answer\n") else { throw LocalAgentError.invalidState }
+        var lines = source.components(separatedBy: "\n")
+        guard let index = lines.firstIndex(where: { $0.hasPrefix("tool-body ::= ") }),
+              let limit = lines.firstIndex(where: { $0.hasPrefix("limit ::= ") }) else { throw LocalAgentError.invalidState }
+        let alternatives = lines[index].dropFirst("tool-body ::= ".count).components(separatedBy: " | ")
+        let names = DirectChatRead.allCases.map(\.rawValue)
+        let retained = alternatives.filter { candidate in
+            names.contains { candidate.hasPrefix("\"\\\"" + $0 + "\\\"\"") }
+        }
+        guard retained.count == names.count else { throw LocalAgentError.invalidState }
+        lines[0] = "root ::= tool | answer"
+        lines[index] = "tool-body ::= " + retained.joined(separator: " | ")
+        lines[limit] = "limit ::= [1-3]"
+        return lines.joined(separator: "\n")
+    }
+}
