@@ -1,0 +1,131 @@
+name: Promote verified existing Orivyn build 15 draft
+on:
+  push:
+    branches: [codex/promote-build15-20261116]
+    paths: ['.github/workflows/promote-build15.yml']
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: orivyn-build15-promotion
+  cancel-in-progress: false
+jobs:
+  promote:
+    if: github.event.repository.private == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      # Replace only after independently verifying the successful draft run.
+      REQUIRED_DRAFT_RUN: '43781581717'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 595330ac155fa7dbaec7e61d5c673a69b07056bd
+          persist-credentials: false
+      - name: Require successful exact package and draft creation
+        run: |
+          set -euo pipefail
+          [[ "$REQUIRED_DRAFT_RUN" =~ ^[1-9][0-9]+$ ]] || { echo 'Verified draft run ID must be pinned before promotion'; exit 1; }
+          gh api repos/$GH_REPO/actions/runs/43774891616 > package-run.json
+          gh api repos/$GH_REPO/actions/runs/43774891616/jobs > package-jobs.json
+          gh api repos/$GH_REPO/actions/runs/$REQUIRED_DRAFT_RUN > draft-run.json
+          gh api repos/$GH_REPO/actions/runs/$REQUIRED_DRAFT_RUN/jobs > draft-jobs.json
+          python3 - <<'PY'
+          import json
+          for prefix,sha,path,job,required in [
+              ('package','595330ac155fa7dbaec7e61d5c673a69b07056bd','.github/workflows/completion-build15.yml','candidate',['Run exact production recovery filesystem tests on Darwin','Build and verify combined native runtime','Portable package and graph regressions','Exact-source checklist UI and real-model acceptance','Release device build and actual IPA resource validation']),
+              ('draft','00925ed9abc6710ee94304efbea845188d29d766','.github/workflows/publish-build15.yml','publish',['Require exact successful package and host checks','Retrieve and verify exact package','Independently require exact checklist acceptance artifacts','Stage labeled unfinished draft preview'])]:
+              run=json.load(open(prefix+'-run.json'))
+              assert run['head_sha']==sha and run['path']==path and run['status']=='completed' and run['conclusion']=='success'
+              jobs=json.load(open(prefix+'-jobs.json'))['jobs']
+              assert len(jobs)==1 and jobs[0]['name']==job and jobs[0]['conclusion']=='success'
+              for name in required:
+                  steps=[s for s in jobs[0]['steps'] if s['name']==name]
+                  assert len(steps)==1 and steps[0]['conclusion']=='success'
+          PY
+      - name: Inspect existing draft and preserve build 14 identity
+        run: |
+          set -euo pipefail
+          gh api repos/$GH_REPO/git/ref/tags/orivyn-v0.1.1-build15 > tag-before.json
+          gh api repos/$GH_REPO/releases/tags/orivyn-v0.1.1-build15 > draft-before.json
+          gh api repos/$GH_REPO/releases/tags/orivyn-v0.1.1-build14 > build14-before.json
+          python3 - <<'PY'
+          import json,pathlib
+          tag=json.load(open('tag-before.json'));r=json.load(open('draft-before.json'))
+          assert tag['object']['type']=='commit' and tag['object']['sha']=='595330ac155fa7dbaec7e61d5c673a69b07056bd'
+          assert r['tag_name']=='orivyn-v0.1.1-build15' and r['draft'] is True and r['prerelease'] is True
+          assets=r['assets']; assert len(assets)==3
+          assert {a['name'] for a in assets}=={'Orivyn-0.1.1-build15-unsigned.ipa','SHA256SUMS','verified-ipa.json'}
+          assert all(a['state']=='uploaded' and a['size']>0 for a in assets)
+          ipa=next(a for a in assets if a['name'].endswith('.ipa'))
+          assert ipa['size']==37233593 and ipa['digest']=='sha256:984b3e015a490e7843c969c486f8ab7861623c3eafacc61d7a01929905a43dd0'
+          assert ipa['browser_download_url']=='https://github.com/R347H4CK3R/Orivyn/releases/download/orivyn-v0.1.1-build15/Orivyn-0.1.1-build15-unsigned.ipa'
+          old=json.load(open('build14-before.json'));assert old['draft'] is False and old['tag_name']=='orivyn-v0.1.1-build14'
+          pathlib.Path('release-id.txt').write_text(str(r['id']))
+          PY
+          mkdir draft-assets
+          gh release download orivyn-v0.1.1-build15 --dir draft-assets
+          python3 scripts/verify_ipa.py draft-assets/Orivyn-0.1.1-build15-unsigned.ipa --output reinspected-ipa.json
+          python3 - <<'PY'
+          import json,pathlib,hashlib
+          v=json.load(open('reinspected-ipa.json'))
+          assert v==json.load(open('draft-assets/verified-ipa.json'))
+          assert v['version']=='0.1.1' and v['build']=='15' and v['bundle_identifier']=='app.jarvisevo.ios'
+          assert v['size']==37233593 and v['sha256']=='984b3e015a490e7843c969c486f8ab7861623c3eafacc61d7a01929905a43dd0'
+          assert pathlib.Path('draft-assets/SHA256SUMS').read_text().strip()==v['sha256']+'  Orivyn-0.1.1-build15-unsigned.ipa'
+          for asset in json.load(open('draft-before.json'))['assets']:
+              data=(pathlib.Path('draft-assets')/asset['name']).read_bytes()
+              assert len(data)==asset['size'] and 'sha256:'+hashlib.sha256(data).hexdigest()==asset['digest']
+          PY
+      - name: Promote only the unchanged existing draft
+        run: |
+          set -euo pipefail
+          gh api repos/$GH_REPO/releases/$(cat release-id.txt) > draft-now.json
+          gh api repos/$GH_REPO/git/ref/tags/orivyn-v0.1.1-build15 > tag-now.json
+          python3 - <<'PY'
+          import json
+          before=json.load(open('draft-before.json'));now=json.load(open('draft-now.json'))
+          for key in ('id','tag_name','draft','prerelease','body','name','assets','target_commitish','updated_at'):
+              assert now[key]==before[key], 'Draft changed during verification: '+key
+          assert json.load(open('tag-now.json'))['object']==json.load(open('tag-before.json'))['object']
+          PY
+          gh api --method PATCH repos/$GH_REPO/releases/$(cat release-id.txt) -F draft=false -F prerelease=true > published-release.json
+      - name: Verify public immutable download and record publication date
+        run: |
+          set -euo pipefail
+          gh api repos/$GH_REPO/releases/tags/orivyn-v0.1.1-build15 > public-release.json
+          gh api repos/$GH_REPO/releases/tags/orivyn-v0.1.1-build14 > build14-after.json
+          python3 - <<'PY'
+          import json,pathlib,datetime
+          before=json.load(open('draft-before.json'));r=json.load(open('public-release.json'))
+          assert r['id']==before['id'] and r['tag_name']==before['tag_name'] and r['draft'] is False and r['prerelease'] is True
+          def identities(release):
+              return sorted((a['id'],a['name'],a['size'],a['digest'],a['state'],a['browser_download_url']) for a in release['assets'])
+          assert identities(r)==identities(before)
+          a=json.load(open('build14-before.json'));b=json.load(open('build14-after.json'))
+          assert a['id']==b['id'] and a['tag_name']==b['tag_name'] and a['draft']==b['draft'] and identities(a)==identities(b)
+          datetime.datetime.strptime(r['published_at'],'%Y-%m-%dT%H:%M:%SZ')
+          pathlib.Path('catalog-publication.json').write_text(json.dumps({'releaseId':r['id'],'tag':r['tag_name'],'published_at':r['published_at'],'sourceCommit':'595330ac155fa7dbaec7e61d5c673a69b07056bd','size':37233593,'sha256':'984b3e015a490e7843c969c486f8ab7861623c3eafacc61d7a01929905a43dd0'},indent=2)+'\n')
+          PY
+          env -u GH_TOKEN -u GITHUB_TOKEN curl -q --fail --location --retry 3 --retry-delay 2 --max-time 180 'https://github.com/R347H4CK3R/Orivyn/releases/download/orivyn-v0.1.1-build15/Orivyn-0.1.1-build15-unsigned.ipa' --output anonymous.ipa
+          python3 - <<'PY'
+          import hashlib,pathlib
+          p=pathlib.Path('anonymous.ipa');assert p.stat().st_size==37233593
+          assert hashlib.sha256(p.read_bytes()).hexdigest()=='984b3e015a490e7843c969c486f8ab7861623c3eafacc61d7a01929905a43dd0'
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Orivyn-build15-promotion-evidence
+          path: |
+            *-run.json
+            *-jobs.json
+            *-before.json
+            *-after.json
+            *-now.json
+            *-release.json
+            reinspected-ipa.json
+            catalog-publication.json
+          retention-days: 14
