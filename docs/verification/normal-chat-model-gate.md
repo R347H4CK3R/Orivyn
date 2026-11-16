@@ -14,4 +14,12 @@ Add `-only-testing:JarvisEVOTests/ProductionNormalChatLocalAgentTests` and incre
 
 Only synthetic memories/prompts/results are attached. No user data, model secrets or raw reasoning is uploaded. The Automatic test restores prior fixture-manifest bytes after joined cleanup; timed-out work that fails to join retains its fixture state rather than deleting live evidence.
 
-Current status: test source syntax checked only. Native type checking, pinned-model decisions and physical iPhone behavior are unverified until execution. Passing these two cases would not prove general autonomous workflows, plugins, writes or arbitrary tools.
+Observed on run 43835300082, source 68ca689: both tests passed on the
+arm64 iPhone 16 Plus / iOS 26.1 simulator. Retained attachments show actual memory
+searches and unpredictable markers in final answers, installed Q4 selection
+without download, persisted successful receipts, and a fresh Python coding turn
+with zero reads. The full gate still failed (191/194); plugin approval prose and
+two task-state UI assertions failed separately. This is not a full-release pass.
+The later arithmetic source and subsequent repairs require their own gate.
+Physical iPhone behavior, general autonomous workflows, external plugins and
+writes remain unverified by these two synthetic cases.

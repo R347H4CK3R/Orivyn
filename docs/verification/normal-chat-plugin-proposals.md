@@ -36,7 +36,12 @@ request cancellation, not hard termination of an uncooperative model. Cancellati
 
 Portable tests exercise real schema validation and adapter transitions using
 controlled model streams; these are not proof of actual model selection quality.
-The native AppModel regression is syntax-checked only until an Apple gate runs.
-Physical iPhone, external provider, review UI and real model behavior are unverified
-for this new increment. No automatic external calls, general plugin autonomy,
+Run 43835300082 (source 68ca689) passed the selected native AppModel regression
+and both synthetic review-presentation UI tests, using a controlled proposal
+provider and mock transport. They verified opening and closing the review sheet,
+draft preservation, consuming the pending card and cross-chat invalidation with
+zero tool calls. They did not execute a reviewed external action or prove actual
+model proposal selection. The overall gate failed separately (191/194).
+Physical iPhone, real external provider, actual model proposal behavior and
+already-open-sheet revision-change UI coverage remain unverified here. No automatic external calls, general plugin autonomy,
 or release readiness is claimed.

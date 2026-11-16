@@ -38,7 +38,10 @@ struct RootViewRegressionFixtureHost: View {
                             .accessibilityIdentifier("fixture.plugin.check")
                         Button("Other chat B") { fixture.model.selectConversation(fixture.historyB) }
                             .accessibilityIdentifier("fixture.history.b")
+                        Text(fixture.pluginRevisionStatus).accessibilityIdentifier("fixture.plugin.revision")
                         RootView(model: fixture.model)
+                            .environment(\.pluginPresentationFixtureActions,
+                                         PluginPresentationFixtureActions(change: { fixture.changePluginRevision($0) }))
                     } else if mode == "chat-local-tasks" {
                         Text("SYNTHETIC TASK RECORDS · NO LOCAL MODEL · NO TOOL EXECUTION")
                             .font(.caption2).accessibilityIdentifier("fixture.chatTasks.notice")
@@ -92,6 +95,38 @@ private final class RootViewRegressionFixture {
     var streamState = "idle"
     var pluginCalls = 0
     var pluginChecks = 0
+    var pluginRevisionStatus = "No revision change"
+    func changePluginRevision(_ kind: String) {
+        guard RootViewRegressionFixtureHost.requestedMode == "plugin-suggestion",
+              let broker = model.plugins, broker.review != nil, broker.journal.records.isEmpty else {
+            pluginRevisionStatus = "Fixture rejected: no exact review or journal already used"; return
+        }
+        let conversation = model.pluginResultConversationContext
+        let provider = model.pluginProposalProviderContext
+        let catalog = broker.proposalCatalogID
+        pluginRevisionStatus = "Exact review observed; changing " + kind
+        work = Task { @MainActor in
+            do {
+                switch kind {
+                case "conversation":
+                    model.selectConversation(historyB); model.selectConversation(historyA)
+                    guard model.pluginResultConversationContext != conversation else { throw CancellationError() }
+                case "provider":
+                    model.replaceProviders([ProviderOption(id: "replacement-ui-fixture", title: "Replacement synthetic provider",
+                        detail: "No inference", provider: PluginPresentationFixtureModel())])
+                    guard model.pluginProposalProviderContext != provider else { throw CancellationError() }
+                case "catalog":
+                    broker.disconnect()
+                    try await broker.connect(endpointText: "https://example.invalid/mcp", token: "")
+                    try broker.installConnection(rememberToken: false)
+                    guard broker.proposalCatalogID != catalog else { throw CancellationError() }
+                default: throw CancellationError()
+                }
+                guard broker.journal.records.isEmpty else { throw CancellationError() }
+                pluginRevisionStatus = "Exact review observed; " + kind + " changed; journal empty"
+            } catch { pluginRevisionStatus = "Fixture revision failed: " + kind }
+        }
+    }
     private var pluginClient: PluginPresentationFixtureClient?
     func refreshPluginCalls() async {
         pluginCalls = await pluginClient?.calls ?? -1

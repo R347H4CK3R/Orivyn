@@ -1,5 +1,6 @@
 #if DEBUG
 import Foundation
+import SwiftUI
 
 /// No network or inference: typed synthetic output still passes the production parser.
 struct PluginPresentationFixtureModel: AIProvider {
@@ -26,5 +27,17 @@ actor PluginPresentationFixtureClient: PluginMCPClient {
     }
     func cancelCurrentOperation() async {}
     func close() async {}
+}
+struct PluginPresentationFixtureActions: Sendable {
+    let change: @MainActor @Sendable (String) -> Void
+}
+private struct PluginPresentationFixtureActionsKey: EnvironmentKey {
+    static let defaultValue: PluginPresentationFixtureActions? = nil
+}
+extension EnvironmentValues {
+    var pluginPresentationFixtureActions: PluginPresentationFixtureActions? {
+        get { self[PluginPresentationFixtureActionsKey.self] }
+        set { self[PluginPresentationFixtureActionsKey.self] = newValue }
+    }
 }
 #endif

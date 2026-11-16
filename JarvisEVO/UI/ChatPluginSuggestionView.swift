@@ -3,6 +3,9 @@ import SwiftUI
 /// App-owned metadata only. Model prose never creates an executable UI action.
 struct ChatPluginSuggestionView: View {
     @Bindable var model: AppModel
+#if DEBUG
+    @Environment(\.pluginPresentationFixtureActions) private var fixtureActions
+#endif
     @State private var presentation: Presentation?
     @State private var failure: String?
     private struct Presentation: Identifiable {
@@ -43,6 +46,18 @@ struct ChatPluginSuggestionView: View {
                             Button("Done") { presentation = nil }
                                 .accessibilityIdentifier("chat.pluginSuggestion.close")
                         } }
+#if DEBUG
+                        .toolbar {
+                            if let fixtureActions, RootViewRegressionFixtureHost.requestedMode == "plugin-suggestion" {
+                                ToolbarItemGroup(placement: .bottomBar) {
+                                    ForEach(["conversation", "provider", "catalog"], id: \.self) { kind in
+                                        Button(kind) { fixtureActions.change(kind) }
+                                            .accessibilityIdentifier("fixture.plugin.change." + kind)
+                                    }
+                                }
+                            }
+                        }
+#endif
                 } else {
                     Text("This suggestion is no longer current. Close it and ask again. No new call was sent.")
                 }

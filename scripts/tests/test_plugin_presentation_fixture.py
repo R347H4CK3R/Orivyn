@@ -21,4 +21,18 @@ class PluginPresentationFixtureTests(unittest.TestCase):
         self.assertNotIn('buttons["plugin.run"].tap()', native)
         self.assertIn('Checks: 2', native)
 
+    def test_revision_controls_are_debug_only_and_use_real_transitions(self):
+        view = (ROOT / 'JarvisEVO/UI/ChatPluginSuggestionView.swift').read_text()
+        block = view[view.index('#if DEBUG\n                        .toolbar'):].split('#endif', 1)[0]
+        self.assertIn('requestedMode == "plugin-suggestion"', block)
+        self.assertIn('fixtureActions.change(kind)', block)
+        fixture = (ROOT / 'JarvisEVO/UI/RootViewRegressionFixtures.swift').read_text()
+        self.assertIn('broker.review != nil', fixture)
+        self.assertIn('broker.journal.records.isEmpty', fixture)
+        self.assertIn('model.selectConversation(historyB); model.selectConversation(historyA)', fixture)
+        self.assertIn('model.replaceProviders([ProviderOption(id: "replacement-ui-fixture"', fixture)
+        self.assertIn('broker.disconnect()', fixture)
+        self.assertIn('broker.proposalCatalogID != catalog', fixture)
+        self.assertNotIn('Task.sleep', fixture[fixture.index('func changePluginRevision'):fixture.index('private var pluginClient')])
+
 if __name__ == '__main__': unittest.main()
