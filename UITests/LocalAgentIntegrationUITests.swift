@@ -3,6 +3,59 @@ import XCTest
 /// Requires native simulator execution. This is not model-inference proof.
 @MainActor
 final class LocalAgentIntegrationUITests: XCTestCase {
+    func testSendRoutesExactLocalRequestToChecklistWithoutExecuting() {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        // Existing controlled UI provider, not real model-inference proof.
+        app.launchArguments = ["--uitesting", "--root-view-fixture", "history-scroll"]
+        app.launch()
+        let input = app.textViews["composer.input"]
+        XCTAssertTrue(input.waitForExistence(timeout: 10))
+        let goal = "List installed models"
+        input.tap(); input.typeText(goal)
+        XCTAssertTrue(app.staticTexts["composer.localTask.routeNotice"].exists)
+        let send = app.buttons["composer.send"]
+        XCTAssertTrue(send.isEnabled)
+        send.tap()
+        let taskGoal = app.textViews["agent.goal"]
+        XCTAssertTrue(taskGoal.waitForExistence(timeout: 5))
+        XCTAssertEqual(taskGoal.value as? String, goal)
+        XCTAssertFalse(app.buttons["agent.run"].exists)
+        XCTAssertFalse(app.staticTexts["agent.answer"].exists)
+        let toggle = app.switches["completion.models"]
+        reveal(toggle, in: app.collectionViews.firstMatch)
+        XCTAssertEqual(toggle.value as? String, "1")
+        app.buttons["chat.localTask.done"].tap()
+        XCTAssertEqual(input.value as? String, goal)
+    }
+
+    func testChatDraftOpensLocalReviewWithoutCreatingOrRunningTask() {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["--uitesting", "--reset-test-storage"]
+        app.launch()
+        let input = app.textViews["composer.input"]
+        XCTAssertTrue(input.waitForExistence(timeout: 10))
+        let goal = "Search saved memory for boats"
+        input.tap(); input.typeText(goal)
+        let review = app.buttons["composer.localTask.review"]
+        XCTAssertTrue(review.waitForExistence(timeout: 5))
+        review.tap()
+        let taskGoal = app.textViews["agent.goal"]
+        XCTAssertTrue(taskGoal.waitForExistence(timeout: 5))
+        XCTAssertEqual(taskGoal.value as? String, goal)
+        XCTAssertFalse(app.buttons["agent.run"].exists)
+        XCTAssertFalse(app.staticTexts["agent.answer"].exists)
+        app.buttons["chat.localTask.done"].tap()
+        XCTAssertTrue(input.waitForExistence(timeout: 5))
+        XCTAssertEqual(input.value as? String, goal)
+        // Normal chat remains a separate explicit action.
+        XCTAssertTrue(app.buttons["composer.send"].exists)
+        review.tap()
+        XCTAssertEqual(taskGoal.value as? String, goal)
+        XCTAssertFalse(app.buttons["agent.run"].exists)
+    }
+
     func testSavedTaskSurvivesRelaunchWithoutAutomaticExecution() {
         continueAfterFailure = false
         let app = XCUIApplication()

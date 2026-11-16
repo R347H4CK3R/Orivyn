@@ -7,7 +7,7 @@ test "${RUNNER_ENVIRONMENT:-}" = github-hosted
 : "${RUNNER_TEMP:?}"
 A="$PWD/artifacts/folder-memory"; mkdir -p "$A"
 git rev-parse HEAD > "$A/source-commit.txt"
-echo 'iOS simulator native components plus actual Files picker cancel/reopen. Does not verify selecting the user archive or physical device/provider behavior.' > "$A/SCOPE.txt"
+echo 'iOS simulator native components plus actual synthetic Files folder selection, import, persistence and explicit chat-task routing. Does not verify selecting the user archive or physical device/provider behavior.' > "$A/SCOPE.txt"
 python3 scripts/materialize_guest.py Fixtures/maintained.img.gz JarvisEVO/Resources/VMAssets/maintained.img
 command -v xcodegen >/dev/null || brew install xcodegen
 bash scripts/bootstrap_llama.sh
@@ -26,6 +26,8 @@ xcodebuild test -project JarvisEVO.xcodeproj -scheme JarvisEVO -derivedDataPath 
  -only-testing:JarvisEVOTests/MemorySearchTests \
  -only-testing:JarvisEVOTests/FolderMemoryNativeIntegrationTests \
  -only-testing:JarvisEVOUITests/FolderMemoryImportUITests \
+ -only-testing:JarvisEVOUITests/LocalAgentIntegrationUITests/testChatDraftOpensLocalReviewWithoutCreatingOrRunningTask \
+ -only-testing:JarvisEVOUITests/LocalAgentIntegrationUITests/testSendRoutesExactLocalRequestToChecklistWithoutExecuting \
  -resultBundlePath "$A/Tests.xcresult" CODE_SIGNING_ALLOWED=NO > "$A/xcodebuild.log" 2>&1
 status=$?
 set -e
@@ -37,8 +39,8 @@ test "$status" = 0
 python3 - "$A/summary.json" <<'PY'
 import json,sys
 s=json.load(open(sys.argv[1]))
-expected={'totalTestCount':22,'passedTests':22,'failedTests':0,'skippedTests':0}
+expected={'totalTestCount':29,'passedTests':29,'failedTests':0,'skippedTests':0}
 for k,v in expected.items():
  assert type(s.get(k)) is int and s[k]==v,(k,s.get(k),v)
-print('22 required native/simulator tests passed without skips; no physical-device acceptance claim.')
+print('29 required native/simulator tests passed without skips; no physical-device acceptance claim.')
 PY

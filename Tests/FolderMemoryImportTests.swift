@@ -11,7 +11,11 @@ final class FolderMemoryImportTests: XCTestCase {
         XCTAssertEqual(FolderMemoryImport.additions(notes, existing: notes).count, 0)
     }
     func testChatGPTExtractsTextWithRoleAndTitleNotHiddenTools() throws {
-        let data = Data(#"[{"title":"Trip","mapping":{"a":{"message":{"author":{"role":"user"},"create_time":1,"content":{"content_type":"text","parts":["I like trains"]}}},"b":{"message":{"author":{"role":"assistant"},"create_time":2,"content":{"content_type":"text","parts":["Noted"]}}},"c":{"message":{"author":{"role":"tool"},"content":{"parts":["secret tool output"]}}}}}]"#.utf8)
+        let data = try exportData([
+            "a": exportedNode("a", text: "I like trains"),
+            "b": exportedNode("b", parent: "a", text: "Noted", role: "assistant"),
+            "c": exportedNode("c", parent: "b", text: "secret tool output", role: "tool")
+        ], current: "c")
         let notes = try FolderMemoryImport.chatGPT(data)
         XCTAssertEqual(notes.count, 2)
         XCTAssertTrue(notes[0].content.contains("user: I like trains"))
@@ -74,7 +78,7 @@ final class FolderMemoryImportTests: XCTestCase {
         let writer = try FileHandle(forWritingTo: file)
         try writer.write(contentsOf: Data("[".utf8))
         for n in 0..<90 {
-            let item: [String: Any] = ["title": "Chat \(n)", "ignored": String(repeating: "x", count: 200_000), "mapping": ["m": ["message": ["author": ["role":"user"], "content": ["content_type":"text", "parts":["Train \(n)"]]]]]]
+            let item: [String: Any] = ["title": "Chat \(n)", "ignored": String(repeating: "x", count: 200_000), "current_node": "m", "mapping": ["m": ["parent": NSNull(), "message": ["author": ["role":"user"], "content": ["content_type":"text", "parts":["Train \(n)"]]]]]]
             if n > 0 { try writer.write(contentsOf: Data(",".utf8)) }
             try writer.write(contentsOf: JSONSerialization.data(withJSONObject: item))
         }
@@ -116,4 +120,63 @@ final class FolderMemoryImportTests: XCTestCase {
         XCTAssertThrowsError(try FolderMemoryImport.scan(root, limits: .init(entries: 10, notes: 10, textBytes: 60)))
     }
 
+
+    private func exportedNode(_ id: String, parent: Any = NSNull(), text: String, role: String = "user", type: String = "text", extraMessage: [String: Any] = [:]) -> [String: Any] {
+        var message: [String: Any] = ["author": ["role": role], "content": ["content_type": type, "parts": [text]]]
+        for (key, value) in extraMessage { message[key] = value }
+        return ["id": id, "parent": parent, "message": message]
+    }
+    private func exportData(_ mapping: [String: Any], current: String? = nil, extra: [String: Any] = [:]) throws -> Data {
+        var conversation: [String: Any] = ["title": "Synthetic tree", "mapping": mapping]
+        if let current { conversation["current_node"] = current }
+        for (key, value) in extra { conversation[key] = value }
+        return try JSONSerialization.data(withJSONObject: [conversation])
+    }
+    func testSelectedBranchUsesParentAncestryNotTimestampsOrAbandonedSiblings() throws {
+        let mapping: [String: Any] = [
+            "root": ["id": "root", "parent": NSNull(), "message": NSNull()],
+            "question": exportedNode("question", parent: "root", text: "Original question", extraMessage: ["create_time": 999]),
+            "abandoned": exportedNode("abandoned", parent: "question", text: "Abandoned response", role: "assistant"),
+            "chosen": exportedNode("chosen", parent: "question", text: "Selected response", role: "assistant", extraMessage: ["create_time": 1])]
+        let notes = try FolderMemoryImport.chatGPT(exportData(mapping, current: "chosen"))
+        XCTAssertEqual(notes.count, 2)
+        XCTAssertTrue(notes[0].content.contains("user: Original question"))
+        XCTAssertTrue(notes[1].content.contains("assistant: Selected response"))
+        XCTAssertFalse(notes.contains { $0.content.contains("Abandoned") })
+        XCTAssertTrue(notes.allSatisfy { $0.content.contains("Synthetic tree") })
+    }
+    func testRejectsMissingCurrentNodeMissingParentsAndCycles() throws {
+        let root = exportedNode("a", text: "Never partially imported")
+        let cases = [try exportData(["a": root]),
+                     try exportData(["a": root], current: "missing"),
+                     try exportData(["a": exportedNode("a", parent: "missing", text: "x")], current: "a"),
+                     try exportData(["a": exportedNode("a", parent: "b", text: "x"), "b": exportedNode("b", parent: "a", text: "y")], current: "a")]
+        for data in cases { XCTAssertThrowsError(try FolderMemoryImport.chatGPT(data)) }
+    }
+    func testDoNotRememberConversationIsSkipped() throws {
+        let data = try exportData(["a": exportedNode("a", text: "Do not import")], current: "a", extra: ["is_do_not_remember": true])
+        XCTAssertTrue(try FolderMemoryImport.chatGPT(data).isEmpty)
+    }
+    func testHiddenReasoningAndToolDirectedMessagesAreNotMemories() throws {
+        let entries: [(String, [String: Any])] = [
+            ("a", ["metadata": ["is_visually_hidden_from_conversation": true]]),
+            ("b", ["channel": "analysis"]),
+            ("c", ["channel": "commentary", "recipient": "browser"]),
+            ("d", ["is_do_not_remember": true]),
+            ("e", ["metadata": ["is_do_not_remember": true]]),
+            ("f", ["channel": "final", "recipient": "all"])]
+        var mapping: [String: Any] = [:]; var parent: Any = NSNull()
+        for (id, extra) in entries { mapping[id] = exportedNode(id, parent: parent, text: "message \(id)", role: "assistant", extraMessage: extra); parent = id }
+        let notes = try FolderMemoryImport.chatGPT(exportData(mapping, current: "f"))
+        XCTAssertEqual(notes.count, 1)
+        XCTAssertTrue(notes[0].content.contains("assistant: message f"))
+    }
+    func testMultimodalMessageIncludesOnlyStringTextParts() throws {
+        var node = exportedNode("a", text: "unused")
+        node["message"] = ["author": ["role": "user"], "content": ["content_type": "multimodal_text", "parts": ["Describe this", ["content_type": "image_asset_pointer", "asset_pointer": "private-image"], "Use short sentences"]]]
+        let notes = try FolderMemoryImport.chatGPT(exportData(["a": node], current: "a"))
+        XCTAssertEqual(notes.count, 1)
+        XCTAssertEqual(notes.first?.content.contains("user: Describe this\nUse short sentences"), true)
+        XCTAssertEqual(notes.first?.content.contains("private-image"), false)
+    }
 }

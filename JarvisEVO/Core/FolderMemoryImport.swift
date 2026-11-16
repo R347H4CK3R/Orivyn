@@ -19,12 +19,14 @@ enum FolderMemoryImport {
         }
     }
     enum Failure: LocalizedError {
-        case unreadable, limit, format
+        case unreadable, limit, format, missingCurrentNode, invalidTree
         var errorDescription: String? {
             switch self {
             case .unreadable: "The selected folder or file could not be read safely. Download it in Files and try again."
             case .limit: "This import exceeds 20,000 entries, 16 MB per text file/conversation, 1 GB of streamed JSON, 40 MB of extracted text, or 10,000 notes. No notes were imported. Choose a smaller subfolder or split the export."
             case .format: "This is not a supported ChatGPT conversations.json export or UTF-8 text file."
+            case .missingCurrentNode: "This conversation export does not identify its selected branch (current_node). It was not imported; a current ChatGPT export is required."
+            case .invalidTree: "This conversation export contains a cyclic branch, missing referenced node, or invalid parent. It was not imported."
             }
         }
     }
@@ -68,19 +70,43 @@ enum FolderMemoryImport {
         var result: [MemoryNote] = []; var bytes = 0
         for conversation in conversations {
             try Task.checkCancellation()
+            let conversationMetadata = conversation["metadata"] as? [String: Any]
+            if conversation["is_do_not_remember"] as? Bool == true || conversationMetadata?["is_do_not_remember"] as? Bool == true { continue }
             guard let mapping = conversation["mapping"] as? [String: [String: Any]] else { throw Failure.format }
             let title = String((conversation["title"] as? String ?? "Untitled conversation").prefix(100))
-            let messages = mapping.sorted { a, b in
-                let am = a.value["message"] as? [String: Any], bm = b.value["message"] as? [String: Any]
-                let at = am?["create_time"] as? Double ?? 0, bt = bm?["create_time"] as? Double ?? 0
-                return at == bt ? a.key < b.key : at < bt
+            // A ChatGPT export is a tree, not a chronological message list. Only
+            // the current node's ancestry is visible history; sibling alternatives
+            // must never be silently combined into supposedly consistent memory.
+            // Legacy exports without a selected leaf are rejected, not guessed.
+            guard let current = conversation["current_node"] as? String, !current.isEmpty else { throw Failure.missingCurrentNode }
+            var branch: [[String: Any]] = [], visited = Set<String>(), cursor: String? = current
+            while let id = cursor {
+                try Task.checkCancellation()
+                guard visited.insert(id).inserted, let node = mapping[id] else { throw Failure.invalidTree }
+                branch.append(node)
+                if node["parent"] is NSNull { cursor = nil }
+                else if let parent = node["parent"] as? String, !parent.isEmpty { cursor = parent }
+                else { throw Failure.invalidTree }
             }
-            for (_, node) in messages {
-                guard let message = node["message"] as? [String: Any],
+            for node in branch.reversed() {
+                try Task.checkCancellation()
+                guard let message = node["message"] as? [String: Any] else { continue }
+                let metadata = message["metadata"] as? [String: Any]
+                guard message["is_do_not_remember"] as? Bool != true,
+                      metadata?["is_do_not_remember"] as? Bool != true,
+                      metadata?["is_visually_hidden_from_conversation"] as? Bool != true,
+                      metadata?["is_user_system_message"] as? Bool != true,
                       let author = message["author"] as? [String: Any], let role = author["role"] as? String,
-                      ["user", "assistant"].contains(role),
-                      let content = message["content"] as? [String: Any],
-                      content["content_type"] as? String == "text",
+                      ["user", "assistant"].contains(role) else { continue }
+                if role == "assistant" {
+                    let channel = message["channel"] as? String
+                    let recipient = message["recipient"] as? String
+                    guard channel == nil || channel == "final",
+                          recipient == nil || recipient == "all" else { continue }
+                }
+                guard let content = message["content"] as? [String: Any],
+                      let contentType = content["content_type"] as? String,
+                      ["text", "multimodal_text"].contains(contentType),
                       let parts = content["parts"] as? [Any] else { continue }
                 let text = parts.compactMap { $0 as? String }.joined(separator: "\n")
                 guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { continue }

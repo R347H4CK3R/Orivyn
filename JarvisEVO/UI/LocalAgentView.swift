@@ -13,6 +13,17 @@ struct LocalAgentView: View {
     @State private var setupError: String?
     @State private var confirmArchive = false
     @Environment(\.scenePhase) private var phase
+    init(model: AppModel, initialGoal: String = "", initialChecklist: LocalCompletionContract? = nil) {
+        self.model = model
+        _goal = State(initialValue: initialGoal)
+        _includeAppInfo = State(initialValue: initialChecklist?.steps.contains { $0.name == "get_app_info" } == true)
+        _includeModels = State(initialValue: initialChecklist?.steps.contains { $0.name == "list_models" } == true)
+        let memory = initialChecklist?.steps.first { $0.name == "search_memory" }
+        _includeMemory = State(initialValue: memory != nil)
+        _memoryQuery = State(initialValue: memory?.arguments.objectValue?["query"]?.stringValue ?? "")
+        _memoryLimit = State(initialValue: Int(memory?.arguments.objectValue?["limit"]?.integerValue ?? 3))
+    }
+
     var body: some View {
         Form {
             Section("Recommended: reviewed conversation task") {
@@ -45,7 +56,7 @@ struct LocalAgentView: View {
                 }
             }
             Section("Reviewed local checklist") {
-                Text("For app information, installed models, or an exact saved-memory search. Select the operations yourself; this does not infer everything your request needs. Your request above and the complete checklist must be reviewed before Run.").font(.caption)
+                Text("For app information, installed models, or an exact saved-memory search. Review the proposed selections, or select operations yourself; this does not infer everything your request needs. Your request above and the complete checklist must be reviewed before Run.").font(.caption)
                 Toggle("Read bundled app information", isOn:$includeAppInfo).accessibilityIdentifier("completion.info")
                 Toggle("List installed models", isOn:$includeModels).accessibilityIdentifier("completion.models")
                 Toggle("Search saved memory", isOn:$includeMemory).accessibilityIdentifier("completion.memory")

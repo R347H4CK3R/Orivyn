@@ -9,6 +9,7 @@ struct RootView: View {
     @State private var incoming = IncomingTextInbox.shared
     @State private var reviewingTool: NativeToolSuggestion?
     @State private var reviewingIncoming: IncomingTextRequest?
+    @State private var reviewingLocalTask: ChatLocalTaskRequest?
     @State private var showHistory = false
     @State private var workspaceSection: WorkspaceSection = .chat
     @State private var showModels = false
@@ -108,6 +109,17 @@ struct RootView: View {
                     .toolbar { ToolbarItem(placement: .cancellationAction) {
                         Button("Done") { reviewingTool = nil }.accessibilityIdentifier("tool.review.done")
                     } }
+            }
+        }
+        .sheet(item: $reviewingLocalTask) { request in
+            NavigationStack {
+                LocalAgentView(model: model, initialGoal: request.goal, initialChecklist: request.proposedChecklist)
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Done") { reviewingLocalTask = nil }
+                                .accessibilityIdentifier("chat.localTask.done")
+                        }
+                    }
             }
         }
         .sheet(isPresented: $showModels) { ModelManagerView(model: model) }
@@ -426,6 +438,26 @@ struct RootView: View {
                         .font(.subheadline)
                 }.buttonStyle(.bordered).accessibilityIdentifier("tool.suggestion.\(suggestion.id)")
             }
+            if !model.isGenerating && !model.isPreparingAutomaticModel && !audioBusy && !attachmentsBusy,
+               let request = ChatLocalTaskRequest(draft: model.draft, hasAttachments: !model.pendingAttachments.isEmpty) {
+                Button {
+                    prepareNavigation()
+                    reviewingLocalTask = request
+                } label: {
+                    Label(request.suggestsLocalReview ? "Suggested local task · review" : "Review as local task", systemImage: "checklist")
+                        .font(.subheadline)
+                }.buttonStyle(.bordered).accessibilityIdentifier("composer.localTask.review")
+                Text(model.selectedLocalAgentProvider == nil
+                         ? "Requires a selected installed local model. No task runs when opened; your draft stays here."
+                         : "Read-only on this iPhone. Review scope, then Run. Your chat draft stays here.")
+                    .font(.caption2).foregroundStyle(.secondary)
+                    .accessibilityIdentifier("composer.localTask.notice")
+            }
+            if chatChecklistRequest != nil {
+                Text("Send opens a proposed local checklist for this request. Review it before approving and running; nothing executes automatically.")
+                    .font(.caption2).foregroundStyle(.secondary)
+                    .accessibilityIdentifier("composer.localTask.routeNotice")
+            }
             if let status = model.statusMessage {
                 HStack {
                     Text(status).font(.caption).foregroundStyle(.secondary)
@@ -510,7 +542,13 @@ struct RootView: View {
                             .frame(width: 32, height: 32).background(Color.primary, in: Circle()).frame(width: 44, height: 44)
                     }.accessibilityLabel("Start voice conversation").accessibilityIdentifier("composer.voice").disabled(audioBusy || attachmentsBusy)
                 } else {
-                    Button { stopAudio(); followsTranscript = true; model.send(); composerFocused = false } label: {
+                    Button {
+                        if let request = chatChecklistRequest {
+                            prepareNavigation(); reviewingLocalTask = request
+                        } else {
+                            stopAudio(); followsTranscript = true; model.send(); composerFocused = false
+                        }
+                    } label: {
                         Image(systemName: "arrow.up").font(.system(size: 17, weight: .semibold)).foregroundStyle(Color(uiColor: .systemBackground))
                             .frame(width: 32, height: 32).background(model.canSend ? Color.primary : Color.secondary.opacity(0.25), in: Circle()).frame(width: 44, height: 44)
                     }.disabled(!model.canSend || audioBusy || attachmentsBusy).accessibilityLabel("Send message").accessibilityIdentifier("composer.send")
@@ -529,6 +567,12 @@ struct RootView: View {
         }
         .padding(.top, 12).padding(.bottom, 10)
         .background { LinearGradient(colors: [Color(uiColor: .systemBackground).opacity(0), Color(uiColor: .systemBackground)], startPoint: .top, endPoint: .bottom) }
+    }
+
+    private var chatChecklistRequest: ChatLocalTaskRequest? {
+        guard let request = ChatLocalTaskRequest(draft: model.draft, hasAttachments: !model.pendingAttachments.isEmpty),
+              request.proposedChecklist != nil else { return nil }
+        return request
     }
 
     private var composerHeight: CGFloat {

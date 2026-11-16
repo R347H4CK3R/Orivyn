@@ -1,4 +1,4 @@
-name: Verify selected folder memory import
+name: Verify folder memory and explicit chat task routing
 on:
   push:
     branches: [ci/folder-memory-20261116]
