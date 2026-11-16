@@ -10,6 +10,7 @@ struct RootView: View {
     @State private var reviewingTool: NativeToolSuggestion?
     @State private var reviewingIncoming: IncomingTextRequest?
     @State private var reviewingLocalTask: ChatLocalTaskRequest?
+    @State private var reviewingPluginTask: PluginChatRequest?
     @State private var showHistory = false
     @State private var workspaceSection: WorkspaceSection = .chat
     @State private var showModels = false
@@ -120,6 +121,16 @@ struct RootView: View {
                                 .accessibilityIdentifier("chat.localTask.done")
                         }
                     }
+            }
+        }
+        .sheet(item: $reviewingPluginTask) { request in
+            NavigationStack {
+                if let broker = model.plugins {
+                    PluginTaskProposalView(broker: broker, model: model, chatRequest: request)
+                        .toolbar { ToolbarItem(placement: .cancellationAction) {
+                            Button("Done") { reviewingPluginTask = nil }.accessibilityIdentifier("chat.plugin.done")
+                        } }
+                } else { Text("Plugin connection is unavailable. Your draft is unchanged.") }
             }
         }
         .sheet(isPresented: $showModels) { ModelManagerView(model: model) }
@@ -437,6 +448,20 @@ struct RootView: View {
                     Label("Review in \(suggestion.title)", systemImage: "arrow.up.forward.app")
                         .font(.subheadline)
                 }.buttonStyle(.bordered).accessibilityIdentifier("tool.suggestion.\(suggestion.id)")
+            }
+            if !model.isGenerating && !model.isPreparingAutomaticModel && !audioBusy && !attachmentsBusy,
+               model.canBeginHeavyWork, model.selectedProvider?.provider != nil,
+               let broker = model.plugins, broker.canReviewTools, !broker.tools.isEmpty, let connection = broker.activeConnection,
+               let request = PluginChatRequest(goal: model.draft, conversation: model.pluginResultConversationContext,
+                   provider: model.pluginProposalProviderContext, connection: connection.id, catalog: broker.proposalCatalogID) {
+                Button {
+                    prepareNavigation()
+                    reviewingPluginTask = request
+                } label: {
+                    Label("Find a connected tool", systemImage: "wrench.and.screwdriver")
+                }.buttonStyle(.bordered).accessibilityIdentifier("composer.plugin.discover")
+                Text("Find uses this draft and the connected tool schemas with your selected model. An online model receives that text. Attachments and history are not included. Nothing runs until you review the exact call. No new plugin is installed.")
+                    .font(.caption2).foregroundStyle(.secondary).accessibilityIdentifier("composer.plugin.disclosure")
             }
             if !model.isGenerating && !model.isPreparingAutomaticModel && !audioBusy && !attachmentsBusy,
                let request = ChatLocalTaskRequest(draft: model.draft, hasAttachments: !model.pendingAttachments.isEmpty) {

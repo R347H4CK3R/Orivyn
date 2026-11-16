@@ -22,6 +22,16 @@ final class AppModel {
             if let ticket = activeVoiceTurn, selectedConversationID != ticket.conversationID { cancelVoiceTurn(ticket) }
         }
     }
+    /// Changes on conversation selection, including switching away and back.
+    var pluginResultConversationContext: UUID { conversationRevision }
+    var pluginProposalProviderContext: UUID { providerRevision }
+    func addPluginResultToDraft(executionID: UUID) throws {
+        guard !isGenerating, let plugins else { throw PluginResultDraftError.stale }
+        draft = try plugins.consumeResultDraft(executionID: executionID,
+            conversationContext: conversationRevision, currentDraft: draft)
+        // Existing attachments and history are deliberately untouched. No Send here.
+    }
+
     var draft = "" {
         didSet { if oldValue != draft { composerDidChange() } }
     }
@@ -254,8 +264,13 @@ final class AppModel {
         }
     }
 
-    func configurePlugins(directory: URL) {
-        do { plugins = try PluginBroker(directory: directory); pluginSetupError = nil }
+    func configurePlugins(directory: URL,
+                          clientFactory: (@MainActor (MCPEndpoint, String?) throws -> any PluginMCPClient)? = nil) {
+        do {
+            if let clientFactory { plugins = try PluginBroker(directory: directory, clientFactory: clientFactory) }
+            else { plugins = try PluginBroker(directory: directory) }
+            pluginSetupError = nil
+        }
         catch { plugins = nil; pluginSetupError = error.localizedDescription }
     }
 

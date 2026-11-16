@@ -36,3 +36,31 @@ required native/simulator count to 75. The integrated portable suite passes 531
 tests with the previously documented Linux URLProtocol redirect exclusion.
 An attempted rerun with a mistyped exclusion hit that unsupported Foundation
 callback; the corrected run passed. No native semantic pass is inferred.
+
+## Combined rerun 43816635355
+
+Source `7ea326d6c17a9f82b3fc4a9c66a7f97826973844`, iPhone 16 Plus
+simulator iOS 26.1. Result: **73 of 75 native/simulator tests passed,
+2 failed, 0 skipped**. Separate macOS ZIP extractor: 17 passed, 0 failed.
+Artifact `14203604106`, SHA-256
+`49c56f37ab1632df12def53de8a79ea9eea6cd268faca701625ee8236b8a30f1`.
+This is a failed acceptance gate, not release approval.
+
+Verified: all 13 attachment association path tests; synthetic ZIP picked through
+Files, reviewed, transactionally committed, and history visible after relaunch;
+retained prepared ZIP survives relaunch without activating before confirmation.
+The five selected AppModel conversation/local-tool integration tests passed.
+
+Remaining failures:
+- `ProductionConversationResponseTests/testPinnedModelWritesPythonAndDescribesActualLimitsWithoutEcho`:
+  Python and direct Paris checks passed; capability answer failed app-information,
+  memory-search and supported-autonomy assertions. Generated capability prose is
+  not reliable solely because policy text is present. Preserve the assertions.
+- `ArchiveRestoreUITests/testRealZIPPickerCancelsAndReopensWithoutRestore` line 92:
+  first picker presentation was not observed after Choose ZIP. Failure preceded
+  cancellation/reopening; other two real-picker paths passed. Investigate actual
+  presentation lifecycle/test interaction; do not replace the picker with mocks.
+
+Private archive, physical-device behavior, actual media association and broader
+autonomous plugin orchestration remain unverified. New plugin-result handoff and
+proposal-filter candidate were not part of this run.

@@ -26,7 +26,7 @@ struct PluginConnectionsSection: View {
                             NavigationLink("Describe a task") { PluginTaskProposalView(broker: broker, model: model) }
                         }
                         ForEach(broker.tools) { tool in
-                            NavigationLink(tool.title ?? tool.name) { PluginToolCallView(broker: broker, tool: tool) }
+                            NavigationLink(tool.title ?? tool.name) { PluginToolCallView(broker: broker, tool: tool, model: model) }
                         }
                         Button("Disconnect") { broker.disconnect() }
                     } else {
@@ -132,14 +132,30 @@ struct PluginConnectionForm: View {
 struct PluginToolCallView: View {
     @Bindable var broker: PluginBroker
     let tool: MCPToolDefinition
+    var model: AppModel?
+    @State private var expectedConversation: UUID?
+    @State private var expectedProvider: UUID?
+    @State private var expectedCatalog: UUID
+    @State private var expectedConnection: UUID?
+    private var reviewContextValid: Bool {
+        expectedConversation == model?.pluginResultConversationContext
+            && (expectedProvider == nil || expectedProvider == model?.pluginProposalProviderContext)
+            && expectedCatalog == broker.proposalCatalogID && expectedConnection == broker.activeConnection?.id
+    }
     @State private var arguments: String
-    init(broker: PluginBroker, tool: MCPToolDefinition, initialArguments: String = "{}") {
+    init(broker: PluginBroker, tool: MCPToolDefinition, initialArguments: String = "{}", model: AppModel? = nil, request: PluginChatRequest? = nil) {
         self.broker = broker
         self.tool = tool
+        self.model = model
+        _expectedConversation = State(initialValue: request?.conversation ?? model?.pluginResultConversationContext)
+        _expectedProvider = State(initialValue: request?.provider)
+        _expectedCatalog = State(initialValue: request?.catalog ?? broker.proposalCatalogID)
+        _expectedConnection = State(initialValue: request?.connection ?? broker.activeConnection?.id)
         _arguments = State(initialValue: initialArguments)
     }
     @State private var error: String?
     @State private var executionTask: Task<Void, Never>?
+    @State private var handoffStatus: String?
     var body: some View {
         Form {
             Section("Untrusted tool description") {
@@ -152,9 +168,12 @@ struct PluginToolCallView: View {
                     .disabled(broker.isBusy).accessibilityIdentifier("plugin.arguments")
                 Text("JSON object, at most 16 KiB. Chats, files, memory and location are not included automatically. Do not include passwords or unrelated private data.").font(.footnote).foregroundStyle(.secondary)
                 Button("Review exact call") {
-                    do { _ = try broker.prepareReview(toolName: tool.name, argumentText: arguments); error = nil }
+                    do {
+                        guard reviewContextValid else { throw PluginResultDraftError.stale }
+                        _ = try broker.prepareReview(toolName: tool.name, argumentText: arguments); error = nil
+                    }
                     catch { self.error = error.localizedDescription }
-                }.disabled(!broker.canReviewTools).accessibilityIdentifier("plugin.review")
+                }.disabled(!broker.canReviewTools || !reviewContextValid).accessibilityIdentifier("plugin.review")
             }
             if let review = broker.review {
                 Section("Approve this one call") {
@@ -163,13 +182,17 @@ struct PluginToolCallView: View {
                     Text(pluginJSON(review.arguments)).font(.caption.monospaced()).textSelection(.enabled)
                     Text("Run sends exactly this request to the server. It may change external data or cost money according to that provider. Canceling afterward cannot undo a remote action. Review only actions and data you intend to authorize.").font(.footnote)
                     Button("Run reviewed call") {
-                        error = nil
+                        error = nil; handoffStatus = nil
+                        let context = expectedConversation
                         executionTask = Task {
-                            do { try await broker.execute(reviewID: review.id) }
+                            do {
+                                guard reviewContextValid else { throw PluginResultDraftError.stale }
+                                try await broker.execute(reviewID: review.id, conversationContext: context)
+                            }
                             catch { if !Task.isCancelled { self.error = error.localizedDescription } }
                             executionTask = nil
                         }
-                    }.disabled(executionTask != nil || broker.isBusy).accessibilityIdentifier("plugin.run")
+                    }.disabled(executionTask != nil || broker.isBusy || !reviewContextValid).accessibilityIdentifier("plugin.run")
                 }
             }
             if broker.isBusy {
@@ -179,6 +202,7 @@ struct PluginToolCallView: View {
                     Text("The server may already have acted. Check its state before retrying.").font(.footnote)
                 }
             }
+            if !reviewContextValid { Section { Text("This review belongs to an earlier conversation, model or connection. Close it and start a fresh review; nothing new was sent.").font(.footnote) } }
             if let error { Section { Text(error).font(.footnote).foregroundStyle(.red) } }
             if let result = broker.lastResult {
                 Section(result.isError ? "Server reported a tool error" : "Server result · not independent verification") {
@@ -192,6 +216,19 @@ struct PluginToolCallView: View {
                     }
                     if let value = result.structuredContent { Text(pluginJSON(value)).font(.caption.monospaced()).textSelection(.enabled) }
                     Text("Treat remote results as untrusted information. They cannot authorize another call.").font(.footnote).foregroundStyle(.secondary)
+                    if let model, let receipt = broker.completedResult, receipt.toolName == tool.name {
+                        Text("Add this result to the current chat draft for discussion. Existing text and attachments are preserved. Nothing is sent now. If you later tap Send with an online model, that provider receives the result and the rest of your submitted conversation.")
+                            .font(.footnote).foregroundStyle(.secondary)
+                        Button("Add result to chat draft") {
+                            do {
+                                try model.addPluginResultToDraft(executionID: receipt.executionID)
+                                handoffStatus = "Added to chat draft. Return to chat to review it; nothing was sent."
+                                error = nil
+                            } catch { self.error = error.localizedDescription }
+                        }.disabled(broker.isBusy || model.isGenerating || receipt.conversationContext != model.pluginResultConversationContext)
+                            .accessibilityIdentifier("plugin.add-result-to-draft")
+                    }
+                    if let handoffStatus { Text(handoffStatus).font(.footnote).accessibilityIdentifier("plugin.result-draft-status") }
                 }
             }
         }.navigationTitle("Review tool").navigationBarTitleDisplayMode(.inline)
@@ -226,10 +263,26 @@ private func pluginJSON(_ value: MCPJSONValue) -> String {
 }
 
 /// Chooses from already-discovered tools. It never installs code or executes calls.
-private struct PluginTaskProposalView: View {
+struct PluginTaskProposalView: View {
     @Bindable var broker: PluginBroker
     @Bindable var model: AppModel
-    @State private var goal = ""
+    @State private var context: PluginChatRequest?
+    private let startsFromChat: Bool
+    @State private var didStart = false
+    @State private var goal: String
+    init(broker: PluginBroker, model: AppModel, chatRequest: PluginChatRequest? = nil) {
+        self.broker = broker; self.model = model
+        startsFromChat = chatRequest != nil
+        _context = State(initialValue: chatRequest ?? broker.activeConnection.flatMap {
+            PluginChatRequest(goal: "Manual task", conversation: model.pluginResultConversationContext,
+                provider: model.pluginProposalProviderContext, connection: $0.id, catalog: broker.proposalCatalogID)
+        })
+        _goal = State(initialValue: chatRequest?.goal ?? "")
+    }
+    private var contextValid: Bool {
+        context?.matches(conversation: model.pluginResultConversationContext, provider: model.pluginProposalProviderContext,
+            connection: broker.activeConnection?.id, catalog: broker.proposalCatalogID) == true
+    }
     @State private var proposed: PluginToolProposal?
     @State private var catalogID: UUID?
     @State private var failure: String?
@@ -245,26 +298,33 @@ private struct PluginTaskProposalView: View {
                 Text("Drafting sends this goal and the connected tool schemas to your selected model. A remote model receives that text. Chats, memory, files, location and plugin tokens are not included. Nothing runs until you review the exact call.")
                     .font(.footnote).foregroundStyle(.secondary)
                 Button("Find a tool and draft arguments") { draftProposal() }
-                    .disabled(task != nil || !broker.canReviewTools || model.isGenerating || model.selectedProvider?.provider == nil || goal.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || goal.utf8.count > 4096)
+                    .disabled(!contextValid || task != nil || !broker.canReviewTools || model.isGenerating || model.selectedProvider?.provider == nil || goal.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || goal.utf8.count > 4096)
                 if task != nil {
                     ProgressView("Choosing from connected tools…")
                     Button("Cancel") { cancel() }
                 }
             }
-            if let proposed, catalogID == broker.proposalCatalogID, broker.canReviewTools,
+            if contextValid, let proposed, catalogID == broker.proposalCatalogID, broker.canReviewTools,
                let tool = broker.tools.first(where: { $0.name == proposed.name }) {
                 Section("Suggested call · not executed") {
                     Text(proposed.name)
                     Text(pluginJSON(proposed.arguments)).font(.caption.monospaced())
                     NavigationLink("Review exact call") {
-                        PluginToolCallView(broker: broker, tool: tool, initialArguments: pluginJSON(proposed.arguments))
+                        PluginToolCallView(broker: broker, tool: tool, initialArguments: pluginJSON(proposed.arguments), model: model, request: context)
                     }
                 }
             }
+            if !contextValid { Section { Text("The conversation, model or connection changed. Close this task and start again from the current draft. No tool was executed.") } }
             if let failure { Section { Text(failure).foregroundStyle(.secondary) } }
         }.navigationTitle("Plugin task")
+            .task {
+                guard startsFromChat, !didStart else { return }
+                didStart = true
+                draftProposal()
+            }
             .onChange(of: goal) { _, _ in proposed = nil; failure = nil }
-            .onChange(of: model.selectedProviderID) { _, _ in cancel() }
+            .onChange(of: model.pluginProposalProviderContext) { _, _ in cancel() }
+            .onChange(of: model.pluginResultConversationContext) { _, _ in cancel() }
             .onChange(of: broker.proposalCatalogID) { _, _ in cancel() }
             .onChange(of: scenePhase) { _, phase in if phase != .active { cancel() } }
             .onDisappear {
@@ -278,7 +338,7 @@ private struct PluginTaskProposalView: View {
         attempt = nil; task?.cancel(); task = nil; proposed = nil; catalogID = nil
     }
     private func draftProposal() {
-        guard broker.canReviewTools, !model.isGenerating, let provider = model.selectedProvider?.provider else { return }
+        guard contextValid, broker.canReviewTools, !model.isGenerating, let provider = model.selectedProvider?.provider else { return }
         proposed = nil; failure = nil
         let id = UUID(), revision = broker.proposalCatalogID
         let selected = model.selectedProviderID, tools = broker.tools, submitted = goal
@@ -287,8 +347,9 @@ private struct PluginTaskProposalView: View {
             do {
                 try await model.beginHeavyWork(id: id, kind: .localAgent)
                 try Task.checkCancellation()
+                guard contextValid, attempt == id else { throw CancellationError() }
                 let result = try await PluginToolProposal.generate(goal: submitted, tools: tools, provider: provider)
-                guard attempt == id, !Task.isCancelled, broker.canReviewTools,
+                guard contextValid, attempt == id, !Task.isCancelled, broker.canReviewTools,
                       broker.proposalCatalogID == revision, model.selectedProviderID == selected,
                       model.heavyWorkLease?.id == id, model.heavyWorkLease?.phase == .ready else { throw CancellationError() }
                 proposed = result; catalogID = revision

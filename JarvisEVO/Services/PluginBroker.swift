@@ -19,6 +19,15 @@ struct PluginConnectionRecord: Codable, Identifiable, Equatable, Sendable {
     var hasSavedToken: Bool
 }
 
+struct PluginCompletedResult: Sendable {
+    let executionID: UUID
+    let connectionID: UUID
+    let catalogRevision: UUID
+    let conversationContext: UUID?
+    let toolName: String
+    let result: MCPToolCallResult
+}
+
 @MainActor @Observable
 final class PluginBroker {
     private struct Snapshot: Codable { var version = 1; var connections: [PluginConnectionRecord] }
@@ -29,6 +38,7 @@ final class PluginBroker {
     private(set) var tools: [MCPToolDefinition] = []
     private(set) var stagedConnection: PluginConnectionRecord?
     private(set) var review: PluginCallReview?
+    private(set) var completedResult: PluginCompletedResult?
     private(set) var lastResult: MCPToolCallResult?
     private(set) var activeConnection: PluginConnectionRecord?
     private(set) var isForeground = true
@@ -120,10 +130,26 @@ final class PluginBroker {
         review = value
         return value
     }
-    func clearResult() { lastResult = nil }
+    func clearResult() { lastResult = nil; completedResult = nil }
+
+    /// Synchronous MainActor consume: validation, append and replay invalidation have no suspension.
+    /// A returned draft is never submitted to a model or used as tool authorization.
+    func consumeResultDraft(executionID: UUID, conversationContext: UUID, currentDraft: String) throws -> String {
+        guard !isBusy, isForeground, !journal.requiresRecovery, let receipt = completedResult,
+              receipt.executionID == executionID, receipt.conversationContext == conversationContext,
+              receipt.connectionID == activeConnection?.id, receipt.catalogRevision == catalogRevision,
+              let record = journal.records.first(where: { $0.id == executionID }),
+              record.connectionID == receipt.connectionID, record.toolName == receipt.toolName,
+              record.state == (receipt.result.isError ? .serverReportedError : .serverReportedSuccess)
+        else { throw PluginResultDraftError.stale }
+        let next = try PluginResultDraft.appending(receipt.result, executionID: executionID,
+            connectionID: receipt.connectionID, toolName: receipt.toolName, to: currentDraft)
+        completedResult = nil
+        return next
+    }
     func invalidateReview() { gate.invalidate(); review = nil }
 
-    func execute(reviewID: UUID) async throws {
+    func execute(reviewID: UUID, conversationContext: UUID? = nil) async throws {
         try Task.checkCancellation()
         guard !journal.requiresRecovery else { throw PluginExecutionError.outcomeNotRecorded }
         guard canReviewTools, let connection = activeConnection, let client else { throw PluginBrokerError.notConnected }
@@ -131,11 +157,14 @@ final class PluginBroker {
         review = nil
         // Durable write occurs before network dispatch. No arguments/result body enters this file.
         let record = try journal.begin(connectionID: connection.id, toolName: approved.toolName)
-        let operation = UUID(); operationID = operation; activeExecution = record; lastResult = nil
+        let operation = UUID(); operationID = operation; activeExecution = record; clearResult()
         do {
             let result = try await client.callTool(named: approved.toolName, arguments: approved.arguments)
             try checkOwner(operation)
             try journal.finish(id: record, state: result.isError ? .serverReportedError : .serverReportedSuccess)
+            completedResult = PluginCompletedResult(executionID: record, connectionID: connection.id,
+                catalogRevision: catalogRevision, conversationContext: conversationContext,
+                toolName: approved.toolName, result: result)
             lastResult = result
             operationID = nil; activeExecution = nil
         } catch {
@@ -155,7 +184,7 @@ final class PluginBroker {
         if let activeExecution { try? journal.finish(id: activeExecution, state: .unknown) }
         activeExecution = nil
         let previous = client; client = nil
-        tools = []; stagedConnection = nil; activeConnection = nil; pendingToken = nil; lastResult = nil
+        tools = []; stagedConnection = nil; activeConnection = nil; pendingToken = nil; clearResult()
         catalogRevision = UUID()
         if let previous { Task { await previous.cancelCurrentOperation(); await previous.close() } }
     }
