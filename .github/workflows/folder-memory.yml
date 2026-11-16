@@ -1,4 +1,4 @@
-name: Verify folder memory and explicit chat task routing
+name: Verify folder memory, remembered Files locations and chat task routing
 on:
   push:
     branches: [ci/folder-memory-20261116]

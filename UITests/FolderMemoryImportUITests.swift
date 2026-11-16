@@ -23,6 +23,13 @@ final class FolderMemoryImportUITests: XCTestCase {
             let shot = XCTAttachment(screenshot: app.screenshot())
             shot.name = "Actual folder picker attempt \(attempt)"; shot.lifetime = .keepAlways; add(shot)
             let cancel = navigation.buttons["Cancel"]
+            // Files remembers the last selected subfolder between presentations.
+            // At a nested location iOS shows Back/Open, not Cancel.
+            for _ in 0..<6 where !cancel.exists {
+                let back = navigation.buttons["BackButton"]
+                guard back.exists else { break }
+                back.tap()
+            }
             XCTAssertTrue(cancel.waitForExistence(timeout: 5)); cancel.tap()
             let absent = NSPredicate(format: "exists == false")
             XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: absent, object: navigation)], timeout: 5), .completed)
