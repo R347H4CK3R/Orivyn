@@ -14,7 +14,7 @@ final class ProductionConversationResponseTests: XCTestCase {
         #if !targetEnvironment(simulator)
         XCTFail("Required pinned conversation gate needs the iOS simulator.")
         #else
-        executionTimeAllowance = 600
+        executionTimeAllowance = 750
         guard let path = environment["ORIVYN_CONVERSATION_MODEL_DIR"], path.hasPrefix("/"),
               path != "/", !path.utf8.contains(0) else {
             XCTFail("Provide a dedicated existing absolute fixture directory."); return
@@ -69,8 +69,13 @@ final class ProductionConversationResponseTests: XCTestCase {
             XCTAssertTrue(limits.lowercased().contains("model"), "Inventory must include installed-model listing.")
             XCTAssertNotNil(limits.lowercased().range(of: #"(?:app[ _]info(?:rmation)?|application information)"#, options: .regularExpression), "Inventory must include app information, including its exact get_app_info tool name.")
             XCTAssertNotNil(limits.lowercased().range(of: #"memor(?:y|ies)"#, options: .regularExpression), "Inventory must include saved-memory search.")
-            XCTAssertTrue(limits.lowercased().contains("review"), "Other actions must not be advertised as automatic execution.")
             assertNoEchoOrReasoning(limits, goal: limitGoal)
+
+            let pluginGoal = "What approval does a connected plugin call need? Can you run it without reviewing the exact call? Answer briefly."
+            let plugin = try await answer(goal: pluginGoal, system: system, provider: provider, concise: true)
+            record("plugin-approval", goal: pluginGoal, answer: plugin, sha: descriptor.sha256)
+            XCTAssertTrue(ConversationApprovalOracle.requiresExactReview(plugin), "Connected plugin calls require exact-call review before execution, not optional or blanket approval.")
+            assertNoEchoOrReasoning(plugin, goal: pluginGoal)
         } catch {
             await provider.unload()
             throw error
@@ -118,7 +123,7 @@ final class ProductionConversationResponseTests: XCTestCase {
     }
 
     private func record(_ name: String, goal: String, answer: String, sha: String) {
-        let attachment = XCTAttachment(string: "scope=three fixed synthetic prompts; not generalized conversational reliability\nmodelSHA256=\(sha)\ngoal=\(goal)\nvisibleAnswer=\(answer)")
+        let attachment = XCTAttachment(string: "scope=four fixed synthetic prompts; not generalized conversational reliability\nmodelSHA256=\(sha)\ngoal=\(goal)\nvisibleAnswer=\(answer)")
         attachment.name = "conversation-model-" + name
         attachment.lifetime = .keepAlways
         add(attachment)

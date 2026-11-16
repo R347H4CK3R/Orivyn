@@ -6,6 +6,7 @@ final class LocalAgentStore {
     private struct Revision: Decodable { let revision: Int }
     private let directory: URL
     private let maximumRecords: Int
+    private var preparedOrigins: [String: UUID] = [:]
     init(directory: URL, maximumRecords: Int = 100) throws {
         self.maximumRecords = maximumRecords
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true, attributes: [.protectionKey: FileProtectionType.complete])
@@ -30,6 +31,43 @@ final class LocalAgentStore {
               let revision = try? JSONDecoder().decode(Revision.self, from: data).revision,
               revision >= 0 else { throw LocalAgentError.storage }
     }
+    /// Origin and reducer bytes share one atomic file. Absence of an envelope
+    /// is legacy; a malformed or incomplete envelope is never treated as legacy.
+    private func stored(id: String) throws -> (raw: String, origin: UUID?) {
+        let file = try url(id)
+        let values = try file.resourceValues(forKeys: [.isSymbolicLinkKey, .isRegularFileKey, .fileSizeKey])
+        guard values.isSymbolicLink != true, values.isRegularFile == true, let count = values.fileSize,
+              count <= 263_000, let text = String(data: try Data(contentsOf: file), encoding: .utf8),
+              let object = try MCPJSONValue.parse(Data(text.utf8), maximumBytes: 263_000).objectValue else { throw LocalAgentError.storage }
+        if object["raw"] != nil || object["chatOrigin"] != nil {
+            guard Set(object.keys) == Set(["raw", "chatOrigin"]), let raw = object["raw"]?.stringValue,
+                  let originText = object["chatOrigin"]?.stringValue, let origin = UUID(uuidString: originText) else { throw LocalAgentError.storage }
+            try verifyIdentity(raw, id: id)
+            return (raw, origin)
+        }
+        try verifyIdentity(text, id: id)
+        return (text, nil)
+    }
+    func origin(id: String) throws -> UUID? {
+        let file = try url(id)
+        do {
+            let attributes = try FileManager.default.attributesOfItem(atPath: file.path)
+            guard attributes[.type] as? FileAttributeType == .typeRegular else { throw LocalAgentError.storage }
+        } catch let error as CocoaError where error.code == .fileReadNoSuchFile { return nil }
+        return try stored(id: id).origin
+    }
+    /// Preparation grants no execution. save atomically commits this association.
+    func bindOrigin(id: String, conversationID: UUID) throws {
+        let canonical = try url(id).lastPathComponent
+        if let existing = try origin(id: id) {
+            guard existing == conversationID else { throw LocalAgentError.storage }
+        } else if FileManager.default.fileExists(atPath: try url(id).path) {
+            throw LocalAgentError.storage // Never relabel a legacy task implicitly.
+        }
+        if let prepared = preparedOrigins[canonical] { guard prepared == conversationID else { throw LocalAgentError.storage } }
+        guard preparedOrigins[canonical] != nil || preparedOrigins.count < maximumRecords else { throw LocalAgentError.storage }
+        preparedOrigins[canonical] = conversationID
+    }
     func save(_ raw: String, id: String) throws {
         try verifyIdentity(raw, id: id)
         let file = try url(id)
@@ -46,16 +84,15 @@ final class LocalAgentStore {
             guard !FileManager.default.fileExists(atPath: archived.path) else { throw LocalAgentError.storage }
             guard try FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil).filter({ $0.pathExtension == "json" }).count < maximumRecords else { throw LocalAgentError.storage }
         }
-        try Data(raw.utf8).write(to: file, options: [.atomic, .completeFileProtection])
+        let origin = try origin(id: id) ?? preparedOrigins[file.lastPathComponent]
+        let bytes: Data
+        if let origin {
+            bytes = try MCPJSONValue.object(["chatOrigin": .string(origin.uuidString), "raw": .string(raw)]).encoded(maximumBytes: 263_000)
+        } else { bytes = Data(raw.utf8) }
+        try bytes.write(to: file, options: [.atomic, .completeFileProtection])
+        preparedOrigins.removeValue(forKey: file.lastPathComponent)
     }
-    func load(id: String) throws -> String {
-        let file = try url(id)
-        let values = try file.resourceValues(forKeys: [.isSymbolicLinkKey, .isRegularFileKey, .fileSizeKey])
-        guard values.isSymbolicLink != true, values.isRegularFile == true, let count = values.fileSize,
-              count <= 131_072, let text = String(data: try Data(contentsOf: file), encoding: .utf8) else { throw LocalAgentError.storage }
-        try verifyIdentity(text, id: id)
-        return text
-    }
+    func load(id: String) throws -> String { try stored(id: id).raw }
     struct RecordBatch { let values: [String]; let unreadable: Int; let total: Int }
     func records(offset: Int = 0, limit: Int = 100) throws -> RecordBatch {
         guard offset >= 0, (1...100).contains(limit) else { throw LocalAgentError.storage }

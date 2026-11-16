@@ -143,3 +143,52 @@ import XCTest
         XCTAssertEqual(try String(contentsOf: target, encoding: .utf8), "keep")
     }
 }
+
+@MainActor final class LocalAgentOriginTests: XCTestCase {
+    func testOriginAndTaskAreCommittedTogetherAndSurviveArchive() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try LocalAgentStore(directory: root), id = UUID().uuidString, origin = UUID()
+        let raw = "{\"id\":\"\(id)\",\"revision\":0}"
+        try store.bindOrigin(id: id, conversationID: origin)
+        try store.save(raw, id: id)
+        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: root.appendingPathComponent(id + ".json"))) as? [String: Any])
+        XCTAssertEqual(object["chatOrigin"] as? String, origin.uuidString)
+        XCTAssertEqual(object["raw"] as? String, raw)
+        let reload = try LocalAgentStore(directory: root)
+        XCTAssertEqual(try reload.origin(id: id), origin)
+        XCTAssertEqual(try reload.load(id: id), raw)
+        XCTAssertThrowsError(try reload.bindOrigin(id: id, conversationID: UUID()))
+        try reload.archive(id: id); try reload.restore(id: id)
+        XCTAssertEqual(try reload.origin(id: id), origin)
+        XCTAssertEqual(try reload.load(id: id), raw)
+    }
+    func testFailedInitialSaveCannotLeaveUnboundTaskAndUpdateKeepsOrigin() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try LocalAgentStore(directory: root), id = UUID().uuidString, origin = UUID()
+        try store.bindOrigin(id: id, conversationID: origin)
+        XCTAssertThrowsError(try store.save("{}", id: id))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: root.appendingPathComponent(id + ".json").path))
+        XCTAssertNil(try LocalAgentStore(directory: root).origin(id: id))
+        try store.save("{\"id\":\"\(id)\",\"revision\":0}", id: id)
+        let reload = try LocalAgentStore(directory: root)
+        let updated = "{\"id\":\"\(id)\",\"revision\":1}"
+        try reload.save(updated, id: id)
+        XCTAssertEqual(try reload.origin(id: id), origin)
+        XCTAssertEqual(try reload.load(id: id), updated)
+    }
+    func testEnvelopeMissingOriginIsNotLegacyAndIsPreserved() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try LocalAgentStore(directory: root), id = UUID().uuidString
+        let raw = "{\"id\":\"\(id)\",\"revision\":0}"
+        let bytes = try JSONSerialization.data(withJSONObject: ["raw": raw])
+        let file = root.appendingPathComponent(id + ".json")
+        try bytes.write(to: file)
+        XCTAssertThrowsError(try store.origin(id: id))
+        XCTAssertThrowsError(try store.load(id: id))
+        XCTAssertThrowsError(try store.bindOrigin(id: id, conversationID: UUID()))
+        XCTAssertEqual(try Data(contentsOf: file), bytes)
+    }
+}

@@ -1,4 +1,4 @@
-name: Verify ZIP lifecycle and integrated conversational tool behavior
+name: Verify chat-bound tasks and explicit approval semantics
 on:
   push:
     branches: [recovery/chatgpt-restore-20261116]

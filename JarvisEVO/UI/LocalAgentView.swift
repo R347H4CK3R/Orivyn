@@ -12,10 +12,15 @@ struct LocalAgentView: View {
     @State private var memoryLimit = 3
     @State private var setupError: String?
     @State private var confirmArchive = false
+    private let chatContext: ChatLocalTaskContext?
+    private let initialTaskID: String?
+    private let draftPlanOnOpen: Bool
     @Environment(\.scenePhase) private var phase
-    init(model: AppModel, initialGoal: String = "", initialChecklist: LocalCompletionContract? = nil) {
+    init(model: AppModel, initialGoal: String = "", initialChecklist: LocalCompletionContract? = nil, chatContext: ChatLocalTaskContext? = nil, initialTaskID: String? = nil, draftPlanOnOpen: Bool = false) {
+        self.chatContext = chatContext; self.initialTaskID = initialTaskID; self.draftPlanOnOpen = draftPlanOnOpen
         self.model = model
         _goal = State(initialValue: initialGoal)
+        _planKind = State(initialValue: draftPlanOnOpen ? "conversation_search" : "conversation_read")
         _includeAppInfo = State(initialValue: initialChecklist?.steps.contains { $0.name == "get_app_info" } == true)
         _includeModels = State(initialValue: initialChecklist?.steps.contains { $0.name == "list_models" } == true)
         let memory = initialChecklist?.steps.first { $0.name == "search_memory" }
@@ -183,7 +188,11 @@ struct LocalAgentView: View {
             guard session == nil else { return }
             do {
                 guard let directory = model.localAgentDirectory else { throw LocalAgentError.unavailable }
-                session = try LocalAgentSession(model: model, directory: directory)
+                let created = try LocalAgentSession(model: model, directory: directory)
+                if let chatContext { try created.bindConversation(chatContext) }
+                session = created
+                if let initialTaskID { created.select(id: initialTaskID) }
+                else if draftPlanOnOpen { created.prepareReadPlan(goal: goal, kind: planKind) }
             } catch { setupError = error.localizedDescription }
         }
         .onDisappear { session?.stop(cancelTask: false); session?.discardReadPlan() }
@@ -194,6 +203,8 @@ struct LocalAgentView: View {
         .onChange(of: includeMemory) { _, _ in session?.discardReadPlan() }
         .onChange(of: memoryQuery) { _, _ in session?.discardReadPlan() }
         .onChange(of: memoryLimit) { _, _ in session?.discardReadPlan() }
+        .onChange(of: model.pluginResultConversationContext) { _, _ in session?.stop(cancelTask: false); session?.discardReadPlan() }
+        .onChange(of: model.pluginProposalProviderContext) { _, _ in session?.stop(cancelTask: false); session?.discardReadPlan() }
         .onChange(of: model.selectedProviderID) { _, _ in session?.discardReadPlan() }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.didReceiveMemoryWarningNotification)) { _ in session?.stop(cancelTask: false) }
         .onReceive(NotificationCenter.default.publisher(for: ProcessInfo.thermalStateDidChangeNotification)) { _ in

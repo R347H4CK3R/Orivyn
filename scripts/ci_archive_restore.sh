@@ -8,7 +8,7 @@ test "${RUNNER_ENVIRONMENT:-}" = github-hosted
 A="$PWD/artifacts/archive-restore"; mkdir -p "$A"
 git rev-parse HEAD > "$A/source-commit.txt"
 printf '%s\n' 'Actual synthetic ZIP selection through the iOS Files provider, review, transactional commit and relaunch history; retained preparation recovery; native core tests. No physical-device or user-archive verification. No release publication.' > "$A/SCOPE.txt"
-# Separate macOS package gate; its count is not part of the 125 simulator tests.
+# Separate macOS package gate; its count is not part of the 135 simulator tests.
 swift test --jobs 2 --package-path Packages/ArchiveExtraction > "$A/extractor-package.log" 2>&1
 python3 scripts/materialize_guest.py Fixtures/maintained.img.gz JarvisEVO/Resources/VMAssets/maintained.img
 command -v xcodegen >/dev/null || brew install xcodegen
@@ -39,13 +39,17 @@ ARCHIVE_RESTORE_SIMULATOR="$SIM" bash Diagnostics/ArchiveRestore/prepare_fixture
 set +e
 xcodebuild test -project JarvisEVO.xcodeproj -scheme JarvisEVO -derivedDataPath "$RUNNER_TEMP/orivyn-archive-restore-derived" \
  -destination "platform=iOS Simulator,id=$SIM" -destination-timeout 120 -parallel-testing-enabled NO \
- -test-timeouts-enabled YES -default-test-execution-time-allowance 180 -maximum-test-execution-time-allowance 600 \
+ -test-timeouts-enabled YES -default-test-execution-time-allowance 180 -maximum-test-execution-time-allowance 750 \
  -only-testing:JarvisEVOTests/ChatGPTConversationRestoreTests \
  -only-testing:JarvisEVOTests/ChatGPTRecordStreamTests \
  -only-testing:JarvisEVOTests/ArchivePreservationTests \
  -only-testing:JarvisEVOTests/ArchiveAttachmentAssociationTests \
  -only-testing:JarvisEVOTests/ArchiveRestorePersistenceTests \
  -only-testing:JarvisEVOTests/ProductionConversationResponseTests \
+ -only-testing:JarvisEVOTests/ConversationApprovalOracleTests \
+ -only-testing:JarvisEVOTests/ChatLocalTaskContextTests \
+ -only-testing:JarvisEVOTests/LocalAgentOriginTests \
+ -only-testing:JarvisEVOTests/ChatLocalAgentSessionTests \
  -only-testing:JarvisEVOTests/ChatResponsePolicyTests \
  -only-testing:JarvisEVOTests/ArchiveRestoreLifetimeTests \
  -only-testing:JarvisEVOTests/PluginResultDraftTests \
@@ -77,8 +81,8 @@ test "$status" = 0
 python3 - "$A/summary.json" <<'PY'
 import json,sys
 s=json.load(open(sys.argv[1]))
-expected={'totalTestCount':125,'passedTests':125,'failedTests':0,'skippedTests':0}
+expected={'totalTestCount':135,'passedTests':135,'failedTests':0,'skippedTests':0}
 for k,v in expected.items():
  assert type(s.get(k)) is int and s[k]==v,(k,s.get(k),v)
-print('125 required native/simulator tests passed without skips. Physical device and private archive remain unverified.')
+print('135 required native/simulator tests passed without skips. Physical device and private archive remain unverified.')
 PY

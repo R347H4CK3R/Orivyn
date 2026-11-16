@@ -64,3 +64,28 @@ Remaining failures:
 Private archive, physical-device behavior, actual media association and broader
 autonomous plugin orchestration remain unverified. New plugin-result handoff and
 proposal-filter candidate were not part of this run.
+
+## Expanded rerun 43821742941
+
+Source `ee1771aa2bf7f4dcd6f2743d11e615b7356a90ab`: **124 of 125
+native/simulator tests passed, 1 failed, 0 skipped**. Separate macOS ZIP extractor:
+17 passed. Artifact `14205916399`, SHA-256
+`15b149cba88543152aaa0924cddfbc6b62cfef6cdbbc90d5e0920dcd1bbaf275`.
+The workflow remains failed, not release approval.
+
+All three actual Files picker/ZIP/relaunch UI tests passed. All selected local
+read sequences, plugin handoff, broker, stale-context, preservation, conversion,
+SQLite and path-association tests passed.
+
+The sole failure was the model capability probe requiring the literal word
+`review` even though its prompt asked only about the three local reads and
+whether email/build/publication could run automatically. The retained response
+correctly listed `list_models`, `get_app_info`, `search_memory` and explicitly
+denied unsupported email/build/publication. Coding, direct-answer, no-echo,
+reasoning-filter, inventory and denial checks passed inside that failed method.
+This result warrants independent test-oracle review, not a claim of another
+capability hallucination or of 125 passing tests. An explicit plugin-approval
+probe should verify the omitted question without discarding existing checks.
+
+Actual user archive/media association, physical-device behavior and general
+external autonomous orchestration remain outside this evidence.

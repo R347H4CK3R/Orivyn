@@ -14,6 +14,22 @@ final class LocalAgentSession {
     private var owner: UUID?
     private var drafting = false
     private var proposedProviderID: String?
+    private var proposedProviderRevision: UUID?
+    private var chatContext: ChatLocalTaskContext?
+    private var runProviderRevision: UUID?
+    func bindConversation(_ context: ChatLocalTaskContext) throws {
+        guard !isRunning, snapshot == nil, context.matches(conversationID: model.selectedConversationID,
+            conversationRevision: model.pluginResultConversationContext, providerRevision: model.pluginProposalProviderContext) else { throw LocalAgentError.staleOwner }
+        chatContext = context
+    }
+    private func validateChatContext() throws {
+        if let context = chatContext {
+            guard context.matches(conversationID: model.selectedConversationID,
+                conversationRevision: model.pluginResultConversationContext, providerRevision: model.pluginProposalProviderContext),
+                model.conversations.contains(where: { $0.id == context.conversationID }) else { throw LocalAgentError.staleOwner }
+        }
+    }
+
     private(set) var proposedCompletion: LocalCompletionReview?
     private(set) var proposedReadPlan: LocalReadPlanProposal?
     private(set) var snapshot: LocalAgentSnapshot?
@@ -38,6 +54,7 @@ final class LocalAgentSession {
     }
     private func persist(_ value: String) throws {
         let item = try core.snapshot(value)
+        if let context = chatContext { try store.bindOrigin(id: item.id, conversationID: context.conversationID) }
         try store.save(value, id: item.id)
         raw = value; snapshot = item
         if let index = records.firstIndex(where: { $0.id == item.id }) { records[index] = item }
@@ -67,22 +84,23 @@ final class LocalAgentSession {
     }
     func discardReadPlan() {
         guard !isRunning else { return }
-        proposedReadPlan = nil; proposedProviderID = nil; proposedCompletion = nil
+        proposedReadPlan = nil; proposedProviderID = nil; proposedProviderRevision = nil; proposedCompletion = nil
     }
     func prepareReadPlan(goal: String, kind: String) {
         guard canManageSavedTasks, proposedCompletion == nil else { return }
         guard let provider = model.selectedLocalAgentProvider else { error = LocalAgentError.localModelRequired.localizedDescription; return }
         let request: GenerationRequest
-        do { request = try .readPlanProposal(goal:goal,kind:kind) } catch { self.error=error.localizedDescription; return }
+        do { try validateChatContext(); request = try .readPlanProposal(goal:goal,kind:kind) } catch { self.error=error.localizedDescription; return }
         proposedReadPlan=nil; proposedProviderID=nil
         let identity=UUID(); owner=identity; drafting=true; error=nil
+        runProviderRevision = model.pluginProposalProviderContext
         work=Task { @MainActor [self] in
             do {
                 try await model.beginHeavyWork(id:identity,kind:.localAgent)
                 try checkOwner(identity)
                 status="Drafting a read plan locally. No tools run before review."
                 var text=""
-                for try await part in try await provider.stream(request) {
+                for try await part in try await decisionStream(request, provider) {
                     try checkOwner(identity)
                     guard text.utf8.count + part.utf8.count <= 4096 else { throw LocalAgentError.outputBound }
                     text += part
@@ -91,7 +109,7 @@ final class LocalAgentSession {
                 guard model.selectedLocalAgentProvider?.id == provider.id else { throw LocalAgentError.staleOwner }
                 let plan=try LocalReadPlan.parseProposal(text)
                 guard plan.kind==kind else { throw LocalAgentError.invalidState }
-                proposedReadPlan=LocalReadPlanProposal(goal:goal,plan:plan); proposedProviderID=provider.id
+                proposedReadPlan=LocalReadPlanProposal(goal:goal,plan:plan); proposedProviderID=provider.id; proposedProviderRevision=model.pluginProposalProviderContext
                 status="Review the proposed scope. Approval creates a task; Run remains explicit."
             } catch {
                 proposedReadPlan=nil; proposedProviderID=nil
@@ -105,7 +123,8 @@ final class LocalAgentSession {
     func approveReadPlan() {
         guard canManageSavedTasks, let proposal=proposedReadPlan else { return }
         do {
-            guard let selected=model.selectedLocalAgentProvider, selected.id==proposedProviderID else { throw LocalAgentError.staleOwner }
+            try validateChatContext()
+            guard model.pluginProposalProviderContext == proposedProviderRevision, let selected=model.selectedLocalAgentProvider, selected.id==proposedProviderID else { throw LocalAgentError.staleOwner }
             let planValue=try MCPJSONValue.parse(Data(proposal.plan.encoded().utf8),maximumBytes:4096)
             let request:MCPJSONValue = .object(["goal":.string(proposal.goal),"id":.string(UUID().uuidString),"plan":planValue])
             let state=try core.call("createReviewed",[String(decoding:request.encoded(maximumBytes:4096),as:UTF8.self)])
@@ -118,7 +137,9 @@ final class LocalAgentSession {
     func prepareCompletion(goal: String, contract: LocalCompletionContract) {
         guard canManageSavedTasks, proposedReadPlan == nil else { return }
         do {
+            try validateChatContext()
             guard let selected=model.selectedLocalAgentProvider else { throw LocalAgentError.localModelRequired }
+            proposedProviderRevision=model.pluginProposalProviderContext
             proposedCompletion=try LocalCompletionReview(goal:goal,contract:contract,providerID:selected.id,modelSHA256:selected.model.sha256)
             error=nil; status="Review every exact operation. No local data has been read and no model has run."
         } catch { proposedCompletion=nil; self.error=error.localizedDescription }
@@ -126,7 +147,8 @@ final class LocalAgentSession {
     func approveCompletion(goal: String, contract: LocalCompletionContract) {
         guard canManageSavedTasks, proposedReadPlan == nil, let review=proposedCompletion else { return }
         do {
-            guard let selected=model.selectedLocalAgentProvider,
+            try validateChatContext()
+            guard proposedProviderRevision == model.pluginProposalProviderContext, let selected=model.selectedLocalAgentProvider,
                   try review.matches(goal:goal,contract:contract,providerID:selected.id,modelSHA256:selected.model.sha256) else {
                 proposedCompletion=nil; throw LocalAgentError.staleOwner
             }
@@ -143,6 +165,7 @@ final class LocalAgentSession {
         guard canManageSavedTasks else { return }
         discardReadPlan()
         do {
+            try validateChatContext()
             try persist(core.call("create", [goal, UUID().uuidString]))
             error = nil; status = "Ready. Tap Run; no work starts automatically."
             try reloadRecords()
@@ -152,6 +175,12 @@ final class LocalAgentSession {
         guard canManageSavedTasks else { return }
         discardReadPlan()
         do {
+            if let origin = try store.origin(id: id) {
+                guard model.selectedConversationID == origin else { throw LocalAgentError.staleOwner }
+                if let context = chatContext { guard context.conversationID == origin else { throw LocalAgentError.staleOwner } }
+                chatContext = ChatLocalTaskContext(conversationID: origin, conversationRevision: model.pluginResultConversationContext, providerRevision: model.pluginProposalProviderContext)
+            } else if chatContext != nil { throw LocalAgentError.staleOwner }
+            try validateChatContext()
             try persist(core.call("recover", [store.load(id: id)]))
             error = nil; status = "Loaded saved local task. Resume is explicit."
         } catch { self.error = error.localizedDescription }
@@ -186,6 +215,11 @@ final class LocalAgentSession {
               ["ready", "interrupted"].contains(current.status) else { return }
         guard let provider = model.selectedLocalAgentProvider else { error = LocalAgentError.localModelRequired.localizedDescription; return }
         do {
+            try validateChatContext()
+            guard try store.load(id: current.id) == state else { throw LocalAgentError.storage }
+            let storedOrigin = try store.origin(id: current.id)
+            guard storedOrigin == chatContext?.conversationID else { throw LocalAgentError.staleOwner }
+            runProviderRevision = model.pluginProposalProviderContext
             if current.status == "interrupted" { state = try core.call("resume", [state]); try persist(state) }
         } catch { self.error = error.localizedDescription; return }
         nativeTranscriptDecisionCount = 0
@@ -290,6 +324,8 @@ final class LocalAgentSession {
     }
     private func checkOwner(_ identity: UUID) throws {
         try Task.checkCancellation()
+        try validateChatContext()
+        guard runProviderRevision == model.pluginProposalProviderContext else { throw LocalAgentError.staleOwner }
         guard owner == identity, model.heavyWorkLease?.id == identity,
               model.heavyWorkLease?.phase == .ready else { throw LocalAgentError.staleOwner }
     }
