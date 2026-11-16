@@ -1,4 +1,4 @@
-name: Verify build 18 SideStore version and release metadata
+name: Verify build 18 version metadata and third-person review denial
 on:
   push:
     branches: [fix/build18-version]
