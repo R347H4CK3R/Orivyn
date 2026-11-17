@@ -1,0 +1,113 @@
+name: Publish verified Orivyn build 21 preview
+on:
+  push:
+    branches: [fix/build21-retained-inventory]
+    paths: ['.github/workflows/publish-build21.yml']
+permissions:
+  contents: write
+  actions: read
+jobs:
+  publish:
+    if: github.event.repository.private == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 0f0247763936c13f9a8bb4392dbc4388217041ab
+          persist-credentials: false
+      - name: Require exact native and package success
+        run: |
+          set -euo pipefail
+          gh api repos/$GH_REPO/actions/runs/44042260672 > run.json
+          gh api repos/$GH_REPO/actions/runs/44042260672/jobs > jobs.json
+          python3 - <<'PYGATE'
+          import json
+          r=json.load(open('run.json'))
+          assert r['run_attempt']==2
+          assert r['head_sha']=='0f0247763936c13f9a8bb4392dbc4388217041ab' and r['conclusion']=='success'
+          jobs=json.load(open('jobs.json'))['jobs']
+          assert len(jobs)==1 and jobs[0]['id']==133914336154 and jobs[0]['conclusion']=='success'
+          for expected in ['Build and verify combined runtime','Verify bounded archive resource usage in fresh native processes','Verify exact retained-inventory service and preservation tests','Actual ZIP picker, reviewed restore and persistent history','Package build 21 only after exact native acceptance passes']:
+              steps=[s for s in jobs[0]['steps'] if s['name']==expected]
+              assert len(steps)==1 and steps[0]['conclusion']=='success'
+          PYGATE
+      - name: Verify exact downloadable candidate
+        run: |
+          set -euo pipefail
+          gh api repos/$GH_REPO/actions/artifacts/14314306601/zip > candidate.zip
+          echo 'cfb63c326e7ef5ce19e2eeecbcf5e83cc7be55f8fb693b563b12a1236ac45e8d  candidate.zip' | sha256sum --check --strict
+          unzip -q candidate.zip -d candidate
+          python3 - <<'PYVERIFY'
+          import pathlib,json,subprocess,hashlib
+          root=pathlib.Path('candidate')
+          paths=list(root.rglob('*.ipa')); assert len(paths)==1
+          ipa=paths[0]
+          subprocess.run(['python3','scripts/verify_ipa.py',str(ipa),'--output','verified-ipa.json'],check=True)
+          v=json.load(open('verified-ipa.json'))
+          assert (v['build'],v['version'],v['bundle_identifier'])==('21','0.1.5','app.jarvisevo.ios')
+          assert v['sha256']=='a70bed64f5d9f646c6cd40ef3a93fbf4fde1bb74a21c430af75736408126f63f' and v['size']==37949131
+          assert v==json.load(open(ipa.parent/'ipa-verification.json'))
+          scope=json.load(open(ipa.parent/'SCOPE.json'))
+          assert scope['source_commit']=='0f0247763936c13f9a8bb4392dbc4388217041ab'
+          assert scope['device_build']=='passed' and scope['ipa_structure_check']=='passed'
+          assert scope['native_features']==['ORIVYN_NATIVE_VISION','ORIVYN_NATIVE_TOOLS','ORIVYN_NATIVE_TRANSCRIPT']
+          assert not (ipa.parent/'source-status-before.txt').read_text().strip()
+          assert (ipa.parent/'SHA256SUMS').read_text().strip()==v['sha256']+'  '+ipa.name
+          summaries=list(root.glob('archive-restore/summary.json')); assert len(summaries)==1
+          summary=json.load(open(summaries[0]))
+          for k,n in {'totalTestCount':275,'passedTests':275,'failedTests':0,'skippedTests':0}.items(): assert summary[k]==n
+          expected_cases={'preservation-resource':{'complete-33554432','complete-2200000000','cancel-33554432'},'import-resource':{'dense','many','longstream','malformed','opaque-limit'}}
+          for label,cases in expected_cases.items():
+              result=json.load(open(root/label/'RESULT.json'))
+              assert result['compileExit']==0 and set(result['cases'])==cases and all(value==0 for value in result['cases'].values())
+              for entry in json.load(open(root/label/'SOURCE-MANIFEST.json')):
+                  assert hashlib.sha256(pathlib.Path(entry['source']).read_bytes()).hexdigest()==entry['sha256']
+          host=root/'inventory-service'
+          assert json.load(open(host/'RESULT.json'))=={'exit':0,'hostPlatform':'darwin','iPhoneVerified':False,'systemSQLite':True}
+          assert hashlib.sha256((host/'SOURCE-MANIFEST.json').read_bytes()).hexdigest()=='946ae0c03b94c4cfafa7a7656d3380c72ddcefe6586c9b141fd9add5fbe86c6c'
+          import re
+          log=(host/'tests.log').read_text()
+          assert re.search(r'Executed 28 tests, with 0 failures',log)
+          assert not re.search(r'Test Case .* skipped',log)
+          assert (root/'archive-restore/source-commit.txt').read_text().strip()=='0f0247763936c13f9a8bb4392dbc4388217041ab'
+          pathlib.Path('ipa-path.txt').write_text(str(ipa))
+          PYVERIFY
+      - name: Recheck live version before publication
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --location https://raw.githubusercontent.com/R347H4CK3R/Orivyn-Distribution/main/source.json -o current-source.json
+          python3 scripts/release_version_guard.py --project project.yml --source current-source.json --ipa "$(cat ipa-path.txt)"
+      - name: Publish unfinished preview without replacing older releases
+        run: |
+          set -euo pipefail
+          IPA="$(cat ipa-path.txt)"
+          sha256sum "$IPA" | sed 's|  .*/|  |' > SHA256SUMS
+          cat > release-notes.md <<'NOTES'
+          Orivyn 0.1.5 build 21 — unfinished unsigned iOS 26+ preview.
+          
+          Changes: supported structured-code export messages restore as inert text under the existing privacy, visibility and routing checks. A read-only per-message inventory shows retained unlinked reference counts from verified preparations, including completed imports, in pages of at most 50 messages. Counts cover supported visible messages only, not all missing media. No media files are linked, opened or executed, and inspection never restores conversations. Existing originals, local edits and history are preserved. Version and in-app release information are updated together.
+          
+          Verification: exact-source iPhone 16 Plus / iOS 26.1 Simulator gate passed all 275 selected tests with zero failures/skips, including actual ZIP selection, reviewed transactional commit, cancellation/reopen, preservation across relaunch, and read-only inventory before and after commit. All 28 macOS preservation/service tests passed, including a near-limit synthetic inventory plan under a 256 MiB process-memory ceiling. Previous large-archive native resource probes passed again. Combined runtime and Release device build/IPA structure checks passed on the same source. The first attempt stalled presenting the system Files picker; one unchanged full rerun passed. Failed evidence is retained; this is not a claimed repair of every system-picker failure. Packaging SCOPE marks tests not_run for that separate packaging step; the preceding simulator step ran independently.
+          
+          Limits remain: no end-to-end acceptance of the user's private backup or physical iPhone has occurred. Unsupported media, alternative branches and unknown formats remain retained rather than activated; this release does not restore working attachment associations, download videos, grant broader autonomy or establish ChatGPT parity. Inventory pagination bounds displayed rows but still decodes the bounded retained plan. Plugin suggestions require reviewed execution. Signing refresh, device thermal/resource behavior, voice, broad vision and live-sync acceptance remain unverified or unfinished. Models download separately; no weights are bundled. Optional remote providers may charge.
+          
+          Preserve existing app data and signing identity when updating. SideStore or another compatible installer must sign this unsigned IPA. Earlier builds remain available. Not completed 1.0.0 and not an OpenAI product.
+          
+          Exact source: 0f0247763936c13f9a8bb4392dbc4388217041ab
+          Gate: https://github.com/R347H4CK3R/Orivyn/actions/runs/44042260672
+          IPA: Orivyn-0.1.5-build21-unsigned.ipa
+          Bytes: 37949131
+          SHA-256: a70bed64f5d9f646c6cd40ef3a93fbf4fde1bb74a21c430af75736408126f63f
+          NOTES
+          gh api --method POST repos/$GH_REPO/git/refs -f ref=refs/tags/orivyn-v0.1.5-build21 -f sha=0f0247763936c13f9a8bb4392dbc4388217041ab > created-tag.json
+          python3 - <<'PYTAG'
+          import json
+          t=json.load(open('created-tag.json'))
+          assert t['ref']=='refs/tags/orivyn-v0.1.5-build21'
+          assert t['object']['type']=='commit' and t['object']['sha']=='0f0247763936c13f9a8bb4392dbc4388217041ab'
+          PYTAG
+          gh release create orivyn-v0.1.5-build21 --verify-tag "$IPA" SHA256SUMS verified-ipa.json --target 0f0247763936c13f9a8bb4392dbc4388217041ab --title "Orivyn 0.1.5 build 21 - unfinished preview" --notes-file release-notes.md --prerelease
