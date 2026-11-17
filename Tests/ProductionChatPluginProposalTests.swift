@@ -2,7 +2,8 @@ import XCTest
 import Foundation
 @testable import JarvisEVO
 
-/// Real pinned local inference; no scripted decisions, execution or retries.
+/// Real pinned local tool/field selection plus deterministic exact-literal copying.
+/// No scripted selection, execution or retries.
 @MainActor
 final class ProductionChatPluginProposalTests: XCTestCase {
     func testPinnedModelSelectsExactPluginProposalWithoutPrivateContextOrExecution() async throws {
@@ -56,13 +57,14 @@ final class ProductionChatPluginProposalTests: XCTestCase {
         let proposed = try evidence.proposals.map { proposal in
             String(decoding: try MCPJSONValue.object(["tool": .string(proposal.name), "arguments": proposal.arguments]).encoded(maximumBytes: 16_384), as: UTF8.self)
         }.joined(separator: "\n")
-        let attachment = XCTAttachment(string: "scope=real pinned local model, synthetic catalog and goal, proposal only; not broker/UI/device proof\nmodelSHA256=\(descriptor.sha256)\nquery=\(query)\nerror=\(String(describing: streamError))\nrequests=\(evidence.requests.joined(separator: "\n---\n"))\nproposals=\(proposed)\nfallback=\(evidence.fallback)\nmodelOutputBytes=\(evidence.outputBytes)\nmodelOutputTruncated=\(evidence.outputTruncated)\nvisibleModelOutput=\(evidence.visibleOutput)\noutput=\(output)")
+        let attachment = XCTAttachment(string: "scope=real pinned local model selects tool and literal-binding field; adapter copies exact user literal; synthetic catalog and goal, proposal only; not broker/UI/device proof\nmodelSHA256=\(descriptor.sha256)\nquery=\(query)\nerror=\(String(describing: streamError))\nrequests=\(evidence.requests.joined(separator: "\n---\n"))\nproposals=\(proposed)\nfallback=\(evidence.fallback)\nexactLiteralModes=\(evidence.exactLiteralModes)\nmodelOutputBytes=\(evidence.outputBytes)\nmodelOutputTruncated=\(evidence.outputTruncated)\nvisibleModelOutput=\(evidence.visibleOutput)\noutput=\(output)")
         attachment.name = "real-model-connected-plugin-proposal"
         attachment.lifetime = .keepAlways
         add(attachment)
         try Task.checkCancellation()
         if let streamError { throw streamError }
         XCTAssertEqual(evidence.requests.count, 1, "Exactly one actual local-model decision, no retries")
+        XCTAssertEqual(evidence.exactLiteralModes, [true], "Dedicated constrained proposal mode must reach the actual provider")
         let request = try XCTUnwrap(evidence.requests.first)
         XCTAssertTrue(request.contains(query))
         XCTAssertTrue(request.contains("notes.search"))
@@ -76,7 +78,16 @@ final class ProductionChatPluginProposalTests: XCTestCase {
         let arguments = try XCTUnwrap(proposal.arguments.objectValue)
         XCTAssertEqual(Set(arguments.keys), ["query"])
         let proposedQuery = try XCTUnwrap(arguments["query"]?.stringValue)
-        XCTAssertTrue(proposedQuery.utf8.elementsEqual(query.utf8), "Model must copy only the requested exact search phrase")
+        XCTAssertTrue(proposedQuery.utf8.elementsEqual(query.utf8), "Resolved proposal must preserve the requested exact search phrase byte-for-byte")
+        // The raw model output must choose the reference protocol, not merely
+        // happen to copy this randomized string correctly. The adapter supplies
+        // the exact literal only after strict parsing and original schema validation.
+        XCTAssertFalse(evidence.outputTruncated)
+        let raw = try XCTUnwrap(try MCPJSONValue.parse(Data(evidence.visibleOutput.utf8), maximumBytes: 16_384).objectValue)
+        XCTAssertEqual(Set(raw.keys), ["tool", "arguments", "literalBindings"])
+        XCTAssertEqual(raw["tool"], .string("notes.search"))
+        XCTAssertEqual(raw["arguments"], .object([:]))
+        XCTAssertEqual(raw["literalBindings"], .array([.object(["argument": .string("query"), "literal": .integer(0)])]))
         XCTAssertNoThrow(try tools[0].inputSchema.validate(proposal.arguments))
         XCTAssertTrue(output.contains("not executed"))
         XCTAssertTrue(output.contains("Review the exact destination and arguments"))
@@ -101,7 +112,7 @@ private struct ObservedPluginModel: AIProvider {
     var id: String { actual.id }
     var displayName: String { actual.displayName }
     func stream(_ request: GenerationRequest) async throws -> AsyncThrowingStream<String, Error> {
-        await observation.request(request.systemPrompt + request.messages.map(\.content).joined(separator: "\n"))
+        await observation.request(request.systemPrompt + request.messages.map(\.content).joined(separator: "\n"), exactLiteralMode: request.pluginLiteralProposal)
         let pair = AsyncThrowingStream<String, Error>.makeStream()
         let task = Task {
             do {
@@ -128,6 +139,7 @@ private struct ForbiddenProposalFallback: AIProvider {
 }
 private actor PluginModelObservation {
     var requests: [String] = []
+    var exactLiteralModes: [Bool] = []
     var proposals: [PluginToolProposal] = []
     var fallback = false
     var visibleOutput = ""
@@ -135,7 +147,7 @@ private actor PluginModelObservation {
     private var worker: Task<Void, Never>?
     var outputBytes = 0
     var outputTruncated = false
-    func request(_ text: String) { requests.append(text) }
+    func request(_ text: String, exactLiteralMode: Bool) { requests.append(text); exactLiteralModes.append(exactLiteralMode) }
     func publish(_ proposal: PluginToolProposal) { proposals.append(proposal) }
     func markFallback() { fallback = true }
     func observeOutput(_ token: String) {
@@ -151,7 +163,7 @@ private actor PluginModelObservation {
         await task?.value
         worker = nil
     }
-    func snapshot() -> (requests: [String], proposals: [PluginToolProposal], fallback: Bool, visibleOutput: String, outputBytes: Int, outputTruncated: Bool) {
-        (requests, proposals, fallback, visibleOutput, outputBytes, outputTruncated)
+    func snapshot() -> (requests: [String], exactLiteralModes: [Bool], proposals: [PluginToolProposal], fallback: Bool, visibleOutput: String, outputBytes: Int, outputTruncated: Bool) {
+        (requests, exactLiteralModes, proposals, fallback, visibleOutput, outputBytes, outputTruncated)
     }
 }

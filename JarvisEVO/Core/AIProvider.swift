@@ -22,6 +22,7 @@ struct GenerationRequest: Sendable {
     var conciseQwen3: Bool = false
     /// Internal reviewed-read suggestion; never a tool execution instruction.
     var nativeReadGoal: String? = nil
+    var pluginLiteralProposal: Bool = false
 
     /// Internal JSON-only decisions opt into the existing Qwen3 non-thinking
     /// prefill. The engine checks architecture and the rendered assistant suffix;
@@ -35,7 +36,7 @@ struct GenerationRequest: Sendable {
         guard !normalChatReadOnly || localAgentRequiresTool == false else { throw LocalAgentError.invalidState }
         guard normalChatRequiredTool == nil || (normalChatReadOnly && NormalChatToolAction.allowedNames.contains(normalChatRequiredTool!)) else { throw LocalAgentError.invalidState }
         guard normalChatPrompt == nil || normalChatReadOnly || normalChatAnswer else { throw LocalAgentError.invalidState }
-        let count = [normalChatAnswer, nativeTranscriptInput != nil, localReadPlanProposal, localReadWorkflowPolicy != nil, localCompletionPolicy != nil, localAgentRequiresTool != nil, nativeReadGoal != nil].filter { $0 }.count
+        let count = [normalChatAnswer, nativeTranscriptInput != nil, localReadPlanProposal, localReadWorkflowPolicy != nil, localCompletionPolicy != nil, localAgentRequiresTool != nil, nativeReadGoal != nil, pluginLiteralProposal].filter { $0 }.count
         guard count <= 1, localReadPlanKind.map({ ["conversation_read","conversation_search"].contains($0) }) ?? true else { throw LocalAgentError.invalidState }
     }
     static func nativeTranscript(stateJSON:String,query:String,messageIndex:Int64) -> Self {

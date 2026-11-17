@@ -195,7 +195,8 @@ actor LlamaEngine: LocalResourceReleasing {
         defer { llama_sampler_free(sampler) }
         try request.validateInternalModes()
         let decisionGrammar: String?
-        if let nativeGrammar { decisionGrammar=nativeGrammar }
+        if request.pluginLiteralProposal { decisionGrammar = PluginToolProposal.literalGrammar }
+        else if let nativeGrammar { decisionGrammar=nativeGrammar }
         else if let kind=request.localReadPlanKind { decisionGrammar = try LocalAgentGrammar.readPlanProposal(kind:kind) }
         else if let policy = request.localCompletionPolicy { decisionGrammar = try LocalAgentGrammar.completion(policy) }
         else if let policy = request.localReadWorkflowPolicy { decisionGrammar = try LocalAgentGrammar.reviewed(policy) }
