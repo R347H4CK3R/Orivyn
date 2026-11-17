@@ -30,3 +30,12 @@ class ImportResourceFixturesTests(unittest.TestCase):
         for name in ['ArchiveReadBufferTests','ArchiveRestoreProgressTests','ArchiveRestoreResourceTests']:
             self.assertIn('-only-testing:JarvisEVOTests/'+name,gate)
         self.assertLess(gate.index('scripts/make_import_resource_fixtures.py'),gate.index('scripts/generate_project.py'))
+
+
+class NativeProbeSDKTests(unittest.TestCase):
+    def test_host_probes_select_macos_sdk_for_absolute_swiftc(self):
+        for name in ["run_import_resource_probe.py", "run_preservation_resource_probe.py"]:
+            source = (ROOT / "scripts" / name).read_text()
+            self.assertIn("sys.platform == 'darwin'", source)
+            self.assertIn("['xcrun','--sdk','macosx','--show-sdk-path']", source)
+            self.assertIn("command[1:1]=['-sdk'", source)

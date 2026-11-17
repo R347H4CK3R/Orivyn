@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """macOS exact-source synthetic preservation/RSS acceptance; not iPhone proof."""
-import argparse,hashlib,json,os,pathlib,subprocess
+import argparse,hashlib,json,os,pathlib,subprocess,sys
 p=argparse.ArgumentParser(description=__doc__);p.add_argument('--swiftc',type=pathlib.Path,required=True);p.add_argument('--output',type=pathlib.Path,required=True)
 a=p.parse_args();root=pathlib.Path(__file__).resolve().parents[1];out=a.output.resolve();out.mkdir(parents=True,exist_ok=False)
 sources=['JarvisEVO/Core/ArchiveReadBuffer.swift','JarvisEVO/Core/ArchiveRestoreProgress.swift','JarvisEVO/Services/ArchivePreservation.swift','Diagnostics/ImportResources/PreservationAcceptance.swift']
@@ -9,6 +9,9 @@ for source in sources:
  b=(root/source).read_bytes();target=out/pathlib.Path(source).name;target.write_bytes(b);files.append(str(target));manifest.append({'source':source,'bytes':len(b),'sha256':hashlib.sha256(b).hexdigest()})
 (out/'SOURCE-MANIFEST.json').write_text(json.dumps(manifest,indent=2)+'\n')
 exe=out/'preservation-acceptance';command=[str(a.swiftc),'-O','-swift-version','6','-parse-as-library','-module-cache-path',str(out/'module-cache'),*files,'-o',str(exe)]
+# An absolute swiftc invocation does not get xcrun's implicit host SDK.
+if sys.platform == 'darwin':
+ command[1:1]=['-sdk',subprocess.check_output(['xcrun','--sdk','macosx','--show-sdk-path'],text=True).strip()]
 (out/'COMMAND.json').write_text(json.dumps(command,indent=2)+'\n')
 with (out/'compile.log').open('w') as log:code=subprocess.run(command,stdout=log,stderr=subprocess.STDOUT,timeout=180).returncode
 results={'compileExit':code,'cases':{},'physicalDeviceVerified':False}

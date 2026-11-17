@@ -36,6 +36,9 @@ def file_sha256(path):
 fixtures=[{'path':f.name,'bytes':f.stat().st_size,'sha256':file_sha256(f)} for f in sorted(out.glob('*.json')) if f.name!='SOURCE-MANIFEST.json']
 (out/'FIXTURES.json').write_text(json.dumps(fixtures,indent=2)+'\n')
 exe=out/'import-resource-probe';command=[str(a.swiftc),'-O','-swift-version','6','-parse-as-library','-module-cache-path',str(out/'module-cache'),*files,'-o',str(exe)]
+# An absolute swiftc invocation does not get xcrun's implicit host SDK.
+if sys.platform == 'darwin':
+ command[1:1]=['-sdk',subprocess.check_output(['xcrun','--sdk','macosx','--show-sdk-path'],text=True).strip()]
 (out/'COMMAND.json').write_text(json.dumps(command,indent=2)+'\n')
 (out/'TOOLCHAIN.txt').write_text(subprocess.check_output([str(a.swiftc),'--version'],text=True))
 with (out/'compile.log').open('w') as log: compiled=subprocess.run(command,stdout=log,stderr=subprocess.STDOUT,timeout=180).returncode

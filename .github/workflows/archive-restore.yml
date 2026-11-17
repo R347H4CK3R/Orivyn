@@ -1,4 +1,4 @@
-name: Verify build 20 bounded archive import resources
+name: Verify build 20 bounded archive import resources (explicit host SDK)
 on:
   push:
     branches: [fix/build20-import-crash]
