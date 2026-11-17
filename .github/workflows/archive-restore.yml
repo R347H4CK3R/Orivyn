@@ -1,4 +1,4 @@
-name: Verify build 22 manual attachments and mandatory plugin-review wording
+name: Verify build 22 manual attachments and exact user-approval semantics
 on:
   push:
     branches: [fix/build22-manual-attachments]
