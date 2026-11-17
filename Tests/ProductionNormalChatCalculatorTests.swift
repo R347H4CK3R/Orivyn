@@ -65,7 +65,7 @@ final class ProductionNormalChatCalculatorTests: XCTestCase {
         attachment.lifetime = .keepAlways
         add(attachment)
         if let streamError { throw streamError }
-        XCTAssertEqual(evidence.requests.count, 2, "Model must choose the tool then consume its result")
+        XCTAssertEqual(evidence.requests.count, 2, "Model must choose the tool then answer from its recorded result")
         XCTAssertFalse(evidence.requests.first?.contains("4976") == true, "Result must not be injected before tool execution")
         XCTAssertTrue(evidence.requests.last?.contains("4976") == true)
         XCTAssertEqual(evidence.reads.count, 1)

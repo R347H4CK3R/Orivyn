@@ -92,18 +92,19 @@ extension LocalAgentGrammar {
     /// Normal chat can answer immediately and has only the advertised three
     /// local reads plus exact-goal arithmetic. Conversation/result paging rules
     /// are deliberately unreachable from this root.
-    static func normalChat(_ source: String) throws -> String {
+    static func normalChat(_ source: String, requiredTool: String? = nil) throws -> String {
+        guard requiredTool == nil || NormalChatToolAction.allowedNames.contains(requiredTool!) else { throw LocalAgentError.invalidState }
         guard source.hasPrefix("root ::= tool | read-result | answer\n") else { throw LocalAgentError.invalidState }
         var lines = source.components(separatedBy: "\n")
         guard let index = lines.firstIndex(where: { $0.hasPrefix("tool-body ::= ") }),
               let limit = lines.firstIndex(where: { $0.hasPrefix("limit ::= ") }) else { throw LocalAgentError.invalidState }
         let alternatives = lines[index].dropFirst("tool-body ::= ".count).components(separatedBy: " | ")
-        let names = NormalChatToolAction.allowedNames
+        let names = requiredTool.map { [$0] } ?? NormalChatToolAction.allowedNames
         let retained = alternatives.filter { candidate in
             names.contains { candidate.hasPrefix("\"\\\"" + $0 + "\\\"\"") }
         }
         guard retained.count == names.count else { throw LocalAgentError.invalidState }
-        lines[0] = "root ::= tool | answer"
+        lines[0] = requiredTool == nil ? "root ::= tool | answer" : "root ::= tool"
         lines[index] = "tool-body ::= " + retained.joined(separator: " | ")
         lines[limit] = "limit ::= [1-3]"
         return lines.joined(separator: "\n")

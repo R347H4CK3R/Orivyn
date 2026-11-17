@@ -46,6 +46,39 @@ struct AppSelfKnowledge: Decodable, Sendable {
         return try LocalToolResultBudget.encode(result, collection: "capabilities", maximumBytes: maximumBytes)
     }
 
+    /// Exact data rendering after a successful recorded get_app_info operation.
+    /// Status labels never come from model prose; whole prerequisite text survives.
+    static func renderRecordedResult(_ result: String) throws -> String {
+        let action = try NormalChatToolAction(value: .object(["name": .string("get_app_info"), "arguments": .object([:])]))
+        try action.validateResult(result, goal: "")
+        guard let fields = try MCPJSONValue.parse(Data(result.utf8), maximumBytes: 4096).objectValue,
+              let capabilities = fields["capabilities"]?.arrayValue else { throw LocalAgentError.invalidState }
+        let ids = capabilities.compactMap { $0.objectValue?["id"]?.stringValue }
+        guard Set(ids).count == ids.count else { throw LocalAgentError.invalidState }
+        func literal(_ text: String) -> String {
+            var value = text.replacingOccurrences(of: "\\", with: "\\\\")
+                .replacingOccurrences(of: "\n", with: "\\n").replacingOccurrences(of: "\r", with: "\\r")
+                .replacingOccurrences(of: "\t", with: "\\t")
+            for marker in ["`", "*", "_", "[", "]", "<", ">", "#"] { value = value.replacingOccurrences(of: marker, with: "\\" + marker) }
+            return value
+        }
+        var lines = ["Bundled app information (metadata only, not repository/source access):"]
+        for (status, label) in [("available", "Available"), ("conditional", "Conditional"), ("notAvailable", "Not available")] {
+            lines.append("\n" + label + ":")
+            let items = capabilities.compactMap { $0.objectValue }.filter { $0["status"]?.stringValue == status }
+            if items.isEmpty { lines.append("- No entries reported in this group.") }
+            for item in items {
+                guard let id = item["id"]?.stringValue else { throw LocalAgentError.invalidState }
+                lines.append("- " + literal(id) + (item["detail"]?.stringValue.map { ": " + literal($0) } ?? ": No detail supplied."))
+            }
+        }
+        if let omitted = fields["omittedItems"]?.integerValue {
+            lines.append("\nSource limitation: \(omitted) additional capabilities omitted from this bounded result. This is not a complete capability list.")
+        }
+        lines.append("\nThese are capability descriptions, not proof that any described action ran.")
+        return lines.joined(separator: "\n")
+    }
+
     static func load(bundle: Bundle = .main) -> Self? {
         guard let url = bundle.url(forResource: "OrivynCapabilities", withExtension: "json"),
               let data = try? Data(contentsOf: url) else { return nil }

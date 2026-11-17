@@ -6,10 +6,10 @@ import unittest
 ROOT = Path(__file__).resolve().parents[2]
 
 class Build19NativeGateTests(unittest.TestCase):
-    def test_gate_requires_all_238_selected_tests_without_failures_or_skips(self):
+    def test_gate_requires_all_245_selected_tests_without_failures_or_skips(self):
         script = (ROOT / 'scripts/ci_archive_restore.sh').read_text()
         expected = ast.literal_eval(re.search(r'^expected=(\{[^\n]+\})$', script, re.M).group(1))
-        self.assertEqual(expected, {'totalTestCount': 238, 'passedTests': 238, 'failedTests': 0, 'skippedTests': 0})
+        self.assertEqual(expected, {'totalTestCount': 245, 'passedTests': 245, 'failedTests': 0, 'skippedTests': 0})
         selectors = re.findall(r'-only-testing:([\w/]+)', script)
         self.assertEqual(len(selectors), len(set(selectors)))
         total = 0
@@ -31,14 +31,12 @@ class Build19NativeGateTests(unittest.TestCase):
                 total += 1
             else:
                 total += len(matches[0])
-        self.assertEqual(total, 238)
+        self.assertEqual(total, 245)
         self.assertIn('assert type(s.get(k)) is int and s[k]==v', script)
         self.assertNotIn('-skip-testing:', script)
 
     def test_post_read_probe_distinguishes_rejection_from_answering(self):
         source = (ROOT / 'Tests/ProductionNormalChatLocalAgentTests.swift').read_text()
-        self.assertIn('ProviderError.rejected(let reason)', source)
-        self.assertIn('current request and recorded results', source)
+        self.assertIn('if let infoError { throw infoError }', source)
         self.assertIn('XCTAssertEqual(infoEvidence.reads.count, 1', source)
-        self.assertIn('XCTAssertEqual(infoEvidence.requests.count, 2', source)
-        self.assertIn('No fabricated answer after fitting fails', source)
+        self.assertIn('XCTAssertEqual(infoEvidence.requests.count, 1', source)

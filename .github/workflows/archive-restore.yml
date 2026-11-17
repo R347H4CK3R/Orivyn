@@ -1,4 +1,4 @@
-name: Verify build 19 normal-chat repairs and bounded context
+name: Verify build 19 separated answers and exact recorded capabilities
 on:
   push:
     branches: [fix/build19-chat-repair]

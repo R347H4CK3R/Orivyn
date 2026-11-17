@@ -11,16 +11,16 @@ SOURCES=['JarvisEVO/Core/NativeReadProposal.swift','JarvisEVO/Core/LocalCalculat
  'JarvisEVO/Core/LocalAgentGrammar.swift','JarvisEVO/Core/LocalAgentError.swift','scripts/swift-smoke/LlamaEngineSmoke.swift']
 def main():
  p=argparse.ArgumentParser(description=__doc__)
- p.add_argument('--scenario',choices=['engine','qwen-mode','calculator-agent','conversation-agent','reviewed-conversation-agent'],default='engine')
+ p.add_argument('--scenario',choices=['engine','qwen-mode','calculator-agent','conversation-agent','reviewed-conversation-agent','normal-chat-agent'],default='engine')
  for n in ['swiftc','runtime','headers','model','output']:p.add_argument('--'+n,required=True,type=pathlib.Path)
  p.add_argument('--run-timeout',type=int,default=180)
  a=p.parse_args();root=pathlib.Path(__file__).resolve().parents[1];out=a.output.resolve();out.mkdir(parents=True,exist_ok=False);manifest=[];files=[]
  sources = list(SOURCES) + ['JarvisEVO/Core/LocalReviewedSearch.swift','JarvisEVO/Core/LocalConversationSearch.swift','JarvisEVO/Core/LocalSearchExcerpt.swift','JarvisEVO/Core/AttachmentTextSearch.swift','JarvisEVO/Core/LocalToolResultBudget.swift','JarvisEVO/Core/LocalReadPlan.swift','JarvisEVO/Core/LocalReadWorkflowPolicy.swift','JarvisEVO/Core/LocalConversationRead.swift','JarvisEVO/Core/LocalAgentSnapshot.swift','JarvisEVO/Core/LocalCalculationEvidence.swift']
  if a.scenario != 'engine':
-  driver = {'qwen-mode':'QwenModeSmoke.swift','calculator-agent':'CalculatorAgentSmoke.swift','conversation-agent':'ConversationAgentSmoke.swift','reviewed-conversation-agent':'ReviewedConversationAgentSmoke.swift'}[a.scenario]
+  driver = {'qwen-mode':'QwenModeSmoke.swift','calculator-agent':'CalculatorAgentSmoke.swift','conversation-agent':'ConversationAgentSmoke.swift','reviewed-conversation-agent':'ReviewedConversationAgentSmoke.swift','normal-chat-agent':'NormalChatAgentSmoke.swift'}[a.scenario]
   sources = [n for n in sources if n != 'scripts/swift-smoke/LlamaEngineSmoke.swift'] + ['scripts/swift-smoke/'+driver]
  if a.scenario in ['calculator-agent','conversation-agent','reviewed-conversation-agent']: sources += ['JarvisEVO/Services/LocalAgentStore.swift','JarvisEVO/Core/LocalAgentSnapshot.swift','JarvisEVO/Core/LocalCalculationEvidence.swift']
- if a.scenario in ['conversation-agent','reviewed-conversation-agent']:
+ if a.scenario in ['conversation-agent','reviewed-conversation-agent','normal-chat-agent']:
   sources = list(dict.fromkeys(sources + runpy.run_path(str(root/'scripts/run_foundation_tests.py'))['SOURCES'] + ['JarvisEVO/Services/LocalReadTools.swift']))
  sources=list(dict.fromkeys(sources))
  for n in sources:
@@ -34,6 +34,10 @@ def main():
   for resource in ['JarvisEVO/Resources/LocalAgentCore.js','scripts/swift-smoke/CalculatorAgentCore.cjs']:
    b=(root/resource).read_bytes();(out/pathlib.Path(resource).name).write_bytes(b)
    manifest.append({'source':resource,'sha256':hashlib.sha256(b).hexdigest(),'bytes':len(b)})
+ if a.scenario == 'normal-chat-agent':
+  resource='JarvisEVO/Resources/OrivynCapabilities.json'
+  b=(root/resource).read_bytes();(out/'OrivynCapabilities.json').write_bytes(b)
+  manifest.append({'source':resource,'sha256':hashlib.sha256(b).hexdigest(),'bytes':len(b)})
  module=out/'llama';module.mkdir();shutil.copytree(a.headers,module/'include')
  (module/'module.modulemap').write_text('module llama [system] { header "include/llama.h" link "llama" export * }\n')
  for f in sorted((module/'include').glob('*.h')):

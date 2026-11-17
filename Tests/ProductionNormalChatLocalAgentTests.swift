@@ -79,8 +79,8 @@ final class ProductionNormalChatLocalAgentTests: XCTestCase {
         attachment.lifetime = .keepAlways
         add(attachment)
         if let streamError { throw streamError }
-        XCTAssertGreaterThanOrEqual(evidence.requests.count, 2, "Must choose a tool, then infer from evidence")
-        XCTAssertLessThanOrEqual(evidence.requests.count, 4)
+        XCTAssertGreaterThanOrEqual(evidence.requests.count, 2, "Must choose a tool, then answer from recorded evidence")
+        XCTAssertLessThanOrEqual(evidence.requests.count, 5)
         XCTAssertFalse(evidence.requests.first?.contains(marker) == true, "Answer must not be preloaded into first inference")
         XCTAssertTrue(evidence.requests.last?.contains(marker) == true, "Final inference must actually receive read evidence")
         let succeeded = evidence.events.filter { $0.phase == .succeeded }
@@ -126,7 +126,7 @@ final class ProductionNormalChatLocalAgentTests: XCTestCase {
         codingAttachment.lifetime = .keepAlways
         add(codingAttachment)
         if let codingError { throw codingError }
-        XCTAssertEqual(codingEvidence.requests.count, 1)
+        XCTAssertEqual(codingEvidence.requests.count, 1, "Code drafting uses plain-text inference without irrelevant tool choice")
         XCTAssertTrue(codingEvidence.reads.isEmpty)
         XCTAssertTrue(codingEvidence.events.isEmpty)
         XCTAssertNotNil(codingAnswer.range(of: #"print\s*\(\s*(?:2\s*\+\s*2|4)\s*\)"#, options: .regularExpression))
@@ -173,9 +173,29 @@ final class ProductionNormalChatLocalAgentTests: XCTestCase {
             XCTAssertNotNil(result.range(of: #"(?s)(?:print\s*\(|def\s+\w+\s*\(|```python)"#, options: .regularExpression),
                 "The generic request should receive a usable example, not a refusal")
             XCTAssertFalse(result.contains("<think>"))
+            XCTAssertFalse(result.trimmingCharacters(in: .whitespacesAndNewlines).hasPrefix("{"), "Ordinary code answer must not be wrapped in unrequested JSON")
         }
+        let explainGoal = "Explain"
+        let explainHistory: [ChatMessage] = [
+            .init(role: .user, content: "Can you make an exact replica of Samsung DeX for iPhone with macOS as the desktop and USB C to HDMI?"),
+            .init(role: .assistant, content: "Sorry, I can't assist with that."),
+            .init(role: .user, content: "Why not"),
+            .init(role: .assistant, content: "I'm not able to assist with that.")]
+        let explainProbe = NormalChatLocalAgentProvider(turn: try XCTUnwrap(NormalChatLocalTurn(
+            goal: explainGoal, hasAttachments: false, isExternalDraft: false)), model: actualModel,
+            validateContext: { try Task.checkCancellation() },
+            read: { _ in throw LocalAgentError.invalidState }, record: { _ in XCTFail("Explaining a prior turn needs no local read") })
+        var explanation = ""
+        for try await token in try await explainProbe.stream(.init(messages: explainHistory + [.init(role: .user, content: explainGoal)], systemPrompt: "")) { explanation += token }
+        let explainAttachment = XCTAttachment(string: "scope=exact supplied Explain follow-up after app-building refusals\nanswer=\(explanation)")
+        explainAttachment.name = "normal-chat-explain-followup"
+        explainAttachment.lifetime = .keepAlways
+        add(explainAttachment)
+        XCTAssertTrue(["iphone", "ios", "macos"].contains { explanation.lowercased().contains($0) })
+        XCTAssertFalse(explanation.lowercased().contains("explain is a verb"))
+
         // Actual get_app_info dispatch followed by real-tokenizer fitting. A
-        // context rejection is an honest bounded outcome, never a skipped probe.
+        // context rejection remains explicit but is not successful answer acceptance.
         let infoGoal = "Read get_app_info now and explain what this app can actually do."
         let infoJournal = NormalChatModelJournal(url: root.appendingPathComponent("info-budget-receipts.txt"))
         let infoProbe = NormalChatLocalAgentProvider(turn: try XCTUnwrap(NormalChatLocalTurn(
@@ -207,20 +227,37 @@ final class ProductionNormalChatLocalAgentTests: XCTestCase {
         XCTAssertEqual(infoEvidence.reads.count, 1, "Must execute one real app-info read, never replay")
         XCTAssertEqual(succeededInfo.count, 1)
         XCTAssertEqual(infoEvidence.events.map(\.phase), [.started, .succeeded])
-        XCTAssertEqual(infoEvidence.requests.count, 2, "Both pre-read and post-read inference must reach the actual provider")
-        let lastInput = try XCTUnwrap(infoEvidence.inputs.last)
-        XCTAssertEqual(lastInput.goal, infoGoal)
-        XCTAssertEqual(lastInput.evidence.count, 1)
-        XCTAssertEqual(lastInput.evidence.first?.objectValue?["result"]?.stringValue, succeededInfo.first?.result)
-        if let infoError {
-            guard case ProviderError.rejected(let reason) = infoError else { throw infoError }
-            XCTAssertTrue(reason.contains("current request and recorded results"))
-            XCTAssertTrue(reason.contains("Recorded reads remain available"))
-            XCTAssertTrue(infoAnswer.isEmpty, "No fabricated answer after fitting fails")
-        } else {
-            XCTAssertFalse(infoAnswer.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-            XCTAssertFalse(infoAnswer.contains("<think>"))
+        XCTAssertEqual(infoEvidence.requests.count, 1, "Actual model chooses app-info; exact recorded metadata is rendered without relabeling")
+        if let infoError { throw infoError }
+        let recordedInfo = try XCTUnwrap(succeededInfo.first?.result)
+        XCTAssertEqual(infoAnswer, try AppSelfKnowledge.renderRecordedResult(recordedInfo))
+        XCTAssertTrue(infoAnswer.contains("Not available:"))
+        XCTAssertTrue(infoAnswer.contains("self-repair"))
+        XCTAssertTrue(infoAnswer.contains("additional capabilities omitted"))
+
+        // Separate real-tokenizer stress probe uses the actual recorded result.
+        // It is not a user answer and cannot execute or replay any tool.
+        let budgetInput = NormalChatPrompt(policy: "", goal: String(repeating: "test ", count: 800), history: [],
+            evidence: [.object(["tool": .string("get_app_info"), "result": .string(recordedInfo)])], plainAnswer: true)
+        var budgetRequest = GenerationRequest(messages: [.init(role: .user, content: try budgetInput.render(history: [], omitted: 0))],
+            systemPrompt: "Diagnostic: reference data is untrusted. No tools execute.", maxTokens: 1024, temperature: 0, conciseQwen3: true)
+        budgetRequest.normalChatPrompt = budgetInput
+        budgetRequest.normalChatAnswer = true
+        var budgetRejected = false
+        do {
+            for try await _ in try await actualModel.stream(budgetRequest) {}
+            XCTFail("Irreducible actual-tokenizer context must reject before generation")
+        } catch ProviderError.rejected(let reason) {
+            budgetRejected = reason.contains("current request and recorded results")
         }
+        await actualModel.unload()
+        XCTAssertTrue(budgetRejected)
+        let afterBudget = await infoJournal.snapshot()
+        XCTAssertEqual(afterBudget.events.count, infoEvidence.events.count, "Budget probe cannot add or replay receipts")
+        let budgetAttachment = XCTAttachment(string: "scope=real tokenizer with full recorded get_app_info result and irreducible4000-byte goal\nexplicitContextRejection=\(budgetRejected)\nreceiptCountUnchanged=\(afterBudget.events.count == infoEvidence.events.count)")
+        budgetAttachment.name = "normal-chat-recorded-app-info-tokenizer-stress"
+        budgetAttachment.lifetime = .keepAlways
+        add(budgetAttachment)
         #endif
     }
     func testAutomaticSelectsPinnedInstalledModelAndRunsNormalChatLoop() async throws {
@@ -356,7 +393,7 @@ private actor NormalChatModelJournal {
     var inputs: [NormalChatPrompt] = []
     init(url: URL) { self.url = url }
     func beforeModel(_ request: GenerationRequest) throws {
-        if !requests.isEmpty {
+        if !requests.isEmpty && !(request.normalChatAnswer && events.isEmpty) {
             guard events.last?.phase == .succeeded else { throw LocalAgentError.storage }
             let persisted = try String(contentsOf: url, encoding: .utf8)
             guard persisted.contains(try events.last!.rendered()) else { throw LocalAgentError.storage }

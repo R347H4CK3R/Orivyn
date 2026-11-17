@@ -141,7 +141,8 @@ private struct CapturingPluginModel: AIProvider {
     let capture: ProposalCapture; let output: String
     func stream(_ request: GenerationRequest) async throws -> AsyncThrowingStream<String, Error> {
         await capture.add(request.systemPrompt + request.messages.map(\.content).joined())
-        return AsyncThrowingStream { $0.yield(output); $0.finish() }
+        let visible = request.normalChatAnswer ? "A poem" : output
+        return AsyncThrowingStream { $0.yield(visible); $0.finish() }
     }
 }
 
