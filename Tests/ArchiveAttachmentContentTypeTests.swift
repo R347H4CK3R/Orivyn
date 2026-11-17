@@ -13,8 +13,15 @@ final class ArchiveAttachmentContentTypeTests: XCTestCase {
     func testOnlyBoundedStillImageBrandsAreRoutedToHEIC() throws {
         func box(_ major: String, _ compatible: String = "") -> Data {
             let count = 16 + compatible.utf8.count
-            return Data([0,0,0,UInt8(count)] + Array("ftyp".utf8) + Array(major.utf8) + [0,0,0,0] + Array(compatible.utf8))
+            var bytes: [UInt8] = [0, 0, 0, UInt8(count)]
+            bytes.append(contentsOf: "ftyp".utf8)
+            bytes.append(contentsOf: major.utf8)
+            bytes.append(contentsOf: [0, 0, 0, 0])
+            bytes.append(contentsOf: compatible.utf8)
+            return Data(bytes)
         }
+        XCTAssertEqual(Array(box("heic")), [0,0,0,16,102,116,121,112,104,101,105,99,0,0,0,0])
+        XCTAssertEqual(Array(box("mif1", "heix")), [0,0,0,20,102,116,121,112,109,105,102,49,0,0,0,0,104,101,105,120])
         XCTAssertEqual(try ArchiveAttachmentContentType.classify(box("heic")), "heic")
         XCTAssertEqual(try ArchiveAttachmentContentType.classify(box("mif1", "heix")), "heic")
         for data in [box("mif1"), box("isom"), box("hevc"), box("avif"), Data(box("heic").dropLast()), Data([0,0,0,0])+Data("ftypheic".utf8)] {

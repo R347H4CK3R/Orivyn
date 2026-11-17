@@ -1,4 +1,4 @@
-name: Verify build 23 local archive format and reviewed DAT media
+name: Verify build 23 format and DAT media with bounded fixture compilation
 on:
   push:
     branches: [fix/build23-format-report]
