@@ -8,6 +8,46 @@ final class ChatGPTConversationRestoreTests: XCTestCase {
         ["id": conversationID.uuidString, "title": "Restored", "create_time": 100.0, "update_time": 200.0,
          "current_node": "leaf", "mapping": ["leaf": ["parent": NSNull(), "message": ["id": messageID.uuidString, "create_time": 150.0, "author": ["role": "user"], "content": ["content_type": "text", "parts": ["Saved question"]]]]]]
     }
+    func testRestoresVisibleStructuredCodeTextWithoutExecution() throws {
+        var value = record()
+        var mapping = value["mapping"] as! [String: [String: Any]]
+        var message = mapping["leaf"]!["message"] as! [String: Any]
+        message["author"] = ["role": "assistant"]
+        message["channel"] = "final"; message["recipient"] = "all"
+        message["status"] = "finished_successfully"
+        message["content"] = ["content_type": "code", "language": "python", "text": "print('synthetic')"]
+        mapping["leaf"]!["message"] = message; value["mapping"] = mapping
+        let result = try ChatGPTConversationRestore.convert(JSONSerialization.data(withJSONObject: value), identities: [:])
+        XCTAssertEqual(result.conversation?.messages.map(\.content), ["print('synthetic')"])
+        XCTAssertEqual(result.conversation?.messages.first?.state, .complete)
+        XCTAssertEqual(result.omittedMessages, 0)
+    }
+    func testStructuredCodeRetainsPrivacyRoutingAndStrictTextShape() throws {
+        let variants: [[String: Any]] = [
+            ["channel": "analysis"], ["recipient": "python"],
+            ["metadata": ["is_visually_hidden_from_conversation": true]],
+            ["metadata": ["is_do_not_remember": true]],
+            ["metadata": ["is_user_system_message": true]],
+            ["author": ["role": "tool"]],
+            ["content": ["content_type": "code", "text": ["untrusted": "not text"]]],
+            ["content": ["content_type": "unknown", "text": "not supported"]],
+            ["content": ["content_type": "code", "text": NSNull(), "parts": ["do not infer"]]]
+        ]
+        for changes in variants {
+            var value = record()
+            var mapping = value["mapping"] as! [String: [String: Any]]
+            var message = mapping["leaf"]!["message"] as! [String: Any]
+            message["author"] = ["role": "assistant"]
+            message["channel"] = "final"; message["recipient"] = "all"
+            message["content"] = ["content_type": "code", "text": "private synthetic"]
+            for (key, item) in changes { message[key] = item }
+            mapping["leaf"]!["message"] = message; value["mapping"] = mapping
+            let result = try ChatGPTConversationRestore.convert(JSONSerialization.data(withJSONObject: value), identities: [:])
+            XCTAssertEqual(result.conversation?.messages.count, 0)
+            XCTAssertEqual(result.omittedMessages, 1)
+            XCTAssertTrue(result.unresolvedContent.isEmpty)
+        }
+    }
     func testConvertsIntoContinuableConversationInsteadOfMemoryExcerpts() throws {
         let data = try JSONSerialization.data(withJSONObject: record())
         let result = try ChatGPTConversationRestore.convert(data, identities: [:])

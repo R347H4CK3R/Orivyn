@@ -7,11 +7,11 @@
 	<key>OrivynFeedbackRepositoryURL</key>
 	<string>https://github.com/R347H4CK3R/Orivyn</string>
 	<key>CFBundleShortVersionString</key>
-	<string>0.1.4</string>
+	<string>0.1.5</string>
 	<key>CFBundleVersion</key>
-	<string>20</string>
+	<string>21</string>
 	<key>OrivynReleaseNotes</key>
-	<string>Unsigned SideStore preview, version 0.1.4 build 20: reduces temporary memory while copying and verifying large chat ZIPs, bounds display progress updates, and skips unused export metadata without building its full object graph. Required privacy and visibility fields remain enforced; ambiguous duplicate fields and excessive retained complexity fail with an explanation. Originals, existing history, review-before-import and atomic commits are preserved. These changes address reproducible synthetic memory defects, not a confirmed diagnosis of every device exit. Private-archive import and physical-device acceptance remain unverified. No video downloading, broader autonomy, vision or sync is added. Preserve existing app data and signing identity when updating.</string>
+	<string>Unsigned SideStore preview, version 0.1.5 build 21: adds a bounded read-only per-message inventory of retained unlinked references before and after import, with explicit incomplete-media-count caveats. No file mapping, attachment activation, download or execution is performed. Visible structured-code text is restored as inert history after privacy and routing checks. Retains build 20 memory safeguards, original archives, existing local edits and reviewed atomic imports. Other content types and alternative branches may remain only in the original ZIP. Physical-device and full private-archive acceptance remain unverified. No video downloading, broader autonomy, vision or sync is added. Preserve app data and signing identity when updating.</string>
 	<key>CFBundleURLTypes</key>
 	<array><dict>
 		<key>CFBundleURLName</key><string>app.jarvisevo.ios.compose</string>

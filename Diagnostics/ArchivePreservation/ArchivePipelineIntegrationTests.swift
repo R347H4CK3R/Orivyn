@@ -5,7 +5,7 @@ import ArchiveExtraction
 /// Synthetic component integration, not app/Files/provider/database verification.
 final class ArchivePipelineIntegrationTests: XCTestCase {
     private func withFixture(_ name: String, body: (URL, URL) throws -> Void) throws {
-        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let root = FileManager.default.temporaryDirectory.resolvingSymlinksInPath().appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }
         let fixture = try XCTUnwrap(Bundle.module.url(forResource: name, withExtension: "zip", subdirectory: "Fixtures"))

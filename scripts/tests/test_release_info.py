@@ -8,6 +8,6 @@ class ReleaseInfoTests(unittest.TestCase):
   self.assertNotIn('?? "1.0"',text)
  def test_release_metadata_matches_requested_candidate(self):
   info=plistlib.loads((ROOT/'JarvisEVO/Info.plist').read_bytes())
-  self.assertEqual(info['CFBundleShortVersionString'],'0.1.4')
-  self.assertEqual(info['CFBundleVersion'],'20')
+  self.assertEqual(info['CFBundleShortVersionString'],'0.1.5')
+  self.assertEqual(info['CFBundleVersion'],'21')
   self.assertIn('SideStore',info['OrivynReleaseNotes'])

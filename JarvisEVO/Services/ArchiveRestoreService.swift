@@ -146,6 +146,69 @@ enum ArchiveRestoreService {
         }
         return RecoveryReport(reviews: result.sorted { $0.jobID.uuidString < $1.jobID.uuidString }, incompleteJobs: incomplete)
     }
+    /// Discoverable read-only inventories include committed preparations. This
+    /// deliberately does not change recovery/ready-to-commit eligibility.
+    static func listInventoryReviews(jobsRoot: URL) throws -> [Review] {
+        try validateRoot(jobsRoot)
+        let urls = try FileManager.default.contentsOfDirectory(at: jobsRoot, includingPropertiesForKeys: nil)
+        guard urls.count <= 1000 else { throw Failure.limit }
+        var reviews: [Review] = []
+        for url in urls {
+            try Task.checkCancellation()
+            guard let id = UUID(uuidString: url.lastPathComponent) else { continue }
+            do {
+                func readReview() throws -> Review? {
+                    let state = try readState(job: url)
+                    guard state.jobID == id, ["reviewReady", "committed"].contains(state.phase),
+                          let review = state.review, review.jobID == id,
+                          let original = state.original, original.sha256 == review.archiveSHA256,
+                          state.planSHA256 != nil else { return nil }
+                    return review
+                }
+                #if canImport(ObjectiveC)
+                let review = try autoreleasepool(invoking: readReview)
+                #else
+                let review = try readReview()
+                #endif
+                if let review { reviews.append(review) }
+            } catch is CancellationError { throw CancellationError() }
+            catch { continue } // Damaged jobs are reported by the existing recovery path.
+        }
+        return reviews.sorted { $0.jobID.uuidString < $1.jobID.uuidString }
+    }
+
+    /// Validates the prepared-plan binding only, not retained asset existence or
+    /// SQLite activation. No raw JSON, inferred path, or original file is exposed.
+    static func retainedInventory(review: Review, jobsRoot: URL, offset: Int = 0) throws -> ArchiveRestoreInventory.Page {
+        try validateRoot(jobsRoot); try Task.checkCancellation()
+        let job = jobsRoot.appendingPathComponent(review.jobID.uuidString), state = try readState(job: job)
+        guard state.jobID == review.jobID, ["reviewReady", "committed"].contains(state.phase),
+              state.review == review, let original = state.original,
+              original.sha256 == review.archiveSHA256, let expectedHash = state.planSHA256 else { throw Failure.invalidJob }
+        guard (0...10_000).contains(review.conversationCount), (0...500_000).contains(review.messageCount),
+              (0...20_000).contains(review.unresolvedCount) else { throw Failure.limit }
+        let planURL = job.appendingPathComponent("plan.json")
+        func buildPage() throws -> ArchiveRestoreInventory.Page {
+            let bytes = try readBounded(planURL, maximum: 50_000_000)
+            guard digest(bytes) == expectedHash else { throw Failure.integrity }
+            let plan = try JSONDecoder().decode(Plan.self, from: bytes)
+            guard plan.conversations.count == review.conversationCount, plan.unresolved.count == review.unresolvedCount,
+                  plan.conversations.reduce(0, { $0 + $1.messages.count }) == review.messageCount else { throw Failure.integrity }
+            return try ArchiveRestoreInventory.page(conversations: plan.conversations,
+                references: plan.unresolved.map { .init(messageID: $0.messageID, source: $0.source) }, offset: offset)
+        }
+        #if canImport(ObjectiveC)
+        let page = try autoreleasepool(invoking: buildPage)
+        #else
+        let page = try buildPage()
+        #endif
+        let current = try readState(job: job)
+        guard current.jobID == state.jobID, current.phase == state.phase, current.review == review,
+              current.original == original, current.planSHA256 == expectedHash,
+              try hashRegular(planURL, maximum: 50_000_000).sha256 == expectedHash else { throw Failure.integrity }
+        try Task.checkCancellation(); return page
+    }
+
     static func verifyForCommit(review: Review, jobsRoot: URL,
                                 progress: @Sendable (String) -> Void = { _ in }) throws -> Plan {
         try validateRoot(jobsRoot)

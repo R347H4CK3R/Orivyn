@@ -126,7 +126,7 @@ enum ChatGPTRecordProjection {
             case .metadata:
                 if key == "attachments" { return .attachments }
                 return ["is_do_not_remember", "is_visually_hidden_from_conversation", "is_user_system_message"].contains(key) ? .scalar : .skip
-            case .content: return key == "parts" ? .parts : key == "content_type" ? .scalar : .skip
+            case .content: return key == "parts" ? .parts : ["content_type", "text"].contains(key) ? .scalar : .skip
             case .opaque: return .opaque
             default: return .skip
             }

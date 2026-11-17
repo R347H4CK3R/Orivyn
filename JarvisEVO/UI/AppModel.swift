@@ -1375,6 +1375,18 @@ final class AppModel {
               unresolvedCount: value.unresolvedCount, omittedCount: value.omittedCount,
               retainedFileCount: value.retainedFileCount, archiveSHA256: value.archiveSHA256)
     }
+    func retainedArchiveInventoryReviews() async throws -> [ArchiveRestoreView.Review] {
+        let root = try archiveRoot()
+        return try await runArchiveWork { try ArchiveRestoreService.listInventoryReviews(jobsRoot: root) }.map(archiveViewReview)
+    }
+    func retainedArchiveInventory(_ value: ArchiveRestoreView.Review, offset: Int) async throws -> ArchiveRestoreInventory.Page {
+        guard !isGenerating, beginHistoryChange() else { throw TextSnapshotError.busy }
+        defer { finishHistoryChange() }
+        await resourceReleaser.unload()
+        try Task.checkCancellation()
+        let root = try archiveRoot(), review = archiveServiceReview(value)
+        return try await runArchiveWork { try ArchiveRestoreService.retainedInventory(review: review, jobsRoot: root, offset: offset) }
+    }
     func prepareArchiveRestore(_ url: URL, progress: @escaping ArchiveRestoreView.Progress) async throws -> ArchiveRestoreView.Review {
         guard !isGenerating, beginHistoryChange() else { throw TextSnapshotError.busy }
         defer { finishHistoryChange() }

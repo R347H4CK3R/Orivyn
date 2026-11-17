@@ -62,6 +62,31 @@ final class ArchiveRestoreUITests: XCTestCase {
         assertRestoredHistory(app)
     }
 
+    func testRetainedMediaInventoryRemainsReadOnlyAfterCommitAndRelaunch() {
+        continueAfterFailure = false
+        let app = launchFresh()
+        openRestore(app); selectFixtureZIP(app); assertReview(app)
+        let inspect = app.buttons["archive.inspect-media"]
+        reveal(inspect, in: app.collectionViews.firstMatch); inspect.tap()
+        let summary = app.staticTexts["archive.media-summary"]
+        reveal(summary, in: app.collectionViews.firstMatch)
+        XCTAssertTrue(summary.waitForExistence(timeout: 30))
+        XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "1 retained reference records")).firstMatch.exists)
+        screenshot(app, "Retained media inventory before restore")
+        reveal(app.buttons["archive.confirm"], in: app.collectionViews.firstMatch, towardEnd: false)
+        XCTAssertTrue(app.buttons["archive.confirm"].exists, "Inventory must not commit history")
+        commitPrepared(app); relaunch(app); openRestore(app)
+        let refresh = app.buttons["archive.refresh-media"]
+        reveal(refresh, in: app.collectionViews.firstMatch); refresh.tap()
+        let retained = app.buttons.containing(NSPredicate(format: "label BEGINSWITH %@", "Inspect retained media")).firstMatch
+        XCTAssertTrue(retained.waitForExistence(timeout: 30))
+        reveal(retained, in: app.collectionViews.firstMatch); retained.tap()
+        reveal(summary, in: app.collectionViews.firstMatch)
+        XCTAssertTrue(summary.waitForExistence(timeout: 30))
+        XCTAssertFalse(app.buttons["archive.confirm"].exists, "Committed inventory must not become a restore proposal")
+        screenshot(app, "Retained media inventory after relaunch")
+    }
+
     private func launchFresh() -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = ["--uitesting", "--reset-test-storage"]
@@ -130,7 +155,7 @@ final class ArchiveRestoreUITests: XCTestCase {
         let counts = app.staticTexts["1 conversations · 2 messages"]
         reveal(counts, in: app.collectionViews.firstMatch)
         XCTAssertTrue(counts.exists, app.debugDescription)
-        let unresolved = app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "1 unresolved media records")).firstMatch
+        let unresolved = app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "1 retained unlinked reference records")).firstMatch
         XCTAssertTrue(unresolved.exists, app.debugDescription)
         XCTAssertFalse(app.staticTexts["archive.error"].exists, app.debugDescription)
         screenshot(app, "Actual ZIP review before explicit commit")

@@ -62,8 +62,17 @@ enum ChatGPTConversationRestore {
                       message["recipient"] == nil || message["recipient"] is NSNull || message["recipient"] as? String == "all" else { continue }
             }
             guard let content = message["content"] as? [String: Any],
-                  let type = content["content_type"] as? String, ["text", "multimodal_text"].contains(type),
-                  let parts = content["parts"] as? [Any] else { continue }
+                  let type = content["content_type"] as? String else { continue }
+            let parts: [Any]
+            if type == "text" || type == "multimodal_text" {
+                guard let supplied = content["parts"] as? [Any] else { continue }
+                parts = supplied
+            } else if type == "code" {
+                // Explicit visible code is inert history text, never a tool invocation.
+                // Do not infer missing text from unknown fields or alternate parts.
+                guard let supplied = content["text"] as? String else { continue }
+                parts = [supplied]
+            } else { continue }
             guard parts.count <= 20_000 else { throw Failure.limit }
             let text = parts.compactMap { $0 as? String }.joined(separator: "\n")
             let hasUnresolved = parts.contains { !($0 is String) } || !(metadata?["attachments"] as? [Any] ?? []).isEmpty

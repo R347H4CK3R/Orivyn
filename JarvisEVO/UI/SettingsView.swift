@@ -54,7 +54,9 @@ struct SettingsView: View {
                     NavigationLink {
                         ArchiveRestoreView(prepare: { url, progress in try await model.prepareArchiveRestore(url, progress: progress) },
                             commit: { review, progress in try await model.commitArchiveRestore(review, progress: progress) },
-                            reloadReviews: { progress in try await model.retainedArchiveReviews(progress: progress) })
+                            reloadReviews: { progress in try await model.retainedArchiveReviews(progress: progress) },
+                            loadInventory: { review, offset in try await model.retainedArchiveInventory(review, offset: offset) },
+                            reloadInventoryReviews: { try await model.retainedArchiveInventoryReviews() })
                     } label: { Label("Import complete ChatGPT ZIP", systemImage: "archivebox") }
                         .disabled(model.isGenerating).accessibilityIdentifier("settings.import-chatgpt-zip")
                     NavigationLink { HistoryImportView(model: model) } label: { Label("Import conversation backup", systemImage: "square.and.arrow.down") }.disabled(model.isGenerating)

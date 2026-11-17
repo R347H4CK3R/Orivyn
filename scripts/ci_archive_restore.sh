@@ -8,7 +8,7 @@ test "${RUNNER_ENVIRONMENT:-}" = github-hosted
 A="$PWD/artifacts/archive-restore"; mkdir -p "$A"
 git rev-parse HEAD > "$A/source-commit.txt"
 printf '%s\n' 'Actual synthetic ZIP selection through the iOS Files provider, review, transactional commit and relaunch history; retained preparation recovery; native core tests. No physical-device or user-archive verification. No release publication.' > "$A/SCOPE.txt"
-# Separate macOS package gate; its count is not part of the 265 simulator tests.
+# Separate macOS package gate; its count is not part of the 273 simulator tests.
 swift test --jobs 2 --package-path Packages/ArchiveExtraction > "$A/extractor-package.log" 2>&1
 python3 scripts/materialize_guest.py Fixtures/maintained.img.gz JarvisEVO/Resources/VMAssets/maintained.img
 command -v xcodegen >/dev/null || brew install xcodegen
@@ -46,6 +46,7 @@ xcodebuild test -project JarvisEVO.xcodeproj -scheme JarvisEVO -derivedDataPath 
  -only-testing:JarvisEVOTests/ArchivePreservationTests \
  -only-testing:JarvisEVOTests/ArchiveReadBufferTests \
  -only-testing:JarvisEVOTests/ArchiveRestoreProgressTests \
+ -only-testing:JarvisEVOTests/ArchiveRestoreInventoryTests \
  -only-testing:JarvisEVOTests/ArchiveRestoreResourceTests \
  -only-testing:JarvisEVOTests/ArchiveAttachmentAssociationTests \
  -only-testing:JarvisEVOTests/ArchiveRestorePersistenceTests \
@@ -114,8 +115,8 @@ test "$status" = 0
 python3 - "$A/summary.json" <<'PY'
 import json,sys
 s=json.load(open(sys.argv[1]))
-expected={'totalTestCount':265,'passedTests':265,'failedTests':0,'skippedTests':0}
+expected={'totalTestCount':273,'passedTests':273,'failedTests':0,'skippedTests':0}
 for k,v in expected.items():
  assert type(s.get(k)) is int and s[k]==v,(k,s.get(k),v)
-print('265 required native/simulator tests passed without skips. Physical device and private archive remain unverified.')
+print('273 required native/simulator tests passed without skips. Physical device and private archive remain unverified.')
 PY

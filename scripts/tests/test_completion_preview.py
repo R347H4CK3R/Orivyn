@@ -15,7 +15,7 @@ class CompletionPreviewTests(unittest.TestCase):
   self.assertNotIn('gh release',s)
  def test_candidate_identity_and_limits(self):
   s=(ROOT/'project.yml').read_text()
-  for x in ['CURRENT_PROJECT_VERSION: 20','MARKETING_VERSION: 0.1.4','app.jarvisevo.ios']:self.assertIn(x,s)
+  for x in ['CURRENT_PROJECT_VERSION: 21','MARKETING_VERSION: 0.1.5','app.jarvisevo.ios']:self.assertIn(x,s)
   doc=(ROOT/'docs/BUILD15_CANDIDATE.md').read_text()
   for x in ['not completed 1.0.0','programmatic review/approval','physical','Generic']:
    self.assertIn(x,doc)

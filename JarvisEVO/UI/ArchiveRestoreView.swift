@@ -29,6 +29,9 @@ struct ArchiveRestoreView: View {
     let commit: @MainActor (Review, @escaping Progress) async throws -> CommitOutcome
     let reloadReviews: @MainActor (@escaping Progress) async throws -> [Review]
 
+    var loadInventory: (@MainActor (Review, Int) async throws -> ArchiveRestoreInventory.Page)?
+    var reloadInventoryReviews: (@MainActor () async throws -> [Review])?
+
     private struct LogLine: Identifiable {
         let id = UUID()
         let time = Date()
@@ -47,6 +50,9 @@ struct ArchiveRestoreView: View {
     @State private var cancelling = false
     @State private var review: Review?
     @State private var retainedReviews: [Review] = []
+    @State private var inventoryReviews: [Review] = []
+    @State private var inventoryReview: Review?
+    @State private var inventoryPage: ArchiveRestoreInventory.Page?
     @State private var lines: [LogLine] = []
     @State private var errorText: String?
     @State private var status = "Choose your complete ChatGPT ZIP. Nothing is uploaded."
@@ -84,9 +90,14 @@ struct ArchiveRestoreView: View {
             if let review {
                 Section("Review prepared restore") {
                     Text("\(review.conversationCount) conversations · \(review.messageCount) messages")
-                    Text("\(review.retainedFileCount) files retained · \(review.unresolvedCount) unresolved media records · \(review.omittedCount) messages not activated")
+                    Text("\(review.retainedFileCount) files retained · \(review.unresolvedCount) retained unlinked reference records · \(review.omittedCount) mapping nodes not activated")
                         .font(.caption)
                     Text("Internal, hidden and private records are not activated as chat instructions. Unsupported and unresolved data stays in the retained archive. Unresolved media is not claimed as a working attachment.").font(.footnote)
+                    Text("Reference counts cover supported visible messages only, not every missing media item. Other content types and alternative branches may exist only in the original ZIP.").font(.footnote)
+                    if loadInventory != nil {
+                        Button("Inspect per-message retained references") { inspectInventory(review, offset: 0) }
+                            .disabled(operation != nil).accessibilityIdentifier("archive.inspect-media")
+                    }
                     Text("Your local edits are preserved. Imported history cannot authorize tools. If you later choose an online model, selected history may be sent to that provider.").font(.footnote)
                     Text("ZIP SHA-256: \(review.archiveSHA256)").font(.caption2).textSelection(.enabled)
                     Button("Restore reviewed conversations") { beginCommit(review) }
@@ -110,6 +121,7 @@ struct ArchiveRestoreView: View {
                     }.disabled(operation != nil)
                 }
             }
+            inventorySections
             Section("Live processing log (latest 200)") {
                 Text("Display progress is coalesced during busy work. No invented percentages. A quiet log can mean a long-running operation, not necessarily a stall.").font(.caption)
                 ForEach(lines) { line in
@@ -147,6 +159,41 @@ struct ArchiveRestoreView: View {
             if choosing {
                 append("Restore view covered while ZIP picker is presented.")
             } else { invalidateLifetime(reason: "Restore view left") }
+        }
+    }
+
+    @ViewBuilder private var inventorySections: some View {
+        if reloadInventoryReviews != nil {
+            Section("Retained media inventory") {
+                Text("Read-only metadata from preserved preparations, including completed imports. No media files are linked, opened, downloaded or executed.").font(.footnote)
+                Button("Refresh retained media inventories") { refreshInventoryReviews() }
+                    .disabled(operation != nil).accessibilityIdentifier("archive.refresh-media")
+                ForEach(inventoryReviews) { item in
+                    Button("Inspect retained media · " + String(item.jobID.uuidString.prefix(8))) { inspectInventory(item, offset: 0) }
+                        .disabled(operation != nil)
+                }
+            }
+        }
+        if let page = inventoryPage, let selected = inventoryReview {
+            Section("Per-message retained references") {
+                Text("\(page.totalRecords) retained reference records across \(page.totalMessages) messages. This is not a complete media count.")
+                    .accessibilityIdentifier("archive.media-summary")
+                Text("Showing \(page.entries.count) messages from offset \(page.offset). These records do not establish a matching file or working attachment. Existing local conversations may differ from this archive.").font(.caption)
+                ForEach(page.entries) { item in
+                    VStack(alignment: .leading) {
+                        Text(verbatim: item.title)
+                        Text("Message \(item.messageIndex) · " + item.id.uuidString).font(.caption2).textSelection(.enabled)
+                        Text("\(item.totalRecords) unlinked records: \(item.contentPartCount) content parts, \(item.attachmentMetadataCount) attachment metadata, \(item.otherCount) other.").font(.caption)
+                    }
+                }
+                if page.offset > 0 {
+                    Button("Previous messages") { inspectInventory(selected, offset: max(0, page.offset - 50)) }.disabled(operation != nil)
+                }
+                if let next = page.nextOffset {
+                    Button("Next messages") { inspectInventory(selected, offset: next) }.disabled(operation != nil)
+                }
+                Button("Close inventory") { inventoryPage = nil; inventoryReview = nil }.disabled(operation != nil)
+            }
         }
     }
 
@@ -244,6 +291,39 @@ struct ArchiveRestoreView: View {
                 append("Loaded \(retainedReviews.count) retained preparations. Revalidation is required before commit.")
             } catch is CancellationError { append("Retained-preparation check cancelled.") }
             catch { errorText = error.localizedDescription; append("Could not load retained preparations.") }
+        }
+    }
+    @MainActor private func inspectInventory(_ selected: Review, offset: Int) {
+        guard operation == nil, let loadInventory else { return }
+        let id = UUID(); operationID = id; errorText = nil
+        inventoryPage = nil; inventoryReview = nil
+        append("Reading bounded retained-reference inventory…")
+        operation = Task { @MainActor in
+            defer { finish(id) }
+            do {
+                let page = try await loadInventory(selected, offset)
+                try Task.checkCancellation()
+                guard active, lifetime.isValid, operationID == id else { return }
+                inventoryReview = selected; inventoryPage = page
+                append("Read-only inventory loaded. No media was linked or activated.")
+            } catch is CancellationError { append("Inventory read cancelled.") }
+            catch { errorText = error.localizedDescription; append("Could not verify retained inventory.") }
+        }
+    }
+    @MainActor private func refreshInventoryReviews() {
+        guard operation == nil, let reloadInventoryReviews else { return }
+        let id = UUID(); operationID = id; errorText = nil
+        append("Checking retained media inventories…")
+        operation = Task { @MainActor in
+            defer { finish(id) }
+            do {
+                let items = try await reloadInventoryReviews()
+                try Task.checkCancellation()
+                guard active, lifetime.isValid, operationID == id else { return }
+                inventoryReviews = items
+                append("Loaded \(items.count) retained inventories; opening one never restores history.")
+            } catch is CancellationError { append("Inventory listing cancelled.") }
+            catch { errorText = error.localizedDescription; append("Could not list retained inventories.") }
         }
     }
     @MainActor private func requestCancellation() {
