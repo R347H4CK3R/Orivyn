@@ -8,7 +8,7 @@ test "${RUNNER_ENVIRONMENT:-}" = github-hosted
 A="$PWD/artifacts/archive-restore"; mkdir -p "$A"
 git rev-parse HEAD > "$A/source-commit.txt"
 printf '%s\n' 'Actual synthetic ZIP selection through the iOS Files provider, review, transactional commit and relaunch history; retained preparation recovery; native core tests. No physical-device or user-archive verification. No release publication.' > "$A/SCOPE.txt"
-# Separate macOS package gate; its count is not part of the 245 simulator tests.
+# Separate macOS package gate; its count is not part of the 265 simulator tests.
 swift test --jobs 2 --package-path Packages/ArchiveExtraction > "$A/extractor-package.log" 2>&1
 python3 scripts/materialize_guest.py Fixtures/maintained.img.gz JarvisEVO/Resources/VMAssets/maintained.img
 command -v xcodegen >/dev/null || brew install xcodegen
@@ -17,6 +17,7 @@ python3 scripts/download_test_model.py > "$A/test-model-path.txt"
 MODEL_DIR="$RUNNER_TEMP/orivyn-conversation-model"
 mkdir -p "$MODEL_DIR"
 python3 Diagnostics/NativeTools/download.py --model-id qwen3-1.7b-q4_k_m --output "$MODEL_DIR/Qwen3-1.7B-Q4_K_M.gguf" > "$A/conversation-model-path.txt"
+python3 scripts/make_import_resource_fixtures.py --output .cache/test-archives
 python3 scripts/generate_project.py
 python3 - "$MODEL_DIR" <<'PYENV'
 import pathlib, sys, xml.etree.ElementTree as ET
@@ -43,6 +44,9 @@ xcodebuild test -project JarvisEVO.xcodeproj -scheme JarvisEVO -derivedDataPath 
  -only-testing:JarvisEVOTests/ChatGPTConversationRestoreTests \
  -only-testing:JarvisEVOTests/ChatGPTRecordStreamTests \
  -only-testing:JarvisEVOTests/ArchivePreservationTests \
+ -only-testing:JarvisEVOTests/ArchiveReadBufferTests \
+ -only-testing:JarvisEVOTests/ArchiveRestoreProgressTests \
+ -only-testing:JarvisEVOTests/ArchiveRestoreResourceTests \
  -only-testing:JarvisEVOTests/ArchiveAttachmentAssociationTests \
  -only-testing:JarvisEVOTests/ArchiveRestorePersistenceTests \
  -only-testing:JarvisEVOTests/ProductionConversationResponseTests \
@@ -110,8 +114,8 @@ test "$status" = 0
 python3 - "$A/summary.json" <<'PY'
 import json,sys
 s=json.load(open(sys.argv[1]))
-expected={'totalTestCount':245,'passedTests':245,'failedTests':0,'skippedTests':0}
+expected={'totalTestCount':265,'passedTests':265,'failedTests':0,'skippedTests':0}
 for k,v in expected.items():
  assert type(s.get(k)) is int and s[k]==v,(k,s.get(k),v)
-print('245 required native/simulator tests passed without skips. Physical device and private archive remain unverified.')
+print('265 required native/simulator tests passed without skips. Physical device and private archive remain unverified.')
 PY

@@ -9,8 +9,8 @@ settings:
     TARGETED_DEVICE_FAMILY: '1'
     CODE_SIGNING_ALLOWED: NO
     PRODUCT_BUNDLE_IDENTIFIER: app.jarvisevo.ios
-    MARKETING_VERSION: 0.1.3
-    CURRENT_PROJECT_VERSION: 19
+    MARKETING_VERSION: 0.1.4
+    CURRENT_PROJECT_VERSION: 20
     SWIFT_STRICT_CONCURRENCY: complete
     SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) $(ORIVYN_NATIVE_FEATURES)"
   configs:
@@ -51,6 +51,9 @@ targets:
     platform: iOS
     sources:
       - path: Tests
+      - path: .cache/test-archives
+        buildPhase: resources
+        optional: true
       - path: .cache/test-models/qwen2.5-0.5b-instruct-q4_k_m.gguf
         buildPhase: resources
         optional: true

@@ -42,6 +42,8 @@ struct ArchiveRestoreView: View {
     @State private var choosing = false
     @State private var operation: Task<Void, Never>?
     @State private var operationID: UUID?
+    @State private var progressMailbox: ArchiveRestoreProgress?
+    @State private var progressConsumer: Task<Void, Never>?
     @State private var cancelling = false
     @State private var review: Review?
     @State private var retainedReviews: [Review] = []
@@ -109,7 +111,7 @@ struct ArchiveRestoreView: View {
                 }
             }
             Section("Live processing log (latest 200)") {
-                Text("This log updates when work reports progress. No invented percentages. A quiet log can mean a long-running operation, not necessarily a stall.").font(.caption)
+                Text("Display progress is coalesced during busy work. No invented percentages. A quiet log can mean a long-running operation, not necessarily a stall.").font(.caption)
                 ForEach(lines) { line in
                     HStack(alignment: .top) {
                         Text(line.time, style: .time).monospacedDigit().foregroundStyle(.secondary)
@@ -167,12 +169,20 @@ struct ArchiveRestoreView: View {
         status = bounded; lastProgressAt = Date()
     }
     @MainActor private func progress(for id: UUID) -> Progress {
-        { line in
-            Task { @MainActor in
-                guard operationID == id else { return }
+        progressMailbox?.finish()
+        progressConsumer?.cancel()
+        let mailbox = ArchiveRestoreProgress()
+        progressMailbox = mailbox
+        progressConsumer = Task { @MainActor in
+            for await line in mailbox.stream {
+                guard !Task.isCancelled, operationID == id else { return }
                 append(line)
+                // Bound redraw frequency too; the producer never waits for UI.
+                do { try await Task.sleep(for: .milliseconds(100)) }
+                catch { return }
             }
         }
+        return { line in mailbox.report(line) }
     }
     @MainActor private func beginPreparation(_ url: URL) {
         guard active, operation == nil else { return }
@@ -246,6 +256,8 @@ struct ArchiveRestoreView: View {
     }
     @MainActor private func finish(_ id: UUID) {
         guard operationID == id else { return }
+        progressMailbox?.finish(); progressMailbox = nil
+        progressConsumer?.cancel(); progressConsumer = nil
         operation = nil; operationID = nil; cancelling = false; committing = false
     }
 }

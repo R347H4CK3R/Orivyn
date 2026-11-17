@@ -7,11 +7,11 @@
 	<key>OrivynFeedbackRepositoryURL</key>
 	<string>https://github.com/R347H4CK3R/Orivyn</string>
 	<key>CFBundleShortVersionString</key>
-	<string>0.1.3</string>
+	<string>0.1.4</string>
 	<key>CFBundleVersion</key>
-	<string>19</string>
+	<string>20</string>
 	<key>OrivynReleaseNotes</key>
-	<string>Version 0.1.3 build 19 separates normal code answers from local tool decisions, retains relevant conversation context, and requires supported explicitly requested reads before reporting their results. App-info replies show recorded capability statuses and source omissions without model relabeling. Runtime-tokenizer fitting preserves the current request and recorded evidence, failing explicitly when they cannot fit without replaying reads. Reasoning markers are filtered while preserving Markdown code. This unsigned SideStore preview retains build 18 restore handling and data identity. Pinned-model checks are limited fixtures, not general multi-model or physical-device acceptance. No broader autonomy, video downloading, vision or sync is added. Preserve existing app data and signing identity when updating.</string>
+	<string>Unsigned SideStore preview, version 0.1.4 build 20: reduces temporary memory while copying and verifying large chat ZIPs, bounds display progress updates, and skips unused export metadata without building its full object graph. Required privacy and visibility fields remain enforced; ambiguous duplicate fields and excessive retained complexity fail with an explanation. Originals, existing history, review-before-import and atomic commits are preserved. These changes address reproducible synthetic memory defects, not a confirmed diagnosis of every device exit. Private-archive import and physical-device acceptance remain unverified. No video downloading, broader autonomy, vision or sync is added. Preserve existing app data and signing identity when updating.</string>
 	<key>CFBundleURLTypes</key>
 	<array><dict>
 		<key>CFBundleURLName</key><string>app.jarvisevo.ios.compose</string>

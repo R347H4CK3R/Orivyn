@@ -16,7 +16,19 @@ import Glibc
 /// This service never activates history or deletes originals. The SQLite receipt,
 /// not this filesystem status, is authoritative after committing history.
 enum ArchiveRestoreService {
-    enum Failure: Error { case invalidJob, unsafePath, limit, integrity, missingConversations, io }
+    enum Failure: LocalizedError {
+        case invalidJob, unsafePath, limit, integrity, missingConversations, io
+        var errorDescription: String? {
+            switch self {
+            case .limit: return "This export exceeds a safe processing limit. Try a smaller export. Existing chat history has not been replaced."
+            case .missingConversations: return "This archive does not contain a supported conversations file."
+            case .invalidJob: return "This restore job is no longer valid. Select the archive again."
+            case .unsafePath: return "The archive contains an unsafe file path and cannot be imported."
+            case .integrity: return "Archive verification failed. No unverified content will be imported."
+            case .io: return "The restore files could not be read or saved. Check available storage and file access."
+            }
+        }
+    }
     struct Review: Codable, Sendable, Equatable {
         let jobID: UUID
         var conversationCount = 0; var messageCount = 0; var unresolvedCount = 0
@@ -74,8 +86,16 @@ enum ArchiveRestoreService {
             var plan = Plan(expectedEpoch: expectedEpoch), seen = Set<UUID>(), budget = 0
             var review = Review(jobID: id); review.archiveSHA256 = original.sha256; review.retainedFileCount = inventory.count
             _ = try ChatGPTRecordStream.read(handle) { bytes in
-                let identities = try legacyIdentities(bytes, archiveSHA: original.sha256)
-                let converted = try ChatGPTConversationRestore.convert(bytes, identities: identities)
+                func convertRecord() throws -> ChatGPTConversationRestore.Result {
+                    let projected = try ChatGPTRecordProjection.project(bytes)
+                    let identities = try legacyIdentities(projected, archiveSHA: original.sha256)
+                    return try ChatGPTConversationRestore.convert(projected: projected, identities: identities)
+                }
+                #if canImport(ObjectiveC)
+                let converted = try autoreleasepool(invoking: convertRecord)
+                #else
+                let converted = try convertRecord()
+                #endif
                 review.omittedCount += converted.omittedMessages
                 if let conversation = converted.conversation {
                     guard seen.insert(conversation.id).inserted else { throw Failure.integrity }
@@ -165,8 +185,8 @@ enum ArchiveRestoreService {
         try writeJSON(state, to: job.appendingPathComponent("state.json"), maximum: 262_144)
     }
     private static func digest(_ data: Data) -> String { SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined() }
-    private static func legacyIdentities(_ bytes: Data, archiveSHA: String) throws -> [String: UUID] {
-        guard let record = try JSONSerialization.jsonObject(with: bytes) as? [String: Any], let id = record["id"] as? String else { throw Failure.integrity }
+    private static func legacyIdentities(_ record: [String: Any], archiveSHA: String) throws -> [String: UUID] {
+        guard let id = record["id"] as? String else { throw Failure.integrity }
         var keys = ["conversation:" + id]
         if let mapping = record["mapping"] as? [String: [String: Any]] {
             for node in mapping.values {
@@ -207,7 +227,7 @@ enum ArchiveRestoreService {
     private static func readBounded(_ url: URL, maximum: Int) throws -> Data {
         let handle = try openRegular(url, maximum: UInt64(maximum)); defer { try? handle.close() }
         var result = Data()
-        while let bytes = try handle.read(upToCount: 65_536), !bytes.isEmpty {
+        while let bytes = try ArchiveReadBuffer.read(handle, upToCount: 65_536), !bytes.isEmpty {
             try Task.checkCancellation(); guard result.count <= maximum - bytes.count else { throw Failure.limit }; result.append(bytes)
         }
         return result
@@ -215,7 +235,7 @@ enum ArchiveRestoreService {
     private static func hashRegular(_ url: URL, maximum: UInt64) throws -> (bytes: UInt64, sha256: String) {
         let handle = try openRegular(url, maximum: maximum); defer { try? handle.close() }
         var hash = SHA256(), size: UInt64 = 0
-        while let bytes = try handle.read(upToCount: 65_536), !bytes.isEmpty {
+        while let bytes = try ArchiveReadBuffer.read(handle, upToCount: 65_536), !bytes.isEmpty {
             try Task.checkCancellation(); guard size <= maximum, UInt64(bytes.count) <= maximum - size else { throw Failure.limit }
             size += UInt64(bytes.count); hash.update(data: bytes)
         }

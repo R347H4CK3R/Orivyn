@@ -21,7 +21,19 @@ enum ArchivePreservation {
         let bytes: UInt64
         let sha256: String
     }
-    enum Failure: Error { case invalidPath, notRegularFile, limit, insufficientSpace, io, changedSource, verification, invalidManifest }
+    enum Failure: LocalizedError {
+        case invalidPath, notRegularFile, limit, insufficientSpace, io, changedSource, verification, invalidManifest
+        var errorDescription: String? {
+            switch self {
+            case .insufficientSpace: return "There is not enough free storage to preserve this ZIP safely. Free space for a complete ZIP copy and its extracted files, then try again."
+            case .limit: return "This ZIP exceeds the supported archive size. Try a smaller export."
+            case .invalidPath, .notRegularFile: return "The selected archive is not a safe regular file. Select a local ZIP file and try again."
+            case .changedSource: return "The source ZIP changed during verification. Wait for its download to finish and try again."
+            case .verification, .invalidManifest: return "The preserved ZIP could not be verified. No unverified archive will be imported."
+            case .io: return "The archive could not be read or saved. Check available storage and file access, then try again."
+            }
+        }
+    }
     private static let chunk = 65_536
     private static let reserve: UInt64 = 33_554_432
 
@@ -54,7 +66,7 @@ enum ArchivePreservation {
         let input = FileHandle(fileDescriptor: sourceFD, closeOnDealloc: false)
         while true {
             try Task.checkCancellation()
-            guard let data = try input.read(upToCount: chunk), !data.isEmpty else { break }
+            guard let data = try ArchiveReadBuffer.read(input, upToCount: chunk), !data.isEmpty else { break }
             guard copied <= size, UInt64(data.count) <= size - copied else { throw Failure.changedSource }
             try writeAll(data, to: output)
             hash.update(data: data); copied += UInt64(data.count)
@@ -157,7 +169,7 @@ enum ArchivePreservation {
         var hash = SHA256(), count: UInt64 = 0
         while true {
             try Task.checkCancellation()
-            guard let data = try handle.read(upToCount: chunk), !data.isEmpty else { break }
+            guard let data = try ArchiveReadBuffer.read(handle, upToCount: chunk), !data.isEmpty else { break }
             guard count <= expectedSize, UInt64(data.count) <= expectedSize - count else { throw Failure.verification }
             hash.update(data: data); count += UInt64(data.count)
             try progress(count)

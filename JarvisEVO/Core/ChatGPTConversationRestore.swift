@@ -23,8 +23,11 @@ enum ChatGPTConversationRestore {
     static func convert(_ data: Data, identities: [String: UUID]) throws -> Result {
         try Task.checkCancellation()
         guard data.count <= 16_000_000 else { throw Failure.limit }
-        guard let record = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let mapping = record["mapping"] as? [String: [String: Any]] else { throw Failure.invalidRecord }
+        return try convert(projected: ChatGPTRecordProjection.project(data), identities: identities)
+    }
+    static func convert(projected record: [String: Any], identities: [String: UUID]) throws -> Result {
+        try Task.checkCancellation()
+        guard let mapping = record["mapping"] as? [String: [String: Any]] else { throw Failure.invalidRecord }
         guard mapping.count <= 20_000 else { throw Failure.limit }
         if excluded(record) { return Result(conversation: nil, omittedMessages: mapping.count) }
         guard let externalID = record["id"] as? String, !externalID.isEmpty,

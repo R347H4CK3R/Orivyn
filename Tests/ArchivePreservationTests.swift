@@ -6,6 +6,19 @@ import XCTest
 #endif
 
 final class ArchivePreservationTests: XCTestCase {
+    func testInsufficientSpaceFailsBeforeCreatingStagingWithActionableError() throws {
+        try fixture { root, source, staging in
+            let free = try XCTUnwrap(FileManager.default.attributesOfFileSystem(forPath: root.path)[.systemFreeSize] as? NSNumber).uint64Value
+            let size = free + 1_073_741_824
+            let handle = try FileHandle(forWritingTo: source); try handle.truncate(atOffset: size); try handle.close()
+            XCTAssertThrowsError(try ArchivePreservation.preserve(source: source, staging: staging, maximumBytes: size)) { error in
+                XCTAssertTrue(error.localizedDescription.contains("free storage"))
+            }
+            XCTAssertFalse(FileManager.default.fileExists(atPath: staging.path))
+            XCTAssertEqual((try FileManager.default.attributesOfItem(atPath: source.path)[.size] as? NSNumber)?.uint64Value, size)
+        }
+    }
+
     func testCopiesAndRevalidatesWithoutChangingOriginal() throws {
         let root = FileManager.default.temporaryDirectory.resolvingSymlinksInPath().appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)

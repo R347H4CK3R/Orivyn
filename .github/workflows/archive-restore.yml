@@ -1,7 +1,7 @@
-name: Verify build 19 separated answers and exact recorded capabilities
+name: Verify build 20 bounded archive import resources
 on:
   push:
-    branches: [fix/build19-chat-repair]
+    branches: [fix/build20-import-crash]
     paths: ['.github/workflows/archive-restore.yml']
 permissions:
   contents: read
@@ -41,9 +41,26 @@ jobs:
         with:
           path: .cache/orivyn-combined
           key: ${{ steps.combined-cache.outputs.cache-primary-key }}
+      - name: Verify bounded archive resource usage in fresh native processes
+        run: |
+          set +e
+          python3 scripts/run_preservation_resource_probe.py --swiftc "$(xcrun -f swiftc)" --output "$RUNNER_TEMP/preservation-resource"
+          PRESERVE=$?
+          python3 scripts/run_import_resource_probe.py --swiftc "$(xcrun -f swiftc)" --output "$RUNNER_TEMP/import-resource"
+          PARSE=$?
+          python3 - <<'PYEVIDENCE'
+          import os,pathlib,shutil
+          for label in ['preservation-resource','import-resource']:
+              source=pathlib.Path(os.environ['RUNNER_TEMP'])/label
+              target=pathlib.Path('artifacts')/label;target.mkdir(parents=True,exist_ok=True)
+              for path in source.glob('*'):
+                  if path.is_file() and (path.suffix in ['.log','.swift','.txt'] or path.name in ['RESULT.json','SOURCE-MANIFEST.json','COMMAND.json','FIXTURES.json']): shutil.copy2(path,target/path.name)
+          PYEVIDENCE
+          EVIDENCE=$?
+          test "$PRESERVE" = 0 && test "$PARSE" = 0 && test "$EVIDENCE" = 0
       - name: Actual ZIP picker, reviewed restore and persistent history
         run: bash scripts/ci_archive_restore.sh
-      - name: Package build 19 only after exact native acceptance passes
+      - name: Package build 20 only after exact native acceptance passes
         run: bash scripts/ci_package_only.sh
       - uses: actions/upload-artifact@v4
         if: always()
