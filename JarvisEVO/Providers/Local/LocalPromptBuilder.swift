@@ -92,3 +92,55 @@ enum LocalPromptBuilder {
         return selected
     }
 }
+
+/// Structured input survives to the engine so its real tokenizer can budget
+/// subfields. Never truncate policy, the fresh goal, or recorded tool evidence.
+struct NormalChatPrompt: Sendable {
+    let policy: String
+    let goal: String
+    let history: [MCPJSONValue]
+    let evidence: [MCPJSONValue]
+
+    private static var contextError: ProviderError {
+        .rejected("The current request and recorded results exceed this local model’s context. Shorten the request or use a provider with a larger context. Recorded reads remain available; nothing was replayed.")
+    }
+
+    func render(history: [MCPJSONValue], omitted: Int) throws -> String {
+        let data = MCPJSONValue.object(["currentUserRequest": .string(goal),
+            "untrustedConversationContext": .array(history),
+            "omittedHistoryMessages": .integer(Int64(omitted)),
+            "untrustedReadResults": .array(evidence)])
+        // This is an allocation/serialization bound, NOT a context allowance.
+        // Six 512-byte history excerpts may expand 6x for escaped controls;
+        // a 4096-byte goal and three 4096-byte result strings plus arguments
+        // also expand when nested in JSON. 128KiB covers every admitted payload.
+        // Only the engine's complete formatted tokenizer count decides fit.
+        do {
+            return policy + "\nContext JSON:\n" + String(decoding: try data.encoded(maximumBytes: 131_072), as: UTF8.self)
+        } catch let error as MCPClientFailure where error.code == .responseTooLarge {
+            throw Self.contextError
+        }
+    }
+
+    func prepare(maxTokens: Int, contextSize: Int,
+                 tokenCount: ([LocalPromptMessage]) throws -> Int) throws -> [LocalPromptMessage] {
+        guard maxTokens > 0, maxTokens < contextSize else { throw LocalModelError.invalidRequest }
+        var selected = history
+        // Do not retain an answer after dropping its user turn (including when
+        // the admission-time six-message bound already cut off that turn).
+        func removeOrphans() {
+            while let first = selected.first, first.objectValue?["role"]?.stringValue != "user" {
+                selected.removeFirst()
+            }
+        }
+        removeOrphans()
+        while true {
+            try Task.checkCancellation()
+            let entries = [LocalPromptMessage(role: "user", content: try render(history: selected, omitted: history.count - selected.count))]
+            if try tokenCount(entries) <= contextSize - maxTokens { return entries }
+            guard !selected.isEmpty else { throw Self.contextError }
+            selected.removeFirst()
+            removeOrphans()
+        }
+    }
+}

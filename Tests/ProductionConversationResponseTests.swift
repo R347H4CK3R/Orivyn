@@ -49,6 +49,16 @@ final class ProductionConversationResponseTests: XCTestCase {
             }
             assertNoEchoOrReasoning(code, goal: codingGoal)
 
+            let genericGoal = "Can you build me a simple python script"
+            let polluted: [ChatMessage] = [.init(role: .user, content: "Make me an unsigned iOS app"),
+                .init(role: .assistant, content: "I’m unable to build or modify executable files or apps outside the Orivyn app. My capabilities are limited to assisting with app-related tasks within the Orivyn environment."),
+                .init(role: .user, content: genericGoal)]
+            let recovered = try await answer(goal: genericGoal, system: system, provider: provider, concise: true, history: polluted)
+            record("prior-refusal-generic-python", goal: genericGoal, answer: recovered, sha: descriptor.sha256)
+            XCTAssertNotNil(recovered.range(of: #"(?s)(?:print\s*\(|def\s+\w+\s*\(|```python)"#, options: .regularExpression))
+            XCTAssertFalse(recovered.lowercased().contains("limited to assisting with app"))
+            assertNoEchoOrReasoning(recovered, goal: genericGoal)
+
             let directGoal = "What is the capital of France? Give a brief direct answer."
             let direct = try await answer(goal: directGoal, system: system, provider: provider, concise: false)
             record("direct-thinking-mode", goal: directGoal, answer: direct, sha: descriptor.sha256)
@@ -84,9 +94,9 @@ final class ProductionConversationResponseTests: XCTestCase {
         #endif
     }
 
-    private func answer(goal: String, system: String, provider: LocalAIProvider, concise: Bool) async throws -> String {
+    private func answer(goal: String, system: String, provider: LocalAIProvider, concise: Bool, history: [ChatMessage]? = nil) async throws -> String {
         let work = Task {
-            let request = GenerationRequest(messages: [ChatMessage(role: .user, content: goal)],
+            let request = GenerationRequest(messages: history ?? [ChatMessage(role: .user, content: goal)],
                 systemPrompt: system, maxTokens: 1024, temperature: 0, conciseQwen3: concise)
             var filter = ChatAnswerStream(), visible = ""
             for try await token in try await provider.stream(request) {
@@ -123,7 +133,7 @@ final class ProductionConversationResponseTests: XCTestCase {
     }
 
     private func record(_ name: String, goal: String, answer: String, sha: String) {
-        let attachment = XCTAttachment(string: "scope=four fixed synthetic prompts; not generalized conversational reliability\nmodelSHA256=\(sha)\ngoal=\(goal)\nvisibleAnswer=\(answer)")
+        let attachment = XCTAttachment(string: "scope=fixed prompts plus supplied refusal excerpt; not generalized conversational reliability\nmodelSHA256=\(sha)\ngoal=\(goal)\nvisibleAnswer=\(answer)")
         attachment.name = "conversation-model-" + name
         attachment.lifetime = .keepAlways
         add(attachment)

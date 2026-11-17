@@ -7,11 +7,11 @@
 	<key>OrivynFeedbackRepositoryURL</key>
 	<string>https://github.com/R347H4CK3R/Orivyn</string>
 	<key>CFBundleShortVersionString</key>
-	<string>0.1.2</string>
+	<string>0.1.3</string>
 	<key>CFBundleVersion</key>
-	<string>18</string>
+	<string>19</string>
 	<key>OrivynReleaseNotes</key>
-	<string>Version 0.1.2 build 18 advances the app version so SideStore can recognize the update. Settings now shows the installed build and these release notes. Retains build 17 restore handling for visible assistant replies with null routing fields. This unfinished unsigned preview does not add broader autonomy or sync. Physical-device and full private-backup acceptance remain unverified. Preserve existing app data and signing identity when updating.</string>
+	<string>Version 0.1.3 build 19 updates normal local-chat guidance to distinguish drafting code from executing it, excludes failed and duplicated current-turn context, fits history with the runtime tokenizer while preserving the current request and recorded results, and filters reasoning markers after answer prefaces while preserving Markdown code. Oversized context fails explicitly without replaying reads. This unfinished unsigned SideStore preview retains build 18 restore handling and data identity. Local regression tests do not establish general model quality or physical-device acceptance; native/model/device validation remains required. No broader autonomy, video downloading, vision or sync is added. Preserve existing app data and signing identity when updating.</string>
 	<key>CFBundleURLTypes</key>
 	<array><dict>
 		<key>CFBundleURLName</key><string>app.jarvisevo.ios.compose</string>

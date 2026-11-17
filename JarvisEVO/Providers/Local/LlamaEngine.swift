@@ -174,9 +174,16 @@ actor LlamaEngine: LocalResourceReleasing {
                 guard let vocab=llama_model_get_vocab(owned.model) else { throw LocalModelError.loadFailed }
                 return try tokenCount(text,vocabulary:vocab)
             }
-            let messages=try LocalPromptBuilder.prepareMessages(from:request.messages,maxTokens:request.maxTokens,contextSize:Int(contextSize)) { [owned] entries in
+            let countFormatted: ([LocalPromptMessage]) throws -> Int = { [self, owned] entries in
                 guard let vocab=llama_model_get_vocab(owned.model) else { throw LocalModelError.loadFailed }
                 return try tokenCount(format(entries,systemPrompt:request.systemPrompt,model:owned.model,conciseQwen3:request.conciseQwen3),vocabulary:vocab)
+            }
+            let messages: [LocalPromptMessage]
+            if let input = request.normalChatPrompt {
+                try request.validateInternalModes()
+                messages = try input.prepare(maxTokens: request.maxTokens, contextSize: Int(contextSize), tokenCount: countFormatted)
+            } else {
+                messages = try LocalPromptBuilder.prepareMessages(from: request.messages, maxTokens: request.maxTokens, contextSize: Int(contextSize), tokenCount: countFormatted)
             }
             prompt=try format(messages,systemPrompt:request.systemPrompt,model:model,conciseQwen3:request.conciseQwen3)
         }

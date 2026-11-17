@@ -1,7 +1,7 @@
-name: Verify build 18 version metadata and third-person review denial
+name: Verify build 19 normal-chat repairs and bounded context
 on:
   push:
-    branches: [fix/build18-version]
+    branches: [fix/build19-chat-repair]
     paths: ['.github/workflows/archive-restore.yml']
 permissions:
   contents: read
@@ -43,7 +43,7 @@ jobs:
           key: ${{ steps.combined-cache.outputs.cache-primary-key }}
       - name: Actual ZIP picker, reviewed restore and persistent history
         run: bash scripts/ci_archive_restore.sh
-      - name: Package build 18 only after exact native acceptance passes
+      - name: Package build 19 only after exact native acceptance passes
         run: bash scripts/ci_package_only.sh
       - uses: actions/upload-artifact@v4
         if: always()

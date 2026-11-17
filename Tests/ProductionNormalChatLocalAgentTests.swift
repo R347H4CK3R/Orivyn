@@ -15,7 +15,7 @@ final class ProductionNormalChatLocalAgentTests: XCTestCase {
         #if !targetEnvironment(simulator)
         XCTFail("Required normal-chat inference gate needs the iOS simulator.")
         #else
-        executionTimeAllowance = 600
+        executionTimeAllowance = 750
         guard let path = environment["ORIVYN_CONVERSATION_MODEL_DIR"], path.hasPrefix("/"), path != "/",
               !path.utf8.contains(0) else { XCTFail("Dedicated fixture directory required"); return }
         let directory = URL(fileURLWithPath: path, isDirectory: true)
@@ -132,6 +132,95 @@ final class ProductionNormalChatLocalAgentTests: XCTestCase {
         XCTAssertNotNil(codingAnswer.range(of: #"print\s*\(\s*(?:2\s*\+\s*2|4)\s*\)"#, options: .regularExpression))
         XCTAssertFalse(codingAnswer.contains(marker), "Unrelated prior-turn private evidence must not enter a fresh coding turn")
         XCTAssertFalse(codingAnswer.contains("<think>"))
+
+        // Regression: the owner's generic request, with the preceding incorrect
+        // refusal retained. This is a bounded excerpt, not a full transcript replay.
+        let genericGoal = "Can you build me a simple python script"
+        let refusedHistory: [ChatMessage] = [
+            .init(role: .user, content: "Make me an unsigned iOS app"),
+            .init(role: .assistant, content: "I’m unable to build or modify executable files or apps outside the Orivyn app. My capabilities are limited to assisting with app-related tasks within the Orivyn environment."),
+            .init(role: .user, content: genericGoal)
+        ]
+        let longHistory: [ChatMessage] = (0..<6).map { index in
+            // Synthetic high-entropy excerpts near the wrapper's 512-byte cap.
+            let text = (0..<12).map { _ in UUID().uuidString }.joined(separator: " ")
+            return ChatMessage(role: index % 2 == 0 ? .user : .assistant, content: text)
+        }
+        for (label, history) in [("fresh", [ChatMessage(role: .user, content: genericGoal)]),
+                                 ("prior-refusal", refusedHistory), ("long-history", longHistory + [.init(role: .user, content: genericGoal)])] {
+            let probe = NormalChatLocalAgentProvider(turn: try XCTUnwrap(NormalChatLocalTurn(
+                goal: genericGoal, hasAttachments: false, isExternalDraft: false)), model: actualModel,
+                validateContext: { try Task.checkCancellation() },
+                read: { _ in throw LocalAgentError.invalidState }, record: { _ in
+                    XCTFail("Ordinary Python drafting must not start a local read")
+                })
+            var result = ""
+            do {
+                for try await token in try await probe.stream(.init(messages: history, systemPrompt: "")) {
+                    result += token
+                }
+            } catch {
+                await actualModel.unload()
+                throw error
+            }
+            let evidence = XCTAttachment(string: "scope=generic Python request through production normal loop; bounded supplied refusal excerpt\nmodelSHA256=\(descriptor.sha256)\nvariant=\(label)\nanswer=\(result)")
+            evidence.name = "normal-chat-refusal-recovery-" + label
+            evidence.lifetime = .keepAlways
+            add(evidence)
+            for refusal in ["unable to build", "cannot write", "can't write", "limited to assisting with app"] {
+                XCTAssertFalse(result.lowercased().contains(refusal))
+            }
+            XCTAssertNotNil(result.range(of: #"(?s)(?:print\s*\(|def\s+\w+\s*\(|```python)"#, options: .regularExpression),
+                "The generic request should receive a usable example, not a refusal")
+            XCTAssertFalse(result.contains("<think>"))
+        }
+        // Actual get_app_info dispatch followed by real-tokenizer fitting. A
+        // context rejection is an honest bounded outcome, never a skipped probe.
+        let infoGoal = "Read get_app_info now and explain what this app can actually do."
+        let infoJournal = NormalChatModelJournal(url: root.appendingPathComponent("info-budget-receipts.txt"))
+        let infoProbe = NormalChatLocalAgentProvider(turn: try XCTUnwrap(NormalChatLocalTurn(
+            goal: infoGoal, hasAttachments: false, isExternalDraft: false)),
+            model: ObservedNormalChatModel(actual: actualModel, journal: infoJournal),
+            validateContext: { try Task.checkCancellation() },
+            read: { action in
+                XCTAssertEqual(action.name, "get_app_info")
+                guard action.name == "get_app_info" else { throw LocalAgentError.invalidState }
+                try await infoJournal.beforeRead(action)
+                return try await LocalReadTools.executeAsync(name: action.name, arguments: action.arguments,
+                    model: model, resultByteLimit: 4096)
+            }, record: { event in try await infoJournal.record(event) },
+            deadline: .now.advanced(by: .seconds(120)))
+        var infoAnswer = "", infoError: (any Error)?
+        do {
+            for try await token in try await infoProbe.stream(.init(
+                messages: longHistory + [.init(role: .user, content: infoGoal)], systemPrompt: "")) {
+                infoAnswer += token
+            }
+        } catch { infoError = error }
+        await actualModel.unload()
+        let infoEvidence = await infoJournal.snapshot()
+        let infoAttachment = XCTAttachment(string: "scope=actual-model long-history app-info read and post-read tokenizer fitting; not generalized response quality\nmodelSHA256=\(descriptor.sha256)\nerror=\(String(describing: infoError))\nreads=\(infoEvidence.reads.count)\nrequests=\(infoEvidence.requests.count)\nreceipts=\((try? String(contentsOf: root.appendingPathComponent("info-budget-receipts.txt"), encoding: .utf8)) ?? "")\nanswer=\(infoAnswer)")
+        infoAttachment.name = "normal-chat-real-tokenizer-post-app-info"
+        infoAttachment.lifetime = .keepAlways
+        add(infoAttachment)
+        let succeededInfo = infoEvidence.events.filter { $0.phase == .succeeded }
+        XCTAssertEqual(infoEvidence.reads.count, 1, "Must execute one real app-info read, never replay")
+        XCTAssertEqual(succeededInfo.count, 1)
+        XCTAssertEqual(infoEvidence.events.map(\.phase), [.started, .succeeded])
+        XCTAssertEqual(infoEvidence.requests.count, 2, "Both pre-read and post-read inference must reach the actual provider")
+        let lastInput = try XCTUnwrap(infoEvidence.inputs.last)
+        XCTAssertEqual(lastInput.goal, infoGoal)
+        XCTAssertEqual(lastInput.evidence.count, 1)
+        XCTAssertEqual(lastInput.evidence.first?.objectValue?["result"]?.stringValue, succeededInfo.first?.result)
+        if let infoError {
+            guard case ProviderError.rejected(let reason) = infoError else { throw infoError }
+            XCTAssertTrue(reason.contains("current request and recorded results"))
+            XCTAssertTrue(reason.contains("Recorded reads remain available"))
+            XCTAssertTrue(infoAnswer.isEmpty, "No fabricated answer after fitting fails")
+        } else {
+            XCTAssertFalse(infoAnswer.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            XCTAssertFalse(infoAnswer.contains("<think>"))
+        }
         #endif
     }
     func testAutomaticSelectsPinnedInstalledModelAndRunsNormalChatLoop() async throws {
@@ -264,6 +353,7 @@ private actor NormalChatModelJournal {
     var events: [NormalChatReadEvent] = []
     var reads: [NormalChatToolAction] = []
     var requests: [String] = []
+    var inputs: [NormalChatPrompt] = []
     init(url: URL) { self.url = url }
     func beforeModel(_ request: GenerationRequest) throws {
         if !requests.isEmpty {
@@ -271,6 +361,7 @@ private actor NormalChatModelJournal {
             let persisted = try String(contentsOf: url, encoding: .utf8)
             guard persisted.contains(try events.last!.rendered()) else { throw LocalAgentError.storage }
         }
+        if let input = request.normalChatPrompt { inputs.append(input) }
         requests.append(request.systemPrompt + request.messages.map(\.content).joined(separator: "\n"))
     }
     func beforeRead(_ action: NormalChatToolAction) throws {
@@ -292,7 +383,7 @@ private actor NormalChatModelJournal {
         try handle.close()
         events = next
     }
-    func snapshot() -> (events: [NormalChatReadEvent], reads: [NormalChatToolAction], requests: [String]) {
-        (events, reads, requests)
+    func snapshot() -> (events: [NormalChatReadEvent], reads: [NormalChatToolAction], requests: [String], inputs: [NormalChatPrompt]) {
+        (events, reads, requests, inputs)
     }
 }

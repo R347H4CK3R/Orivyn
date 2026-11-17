@@ -1,0 +1,13 @@
+{
+  "publishedBaseCommit": "c33cf144bbdd90965516054f41cc27d259c8592e",
+  "localEquivalentBaseCommit": "f8e7f00",
+  "exactBaseTree": "e05df7f384d31af97032e949ad8d543e13796954",
+  "verification": "GitHub connector Git commit tree equals local git rev-parse tree",
+  "sourceCatalogURL": "https://raw.githubusercontent.com/R347H4CK3R/Orivyn-Distribution/main/source.json",
+  "observedCatalogSHA256": "ed41ce63a161d89898327f029b953ab73e760039f375da5f052ad511e8fb60e9",
+  "observedLatestVersion": "0.1.2",
+  "observedLatestBuild": "18",
+  "candidateVersion": "0.1.3",
+  "candidateBuild": "19",
+  "publication": "not_performed"
+}
