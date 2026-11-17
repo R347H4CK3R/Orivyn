@@ -1,0 +1,40 @@
+name: Diagnose synthetic multi-GB preservation memory
+on:
+  push:
+    branches: [diagnostics/build20-preservation]
+    paths: ['.github/workflows/import-preservation-diagnostic.yml']
+permissions:
+  contents: read
+jobs:
+  synthetic-preservation:
+    if: github.event.repository.private == false
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Compile exact source and isolated read-pool experiment
+        run: |
+          set -euo pipefail
+          python3 Diagnostics/ImportResources/prepare_preservation_probe.py "$RUNNER_TEMP/preservation-probe"
+          mkdir -p artifacts/preservation-diagnostic
+          cp "$RUNNER_TEMP/preservation-probe/source-manifest.json" artifacts/preservation-diagnostic/
+          git rev-parse HEAD > artifacts/preservation-diagnostic/source-commit.txt
+          for mode in baseline read-pool-experiment; do
+            swiftc "$RUNNER_TEMP/preservation-probe/$mode.swift" "$RUNNER_TEMP/preservation-probe/Driver.swift" -o "$RUNNER_TEMP/preservation-probe/$mode"
+          done
+      - name: Measure fresh isolated synthetic processes
+        run: |
+          set -euo pipefail
+          for bytes in 33554432 2200000000; do
+            for mode in baseline read-pool-experiment; do
+              "$RUNNER_TEMP/preservation-probe/$mode" "$bytes" > "artifacts/preservation-diagnostic/$mode-$bytes.json"
+            done
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Orivyn-synthetic-preservation-diagnostic
+          path: artifacts/preservation-diagnostic
+          retention-days: 7
