@@ -1,4 +1,4 @@
-name: Verify build 23 with state-aware real Files navigation
+name: Verify build 23 after blocked accessibility snapshot recovery
 on:
   push:
     branches: [fix/build23-format-report]

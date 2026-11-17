@@ -251,7 +251,8 @@ final class ArchiveRestoreUITests: XCTestCase {
         let file = app.cells.containing(.staticText, identifier: "Synthetic ChatGPT Backup.zip").firstMatch
         // One bounded navigation attempt, not a repeated picker/test retry. Slow
         // provider presentation was observed in failure recordings. Share a 60s
-        // budget across state waits so the longer restore assertions still run.
+        // predicate-wait budget across states. Accessibility resolution and one
+        // final state snapshot can exceed it; this is not a wall-clock deadline.
         let deadline = Date().addingTimeInterval(60)
         func ready(_ item: XCUIElement) -> Bool { item.exists && item.isEnabled && item.isHittable }
         func presented() -> Bool {
@@ -340,7 +341,14 @@ final class ArchiveRestoreUITests: XCTestCase {
                                 condition: @escaping () -> Bool) -> Bool {
         let timeout = min(30, max(0, deadline.timeIntervalSinceNow))
         let result = XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in condition() }, object: nil)], timeout: timeout)
-        guard result == .completed else {
+        // A remote accessibility query can occupy the entire predicate wait
+        // while Files replaces its navigation hierarchy. In run 44123353792
+        // attempt 2, that query blocked for 30s; the failure screenshot already
+        // showed the requested Browse selection and fixture folder. Re-read the
+        // same concrete condition once after a timeout, without repeating any
+        // UI action or accepting a weaker state. Other waiter failures still fail.
+        let reachedState = result == .completed || (result == .timedOut && condition())
+        guard reachedState else {
             recordFilesState(app, "Failed Files state: " + name)
             XCTFail("Files did not reach expected state: \(name). \(app.debugDescription)")
             return false
