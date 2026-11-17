@@ -77,7 +77,7 @@ dependencies = ', '.join(x for x in [crypto_package,extra_dependency.lstrip(', '
 products = ', '.join(x for x in [crypto_product,extra_test_dependency.lstrip(', '),sqlite_dependency.lstrip(', ')] if x)
 (out/'Package.swift').write_text(f'''// swift-tools-version: 6.0
 import PackageDescription
-let package = Package(name: "Preservation", dependencies: [{dependencies}], targets: [{sqlite_target}.target(name: "Preservation", dependencies: [{products}]), .testTarget(name: "PreservationTests", dependencies: [.target(name: "Preservation"){extra_test_dependency}]{resources})])
+let package = Package(name: "Preservation", platforms: [.macOS(.v13)], dependencies: [{dependencies}], targets: [{sqlite_target}.target(name: "Preservation", dependencies: [{products}]), .testTarget(name: "PreservationTests", dependencies: [.target(name: "Preservation"){extra_test_dependency}]{resources})])
 ''')
 def sha_file(path):
  digest=hashlib.sha256()

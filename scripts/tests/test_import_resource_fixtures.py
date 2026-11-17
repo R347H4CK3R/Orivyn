@@ -39,3 +39,9 @@ class NativeProbeSDKTests(unittest.TestCase):
             self.assertIn("sys.platform == 'darwin'", source)
             self.assertIn("['xcrun','--sdk','macosx','--show-sdk-path']", source)
             self.assertIn("command[1:1]=['-sdk'", source)
+
+class InventoryHostPlatformTests(unittest.TestCase):
+    def test_host_package_matches_extractor_minimum(self):
+        source = (ROOT / "Diagnostics/ArchivePreservation/run.py").read_text()
+        self.assertIn("platforms: [.macOS(.v13)]", source)
+        self.assertIn(".macOS(.v13)", (ROOT / "Packages/ArchiveExtraction/Package.swift").read_text())

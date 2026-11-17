@@ -1,4 +1,4 @@
-name: Verify build 21 retained-reference inventory
+name: Verify build 21 retained-reference inventory (host macOS 13 minimum)
 on:
   push:
     branches: [fix/build21-retained-inventory]
