@@ -17,9 +17,11 @@ if len(sys.argv) > 3:
  shutil.copyfile(root/'Diagnostics/ArchivePreservation/ArchiveRestoreServiceTests.swift',out/'Tests/PreservationTests/ArchiveRestoreServiceTests.swift')
  shutil.copyfile(root/'JarvisEVO/Services/ArchiveRestoreRecovery.swift',out/'Sources/Preservation/ArchiveRestoreRecovery.swift')
  shutil.copyfile(root/'JarvisEVO/Services/ArchiveRestoreService.swift',out/'Sources/Preservation/ArchiveRestoreService.swift')
- for name in ['Conversation.swift','MemoryNote.swift','ImageOCRResult.swift','OCRLineEvidence.swift','ChatGPTConversationRestore.swift','ChatGPTRecordStream.swift','ArchiveRestoreProgress.swift','ArchiveRestoreInventory.swift','ArchiveAttachmentSupplement.swift']:
+ for name in ['Conversation.swift','MemoryNote.swift','ImageOCRResult.swift','OCRLineEvidence.swift','ChatGPTConversationRestore.swift','ChatGPTRecordStream.swift','ArchiveRestoreProgress.swift','ArchiveRestoreInventory.swift','ArchiveAttachmentSupplement.swift','ArchiveAttachmentContentType.swift','ArchiveFormatReport.swift']:
   shutil.copyfile(root/'JarvisEVO/Core'/name,out/'Sources/Preservation'/name)
  shutil.copyfile(root/'JarvisEVO/Services/ArchiveVerifiedAssetCopy.swift',out/'Sources/Preservation/ArchiveVerifiedAssetCopy.swift')
+ helper_test=(root/'Tests/ArchiveAttachmentContentTypeTests.swift').read_text().replace('@testable import JarvisEVO','@testable import Preservation')
+ (out/'Tests/PreservationTests/ArchiveAttachmentContentTypeTests.swift').write_text(helper_test)
  fixtures=out/'Tests/PreservationTests/Fixtures'; fixtures.mkdir()
  conversation = [{"id":"00000000-0000-0000-0000-000000000101", "title":"Synthetic import", "create_time":100.0, "update_time":101.0, "current_node":"leaf", "mapping":{"leaf":{"parent":None, "message":{"id":"00000000-0000-0000-0000-000000000102", "create_time":101.0, "status":"finished_successfully", "author":{"role":"user"}, "content":{"content_type":"text", "parts":["Synthetic saved question"]}}}}}]
  conversation[0]['mapping']['reply']={'parent':'leaf','message':{'id':'00000000-0000-0000-0000-000000000103','create_time':102.0,'status':'finished_successfully','author':{'role':'assistant'},'channel':'final','recipient':'all','content':{'content_type':'text','parts':['Synthetic saved answer']}}}
@@ -31,6 +33,10 @@ if len(sys.argv) > 3:
  # Manual attachment fixture deliberately has no HTML/export mapping.
  with zipfile.ZipFile(fixtures/'legacy-assets.zip','w') as archive:
   for name,data in [('conversations.json',conversation_bytes),('assets/note.txt',b'Synthetic attachment, not private data.\n'),('assets/opaque.bin',b'opaque')]:
+   info=zipfile.ZipInfo(name,date_time=(2026,1,1,0,0,0));info.external_attr=0o100600<<16;archive.writestr(info,data)
+ # .dat candidates are type-checked only after explicit selection and verified copy.
+ with zipfile.ZipFile(fixtures/'dat-assets.zip','w') as archive:
+  for name,data in [('conversations.json',conversation_bytes),('assets/text.dat',b'Synthetic selected text.\n'),('assets/image.dat',bytes([137,80,78,71,13,10,26,10])),('assets/document.dat',b'%PDF-not a real document'),('assets/unknown.dat',bytes([0,255,128,0]))]:
    info=zipfile.ZipInfo(name,date_time=(2026,1,1,0,0,0));info.external_attr=0o100600<<16;archive.writestr(info,data)
  corrupt=bytearray((fixtures/'valid.zip').read_bytes()); pos=corrupt.index(b'Synthetic conversation'); corrupt[pos] ^= 1; (fixtures/'crc-failure.zip').write_bytes(corrupt)
  # Synthetic near-limit plan is generated outside the measured Swift process.

@@ -237,8 +237,18 @@ enum ArchiveRestoreService {
         let plan: Plan
         let files: [AttachmentFile]
         let unavailable: Int
+        let inventory: [FileRecord]
         let inventorySHA256: String
         let original: ArchivePreservation.Manifest
+    }
+    static func formatReport(review: Review, jobsRoot: URL) throws -> ArchiveFormatReport.Summary {
+        let context = try supplementContext(review: review, jobsRoot: jobsRoot)
+        let input = try context.inventory.map { file -> ArchiveFormatReport.InputFile in
+            guard let bytes = Int64(exactly: file.bytes) else { throw Failure.integrity }
+            return .init(relativePath: file.path, bytes: bytes)
+        }
+        return try ArchiveFormatReport.summarize(files: input, conversationCount: review.conversationCount,
+            messageCount: review.messageCount, unresolvedRecords: review.unresolvedCount)
     }
     /// Eligible retained files only. No file is inferred to belong to a message.
     static func attachmentFiles(review: Review, jobsRoot: URL, offset: Int = 0) throws -> AttachmentFiles {
@@ -317,7 +327,25 @@ enum ArchiveRestoreService {
         let suffix = URL(fileURLWithPath: candidate.source.relativePath).pathExtension.lowercased()
         let destination = staging.appendingPathComponent(UUID().uuidString + "." + suffix)
         try ArchiveVerifiedAssetCopy.copy(root: job.appendingPathComponent("payload/extracted"), source: candidate.source, to: destination)
-        return destination
+        guard suffix == "dat" else { return destination }
+        // This first exclusive copy is verified against the exact reviewed source.
+        // Probe only this selected file; inventory listing never opens media.
+        defer { try? FileManager.default.removeItem(at: destination) }
+        try Task.checkCancellation()
+        let bytes = try readBounded(destination, maximum: 10 * 1024 * 1024)
+        guard UInt64(bytes.count) == candidate.source.bytes, digest(bytes) == candidate.source.sha256 else { throw Failure.integrity }
+        let detectedSuffix = try ArchiveAttachmentContentType.classify(bytes)
+        let routed = staging.appendingPathComponent(UUID().uuidString + "." + detectedSuffix)
+        // A second verified exclusive copy avoids overwrite-prone renames. The
+        // existing importer must still decode; magic alone never activates it.
+        var copied = false, transferred = false
+        defer { if copied && !transferred { try? FileManager.default.removeItem(at: routed) } }
+        try Task.checkCancellation()
+        try ArchiveVerifiedAssetCopy.copy(root: job.appendingPathComponent("payload/extracted"), source: candidate.source, to: routed)
+        copied = true
+        try Task.checkCancellation()
+        transferred = true
+        return routed
     }
     private static func supplementContext(review: Review, jobsRoot: URL) throws -> SupplementContext {
         try validateRoot(jobsRoot); try Task.checkCancellation()
@@ -347,7 +375,7 @@ enum ArchiveRestoreService {
               plan.conversations.reduce(0, { $0 + $1.messages.count }) == review.messageCount else { throw Failure.integrity }
         _ = try ArchiveRestoreInventory.page(conversations: plan.conversations,
             references: plan.unresolved.map { .init(messageID: $0.messageID, source: $0.source) })
-        let supported = Set(["txt", "json", "pdf", "png", "jpg", "jpeg", "heic", "heif"])
+        let supported = Set(["txt", "json", "pdf", "png", "jpg", "jpeg", "heic", "heif", "dat"])
         var eligible: [AttachmentFile] = [], unavailable = 0, paths = Set<String>()
         for file in files {
             try Task.checkCancellation()
@@ -368,7 +396,7 @@ enum ArchiveRestoreService {
               try hashRegular(planURL, maximum: 50_000_000).sha256 == planHash,
               try hashRegular(inventoryURL, maximum: 32_000_000).sha256 == inventoryHash else { throw Failure.integrity }
         try Task.checkCancellation()
-        return SupplementContext(plan: plan, files: eligible, unavailable: unavailable, inventorySHA256: inventoryHash, original: original)
+        return SupplementContext(plan: plan, files: eligible, unavailable: unavailable, inventory: files, inventorySHA256: inventoryHash, original: original)
     }
 
     static func verifyForCommit(review: Review, jobsRoot: URL,

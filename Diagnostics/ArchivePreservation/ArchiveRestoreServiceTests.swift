@@ -19,6 +19,72 @@ final class ArchiveRestoreServiceTests: XCTestCase {
         let source = try XCTUnwrap(Bundle.module.url(forResource: "valid", withExtension: "zip", subdirectory: "Fixtures")).resolvingSymlinksInPath()
         try body(root, source)
     }
+    func testCancelledDATStagingDoesNotCreateOwnedCopyOrChangeOriginal() async throws {
+        let root = FileManager.default.temporaryDirectory.resolvingSymlinksInPath().appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let source = try XCTUnwrap(Bundle.module.url(forResource: "dat-assets", withExtension: "zip", subdirectory: "Fixtures")).resolvingSymlinksInPath()
+        let review = try ArchiveRestoreService.prepare(source: source, jobsRoot: root, expectedEpoch: UUID())
+        let file = try XCTUnwrap(ArchiveRestoreService.attachmentFiles(review: review, jobsRoot: root).items.first { $0.relativePath == "assets/text.dat" })
+        let message = try XCTUnwrap(ArchiveRestoreService.attachmentMessages(review: review, jobsRoot: root).items.first)
+        let candidate = try ArchiveRestoreService.manualAttachmentCandidate(review: review, jobsRoot: root, file: file, message: message)
+        let cancelled = await Task.detached {
+            withUnsafeCurrentTask { $0?.cancel() }
+            do { _ = try ArchiveRestoreService.stageAttachment(candidate: candidate, review: review, jobsRoot: root); return false }
+            catch is CancellationError { return true }
+            catch { return false }
+        }.value
+        XCTAssertTrue(cancelled)
+        let job = root.appendingPathComponent(review.jobID.uuidString)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: job.appendingPathComponent("attachment-staging").path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: job.appendingPathComponent("payload/original.zip").path))
+        XCTAssertEqual(try ArchiveRestoreService.verifyForCommit(review: review, jobsRoot: root).conversations.count, 1)
+    }
+    func testSelectedDATStagesVerifiedBytesWithDecoderSuffixAndOriginalReceipt() throws {
+        try withRoot { root, _ in
+            let source = try XCTUnwrap(Bundle.module.url(forResource: "dat-assets", withExtension: "zip", subdirectory: "Fixtures")).resolvingSymlinksInPath()
+            let review = try ArchiveRestoreService.prepare(source: source, jobsRoot: root, expectedEpoch: UUID())
+            let files = try ArchiveRestoreService.attachmentFiles(review: review, jobsRoot: root)
+            XCTAssertEqual(files.items.filter { $0.relativePath.hasSuffix(".dat") }.count, 4)
+            let message = try XCTUnwrap(ArchiveRestoreService.attachmentMessages(review: review, jobsRoot: root).items.first)
+            for (path, suffix) in [("assets/text.dat", "txt"), ("assets/image.dat", "png"), ("assets/document.dat", "pdf")] {
+                let file = try XCTUnwrap(files.items.first { $0.relativePath == path })
+                let candidate = try ArchiveRestoreService.manualAttachmentCandidate(review: review, jobsRoot: root, file: file, message: message)
+                let staged = try ArchiveRestoreService.stageAttachment(candidate: candidate, review: review, jobsRoot: root)
+                XCTAssertEqual(staged.pathExtension, suffix)
+                XCTAssertEqual(candidate.source.relativePath, path)
+                XCTAssertEqual(candidate.source.origin, .userReviewed)
+                let bytes = try Data(contentsOf: staged)
+                XCTAssertEqual(UInt64(bytes.count), file.bytes)
+                XCTAssertEqual(SHA256.hash(data: bytes).map { String(format: "%02x", $0) }.joined(), file.sha256)
+                try FileManager.default.removeItem(at: staged)
+            }
+            let opaque = try XCTUnwrap(files.items.first { $0.relativePath == "assets/unknown.dat" })
+            let candidate = try ArchiveRestoreService.manualAttachmentCandidate(review: review, jobsRoot: root, file: opaque, message: message)
+            XCTAssertThrowsError(try ArchiveRestoreService.stageAttachment(candidate: candidate, review: review, jobsRoot: root))
+            let job = root.appendingPathComponent(review.jobID.uuidString)
+            XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: job.appendingPathComponent("attachment-staging").path), [])
+            XCTAssertTrue(FileManager.default.fileExists(atPath: job.appendingPathComponent("payload/original.zip").path))
+            XCTAssertEqual(try ArchiveRestoreService.listReadyReviews(jobsRoot: root).map(\.jobID), [review.jobID])
+        }
+    }
+    func testFormatReportUsesFullBoundInventoryInReadyAndCommittedStates() throws {
+        try withRoot { root, source in
+            let review = try ArchiveRestoreService.prepare(source: source, jobsRoot: root, expectedEpoch: UUID())
+            let report = try ArchiveRestoreService.formatReport(review: review, jobsRoot: root)
+            XCTAssertEqual(report.retainedFiles, 3)
+            XCTAssertEqual(report.supportedExtensionFiles, 2)
+            XCTAssertEqual(report.otherFiles, 1)
+            XCTAssertEqual(report.conversationCount, 1)
+            XCTAssertEqual(report.messageCount, 2)
+            XCTAssertEqual(report.metadata, [.legacyConversations])
+            try ArchiveRestoreService.markCommitted(review: review, jobsRoot: root)
+            XCTAssertEqual(try ArchiveRestoreService.formatReport(review: review, jobsRoot: root), report)
+            let inventory = root.appendingPathComponent(review.jobID.uuidString).appendingPathComponent("inventory.json")
+            try Data("[]".utf8).write(to: inventory)
+            XCTAssertThrowsError(try ArchiveRestoreService.formatReport(review: review, jobsRoot: root))
+        }
+    }
     func testPreparationSurvivesServiceRecreationAndRevalidatesPlan() throws {
         try withRoot { root, source in
             let epoch = UUID()

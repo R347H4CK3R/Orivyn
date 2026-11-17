@@ -63,9 +63,15 @@ final class ArchiveRestoreUITests: XCTestCase {
     }
 
     func testRetainedMediaInventoryRemainsReadOnlyAfterCommitAndRelaunch() {
+        executionTimeAllowance = 240 // Includes two explicit read-only format inspections.
         continueAfterFailure = false
         let app = launchFresh()
         openRestore(app); selectFixtureZIP(app); assertReview(app)
+        tapUnobscured(app.buttons["archive.inspect-format"], in: app, towardEnd: false)
+        assertFormatReport(app)
+        reveal(app.buttons["archive.confirm"], in: app.collectionViews.firstMatch, towardEnd: false)
+        XCTAssertTrue(app.buttons["archive.confirm"].exists, "Format report must not commit history")
+        tapUnobscured(app.buttons["archive.close-format"], in: app)
         let inspect = app.buttons["archive.inspect-media"]
         tapUnobscured(inspect, in: app, towardEnd: false)
         assertInventoryLoaded(app)
@@ -87,15 +93,18 @@ final class ArchiveRestoreUITests: XCTestCase {
         XCTAssertTrue(summary.waitForExistence(timeout: 30))
         XCTAssertFalse(app.buttons["archive.confirm"].exists, "Committed inventory must not become a restore proposal")
         screenshot(app, "Retained media inventory after relaunch")
+        tapUnobscured(app.buttons["archive.retained-format"], in: app, towardEnd: false)
+        assertFormatReport(app)
+        XCTAssertFalse(app.buttons["archive.confirm"].exists, "Format report must not create a restore proposal")
     }
 
     func testManualAttachmentRequiresConfirmationAndSurvivesRelaunchWithoutReplayDuplication() {
-        executionTimeAllowance = 480
+        executionTimeAllowance = 600 // Prior exact flow took 472.6s; DAT and added report rows expand navigation.
         continueAfterFailure = false
         let app = launchFresh()
         openRestore(app); selectFixtureZIP(app); assertReview(app); commitPrepared(app)
         relaunch(app); assertRestoredHistory(app)
-        let preview = app.buttons["Preview reviewed-note.txt"]
+        let preview = app.buttons["Preview reviewed-note.dat"]
         XCTAssertFalse(preview.exists, "Text restoration alone must not activate an attachment")
 
         openRestore(app); reviewManualAttachment(app)
@@ -110,10 +119,10 @@ final class ArchiveRestoreUITests: XCTestCase {
         screenshot(app, "One explicitly reviewed attachment committed")
         relaunch(app); assertRestoredHistory(app)
         XCTAssertTrue(preview.waitForExistence(timeout: 15), app.debugDescription)
-        XCTAssertEqual(app.buttons.matching(NSPredicate(format: "label == %@", "Preview reviewed-note.txt")).count, 1)
+        XCTAssertEqual(app.buttons.matching(NSPredicate(format: "label == %@", "Preview reviewed-note.dat")).count, 1)
         preview.tap()
         XCTAssertTrue(app.buttons["attachment.preview.done"].waitForExistence(timeout: 15), app.debugDescription)
-        XCTAssertTrue(app.navigationBars["reviewed-note.txt"].exists, app.debugDescription)
+        XCTAssertTrue(app.navigationBars["reviewed-note.dat"].exists, app.debugDescription)
         XCTAssertTrue(app.otherElements["attachment.document.preview"].waitForExistence(timeout: 15), "Must show the real local-file QuickLook view, not an extracted-text fallback")
         screenshot(app, "Actual retained attachment preview after relaunch")
         attachHierarchy(app, "Retained attachment preview after relaunch")
@@ -124,7 +133,18 @@ final class ArchiveRestoreUITests: XCTestCase {
         tapUnobscured(app.buttons["archive.attach-confirm"], in: app)
         waitArchiveStatus("This source already has a saved attachment receipt. No file was copied or attached again, including if you removed it later.", app)
         relaunch(app); assertRestoredHistory(app)
-        XCTAssertEqual(app.buttons.matching(NSPredicate(format: "label == %@", "Preview reviewed-note.txt")).count, 1)
+        XCTAssertEqual(app.buttons.matching(NSPredicate(format: "label == %@", "Preview reviewed-note.dat")).count, 1)
+    }
+    private func assertFormatReport(_ app: XCUIApplication) {
+        waitArchiveStatus("Local format report loaded. No files were attached and nothing was sent.", app)
+        let summary = app.staticTexts["archive.format-summary"]
+        reveal(summary, in: app.collectionViews.firstMatch)
+        XCTAssertEqual(summary.label, "Retained files: 5 · DAT files: 1 · supported-extension files: 3 · other files: 1")
+        let limits = app.staticTexts["archive.format-limitations"]
+        reveal(limits, in: app.collectionViews.firstMatch)
+        XCTAssertTrue(limits.label.contains("Metadata presence is not format validation or an automatic attachment mapping."))
+        XCTAssertFalse(app.buttons["archive.attach-confirm"].exists)
+        screenshot(app, "Read-only local format report")
     }
     private func reviewManualAttachment(_ app: XCUIApplication) {
         tapUnobscured(app.buttons["archive.refresh-media"], in: app)
@@ -133,7 +153,7 @@ final class ArchiveRestoreUITests: XCTestCase {
         tapUnobscured(find, in: app)
         waitArchiveStatus("Retained files loaded. Choose one file and then its destination message.", app)
         XCTAssertFalse(app.buttons["archive.attach-confirm"].exists, "No automatic target or pending confirmation")
-        let file = app.buttons.matching(identifier: "archive.attachment-file").matching(NSPredicate(format: "label CONTAINS %@", "assets/reviewed-note.txt")).firstMatch
+        let file = app.buttons.matching(identifier: "archive.attachment-file").matching(NSPredicate(format: "label CONTAINS %@", "assets/reviewed-note.dat")).firstMatch
         tapUnobscured(file, in: app)
         waitArchiveStatus("Visible messages loaded. Choose the destination yourself. No file was attached.", app)
         XCTAssertFalse(app.buttons["archive.attach-confirm"].exists, "Choosing a file does not choose a message")

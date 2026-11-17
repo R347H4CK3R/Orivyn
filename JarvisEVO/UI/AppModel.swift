@@ -1379,6 +1379,14 @@ final class AppModel {
         let root = try archiveRoot()
         return try await runArchiveWork { try ArchiveRestoreService.listInventoryReviews(jobsRoot: root) }.map(archiveViewReview)
     }
+    func retainedArchiveFormatReport(_ value: ArchiveRestoreView.Review) async throws -> ArchiveFormatReport.Summary {
+        guard !isGenerating, beginHistoryChange() else { throw TextSnapshotError.busy }
+        defer { finishHistoryChange() }
+        await resourceReleaser.unload()
+        try Task.checkCancellation()
+        let root = try archiveRoot(), review = archiveServiceReview(value)
+        return try await runArchiveWork { try ArchiveRestoreService.formatReport(review: review, jobsRoot: root) }
+    }
     func retainedArchiveInventory(_ value: ArchiveRestoreView.Review, offset: Int) async throws -> ArchiveRestoreInventory.Page {
         guard !isGenerating, beginHistoryChange() else { throw TextSnapshotError.busy }
         defer { finishHistoryChange() }

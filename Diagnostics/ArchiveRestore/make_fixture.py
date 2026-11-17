@@ -30,7 +30,8 @@ def create(destination):
     records = [('conversations.json', json.dumps([conversation], ensure_ascii=False).encode()),
                ('assets/synthetic-ui-asset.bin', b'Synthetic unsupported media; not a real image.\n'),
                ('unsupported-record.txt', b'Synthetic retained archive record.\n'),
-               ('assets/reviewed-note.txt', b'Synthetic reviewed attachment.\n')]
+               ('assets/reviewed-note.txt', b'Synthetic reviewed attachment.\n'),
+               ('assets/reviewed-note.dat', b'Synthetic reviewed attachment.\n')]
     with zipfile.ZipFile(destination, 'x') as archive:
         for name, data in records:
             info = zipfile.ZipInfo(name, date_time=(2026, 1, 1, 0, 0, 0))

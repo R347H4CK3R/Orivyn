@@ -29,6 +29,7 @@ struct ArchiveRestoreView: View {
     let commit: @MainActor (Review, @escaping Progress) async throws -> CommitOutcome
     let reloadReviews: @MainActor (@escaping Progress) async throws -> [Review]
 
+    var loadFormatReport: (@MainActor (Review) async throws -> ArchiveFormatReport.Summary)?
     var loadInventory: (@MainActor (Review, Int) async throws -> ArchiveRestoreInventory.Page)?
     var reloadInventoryReviews: (@MainActor () async throws -> [Review])?
     var loadAttachmentFiles: (@MainActor (Review, Int) async throws -> ArchiveRestoreService.AttachmentFiles)?
@@ -63,6 +64,7 @@ struct ArchiveRestoreView: View {
     @State private var retainedReviews: [Review] = []
     @State private var inventoryReviews: [Review] = []
     @State private var inventoryReview: Review?
+    @State private var formatSummary: ArchiveFormatReport.Summary?
     @State private var inventoryPage: ArchiveRestoreInventory.Page?
     @State private var attachmentArchive: Review?
     @State private var attachmentFiles: ArchiveRestoreService.AttachmentFiles?
@@ -111,6 +113,10 @@ struct ArchiveRestoreView: View {
                         .font(.caption)
                     Text("Internal, hidden and private records are not activated as chat instructions. Unsupported and unresolved data stays in the retained archive. Unresolved media is not claimed as a working attachment.").font(.footnote)
                     Text("Reference counts cover supported visible messages only, not every missing media item. Other content types and alternative branches may exist only in the original ZIP.").font(.footnote)
+                    if loadFormatReport != nil {
+                        Button("Inspect local archive format") { inspectFormat(review) }
+                            .disabled(operation != nil).accessibilityIdentifier("archive.inspect-format")
+                    }
                     if loadInventory != nil {
                         Button("Inspect per-message retained references") { inspectInventory(review, offset: 0) }
                             .disabled(operation != nil).accessibilityIdentifier("archive.inspect-media")
@@ -144,6 +150,7 @@ struct ArchiveRestoreView: View {
                     }.disabled(operation != nil)
                 }
             }
+            formatSection
             inventorySections
             attachmentSections
             Section("Live processing log (latest 200)") {
@@ -186,6 +193,22 @@ struct ArchiveRestoreView: View {
         }
     }
 
+    @ViewBuilder private var formatSection: some View {
+        if let summary = formatSummary {
+            Section("Local archive format report") {
+                Text("Retained files: \(summary.retainedFiles) · DAT files: \(summary.datFiles) · supported-extension files: \(summary.supportedExtensionFiles) · other files: \(summary.otherFiles)")
+                    .accessibilityIdentifier("archive.format-summary")
+                Text("Prepared conversations: \(summary.conversationCount) · messages: \(summary.messageCount) · retained unlinked records: \(summary.unresolvedRecords)")
+                Text("Root numbered conversation files: \(summary.numberedConversationFiles)")
+                ForEach(summary.metadata, id: \.self) { item in Text(item.label) }
+                Text("Metadata presence is not format validation or an automatic attachment mapping. Only exact root-level metadata names are detected; nested layouts may differ. File types and missing-media totals are not established by these counts. This report reads the verified inventory only; it does not open media, restore history or send anything.")
+                    .font(.footnote).accessibilityIdentifier("archive.format-limitations")
+                Button("Close format report") { formatSummary = nil }.disabled(operation != nil)
+                    .accessibilityIdentifier("archive.close-format")
+            }
+        }
+    }
+
     @ViewBuilder private var inventorySections: some View {
         if reloadInventoryReviews != nil {
             Section("Retained media inventory") {
@@ -195,6 +218,10 @@ struct ArchiveRestoreView: View {
                 ForEach(inventoryReviews) { item in
                     Button("Inspect retained media · " + String(item.jobID.uuidString.prefix(8))) { inspectInventory(item, offset: 0) }
                         .disabled(operation != nil)
+                    if loadFormatReport != nil {
+                        Button("Inspect format · " + String(item.jobID.uuidString.prefix(8))) { inspectFormat(item) }
+                            .disabled(operation != nil).accessibilityIdentifier("archive.retained-format")
+                    }
                     if loadAttachmentFiles != nil {
                         Button("Choose archive file · " + String(item.jobID.uuidString.prefix(8))) { readAttachmentFiles(item, offset: 0) }
                             .disabled(operation != nil).accessibilityIdentifier("archive.find-retained-attachments")
@@ -231,7 +258,7 @@ struct ArchiveRestoreView: View {
                 Text("This is a manual association you choose, not an exporter-verified match. Restore the conversations first. Older receipts that preserved existing conversations may not establish an eligible target.").font(.footnote)
                 Text("\(page.totalCount) files · \(page.unavailableCount) unavailable files. These are not resolved opaque-reference counts.")
                     .accessibilityIdentifier("archive.attachment-summary")
-                Text("Files must pass supported image, PDF or UTF-8 text validation, up to 10 MiB each. Nothing is attached by opening this list. Original files and unresolved-reference counts remain unchanged.").font(.footnote)
+                Text("Files must pass supported image, PDF or UTF-8 text validation, up to 10 MiB each. DAT entries are only potentially supported: the selected bytes must pass type and decoder checks when imported. Nothing is attached by opening this list. Original files and unresolved-reference counts remain unchanged.").font(.footnote)
                 ForEach(page.items) { item in
                     Button { selectAttachmentFile(selected, file: item) } label: {
                         VStack(alignment: .leading) {
@@ -304,6 +331,7 @@ struct ArchiveRestoreView: View {
             .filter { !CharacterSet.controlCharacters.contains($0) || $0 == "\n" }.prefix(limit)))
     }
     @MainActor private func clearAttachmentSelection() {
+        formatSummary = nil
         pendingAttachment = nil; attachmentFiles = nil; attachmentArchive = nil
         selectedAttachmentFile = nil; attachmentMessages = nil; attachmentMessageQuery = ""
     }
@@ -495,6 +523,24 @@ struct ArchiveRestoreView: View {
                 append("Loaded \(retainedReviews.count) retained preparations. Revalidation is required before commit.")
             } catch is CancellationError { append("Retained-preparation check cancelled.") }
             catch { errorText = error.localizedDescription; append("Could not load retained preparations.") }
+        }
+    }
+    @MainActor private func inspectFormat(_ selected: Review) {
+        guard active, lifetime.isValid, operation == nil, let loadFormatReport else { return }
+        clearAttachmentSelection()
+        inventoryPage = nil; inventoryReview = nil
+        let id = UUID(); operationID = id; errorText = nil
+        append("Reading local archive format counts…")
+        operation = Task { @MainActor in
+            defer { finish(id) }
+            do {
+                let summary = try await loadFormatReport(selected)
+                try Task.checkCancellation()
+                guard active, lifetime.isValid, operationID == id else { return }
+                formatSummary = summary
+                append("Local format report loaded. No files were attached and nothing was sent.")
+            } catch is CancellationError { append("Format report read cancelled.") }
+            catch { errorText = error.localizedDescription; append("Could not verify local format report.") }
         }
     }
     @MainActor private func inspectInventory(_ selected: Review, offset: Int) {

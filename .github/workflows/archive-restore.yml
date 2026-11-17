@@ -1,7 +1,7 @@
-name: Verify build 22 manual attachments and exact user-approval semantics
+name: Verify build 23 local archive format and reviewed DAT media
 on:
   push:
-    branches: [fix/build22-manual-attachments]
+    branches: [fix/build23-format-report]
     paths: ['.github/workflows/archive-restore.yml']
 permissions:
   contents: read
@@ -70,12 +70,12 @@ jobs:
           python3 - <<'PYINVENTORY'
           import pathlib,re
           log=pathlib.Path('artifacts/inventory-service/tests.log').read_text()
-          assert re.search(r'Executed 38 tests, with 0 failures',log)
+          assert re.search(r'Executed 45 tests, with 0 failures',log)
           assert not re.search(r"Test Case .* skipped",log)
           PYINVENTORY
       - name: Actual ZIP picker, manual attachment review, preview and persistent history
         run: bash scripts/ci_archive_restore.sh
-      - name: Package build 22 only after exact native acceptance passes
+      - name: Package build 23 only after exact native acceptance passes
         run: bash scripts/ci_package_only.sh
       - uses: actions/upload-artifact@v4
         if: always()

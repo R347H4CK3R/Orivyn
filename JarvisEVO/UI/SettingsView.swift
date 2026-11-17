@@ -55,6 +55,7 @@ struct SettingsView: View {
                         ArchiveRestoreView(prepare: { url, progress in try await model.prepareArchiveRestore(url, progress: progress) },
                             commit: { review, progress in try await model.commitArchiveRestore(review, progress: progress) },
                             reloadReviews: { progress in try await model.retainedArchiveReviews(progress: progress) },
+                            loadFormatReport: { review in try await model.retainedArchiveFormatReport(review) },
                             loadInventory: { review, offset in try await model.retainedArchiveInventory(review, offset: offset) },
                             reloadInventoryReviews: { try await model.retainedArchiveInventoryReviews() },
                             loadAttachmentFiles: { review, offset in try await model.retainedArchiveAttachmentFiles(review, offset: offset) },
