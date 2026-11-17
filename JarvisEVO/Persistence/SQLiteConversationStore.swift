@@ -60,6 +60,18 @@ private final class DatabaseHandle: @unchecked Sendable {
             try migrateTextLineageIfEligible()
             try migrateTextSenderIfEligible()
             try execute("CREATE TABLE IF NOT EXISTS archive_restore_receipts (job TEXT PRIMARY KEY, archive TEXT NOT NULL UNIQUE, epoch TEXT NOT NULL, payload BLOB NOT NULL, receipt BLOB NOT NULL);")
+            // Only both absent denotes the legacy migration. Partial metadata
+            // loss must not turn a historical supplement into a fresh attachment.
+            var supplementStatement: OpaquePointer?
+            guard sqlite3_prepare_v2(raw, "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name IN ('archive_attachment_supplement_state','archive_attachment_supplements')", -1, &supplementStatement, nil) == SQLITE_OK else { throw DatabaseError.operation("Could not inspect attachment supplement metadata.") }
+            guard sqlite3_step(supplementStatement) == SQLITE_ROW else {
+                sqlite3_finalize(supplementStatement); throw DatabaseError.operation("Could not inspect attachment supplement metadata.")
+            }
+            let supplementTables = sqlite3_column_int(supplementStatement, 0)
+            sqlite3_finalize(supplementStatement)
+            if supplementTables == 0 {
+                try execute("CREATE TABLE archive_attachment_supplement_state (singleton INTEGER PRIMARY KEY CHECK(singleton=1), version INTEGER NOT NULL CHECK(version=2)); INSERT INTO archive_attachment_supplement_state VALUES(1,2); CREATE TABLE archive_attachment_supplements (archive TEXT NOT NULL, map TEXT NOT NULL, message TEXT NOT NULL, path TEXT NOT NULL, asset TEXT NOT NULL UNIQUE, source BLOB NOT NULL, receipt BLOB NOT NULL, PRIMARY KEY(archive,message,path));")
+            }
             try execute("COMMIT")
         } catch { try? execute("ROLLBACK"); throw error }
         #if os(iOS)
@@ -163,6 +175,129 @@ actor SQLiteConversationStore {
     /// owns archive/plan SHA verification and Files permissions. Exact canonical
     /// bytes bind replay; attachments require a separate ownership-proof API.
     /// A returned receipt means COMMIT succeeded even if the caller's later reload fails.
+    /// Returns historical completion only. A replay never recreates files or a
+    /// user-removed attachment. Check this before any importer allocates files.
+    func archiveAttachmentSupplementReceipt(source: ArchiveAttachmentSupplement.Source, expectedEpoch: UUID) throws -> ArchiveAttachmentSupplement.Receipt? {
+        try Task.checkCancellation()
+        try ArchiveAttachmentSupplement.validate(source)
+        try database.execute("BEGIN")
+        do {
+            _ = try supplementOriginalMessage(source: source, expectedEpoch: expectedEpoch)
+            let receipt = try supplementReceipt(source: source, expectedEpoch: expectedEpoch)
+            try Task.checkCancellation()
+            try database.execute("COMMIT")
+            return receipt
+        } catch { try? database.execute("ROLLBACK"); throw error }
+    }
+
+    /// The coordinator owns copied files until this transaction returns a durable
+    /// receipt. This method does not trust export attachment metadata or touch files.
+    func applyArchiveAttachmentSupplement(source: ArchiveAttachmentSupplement.Source, expectedEpoch: UUID, expectedMessage: ChatMessage, attachment: ChatAttachment) throws -> ArchiveAttachmentSupplement.Receipt {
+        try Task.checkCancellation()
+        try ArchiveAttachmentSupplement.validate(source)
+        try ArchiveAttachmentSupplement.validate(attachment, source: source)
+        try database.execute("BEGIN IMMEDIATE")
+        do {
+            let original = try supplementOriginalMessage(source: source, expectedEpoch: expectedEpoch)
+            if let prior = try supplementReceipt(source: source, expectedEpoch: expectedEpoch) {
+                guard prior.attachment == attachment else { throw ArchiveAttachmentSupplement.Failure.conflict }
+                try Task.checkCancellation(); try database.execute("COMMIT"); return prior
+            }
+            // Do not use load(): its UI recovery normalization rewrites unrelated
+            // persisted streaming states. A supplement changes one array only.
+            let storedConversation: Conversation? = try withStatement("SELECT payload FROM conversations WHERE id=?") { statement in
+                bind(source.conversationID.uuidString, to: 1, in: statement)
+                let status = sqlite3_step(statement)
+                if status == SQLITE_DONE { return nil }
+                guard status == SQLITE_ROW, sqlite3_column_bytes(statement, 0) <= ConversationBackup.maximumBytes else { throw ArchiveAttachmentSupplement.Failure.invalid }
+                let value = try decoder.decode(Conversation.self, from: blob(statement, at: 0))
+                guard value.id == source.conversationID else { throw ArchiveAttachmentSupplement.Failure.conflict }
+                return value
+            }
+            guard var conversation = storedConversation,
+                  let index = conversation.messages.firstIndex(where: { $0.id == source.messageID }),
+                  conversation.messages[index] == expectedMessage,
+                  expectedMessage.id == source.messageID, expectedMessage.role != .system,
+                  expectedMessage.state != .streaming, expectedMessage.attachments.count < 20
+            else { throw ArchiveAttachmentSupplement.Failure.changed }
+            var core = expectedMessage; core.attachments = []
+            guard core == original else { throw ArchiveAttachmentSupplement.Failure.changed }
+            // IDs and storage paths are global ownership, not just per-message
+            // display identities. Existing files may not be adopted by a supplement.
+            for existing in try list(includeArchived: true).flatMap(\.messages).flatMap(\.attachments) {
+                guard existing.id != attachment.id,
+                      existing.localRelativePaths.isDisjoint(with: attachment.localRelativePaths)
+                else { throw ArchiveAttachmentSupplement.Failure.conflict }
+            }
+            let encoder = JSONEncoder(); encoder.outputFormatting = [.sortedKeys]
+            let receipt = ArchiveAttachmentSupplement.Receipt(source: source, epoch: expectedEpoch, attachment: attachment)
+            let sourceBytes = try encoder.encode(source), receiptBytes = try encoder.encode(receipt)
+            guard receiptBytes.count <= 2_000_000 else { throw ArchiveAttachmentSupplement.Failure.limit }
+            let retained = try withStatement("SELECT COALESCE(SUM(length(receipt)),0),COUNT(*) FROM archive_attachment_supplements") { statement in
+                guard sqlite3_step(statement) == SQLITE_ROW, sqlite3_column_int64(statement, 1) < 10_000 else { throw ArchiveAttachmentSupplement.Failure.limit }
+                return sqlite3_column_int64(statement, 0)
+            }
+            guard retained >= 0, retained <= Int64(50_000_000 - receiptBytes.count) else { throw ArchiveAttachmentSupplement.Failure.limit }
+            conversation.messages[index].attachments.append(attachment)
+            try validate(conversation)
+            try writeConversation(conversation)
+            try withStatement("INSERT INTO archive_attachment_supplements(archive,map,message,path,source,receipt,asset) VALUES(?,?,?,?,?,?,?)") { statement in
+                bind(source.archiveSHA256, to: 1, in: statement); bind(source.mapSHA256, to: 2, in: statement)
+                bind(source.messageID.uuidString, to: 3, in: statement); bind(source.relativePath, to: 4, in: statement)
+                bind(sourceBytes, to: 5, in: statement); bind(receiptBytes, to: 6, in: statement); bind(attachment.id.uuidString, to: 7, in: statement); try requireDone(statement)
+            }
+            try Task.checkCancellation()
+            try database.execute("COMMIT")
+            return receipt
+        } catch { try? database.execute("ROLLBACK"); throw error }
+    }
+
+    private func supplementReceipt(source: ArchiveAttachmentSupplement.Source, expectedEpoch: UUID) throws -> ArchiveAttachmentSupplement.Receipt? {
+        try withStatement("SELECT source,receipt,asset FROM archive_attachment_supplements WHERE archive=? AND message=? AND path=?") { statement in
+            bind(source.archiveSHA256, to: 1, in: statement)
+            bind(source.messageID.uuidString, to: 2, in: statement); bind(source.relativePath, to: 3, in: statement)
+            let status = sqlite3_step(statement)
+            if status == SQLITE_DONE { return nil }
+            guard status == SQLITE_ROW, sqlite3_column_bytes(statement, 0) <= 16_384,
+                  sqlite3_column_bytes(statement, 1) <= 2_000_000 else { throw ArchiveAttachmentSupplement.Failure.conflict }
+            let storedSource = try decoder.decode(ArchiveAttachmentSupplement.Source.self, from: blob(statement, at: 0))
+            let receipt = try decoder.decode(ArchiveAttachmentSupplement.Receipt.self, from: blob(statement, at: 1))
+            guard let asset = sqlite3_column_text(statement, 2), String(cString: asset) == receipt.attachment.id.uuidString,
+                  storedSource == source, receipt.source == source, receipt.epoch == expectedEpoch else { throw ArchiveAttachmentSupplement.Failure.conflict }
+            try ArchiveAttachmentSupplement.validate(receipt.attachment, source: source)
+            guard sqlite3_step(statement) == SQLITE_DONE else { throw ArchiveAttachmentSupplement.Failure.conflict }
+            return receipt
+        }
+    }
+
+    private func supplementOriginalMessage(source: ArchiveAttachmentSupplement.Source, expectedEpoch: UUID) throws -> ChatMessage {
+        guard try tableExists("archive_attachment_supplements"), try tableExists("archive_attachment_supplement_state") else { throw ArchiveAttachmentSupplement.Failure.conflict }
+        try withStatement("SELECT singleton,version FROM archive_attachment_supplement_state") { statement in
+            guard sqlite3_step(statement) == SQLITE_ROW,
+                  sqlite3_column_type(statement, 0) == SQLITE_INTEGER, sqlite3_column_int64(statement, 0) == 1,
+                  sqlite3_column_type(statement, 1) == SQLITE_INTEGER, sqlite3_column_int64(statement, 1) == 2,
+                  sqlite3_step(statement) == SQLITE_DONE else { throw ArchiveAttachmentSupplement.Failure.conflict }
+        }
+        guard try textReceiveEpoch() == expectedEpoch,
+              let receipt = try archiveRestoreReceipt(archiveSHA256: source.archiveSHA256), receipt.epoch == expectedEpoch
+        else { throw ArchiveAttachmentSupplement.Failure.changed }
+        // Legacy receipts record counts, not the IDs actually inserted. A mixed
+        // receipt cannot establish that this target was one of the new rows.
+        guard receipt.preservedConversations == 0 else { throw ArchiveAttachmentSupplement.Failure.unprovenImport }
+        return try withStatement("SELECT payload FROM archive_restore_receipts WHERE archive=?") { statement in
+            bind(source.archiveSHA256, to: 1, in: statement)
+            guard sqlite3_step(statement) == SQLITE_ROW,
+                  sqlite3_column_bytes(statement, 0) <= ConversationBackup.maximumBytes else { throw ArchiveAttachmentSupplement.Failure.invalid }
+            let conversations = try decoder.decode([Conversation].self, from: blob(statement, at: 0))
+            let candidates = conversations.filter { $0.id == source.conversationID }
+            guard candidates.count == 1 else { throw ArchiveAttachmentSupplement.Failure.invalid }
+            let messages = candidates[0].messages.filter { $0.id == source.messageID }
+            guard messages.count == 1, messages[0].attachments.isEmpty,
+                  messages[0].role != .system, messages[0].state != .streaming else { throw ArchiveAttachmentSupplement.Failure.invalid }
+            return messages[0]
+        }
+    }
+
     func applyArchiveRestore(jobID: UUID, archiveSHA256: String, expectedEpoch: UUID, conversations: [Conversation]) throws -> ArchiveRestoreReceipt {
         try Task.checkCancellation()
         guard archiveSHA256.count == 64,
@@ -371,6 +506,9 @@ actor SQLiteConversationStore {
     /// Runs inside the caller's erasure transaction. Missing receive metadata must
     /// not prevent user erasure. Do not recreate it: receives still fail closed.
     private func invalidateTextReceivesForErasure() throws {
+        if try tableExists("archive_attachment_supplements") {
+            try database.execute("DELETE FROM archive_attachment_supplements")
+        }
         if try tableExists("archive_restore_receipts") {
             try database.execute("DELETE FROM archive_restore_receipts")
         }

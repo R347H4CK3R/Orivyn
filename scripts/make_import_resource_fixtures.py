@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Synthetic resource fixtures only; no private export or media."""
-import argparse,json,pathlib,zipfile
+import argparse,json,pathlib,zipfile,runpy
 
 def generate(output):
     output.mkdir(parents=True,exist_ok=True)
@@ -17,6 +17,11 @@ def generate(output):
         with zipfile.ZipFile(output/name,'w',compression=zipfile.ZIP_DEFLATED) as archive:
             entry=zipfile.ZipInfo('conversations.json',(2026,1,1,0,0,0));entry.compress_type=zipfile.ZIP_DEFLATED
             archive.writestr(entry,body)
+    # Reuse the exact public synthetic acceptance fixture, never user input.
+    fixture = pathlib.Path(__file__).resolve().parents[1] / 'Diagnostics/ArchiveRestore/make_fixture.py'
+    manual = output / 'manual-attachments.zip'
+    manual.unlink(missing_ok=True)
+    runpy.run_path(str(fixture))['create'](manual)
     return len(dense)
 if __name__=='__main__':
     parser=argparse.ArgumentParser();parser.add_argument('--output',type=pathlib.Path,required=True)

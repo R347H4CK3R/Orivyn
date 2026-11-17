@@ -7,17 +7,24 @@
 	<key>OrivynFeedbackRepositoryURL</key>
 	<string>https://github.com/R347H4CK3R/Orivyn</string>
 	<key>CFBundleShortVersionString</key>
-	<string>0.1.5</string>
+	<string>0.1.6</string>
 	<key>CFBundleVersion</key>
-	<string>21</string>
+	<string>22</string>
 	<key>OrivynReleaseNotes</key>
-	<string>Unsigned SideStore preview, version 0.1.5 build 21: adds a bounded read-only per-message inventory of retained unlinked references before and after import, with explicit incomplete-media-count caveats. No file mapping, attachment activation, download or execution is performed. Visible structured-code text is restored as inert history after privacy and routing checks. Retains build 20 memory safeguards, original archives, existing local edits and reviewed atomic imports. Other content types and alternative branches may remain only in the original ZIP. Physical-device and full private-archive acceptance remain unverified. No video downloading, broader autonomy, vision or sync is added. Preserve app data and signing identity when updating.</string>
+	<string>Unsigned SideStore preview, version 0.1.6 build 22: adds manual reviewed association of one exact retained file with one explicitly selected imported visible message. Choose both yourself, then confirm; no filename matching or automatic media restoration is claimed. Supported files are validated locally up to 10 MiB, with immutable receipts, replay protection and original-byte verification. Old restore receipts that preserved existing conversations cannot prove target membership and are not eligible. Original ZIPs, local edits and unlinked reference records remain preserved. The speculative legacy assetsJson parser is not included. Retains prior import memory safeguards and read-only inventory. Physical-device and full private-archive acceptance remain unverified. No video downloading, broader autonomy, vision or sync is added. Preserve app data and signing identity when updating.</string>
 	<key>CFBundleURLTypes</key>
-	<array><dict>
-		<key>CFBundleURLName</key><string>app.jarvisevo.ios.compose</string>
-		<key>CFBundleURLSchemes</key><array><string>orivyn</string></array>
-		<key>CFBundleTypeRole</key><string>Editor</string>
-	</dict></array>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>app.jarvisevo.ios.compose</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>orivyn</string>
+			</array>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+		</dict>
+	</array>
 	<key>UILaunchScreen</key>
 	<dict/>
 	<key>NSMicrophoneUsageDescription</key>
@@ -37,11 +44,16 @@
 		<key>UISceneConfigurations</key>
 		<dict>
 			<key>UIWindowSceneSessionRoleExternalDisplayNonInteractive</key>
-			<array><dict>
-				<key>UISceneConfigurationName</key><string>Orivyn Desk</string>
-				<key>UISceneClassName</key><string>UIWindowScene</string>
-				<key>UISceneDelegateClassName</key><string>$(PRODUCT_MODULE_NAME).ExternalWorkspaceSceneDelegate</string>
-			</dict></array>
+			<array>
+				<dict>
+					<key>UISceneConfigurationName</key>
+					<string>Orivyn Desk</string>
+					<key>UISceneClassName</key>
+					<string>UIWindowScene</string>
+					<key>UISceneDelegateClassName</key>
+					<string>$(PRODUCT_MODULE_NAME).ExternalWorkspaceSceneDelegate</string>
+				</dict>
+			</array>
 		</dict>
 	</dict>
 	<key>UISupportedInterfaceOrientations</key>

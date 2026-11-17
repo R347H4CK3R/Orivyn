@@ -179,6 +179,7 @@ private struct DocumentPreview: UIViewControllerRepresentable {
     func makeUIViewController(context: Context) -> QLPreviewController {
         let controller = QLPreviewController()
         controller.dataSource = context.coordinator
+        controller.view.accessibilityIdentifier = "attachment.document.preview"
         return controller
     }
     func updateUIViewController(_ controller: QLPreviewController, context: Context) { }

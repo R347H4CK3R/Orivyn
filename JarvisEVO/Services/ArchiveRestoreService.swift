@@ -209,6 +209,168 @@ enum ArchiveRestoreService {
         try Task.checkCancellation(); return page
     }
 
+    struct AttachmentCandidate: Sendable, Equatable, Identifiable {
+        let source: ArchiveAttachmentSupplement.Source
+        let expectedEpoch: UUID
+        let originalMessage: ChatMessage
+        let title: String
+        let messageIndex: Int
+        var id: String { source.messageID.uuidString + ":" + source.relativePath }
+    }
+    struct AttachmentFile: Sendable, Equatable, Identifiable {
+        let relativePath: String; let bytes: UInt64; let sha256: String
+        var id: String { relativePath }
+    }
+    struct AttachmentMessage: Sendable, Equatable, Identifiable {
+        let conversationID: UUID; let messageID: UUID; let title: String
+        let messageIndex: Int; let contentSnippet: String
+        var id: UUID { messageID }
+    }
+    struct AttachmentFiles: Sendable {
+        let items: [AttachmentFile]; let totalCount: Int; let unavailableCount: Int
+        let offset: Int; let nextOffset: Int?
+    }
+    struct AttachmentMessages: Sendable {
+        let items: [AttachmentMessage]; let totalCount: Int; let offset: Int; let nextOffset: Int?
+    }
+    private struct SupplementContext {
+        let plan: Plan
+        let files: [AttachmentFile]
+        let unavailable: Int
+        let inventorySHA256: String
+        let original: ArchivePreservation.Manifest
+    }
+    /// Eligible retained files only. No file is inferred to belong to a message.
+    static func attachmentFiles(review: Review, jobsRoot: URL, offset: Int = 0) throws -> AttachmentFiles {
+        guard offset >= 0 else { throw Failure.limit }
+        let context = try supplementContext(review: review, jobsRoot: jobsRoot)
+        guard offset <= context.files.count else { throw Failure.limit }
+        let end = min(context.files.count, offset + min(50, Int.max - offset))
+        return AttachmentFiles(items: Array(context.files[offset..<end]), totalCount: context.files.count,
+            unavailableCount: context.unavailable, offset: offset, nextOffset: end < context.files.count ? end : nil)
+    }
+    /// Search already-restored visible history, retaining at most fifty labels.
+    static func attachmentMessages(review: Review, jobsRoot: URL, offset: Int = 0, query: String = "") throws -> AttachmentMessages {
+        guard offset >= 0, query.count <= 200, query.utf8.count <= 800 else { throw Failure.limit }
+        let context = try supplementContext(review: review, jobsRoot: jobsRoot)
+        var count = 0, items: [AttachmentMessage] = []
+        for conversation in context.plan.conversations {
+            for (index, message) in conversation.messages.enumerated() {
+                try Task.checkCancellation()
+                guard message.role == .user || message.role == .assistant else { continue }
+                guard query.isEmpty || conversation.title.range(of: query, options: [.literal, .caseInsensitive]) != nil ||
+                      message.content.range(of: query, options: [.literal, .caseInsensitive]) != nil else { continue }
+                if count >= offset && items.count < 50 { items.append(attachmentLabel(conversation, message, index)) }
+                count += 1
+            }
+        }
+        guard offset <= count else { throw Failure.limit }
+        let end = offset + items.count
+        return AttachmentMessages(items: items, totalCount: count, offset: offset, nextOffset: end < count ? end : nil)
+    }
+    static func manualAttachmentCandidate(review: Review, jobsRoot: URL, file: AttachmentFile, message: AttachmentMessage) throws -> AttachmentCandidate {
+        let context = try supplementContext(review: review, jobsRoot: jobsRoot)
+        guard context.files.contains(file) else { throw Failure.integrity }
+        let candidate = try manualCandidate(context: context, file: file, conversationID: message.conversationID, messageID: message.messageID)
+        guard message.title == candidate.title, message.messageIndex == candidate.messageIndex,
+              message.contentSnippet == safeAttachmentLabel(candidate.originalMessage.content) else { throw Failure.integrity }
+        return candidate
+    }
+    private static func safeAttachmentLabel(_ text: String) -> String {
+        // Bounded scalar prefix, not a whole-string filter allocation.
+        var scalars = String.UnicodeScalarView()
+        for scalar in text.unicodeScalars where !CharacterSet.controlCharacters.contains(scalar) {
+            scalars.append(scalar)
+            if scalars.count == 200 { break }
+        }
+        return String(scalars)
+    }
+    private static func attachmentLabel(_ conversation: Conversation, _ message: ChatMessage, _ index: Int) -> AttachmentMessage {
+        AttachmentMessage(conversationID: conversation.id, messageID: message.id,
+            title: safeAttachmentLabel(conversation.title), messageIndex: index + 1,
+            contentSnippet: safeAttachmentLabel(message.content))
+    }
+    private static func manualCandidate(context: SupplementContext, file: AttachmentFile, conversationID: UUID, messageID: UUID) throws -> AttachmentCandidate {
+        guard let conversation = context.plan.conversations.first(where: { $0.id == conversationID }),
+              let index = conversation.messages.firstIndex(where: { $0.id == messageID }) else { throw Failure.integrity }
+        let message = conversation.messages[index]
+        guard message.role == .user || message.role == .assistant else { throw Failure.integrity }
+        var source = ArchiveAttachmentSupplement.Source(archiveSHA256: context.original.sha256, mapSHA256: context.inventorySHA256,
+            conversationID: conversationID, messageID: messageID, relativePath: file.relativePath, bytes: file.bytes, sha256: file.sha256)
+        source.origin = .userReviewed
+        try ArchiveAttachmentSupplement.validate(source)
+        return AttachmentCandidate(source: source, expectedEpoch: context.plan.expectedEpoch, originalMessage: message,
+            title: safeAttachmentLabel(conversation.title), messageIndex: index + 1)
+    }
+    /// Reconstruct the exact user-reviewed selection and original evidence before
+    /// copying. The returned exclusive staging file belongs to the caller.
+    static func stageAttachment(candidate: AttachmentCandidate, review: Review, jobsRoot: URL) throws -> URL {
+        let context = try supplementContext(review: review, jobsRoot: jobsRoot)
+        let file = AttachmentFile(relativePath: candidate.source.relativePath, bytes: candidate.source.bytes, sha256: candidate.source.sha256)
+        guard context.files.contains(file), candidate == (try manualCandidate(context: context, file: file,
+            conversationID: candidate.source.conversationID, messageID: candidate.source.messageID)) else { throw Failure.integrity }
+        let job = jobsRoot.appendingPathComponent(review.jobID.uuidString)
+        _ = try ArchivePreservation.revalidate(staging: job.appendingPathComponent("payload"), expected: context.original)
+        let staging = job.appendingPathComponent("attachment-staging", isDirectory: true)
+        if mkdir(staging.path, 0o700) != 0 && errno != EEXIST { throw Failure.io }
+        try validateRoot(staging)
+        let suffix = URL(fileURLWithPath: candidate.source.relativePath).pathExtension.lowercased()
+        let destination = staging.appendingPathComponent(UUID().uuidString + "." + suffix)
+        try ArchiveVerifiedAssetCopy.copy(root: job.appendingPathComponent("payload/extracted"), source: candidate.source, to: destination)
+        return destination
+    }
+    private static func supplementContext(review: Review, jobsRoot: URL) throws -> SupplementContext {
+        try validateRoot(jobsRoot); try Task.checkCancellation()
+        let job = jobsRoot.appendingPathComponent(review.jobID.uuidString), state = try readState(job: job)
+        guard state.jobID == review.jobID, ["reviewReady", "committed"].contains(state.phase), state.review == review,
+              let original = state.original, original.sha256 == review.archiveSHA256,
+              let planHash = state.planSHA256, let inventoryHash = state.inventorySHA256 else { throw Failure.invalidJob }
+        guard (0...10_000).contains(review.conversationCount), (0...500_000).contains(review.messageCount),
+              (0...20_000).contains(review.unresolvedCount), (0...20_000).contains(review.retainedFileCount) else { throw Failure.limit }
+        let planURL = job.appendingPathComponent("plan.json"), inventoryURL = job.appendingPathComponent("inventory.json")
+        func decodeBound<T: Decodable>(_ type: T.Type, from url: URL, maximum: Int, hash: String) throws -> T {
+            func decode() throws -> T {
+                let bytes = try readBounded(url, maximum: maximum)
+                guard digest(bytes) == hash else { throw Failure.integrity }
+                return try JSONDecoder().decode(type, from: bytes)
+            }
+            #if canImport(ObjectiveC)
+            return try autoreleasepool(invoking: decode)
+            #else
+            return try decode()
+            #endif
+        }
+        let plan = try decodeBound(Plan.self, from: planURL, maximum: 50_000_000, hash: planHash)
+        let files = try decodeBound([FileRecord].self, from: inventoryURL, maximum: 32_000_000, hash: inventoryHash)
+        guard files.count <= 20_000, files.count == review.retainedFileCount,
+              plan.conversations.count == review.conversationCount, plan.unresolved.count == review.unresolvedCount,
+              plan.conversations.reduce(0, { $0 + $1.messages.count }) == review.messageCount else { throw Failure.integrity }
+        _ = try ArchiveRestoreInventory.page(conversations: plan.conversations,
+            references: plan.unresolved.map { .init(messageID: $0.messageID, source: $0.source) })
+        let supported = Set(["txt", "json", "pdf", "png", "jpg", "jpeg", "heic", "heif"])
+        var eligible: [AttachmentFile] = [], unavailable = 0, paths = Set<String>()
+        for file in files {
+            try Task.checkCancellation()
+            guard paths.insert(file.path).inserted else { throw Failure.integrity }
+            guard file.path.utf8.count <= 4096, file.sha256.utf8.count == 64,
+                  file.bytes > 0, file.bytes <= 10 * 1024 * 1024 else { unavailable += 1; continue }
+            // Reuse the exact literal-path/hash validator without granting a target.
+            let validation = ArchiveAttachmentSupplement.Source(archiveSHA256: original.sha256, mapSHA256: inventoryHash,
+                conversationID: review.jobID, messageID: review.jobID, relativePath: file.path, bytes: file.bytes, sha256: file.sha256)
+            guard supported.contains(URL(fileURLWithPath: file.path).pathExtension.lowercased()),
+                  (try? ArchiveAttachmentSupplement.validate(validation)) != nil else { unavailable += 1; continue }
+            eligible.append(AttachmentFile(relativePath: file.path, bytes: file.bytes, sha256: file.sha256))
+        }
+        eligible.sort { $0.relativePath < $1.relativePath }
+        let current = try readState(job: job)
+        guard current.jobID == state.jobID, current.phase == state.phase, current.review == review,
+              current.original == original, current.planSHA256 == planHash, current.inventorySHA256 == inventoryHash,
+              try hashRegular(planURL, maximum: 50_000_000).sha256 == planHash,
+              try hashRegular(inventoryURL, maximum: 32_000_000).sha256 == inventoryHash else { throw Failure.integrity }
+        try Task.checkCancellation()
+        return SupplementContext(plan: plan, files: eligible, unavailable: unavailable, inventorySHA256: inventoryHash, original: original)
+    }
+
     static func verifyForCommit(review: Review, jobsRoot: URL,
                                 progress: @Sendable (String) -> Void = { _ in }) throws -> Plan {
         try validateRoot(jobsRoot)

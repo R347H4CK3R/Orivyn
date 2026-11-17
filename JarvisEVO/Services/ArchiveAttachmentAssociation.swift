@@ -56,7 +56,7 @@ enum ArchiveAttachmentAssociation {
               UInt64(before.st_size) == bytes else { throw Failure.invalidEvidence }
         let reader = FileHandle(fileDescriptor: file, closeOnDealloc: false)
         var digest = SHA256(), readBytes: UInt64 = 0
-        while let chunk = try reader.read(upToCount: 65_536), !chunk.isEmpty {
+        while let chunk = try ArchiveReadBuffer.read(reader, upToCount: 65_536), !chunk.isEmpty {
             try Task.checkCancellation()
             guard readBytes <= bytes, UInt64(chunk.count) <= bytes - readBytes else { throw Failure.changedFile }
             digest.update(data: chunk); readBytes += UInt64(chunk.count)

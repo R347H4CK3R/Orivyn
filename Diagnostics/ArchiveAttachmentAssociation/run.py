@@ -5,6 +5,7 @@ root=pathlib.Path(__file__).resolve().parents[2]
 out=pathlib.Path(sys.argv[2]).resolve();out.mkdir(parents=True,exist_ok=False)
 for name in ['Sources/Association','Tests/AssociationTests']:(out/name).mkdir(parents=True)
 shutil.copyfile(root/'JarvisEVO/Services/ArchiveAttachmentAssociation.swift',out/'Sources/Association/ArchiveAttachmentAssociation.swift')
+shutil.copyfile(root/'JarvisEVO/Core/ArchiveReadBuffer.swift',out/'Sources/Association/ArchiveReadBuffer.swift')
 shutil.copyfile(root/'Tests/ArchiveAttachmentAssociationTests.swift',out/'Tests/AssociationTests/ArchiveAttachmentAssociationTests.swift')
 (out/'Package.swift').write_text('''// swift-tools-version: 6.0
 import PackageDescription

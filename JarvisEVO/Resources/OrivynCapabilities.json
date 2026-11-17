@@ -81,7 +81,7 @@
     {
       "id": "archive-restore",
       "status": "conditional",
-      "detail": "The ChatGPT ZIP restore screen prepares and preserves an archive locally, then requires review before committing supported conversation records. Retained or unresolved assets are not proof every attachment works. Private-archive contents and physical-device behavior remain unverified; no upload or hidden reasoning import is implied."
+      "detail": "The ChatGPT ZIP restore screen preserves an archive locally and requires review before importing supported visible conversations. A separate manual flow lets the user choose an exact retained file and imported visible message, then confirm a validated attachment. It does not infer mappings or automatically restore all media. Unlinked records and originals remain preserved. Mixed preserved/imported receipts may be ineligible. Private archives and physical-device behavior remain unverified."
     }
   ]
 }

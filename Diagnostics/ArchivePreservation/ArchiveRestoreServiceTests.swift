@@ -262,3 +262,187 @@ extension ArchiveRestoreServiceTests {
         print("INVENTORY_RESOURCE processPeakBytes=\(peakBytes) ceilingBytes=268435456 rows=20000 page=50 metadataOnly=true")
     }
 }
+
+extension ArchiveRestoreServiceTests {
+    func withLegacyAsset(_ body: (URL, ArchiveRestoreService.Review) throws -> Void) throws {
+        let root = FileManager.default.temporaryDirectory.resolvingSymlinksInPath().appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let zip = try XCTUnwrap(Bundle.module.url(forResource: "legacy-assets", withExtension: "zip", subdirectory: "Fixtures")).resolvingSymlinksInPath()
+        try body(root, ArchiveRestoreService.prepare(source: zip, jobsRoot: root, expectedEpoch: UUID()))
+    }
+    func chosen(_ review: ArchiveRestoreService.Review, _ root: URL) throws -> ArchiveRestoreService.AttachmentCandidate {
+        let file = try XCTUnwrap(ArchiveRestoreService.attachmentFiles(review: review, jobsRoot: root).items.first { $0.relativePath == "assets/note.txt" })
+        let message = try XCTUnwrap(ArchiveRestoreService.attachmentMessages(review: review, jobsRoot: root).items.first)
+        return try ArchiveRestoreService.manualAttachmentCandidate(review: review, jobsRoot: root, file: file, message: message)
+    }
+    func testManualListsAndSelectionDoNotRequireExportMap() throws {
+        try withLegacyAsset { root, review in
+            let page = try ArchiveRestoreService.attachmentFiles(review: review, jobsRoot: root)
+            XCTAssertEqual(page.items.map(\.relativePath), ["assets/note.txt", "conversations.json"])
+            XCTAssertEqual(page.unavailableCount, 1)
+            let messages = try ArchiveRestoreService.attachmentMessages(review: review, jobsRoot: root)
+            XCTAssertEqual(messages.totalCount, 2)
+            XCTAssertEqual(messages.items.first?.messageID.uuidString, "00000000-0000-0000-0000-000000000102")
+            let candidate = try chosen(review, root)
+            XCTAssertEqual(candidate.source.relativePath, "assets/note.txt")
+            XCTAssertEqual(candidate.source.origin, .userReviewed)
+            let inventoryBytes = try Data(contentsOf: root.appendingPathComponent(review.jobID.uuidString + "/inventory.json"))
+            XCTAssertEqual(candidate.source.mapSHA256, SHA256.hash(data: inventoryBytes).map { String(format: "%02x", $0) }.joined())
+            XCTAssertEqual(try ArchiveRestoreService.retainedInventory(review: review, jobsRoot: root).totalRecords, review.unresolvedCount)
+            try ArchiveRestoreService.markCommitted(review: review, jobsRoot: root)
+            XCTAssertEqual(try chosen(review, root), candidate)
+        }
+    }
+    func testExactManualCandidateCopiesVerifiedBytesAndPreservesOriginal() throws {
+        try withLegacyAsset { root, review in
+            let candidate = try chosen(review, root)
+            let url = try ArchiveRestoreService.stageAttachment(candidate: candidate, review: review, jobsRoot: root)
+            XCTAssertEqual(try String(contentsOf: url, encoding: .utf8), "Synthetic attachment, not private data.\n")
+            XCTAssertEqual(url.pathExtension, "txt")
+            XCTAssertTrue(FileManager.default.fileExists(atPath: root.appendingPathComponent(review.jobID.uuidString + "/payload/original.zip").path))
+            XCTAssertEqual(try chosen(review, root), candidate)
+        }
+    }
+    func testChangedManualFileOrPlanFailClosed() throws {
+        for changedPath in ["plan.json", "payload/extracted/assets/note.txt", "inventory.json"] {
+            try withLegacyAsset { root, review in
+                let candidate = try chosen(review, root)
+                try Data("tampered".utf8).write(to: root.appendingPathComponent(review.jobID.uuidString + "/" + changedPath))
+                XCTAssertThrowsError(try ArchiveRestoreService.stageAttachment(candidate: candidate, review: review, jobsRoot: root))
+            }
+        }
+    }
+    func testManualMessagesQueryAndSelectionMetadataAreBound() throws {
+        try withLegacyAsset { root, review in
+            let all = try ArchiveRestoreService.attachmentMessages(review: review, jobsRoot: root)
+            let answer = try ArchiveRestoreService.attachmentMessages(review: review, jobsRoot: root, query: "ANSWER")
+            XCTAssertEqual(answer.totalCount, 1); XCTAssertEqual(answer.items.first?.messageIndex, 2)
+            XCTAssertEqual(try ArchiveRestoreService.attachmentMessages(review: review, jobsRoot: root, query: ".*").totalCount, 0)
+            XCTAssertThrowsError(try ArchiveRestoreService.attachmentMessages(review: review, jobsRoot: root, query: String(repeating: "x", count: 201)))
+            XCTAssertThrowsError(try ArchiveRestoreService.attachmentMessages(review: review, jobsRoot: root, offset: -1))
+            XCTAssertThrowsError(try ArchiveRestoreService.attachmentFiles(review: review, jobsRoot: root, offset: Int.max))
+            let file = try XCTUnwrap(ArchiveRestoreService.attachmentFiles(review: review, jobsRoot: root).items.first)
+            let msg = try XCTUnwrap(all.items.first)
+            let altered = ArchiveRestoreService.AttachmentMessage(conversationID: msg.conversationID, messageID: msg.messageID, title: "tampered", messageIndex: msg.messageIndex, contentSnippet: msg.contentSnippet)
+            XCTAssertThrowsError(try ArchiveRestoreService.manualAttachmentCandidate(review: review, jobsRoot: root, file: file, message: altered))
+            let wrong = ArchiveRestoreService.AttachmentFile(relativePath: file.relativePath, bytes: file.bytes + 1, sha256: file.sha256)
+            XCTAssertThrowsError(try ArchiveRestoreService.manualAttachmentCandidate(review: review, jobsRoot: root, file: wrong, message: msg))
+        }
+    }
+
+}
+
+extension ArchiveRestoreServiceTests {
+    func testVerifiedAssetCopyRejectsAncestorSymlinkAndPreservesExistingDestination() throws {
+        try withLegacyAsset { root, review in
+            let candidate = try chosen(review, root)
+            let extracted = root.appendingPathComponent(review.jobID.uuidString + "/payload/extracted")
+            let output = root.appendingPathComponent("existing.txt")
+            try Data("keep".utf8).write(to: output)
+            XCTAssertThrowsError(try ArchiveVerifiedAssetCopy.copy(root: extracted, source: candidate.source, to: output))
+            XCTAssertEqual(try String(contentsOf: output, encoding: .utf8), "keep")
+            let assets = extracted.appendingPathComponent("assets")
+            let moved = root.appendingPathComponent("moved-assets")
+            try FileManager.default.moveItem(at: assets, to: moved)
+            try FileManager.default.createSymbolicLink(at: assets, withDestinationURL: moved)
+            let absent = root.appendingPathComponent("absent.txt")
+            XCTAssertThrowsError(try ArchiveVerifiedAssetCopy.copy(root: extracted, source: candidate.source, to: absent))
+            XCTAssertFalse(FileManager.default.fileExists(atPath: absent.path))
+        }
+    }
+    func testVerifiedAssetCopyRejectsChangedDigestAndRemovesOnlyOwnedPartial() throws {
+        try withLegacyAsset { root, review in
+            let candidate = try chosen(review, root)
+            let extracted = root.appendingPathComponent(review.jobID.uuidString + "/payload/extracted")
+            var wrong = candidate.source; wrong.sha256 = String(repeating: "0", count: 64)
+            let output = root.appendingPathComponent("new.txt")
+            XCTAssertThrowsError(try ArchiveVerifiedAssetCopy.copy(root: extracted, source: wrong, to: output))
+            XCTAssertFalse(FileManager.default.fileExists(atPath: output.path))
+            XCTAssertTrue(FileManager.default.fileExists(atPath: extracted.appendingPathComponent(wrong.relativePath).path))
+        }
+    }
+}
+
+extension ArchiveRestoreServiceTests {
+    func testChangedCandidateMessageEpochOrSourceCannotBeStaged() throws {
+        try withLegacyAsset { root, review in
+            let candidate = try chosen(review, root)
+            var alteredMessage = candidate.originalMessage; alteredMessage.content = "unreviewed replacement"
+            var alteredSource = candidate.source; alteredSource.relativePath = "assets/other.txt"
+            let changes: [ArchiveRestoreService.AttachmentCandidate] = [
+                .init(source: candidate.source, expectedEpoch: UUID(), originalMessage: candidate.originalMessage, title: candidate.title, messageIndex: candidate.messageIndex),
+                .init(source: candidate.source, expectedEpoch: candidate.expectedEpoch, originalMessage: alteredMessage, title: candidate.title, messageIndex: candidate.messageIndex),
+                .init(source: alteredSource, expectedEpoch: candidate.expectedEpoch, originalMessage: candidate.originalMessage, title: candidate.title, messageIndex: candidate.messageIndex)
+            ]
+            for changed in changes {
+                XCTAssertThrowsError(try ArchiveRestoreService.stageAttachment(candidate: changed, review: review, jobsRoot: root))
+            }
+            XCTAssertFalse(FileManager.default.fileExists(atPath: root.appendingPathComponent(review.jobID.uuidString + "/attachment-staging").path))
+        }
+    }
+}
+
+extension ArchiveRestoreServiceTests {
+    func bindSyntheticPlan(_ plan: ArchiveRestoreService.Plan, review: inout ArchiveRestoreService.Review, root: URL) throws {
+        let job = root.appendingPathComponent(review.jobID.uuidString)
+        let bytes = try JSONEncoder().encode(plan)
+        review.conversationCount = plan.conversations.count
+        review.messageCount = plan.conversations.reduce(0) { $0 + $1.messages.count }
+        review.unresolvedCount = plan.unresolved.count
+        var state = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: job.appendingPathComponent("state.json"))) as? [String: Any])
+        state["review"] = try JSONSerialization.jsonObject(with: JSONEncoder().encode(review))
+        state["planSHA256"] = SHA256.hash(data: bytes).map { String(format: "%02x", $0) }.joined()
+        try bytes.write(to: job.appendingPathComponent("plan.json"))
+        try JSONSerialization.data(withJSONObject: state).write(to: job.appendingPathComponent("state.json"))
+    }
+    func testManualContextRejectsDuplicateMessagesConversationsAndOrphans() throws {
+        for mode in 0..<3 {
+            try withLegacyAsset { root, originalReview in
+                var review = originalReview
+                var plan = try JSONDecoder().decode(ArchiveRestoreService.Plan.self, from: Data(contentsOf: root.appendingPathComponent(review.jobID.uuidString + "/plan.json")))
+                if mode == 0 { plan.conversations[0].messages.append(plan.conversations[0].messages[0]) }
+                if mode == 1 { plan.conversations.append(plan.conversations[0]) }
+                if mode == 2 { plan.unresolved.append(.init(messageID: UUID(), source: "contentPart", originalJSON: Data("{}".utf8))) }
+                try bindSyntheticPlan(plan, review: &review, root: root)
+                XCTAssertThrowsError(try ArchiveRestoreService.attachmentFiles(review: review, jobsRoot: root))
+                XCTAssertThrowsError(try ArchiveRestoreService.attachmentMessages(review: review, jobsRoot: root))
+            }
+        }
+    }
+    func testManualMessagesPageFiftyBoundLabelsAndPreservePlan() throws {
+        try withLegacyAsset { root, originalReview in
+            var review = originalReview
+            let url = root.appendingPathComponent(review.jobID.uuidString + "/plan.json")
+            var plan = try JSONDecoder().decode(ArchiveRestoreService.Plan.self, from: Data(contentsOf: url))
+            plan.conversations[0].title = "Synthetic\n" + String(repeating: "t", count: 300)
+            plan.conversations[0].messages = (0..<103).map { index in ChatMessage(role: .user, content: "Row \(index)\n" + String(repeating: "x", count: 300)) }
+            try bindSyntheticPlan(plan, review: &review, root: root)
+            let before = try Data(contentsOf: url)
+            let first = try ArchiveRestoreService.attachmentMessages(review: review, jobsRoot: root)
+            XCTAssertEqual(first.totalCount, 103); XCTAssertEqual(first.items.count, 50); XCTAssertEqual(first.nextOffset, 50)
+            XCTAssertEqual(first.items.first?.title.unicodeScalars.count, 200)
+            XCTAssertEqual(first.items.first?.contentSnippet.unicodeScalars.count, 200)
+            XCTAssertFalse(first.items[0].contentSnippet.contains("\n"))
+            let last = try ArchiveRestoreService.attachmentMessages(review: review, jobsRoot: root, offset: 100)
+            XCTAssertEqual(last.items.count, 3); XCTAssertNil(last.nextOffset); XCTAssertEqual(last.items[0].messageIndex, 101)
+            XCTAssertEqual(try Data(contentsOf: url), before)
+        }
+    }
+    func testManualContextRejectsDuplicateInventoryPathsAndAlteredReview() throws {
+        try withLegacyAsset { root, review in
+            var altered = review; altered.messageCount += 1
+            XCTAssertThrowsError(try ArchiveRestoreService.attachmentFiles(review: altered, jobsRoot: root))
+            let job = root.appendingPathComponent(review.jobID.uuidString)
+            let inventoryURL = job.appendingPathComponent("inventory.json")
+            var files = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: inventoryURL)) as? [[String: Any]])
+            files[1] = files[0]
+            let bytes = try JSONSerialization.data(withJSONObject: files)
+            var state = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: job.appendingPathComponent("state.json"))) as? [String: Any])
+            state["inventorySHA256"] = SHA256.hash(data: bytes).map { String(format: "%02x", $0) }.joined()
+            try bytes.write(to: inventoryURL)
+            try JSONSerialization.data(withJSONObject: state).write(to: job.appendingPathComponent("state.json"))
+            XCTAssertThrowsError(try ArchiveRestoreService.attachmentFiles(review: review, jobsRoot: root))
+        }
+    }
+}

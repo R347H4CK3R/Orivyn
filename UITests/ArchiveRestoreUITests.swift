@@ -89,6 +89,70 @@ final class ArchiveRestoreUITests: XCTestCase {
         screenshot(app, "Retained media inventory after relaunch")
     }
 
+    func testManualAttachmentRequiresConfirmationAndSurvivesRelaunchWithoutReplayDuplication() {
+        executionTimeAllowance = 480
+        continueAfterFailure = false
+        let app = launchFresh()
+        openRestore(app); selectFixtureZIP(app); assertReview(app); commitPrepared(app)
+        relaunch(app); assertRestoredHistory(app)
+        let preview = app.buttons["Preview reviewed-note.txt"]
+        XCTAssertFalse(preview.exists, "Text restoration alone must not activate an attachment")
+
+        openRestore(app); reviewManualAttachment(app)
+        tapUnobscured(app.buttons["archive.attach-cancel"], in: app)
+        waitAbsent(app.buttons["archive.attach-confirm"])
+        relaunch(app); assertRestoredHistory(app)
+        XCTAssertFalse(preview.exists, "Cancelling per-file review must leave history without the attachment")
+
+        openRestore(app); reviewManualAttachment(app)
+        tapUnobscured(app.buttons["archive.attach-confirm"], in: app)
+        waitArchiveStatus("Reviewed attachment saved. Original archive and unlinked reference records are unchanged; other media is not claimed as restored.", app)
+        screenshot(app, "One explicitly reviewed attachment committed")
+        relaunch(app); assertRestoredHistory(app)
+        XCTAssertTrue(preview.waitForExistence(timeout: 15), app.debugDescription)
+        XCTAssertEqual(app.buttons.matching(NSPredicate(format: "label == %@", "Preview reviewed-note.txt")).count, 1)
+        preview.tap()
+        XCTAssertTrue(app.buttons["attachment.preview.done"].waitForExistence(timeout: 15), app.debugDescription)
+        XCTAssertTrue(app.navigationBars["reviewed-note.txt"].exists, app.debugDescription)
+        XCTAssertTrue(app.otherElements["attachment.document.preview"].waitForExistence(timeout: 15), "Must show the real local-file QuickLook view, not an extracted-text fallback")
+        screenshot(app, "Actual retained attachment preview after relaunch")
+        attachHierarchy(app, "Retained attachment preview after relaunch")
+        app.buttons["attachment.preview.done"].tap()
+
+        // A repeated explicit request returns the saved receipt, not another copy.
+        openRestore(app); reviewManualAttachment(app)
+        tapUnobscured(app.buttons["archive.attach-confirm"], in: app)
+        waitArchiveStatus("This source already has a saved attachment receipt. No file was copied or attached again, including if you removed it later.", app)
+        relaunch(app); assertRestoredHistory(app)
+        XCTAssertEqual(app.buttons.matching(NSPredicate(format: "label == %@", "Preview reviewed-note.txt")).count, 1)
+    }
+    private func reviewManualAttachment(_ app: XCUIApplication) {
+        tapUnobscured(app.buttons["archive.refresh-media"], in: app)
+        let find = app.buttons["archive.find-retained-attachments"]
+        XCTAssertTrue(find.waitForExistence(timeout: 30), app.debugDescription)
+        tapUnobscured(find, in: app)
+        waitArchiveStatus("Retained files loaded. Choose one file and then its destination message.", app)
+        XCTAssertFalse(app.buttons["archive.attach-confirm"].exists, "No automatic target or pending confirmation")
+        let file = app.buttons.matching(identifier: "archive.attachment-file").matching(NSPredicate(format: "label CONTAINS %@", "assets/reviewed-note.txt")).firstMatch
+        tapUnobscured(file, in: app)
+        waitArchiveStatus("Visible messages loaded. Choose the destination yourself. No file was attached.", app)
+        XCTAssertFalse(app.buttons["archive.attach-confirm"].exists, "Choosing a file does not choose a message")
+        let target = app.buttons.matching(identifier: "archive.attachment-target").matching(NSPredicate(format: "label CONTAINS %@", "Synthetic ZIP acceptance question.")).firstMatch
+        tapUnobscured(target, in: app)
+        waitArchiveStatus("Attachment ready for explicit confirmation. No file was attached.", app)
+        reveal(app.staticTexts["archive.attachment-message"], in: app.collectionViews.firstMatch)
+        XCTAssertEqual(app.staticTexts["archive.attachment-message"].label, "Synthetic ZIP acceptance question.")
+        reveal(app.buttons["archive.attach-confirm"], in: app.collectionViews.firstMatch)
+        XCTAssertTrue(app.buttons["archive.attach-confirm"].exists, app.debugDescription)
+        XCTAssertFalse(app.staticTexts["archive.error"].exists, app.debugDescription)
+    }
+    private func waitArchiveStatus(_ expected: String, _ app: XCUIApplication) {
+        let status = app.staticTexts["archive.status"]
+        reveal(status, in: app.collectionViews.firstMatch, towardEnd: false)
+        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "label == %@", expected), object: status)], timeout: 45), .completed, app.debugDescription)
+        XCTAssertFalse(app.staticTexts["archive.error"].exists, app.debugDescription)
+    }
+
     /// XCTest can call a row under iOS's translucent navigation bar hittable.
     /// Require its full frame inside the unobscured List viewport before tapping.
     private func tapUnobscured(_ target: XCUIElement, in app: XCUIApplication,

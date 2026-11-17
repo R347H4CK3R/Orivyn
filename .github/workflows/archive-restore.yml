@@ -1,7 +1,7 @@
-name: Verify build 21 retained-reference inventory (unobscured inventory acceptance)
+name: Verify build 22 manually reviewed retained attachments
 on:
   push:
-    branches: [fix/build21-retained-inventory]
+    branches: [fix/build22-manual-attachments]
     paths: ['.github/workflows/archive-restore.yml']
 permissions:
   contents: read
@@ -58,7 +58,7 @@ jobs:
           PYEVIDENCE
           EVIDENCE=$?
           test "$PRESERVE" = 0 && test "$PARSE" = 0 && test "$EVIDENCE" = 0
-      - name: Verify exact retained-inventory service and preservation tests
+      - name: Verify exact manual-selection service and preservation tests
         run: |
           mkdir -p artifacts/inventory-service
           set +e
@@ -70,12 +70,12 @@ jobs:
           python3 - <<'PYINVENTORY'
           import pathlib,re
           log=pathlib.Path('artifacts/inventory-service/tests.log').read_text()
-          assert re.search(r'Executed 28 tests, with 0 failures',log)
+          assert re.search(r'Executed 38 tests, with 0 failures',log)
           assert not re.search(r"Test Case .* skipped",log)
           PYINVENTORY
-      - name: Actual ZIP picker, reviewed restore and persistent history
+      - name: Actual ZIP picker, manual attachment review, preview and persistent history
         run: bash scripts/ci_archive_restore.sh
-      - name: Package build 21 only after exact native acceptance passes
+      - name: Package build 22 only after exact native acceptance passes
         run: bash scripts/ci_package_only.sh
       - uses: actions/upload-artifact@v4
         if: always()

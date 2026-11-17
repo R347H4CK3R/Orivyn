@@ -31,6 +31,17 @@ struct ArchiveRestoreView: View {
 
     var loadInventory: (@MainActor (Review, Int) async throws -> ArchiveRestoreInventory.Page)?
     var reloadInventoryReviews: (@MainActor () async throws -> [Review])?
+    var loadAttachmentFiles: (@MainActor (Review, Int) async throws -> ArchiveRestoreService.AttachmentFiles)?
+    var loadAttachmentMessages: (@MainActor (Review, Int, String) async throws -> ArchiveRestoreService.AttachmentMessages)?
+    var reviewAttachment: (@MainActor (Review, ArchiveRestoreService.AttachmentFile, ArchiveRestoreService.AttachmentMessage) async throws -> (candidate: ArchiveRestoreService.AttachmentCandidate, message: ChatMessage))?
+    var commitAttachment: (@MainActor (Review, ArchiveRestoreService.AttachmentCandidate, ChatMessage, @escaping Progress) async throws -> CommitOutcome)?
+
+    private struct AttachmentReview {
+        let archive: Review
+        let candidate: ArchiveRestoreService.AttachmentCandidate
+        let message: ChatMessage
+        let lifecycle: UUID
+    }
 
     private struct LogLine: Identifiable {
         let id = UUID()
@@ -53,6 +64,12 @@ struct ArchiveRestoreView: View {
     @State private var inventoryReviews: [Review] = []
     @State private var inventoryReview: Review?
     @State private var inventoryPage: ArchiveRestoreInventory.Page?
+    @State private var attachmentArchive: Review?
+    @State private var attachmentFiles: ArchiveRestoreService.AttachmentFiles?
+    @State private var selectedAttachmentFile: ArchiveRestoreService.AttachmentFile?
+    @State private var attachmentMessages: ArchiveRestoreService.AttachmentMessages?
+    @State private var attachmentMessageQuery = ""
+    @State private var pendingAttachment: AttachmentReview?
     @State private var lines: [LogLine] = []
     @State private var errorText: String?
     @State private var status = "Choose your complete ChatGPT ZIP. Nothing is uploaded."
@@ -98,12 +115,17 @@ struct ArchiveRestoreView: View {
                         Button("Inspect per-message retained references") { inspectInventory(review, offset: 0) }
                             .disabled(operation != nil).accessibilityIdentifier("archive.inspect-media")
                     }
+                    if loadAttachmentFiles != nil {
+                        Button("Choose a file to attach manually") { readAttachmentFiles(review, offset: 0) }
+                            .disabled(operation != nil).accessibilityIdentifier("archive.find-attachments")
+                    }
                     Text("Your local edits are preserved. Imported history cannot authorize tools. If you later choose an online model, selected history may be sent to that provider.").font(.footnote)
                     Text("ZIP SHA-256: \(review.archiveSHA256)").font(.caption2).textSelection(.enabled)
                     Button("Restore reviewed conversations") { beginCommit(review) }
                         .disabled(operation != nil)
                         .accessibilityIdentifier("archive.confirm")
                     Button("Leave prepared for later", role: .cancel) {
+                        clearAttachmentSelection()
                         self.review = nil
                         status = "Prepared files retained. Review them again before restoring."
                     }.disabled(operation != nil)
@@ -116,12 +138,14 @@ struct ArchiveRestoreView: View {
                 if retainedReviews.isEmpty { Text("No retained preparations loaded.").font(.caption) }
                 ForEach(retainedReviews) { item in
                     Button("Review \(item.conversationCount) conversations · \(item.jobID.uuidString.prefix(8))") {
+                        clearAttachmentSelection()
                         review = item; errorText = nil
                         status = "Retained preparation selected. Files will be verified again before commit."
                     }.disabled(operation != nil)
                 }
             }
             inventorySections
+            attachmentSections
             Section("Live processing log (latest 200)") {
                 Text("Display progress is coalesced during busy work. No invented percentages. A quiet log can mean a long-running operation, not necessarily a stall.").font(.caption)
                 ForEach(lines) { line in
@@ -171,6 +195,10 @@ struct ArchiveRestoreView: View {
                 ForEach(inventoryReviews) { item in
                     Button("Inspect retained media · " + String(item.jobID.uuidString.prefix(8))) { inspectInventory(item, offset: 0) }
                         .disabled(operation != nil)
+                    if loadAttachmentFiles != nil {
+                        Button("Choose archive file · " + String(item.jobID.uuidString.prefix(8))) { readAttachmentFiles(item, offset: 0) }
+                            .disabled(operation != nil).accessibilityIdentifier("archive.find-retained-attachments")
+                    }
                 }
             }
         }
@@ -197,11 +225,184 @@ struct ArchiveRestoreView: View {
         }
     }
 
+    @ViewBuilder private var attachmentSections: some View {
+        if let page = attachmentFiles, let selected = attachmentArchive {
+            Section("Choose one retained file") {
+                Text("This is a manual association you choose, not an exporter-verified match. Restore the conversations first. Older receipts that preserved existing conversations may not establish an eligible target.").font(.footnote)
+                Text("\(page.totalCount) files · \(page.unavailableCount) unavailable files. These are not resolved opaque-reference counts.")
+                    .accessibilityIdentifier("archive.attachment-summary")
+                Text("Files must pass supported image, PDF or UTF-8 text validation, up to 10 MiB each. Nothing is attached by opening this list. Original files and unresolved-reference counts remain unchanged.").font(.footnote)
+                ForEach(page.items) { item in
+                    Button { selectAttachmentFile(selected, file: item) } label: {
+                        VStack(alignment: .leading) {
+                            Text(verbatim: item.relativePath).font(.caption)
+                            Text("\(item.bytes) bytes").font(.caption)
+                        }
+                    }.disabled(operation != nil || loadAttachmentMessages == nil || reviewAttachment == nil || commitAttachment == nil)
+                        .accessibilityIdentifier("archive.attachment-file")
+                }
+                if page.offset > 0 {
+                    Button("Previous files") { readAttachmentFiles(selected, offset: max(0, page.offset - 50)) }.disabled(operation != nil)
+                }
+                if let next = page.nextOffset {
+                    Button("Next files") { readAttachmentFiles(selected, offset: next) }.disabled(operation != nil)
+                }
+                Button("Close attachment selection") { clearAttachmentSelection() }.disabled(operation != nil)
+            }
+        }
+        if let file = selectedAttachmentFile, let selected = attachmentArchive {
+            Section("Choose the destination message") {
+                Text(verbatim: file.relativePath).font(.caption)
+                Text("Choose the visible message that should receive this file. No destination is selected automatically.").font(.footnote)
+                TextField("Search message text or title", text: $attachmentMessageQuery)
+                    .accessibilityIdentifier("archive.attachment-search")
+                    .disabled(operation != nil)
+                    .onChange(of: attachmentMessageQuery) { _, _ in pendingAttachment = nil; attachmentMessages = nil }
+                Button("Search messages") { readAttachmentMessages(selected, file: file, offset: 0) }
+                    .disabled(operation != nil).accessibilityIdentifier("archive.attachment-search-submit")
+                if let page = attachmentMessages {
+                    Text("\(page.totalCount) imported-plan messages · offset \(page.offset)")
+                    Text("Imported-plan messages; current eligibility is checked when reviewed.").font(.footnote)
+                    ForEach(page.items) { item in
+                        Button { beginAttachmentReview(selected, file: file, target: item) } label: {
+                            VStack(alignment: .leading) {
+                                Text(verbatim: displaySnippet(item.title, limit: 200))
+                                Text("Message \(item.messageIndex)").font(.caption)
+                                Text(verbatim: displaySnippet(item.contentSnippet, limit: 400)).font(.caption)
+                            }
+                        }.disabled(operation != nil).accessibilityIdentifier("archive.attachment-target")
+                    }
+                    if page.offset > 0 {
+                        Button("Previous messages") { readAttachmentMessages(selected, file: file, offset: max(0, page.offset - 50)) }.disabled(operation != nil)
+                    }
+                    if let next = page.nextOffset {
+                        Button("Next messages") { readAttachmentMessages(selected, file: file, offset: next) }.disabled(operation != nil)
+                    }
+                }
+            }
+        }
+        if let pending = pendingAttachment {
+            Section("Review your manual association") {
+                Text("You chose this file and message. The export did not establish their association.").font(.footnote)
+                Text(verbatim: displaySnippet(pending.candidate.title, limit: 200))
+                Text("Conversation: " + pending.candidate.source.conversationID.uuidString).font(.caption2)
+                Text("Message: " + pending.message.id.uuidString).font(.caption2)
+                Text(verbatim: displaySnippet(pending.message.content, limit: 400)).font(.caption)
+                    .accessibilityIdentifier("archive.attachment-message")
+                Text(verbatim: pending.candidate.source.relativePath).textSelection(.enabled)
+                Text("\(pending.candidate.source.bytes) bytes · extension: " + URL(fileURLWithPath: pending.candidate.source.relativePath).pathExtension.lowercased()).font(.caption)
+                Text("Confirmation copies and validates only this file, then adds it to the unchanged reviewed message. Existing text and attachments stay intact. Images are validated locally with a clean preview and recognized text. Unsupported files fail without attaching. If you later use an online model, attached extracted text may be sent to that provider.").font(.footnote)
+                Button("Attach reviewed file") { confirmAttachment(pending) }
+                    .disabled(operation != nil).accessibilityIdentifier("archive.attach-confirm")
+                Button("Cancel attachment review", role: .cancel) { pendingAttachment = nil }
+                    .disabled(operation != nil).accessibilityIdentifier("archive.attach-cancel")
+            }
+        }
+    }
+    private func displaySnippet(_ value: String, limit: Int) -> String {
+        String(String.UnicodeScalarView(value.unicodeScalars.lazy
+            .filter { !CharacterSet.controlCharacters.contains($0) || $0 == "\n" }.prefix(limit)))
+    }
+    @MainActor private func clearAttachmentSelection() {
+        pendingAttachment = nil; attachmentFiles = nil; attachmentArchive = nil
+        selectedAttachmentFile = nil; attachmentMessages = nil; attachmentMessageQuery = ""
+    }
+    @MainActor private func readAttachmentFiles(_ selected: Review, offset: Int) {
+        guard active, lifetime.isValid, operation == nil, let loadAttachmentFiles else { return }
+        clearAttachmentSelection()
+        let id = UUID(), generation = lifecycle; operationID = id; errorText = nil
+        append("Reading retained files for manual selection…")
+        operation = Task { @MainActor in
+            defer { finish(id) }
+            do {
+                let page = try await loadAttachmentFiles(selected, offset)
+                try Task.checkCancellation()
+                guard active, lifetime.isValid, lifecycle == generation, operationID == id else { return }
+                attachmentArchive = selected; attachmentFiles = page
+                append("Retained files loaded. Choose one file and then its destination message.")
+            } catch is CancellationError { append("Attachment candidate read cancelled.") }
+            catch { errorText = error.localizedDescription; append("Could not read retained attachment files.") }
+        }
+    }
+    @MainActor private func selectAttachmentFile(_ selected: Review, file: ArchiveRestoreService.AttachmentFile) {
+        guard active, lifetime.isValid, operation == nil, attachmentArchive == selected,
+              attachmentFiles?.items.contains(file) == true else { return }
+        pendingAttachment = nil; selectedAttachmentFile = file; attachmentMessages = nil; attachmentMessageQuery = ""
+        readAttachmentMessages(selected, file: file, offset: 0)
+    }
+    @MainActor private func readAttachmentMessages(_ selected: Review, file: ArchiveRestoreService.AttachmentFile, offset: Int) {
+        guard active, lifetime.isValid, operation == nil, let loadAttachmentMessages,
+              attachmentArchive == selected, selectedAttachmentFile == file else { return }
+        pendingAttachment = nil; attachmentMessages = nil
+        let id = UUID(), generation = lifecycle, query = attachmentMessageQuery
+        operationID = id; errorText = nil
+        append("Reading imported-plan visible messages…")
+        operation = Task { @MainActor in
+            defer { finish(id) }
+            do {
+                let page = try await loadAttachmentMessages(selected, offset, query)
+                try Task.checkCancellation()
+                guard active, lifetime.isValid, lifecycle == generation, operationID == id,
+                      attachmentArchive == selected, selectedAttachmentFile == file, attachmentMessageQuery == query else { return }
+                attachmentMessages = page
+                append("Visible messages loaded. Choose the destination yourself. No file was attached.")
+            } catch is CancellationError { append("Message read cancelled.") }
+            catch { errorText = error.localizedDescription; append("Could not read imported-plan messages.") }
+        }
+    }
+    @MainActor private func beginAttachmentReview(_ selected: Review, file: ArchiveRestoreService.AttachmentFile, target: ArchiveRestoreService.AttachmentMessage) {
+        guard active, lifetime.isValid, operation == nil, let reviewAttachment,
+              attachmentArchive == selected, selectedAttachmentFile == file,
+              attachmentMessages?.items.contains(target) == true else { return }
+        pendingAttachment = nil
+        let id = UUID(), generation = lifecycle; operationID = id; errorText = nil
+        append("Checking your selected file and current message before review…")
+        operation = Task { @MainActor in
+            defer { finish(id) }
+            do {
+                let reviewed = try await reviewAttachment(selected, file, target)
+                try Task.checkCancellation()
+                guard active, lifetime.isValid, lifecycle == generation, operationID == id,
+                      attachmentArchive == selected, selectedAttachmentFile == file else { return }
+                pendingAttachment = AttachmentReview(archive: selected, candidate: reviewed.candidate, message: reviewed.message, lifecycle: generation)
+                append("Attachment ready for explicit confirmation. No file was attached.")
+            } catch is CancellationError { append("Attachment review cancelled.") }
+            catch { errorText = error.localizedDescription; append("This attachment cannot be reviewed safely.") }
+        }
+    }
+    @MainActor private func confirmAttachment(_ selected: AttachmentReview) {
+        guard active, lifetime.isValid, operation == nil, let commitAttachment,
+              selected.lifecycle == lifecycle, pendingAttachment?.candidate == selected.candidate,
+              pendingAttachment?.archive == selected.archive, pendingAttachment?.message == selected.message,
+              pendingAttachment?.lifecycle == selected.lifecycle else { return }
+        pendingAttachment = nil
+        let id = UUID(); operationID = id; committing = true; errorText = nil
+        append("Validating the one explicitly confirmed attachment…")
+        operation = Task { @MainActor in
+            defer { finish(id) }
+            do {
+                let outcome = try await commitAttachment(selected.archive, selected.candidate, selected.message, progress(for: id))
+                switch outcome {
+                case .committed(let message): append(message)
+                case .committedMaintenancePending(let message): append(message)
+                case .committedReloadPending(let message):
+                    append(message); errorText = "The attachment was committed, but visible history needs a refresh. Do not attach it again to fix this."
+                }
+            } catch {
+                // The coordinator must return a committed outcome after the
+                // receipt commits, even if reload or later maintenance fails.
+                errorText = error.localizedDescription
+                append("Attachment did not commit. Review it again before retrying.")
+            }
+        }
+    }
+
     @MainActor private func activateLifetime() {
         if !lifetime.isValid { lifetime = ArchiveRestoreLifetime(); lifecycle = UUID() }
         active = true
     }
     @MainActor private func invalidateLifetime(reason: String) {
+        clearAttachmentSelection()
         lifetime.invalidate()
         active = false; lifecycle = UUID(); pickerLifecycle = nil; choosing = false
         append(reason + "; pending picker callbacks invalidated.")
@@ -234,6 +435,7 @@ struct ArchiveRestoreView: View {
     @MainActor private func beginPreparation(_ url: URL) {
         guard active, operation == nil else { return }
         let id = UUID(); operationID = id
+        clearAttachmentSelection()
         review = nil; errorText = nil; cancelling = false
         append("Opening selected ZIP…")
         operation = Task { @MainActor in
@@ -254,6 +456,7 @@ struct ArchiveRestoreView: View {
     }
     @MainActor private func beginCommit(_ selected: Review) {
         guard operation == nil else { return }
+        clearAttachmentSelection()
         let id = UUID(); operationID = id; committing = true; errorText = nil
         append("Revalidating prepared files before the history transaction…")
         operation = Task { @MainActor in
@@ -281,6 +484,7 @@ struct ArchiveRestoreView: View {
     }
     @MainActor private func refresh() {
         guard operation == nil else { return }
+        clearAttachmentSelection()
         let id = UUID(); operationID = id; errorText = nil
         append("Checking retained preparations…")
         operation = Task { @MainActor in
@@ -295,6 +499,7 @@ struct ArchiveRestoreView: View {
     }
     @MainActor private func inspectInventory(_ selected: Review, offset: Int) {
         guard operation == nil, let loadInventory else { return }
+        clearAttachmentSelection()
         let id = UUID(); operationID = id; errorText = nil
         inventoryPage = nil; inventoryReview = nil
         append("Reading bounded retained-reference inventory…")
@@ -312,6 +517,7 @@ struct ArchiveRestoreView: View {
     }
     @MainActor private func refreshInventoryReviews() {
         guard operation == nil, let reloadInventoryReviews else { return }
+        clearAttachmentSelection()
         let id = UUID(); operationID = id; errorText = nil
         append("Checking retained media inventories…")
         operation = Task { @MainActor in

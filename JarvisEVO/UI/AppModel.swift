@@ -1387,6 +1387,113 @@ final class AppModel {
         let root = try archiveRoot(), review = archiveServiceReview(value)
         return try await runArchiveWork { try ArchiveRestoreService.retainedInventory(review: review, jobsRoot: root, offset: offset) }
     }
+    func retainedArchiveAttachmentFiles(_ value: ArchiveRestoreView.Review, offset: Int) async throws -> ArchiveRestoreService.AttachmentFiles {
+        guard !isGenerating, !isSavingSubmittedTurn, attachmentImportJobs.isEmpty, beginHistoryChange() else { throw TextSnapshotError.busy }
+        defer { finishHistoryChange() }
+        await resourceReleaser.unload()
+        try Task.checkCancellation()
+        let root = try archiveRoot(), review = archiveServiceReview(value)
+        return try await runArchiveWork { try ArchiveRestoreService.attachmentFiles(review: review, jobsRoot: root, offset: offset) }
+    }
+    func retainedArchiveAttachmentMessages(_ value: ArchiveRestoreView.Review, offset: Int, query: String) async throws -> ArchiveRestoreService.AttachmentMessages {
+        guard !isGenerating, !isSavingSubmittedTurn, attachmentImportJobs.isEmpty, beginHistoryChange() else { throw TextSnapshotError.busy }
+        defer { finishHistoryChange() }
+        await resourceReleaser.unload()
+        try Task.checkCancellation()
+        let root = try archiveRoot(), review = archiveServiceReview(value)
+        return try await runArchiveWork { try ArchiveRestoreService.attachmentMessages(review: review, jobsRoot: root, offset: offset, query: query) }
+    }
+    func reviewArchiveAttachment(_ value: ArchiveRestoreView.Review, file: ArchiveRestoreService.AttachmentFile,
+                                 message: ArchiveRestoreService.AttachmentMessage) async throws -> (candidate: ArchiveRestoreService.AttachmentCandidate, message: ChatMessage) {
+        guard !isGenerating, !isSavingSubmittedTurn, attachmentImportJobs.isEmpty, beginHistoryChange() else { throw TextSnapshotError.busy }
+        defer { finishHistoryChange() }
+        await resourceReleaser.unload()
+        try Task.checkCancellation()
+        let root = try archiveRoot(), review = archiveServiceReview(value)
+        let candidate = try await runArchiveWork { try ArchiveRestoreService.manualAttachmentCandidate(review: review, jobsRoot: root, file: file, message: message) }
+        _ = try await store.archiveAttachmentSupplementReceipt(source: candidate.source, expectedEpoch: candidate.expectedEpoch)
+        try Task.checkCancellation()
+        return (candidate, try await currentArchiveAttachmentMessage(candidate))
+    }
+
+    private func currentArchiveAttachmentMessage(_ candidate: ArchiveRestoreService.AttachmentCandidate) async throws -> ChatMessage {
+        guard try await store.textReceiveEpoch() == candidate.expectedEpoch,
+              let conversation = try await store.load(id: candidate.source.conversationID) else {
+            throw ArchiveAttachmentSupplement.Failure.changed
+        }
+        let matches = conversation.messages.filter { $0.id == candidate.source.messageID }
+        guard matches.count == 1 else { throw ArchiveAttachmentSupplement.Failure.changed }
+        var core = matches[0]; core.attachments = []
+        guard core == candidate.originalMessage else { throw ArchiveAttachmentSupplement.Failure.changed }
+        return matches[0]
+    }
+
+    func reviewArchiveAttachment(_ value: ArchiveRestoreView.Review, candidate: ArchiveRestoreService.AttachmentCandidate) async throws -> ChatMessage {
+        guard !isGenerating, !isSavingSubmittedTurn, attachmentImportJobs.isEmpty, beginHistoryChange() else { throw TextSnapshotError.busy }
+        defer { finishHistoryChange() }
+        guard value.archiveSHA256 == candidate.source.archiveSHA256, candidate.source.origin == .userReviewed else { throw ArchiveAttachmentSupplement.Failure.invalid }
+        // Lookup validates the immutable text receipt and epoch even when this
+        // source has not been attached. It never copies or activates a file.
+        _ = try await store.archiveAttachmentSupplementReceipt(source: candidate.source, expectedEpoch: candidate.expectedEpoch)
+        try Task.checkCancellation()
+        return try await currentArchiveAttachmentMessage(candidate)
+    }
+
+    func commitArchiveAttachment(_ value: ArchiveRestoreView.Review, candidate: ArchiveRestoreService.AttachmentCandidate,
+                                 expectedMessage: ChatMessage, progress: @escaping ArchiveRestoreView.Progress) async throws -> ArchiveRestoreView.CommitOutcome {
+        guard !isGenerating, !isSavingSubmittedTurn, attachmentImportJobs.isEmpty, beginHistoryChange() else { throw TextSnapshotError.busy }
+        // Holds the existing app-private history/attachment maintenance lock across
+        // verification, importer ownership, SQLite commit, and catalog refresh.
+        var releaseHistory = true
+        defer { if releaseHistory { finishHistoryChange() } }
+        guard value.archiveSHA256 == candidate.source.archiveSHA256, candidate.source.origin == .userReviewed else { throw ArchiveAttachmentSupplement.Failure.invalid }
+        if try await store.archiveAttachmentSupplementReceipt(source: candidate.source, expectedEpoch: candidate.expectedEpoch) != nil {
+            return .committed("This source already has a saved attachment receipt. No file was copied or attached again, including if you removed it later.")
+        }
+        guard try await currentArchiveAttachmentMessage(candidate) == expectedMessage else { throw ArchiveAttachmentSupplement.Failure.changed }
+        progress("Releasing local model memory before verifying the reviewed attachment")
+        await resourceReleaser.unload()
+        try Task.checkCancellation()
+        let root = try archiveRoot(), review = archiveServiceReview(value)
+        progress("Rechecking preserved archive and your exact file/message selection")
+        let staged = try await ArchiveOwnedFileWork.run { try ArchiveRestoreService.stageAttachment(candidate: candidate, review: review, jobsRoot: root) }
+        defer { try? FileManager.default.removeItem(at: staged) }
+        try Task.checkCancellation()
+        // Never remove a pre-existing/shared file, even if a faulty importer
+        // returns a colliding identity. The production importer allocates UUIDs.
+        let existingNames = Set(try FileManager.default.contentsOfDirectory(atPath: attachmentService.directory.path))
+        var attachment = try await attachmentImporter.importAttachment(.file(staged))
+        let ownsNewFiles = attachment.localRelativePaths.isDisjoint(with: existingNames)
+        var committed = false
+        defer { if !committed && ownsNewFiles { attachmentService.remove(attachment) } }
+        guard ownsNewFiles else { throw ArchiveAttachmentSupplement.Failure.conflict }
+        attachment.name = String(candidate.source.relativePath.split(separator: "/").last ?? "Attachment")
+        attachment.name = String(attachment.name.prefix(200))
+        try ArchiveAttachmentSupplement.validate(attachment, source: candidate.source)
+        guard attachmentService.url(for: attachment) != nil else { throw ArchiveAttachmentSupplement.Failure.invalid }
+        let directory = attachmentService.directory, importedPath = attachment.relativePath, source = candidate.source
+        _ = try await runArchiveWork {
+            try ArchiveAttachmentAssociation.verify(root: directory, relativePath: importedPath, bytes: source.bytes, sha256: source.sha256)
+        }
+        try Task.checkCancellation()
+        progress("Saving only the reviewed attachment association atomically")
+        _ = try await store.applyArchiveAttachmentSupplement(source: source, expectedEpoch: candidate.expectedEpoch,
+            expectedMessage: expectedMessage, attachment: attachment)
+        committed = true // A durable receipt, never a reason to delete its file.
+        attachmentHistoryIsLoaded = false; peerHistoryNeedsReload = true
+        let result = "Reviewed attachment saved. Original archive and unlinked reference records are unchanged; other media is not claimed as restored."
+        do {
+            conversations = try await store.list(includeArchived: true)
+            conversationRevision = UUID()
+            attachmentHistoryIsLoaded = true; peerHistoryNeedsReload = false
+        } catch {
+            releaseHistory = false
+            return .committedReloadPending(result + " History editing is locked until reload succeeds. Refresh retained preparations or reopen the app.")
+        }
+        statusMessage = result
+        return .committed(result)
+    }
+
     func prepareArchiveRestore(_ url: URL, progress: @escaping ArchiveRestoreView.Progress) async throws -> ArchiveRestoreView.Review {
         guard !isGenerating, beginHistoryChange() else { throw TextSnapshotError.busy }
         defer { finishHistoryChange() }
