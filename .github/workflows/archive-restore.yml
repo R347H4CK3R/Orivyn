@@ -1,4 +1,4 @@
-name: Verify build 23 format DAT media and exact plugin literal proposals
+name: Verify build 23 with state-aware real Files navigation
 on:
   push:
     branches: [fix/build23-format-report]

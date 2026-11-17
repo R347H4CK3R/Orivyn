@@ -241,35 +241,111 @@ final class ArchiveRestoreUITests: XCTestCase {
     private func selectFixtureZIP(_ app: XCUIApplication) {
         chooseZIP(app)
         let navigation = app.navigationBars["FullDocumentManagerViewControllerNavigationBar"]
-        // Follow the real Files provider UI. No selected URL is injected into Orivyn.
-        if app.buttons["Browse"].firstMatch.exists { app.buttons["Browse"].firstMatch.tap() }
-        let onMyPhone = app.descendants(matching: .any).matching(identifier: "On My iPhone").firstMatch
-        for _ in 0..<6 where !onMyPhone.exists {
-            let back = navigation.buttons["BackButton"]
-            guard back.exists else { break }
-            back.tap()
-        }
-        XCTAssertTrue(onMyPhone.waitForExistence(timeout: 10), app.debugDescription)
-        onMyPhone.tap()
-        tapLocation("Archive Fixture", app)
-        // Files exposes a filename StaticText separately from its selectable tile.
-        // The first native run tapped that label without selecting the document.
-        // Select the containing file cell, not an arbitrary descendant label.
+        let tabs = app.tabBars["DOC.browsingModeTabBar"]
+        let browse = tabs.buttons["Browse"]
+        let sidebar = app.collectionViews["Browse View"]
+        let phone = app.cells["DOC.sidebar.item.On My iPhone"]
+        let locations = app.cells["DOC.sidebar.header.Locations"]
+        let tags = app.cells["DOC.sidebar.header.Tags"]
+        let folder = app.cells.containing(.staticText, identifier: "Archive Fixture").firstMatch
         let file = app.cells.containing(.staticText, identifier: "Synthetic ChatGPT Backup.zip").firstMatch
+        // One bounded navigation attempt, not a repeated picker/test retry. Slow
+        // provider presentation was observed in failure recordings. Share a 60s
+        // budget across state waits so the longer restore assertions still run.
+        let deadline = Date().addingTimeInterval(60)
+        func ready(_ item: XCUIElement) -> Bool { item.exists && item.isEnabled && item.isHittable }
+        func presented() -> Bool {
+            navigation.exists && !navigation.frame.isEmpty &&
+                app.frame.contains(navigation.frame) && navigation.frame.minY < app.frame.midY
+        }
+        func contentReady() -> Bool { ready(file) || ready(folder) || ready(phone) || ready(locations) || ready(tags) }
+        func navigationState() -> [String] {
+            let back = navigation.buttons["BackButton"]
+            return navigation.staticTexts.allElementsBoundByIndex.map(\.label) + [back.exists ? back.label : "<no back control>"]
+        }
+        guard waitFilesState("Fully presented Files content", app, deadline: deadline, condition: {
+            presented() && (contentReady() || (tabs.exists && ready(browse)))
+        }) else { return }
+        if !ready(file) && !ready(folder) {
+            if tabs.exists && ready(browse) && !browse.isSelected {
+                recordFilesState(app, "Before selecting Files Browse tab")
+                browse.tap()
+                guard waitFilesState("Files Browse tab selected", app, deadline: deadline, condition: {
+                    presented() && browse.isSelected && (contentReady() || navigation.buttons["BackButton"].exists)
+                }) else { return }
+                recordFilesState(app, "After selecting Files Browse tab")
+            }
+            // If Files restored a nested directory, follow only its own Back
+            // control, checking a concrete changed navigation state each time.
+            for step in 0..<6 {
+                if ready(file) || ready(folder) || phone.exists || locations.exists || tags.exists { break }
+                let back = navigation.buttons["BackButton"]
+                guard ready(back) else { break }
+                let previous = navigationState()
+                recordFilesState(app, "Before Files Back transition \(step)")
+                back.tap()
+                guard waitFilesState("Changed Files Back state", app, deadline: deadline, condition: {
+                    presented() && (contentReady() ||
+                        navigationState() != previous)
+                }) else { return }
+                recordFilesState(app, "After Files Back transition \(step)")
+            }
+            if !ready(file) && !ready(folder) {
+                // Only reveal an observed offscreen location in the actual Files
+                // sidebar. Tags-only at the top is not proof of collapsed Locations.
+                if phone.exists && !phone.isHittable && sidebar.exists {
+                    for step in 0..<3 where !ready(phone) {
+                        guard phone.frame.minY < navigation.frame.maxY else { break }
+                        recordFilesState(app, "Before Files sidebar reveal \(step)")
+                        sidebar.swipeDown()
+                        recordFilesState(app, "After Files sidebar reveal \(step)")
+                    }
+                }
+                guard waitFilesState("Files On My iPhone location ready", app, deadline: deadline, condition: {
+                    presented() && ready(phone)
+                }) else { return }
+                recordFilesState(app, "Before exact Files On My iPhone cell")
+                phone.tap()
+                // A Selected sidebar row is not directory navigation success.
+                guard waitFilesState("On My iPhone folder content", app, deadline: deadline, condition: {
+                    presented() && (ready(folder) || ready(file))
+                }) else { return }
+                recordFilesState(app, "After On My iPhone content transition")
+            }
+        }
+        if !ready(file) {
+            XCTAssertTrue(ready(folder), "Exact fixture folder must be selectable: \(app.debugDescription)")
+            guard ready(folder) else { return }
+            recordFilesState(app, "Before exact Archive Fixture folder cell")
+            folder.tap()
+            guard waitFilesState("Archive Fixture ZIP content", app, deadline: deadline, condition: {
+                presented() && ready(file)
+            }) else { return }
+            recordFilesState(app, "After Archive Fixture content transition")
+        }
+        // Real selectable document tile; no URL or selected-document injection.
         XCTAssertTrue(file.waitForExistence(timeout: 10), app.debugDescription)
         XCTAssertTrue(file.isEnabled, "Synthetic ZIP tile must be selectable: \(app.debugDescription)")
         XCTAssertTrue(file.isHittable, "Synthetic ZIP tile must be visible: \(app.debugDescription)")
-        attachHierarchy(app, "Files ZIP tile before selection")
-        screenshot(app, "Files ZIP tile before selection")
+        recordFilesState(app, "Files ZIP tile before selection")
         file.tap()
-        attachHierarchy(app, "Files ZIP tile after selection")
-        screenshot(app, "Files ZIP tile after selection")
+        recordFilesState(app, "Files ZIP tile after selection")
         waitAbsent(navigation, timeout: 15)
     }
-    private func tapLocation(_ name: String, _ app: XCUIApplication) {
-        let item = app.descendants(matching: .any).matching(identifier: name).firstMatch
-        XCTAssertTrue(item.waitForExistence(timeout: 10), app.debugDescription)
-        item.tap()
+    private func recordFilesState(_ app: XCUIApplication, _ name: String) {
+        attachHierarchy(app, name)
+        screenshot(app, name)
+    }
+    private func waitFilesState(_ name: String, _ app: XCUIApplication, deadline: Date,
+                                condition: @escaping () -> Bool) -> Bool {
+        let timeout = min(30, max(0, deadline.timeIntervalSinceNow))
+        let result = XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in condition() }, object: nil)], timeout: timeout)
+        guard result == .completed else {
+            recordFilesState(app, "Failed Files state: " + name)
+            XCTFail("Files did not reach expected state: \(name). \(app.debugDescription)")
+            return false
+        }
+        return true
     }
     private func assertReview(_ app: XCUIApplication) {
         let confirm = app.buttons["archive.confirm"]
