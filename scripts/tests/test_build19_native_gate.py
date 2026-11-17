@@ -6,10 +6,10 @@ import unittest
 ROOT = Path(__file__).resolve().parents[2]
 
 class Build19NativeGateTests(unittest.TestCase):
-    def test_gate_requires_all_297_selected_tests_without_failures_or_skips(self):
+    def test_gate_requires_all_299_selected_tests_without_failures_or_skips(self):
         script = (ROOT / 'scripts/ci_archive_restore.sh').read_text()
         expected = ast.literal_eval(re.search(r'^expected=(\{[^\n]+\})$', script, re.M).group(1))
-        self.assertEqual(expected, {'totalTestCount': 297, 'passedTests': 297, 'failedTests': 0, 'skippedTests': 0})
+        self.assertEqual(expected, {'totalTestCount': 299, 'passedTests': 299, 'failedTests': 0, 'skippedTests': 0})
         selectors = re.findall(r'-only-testing:([\w/]+)', script)
         self.assertEqual(len(selectors), len(set(selectors)))
         total = 0
@@ -31,7 +31,7 @@ class Build19NativeGateTests(unittest.TestCase):
                 total += 1
             else:
                 total += len(matches[0])
-        self.assertEqual(total, 297)
+        self.assertEqual(total, 299)
         self.assertIn('assert type(s.get(k)) is int and s[k]==v', script)
         self.assertNotIn('-skip-testing:', script)
 

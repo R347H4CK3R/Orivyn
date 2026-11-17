@@ -19,6 +19,7 @@ final class ChatResponsePolicyTests: XCTestCase {
         XCTAssertTrue(prompt.contains("Plugin calls require exact-call review"))
         XCTAssertTrue(prompt.contains("by the user in Orivyn's review screen"))
         XCTAssertTrue(prompt.contains("Jarvis cannot run a plugin call without the user reviewing its exact name and arguments"))
+        XCTAssertTrue(prompt.contains("Every plugin execution is blocked until the user approves its exact name and arguments in the review screen"))
         XCTAssertTrue(prompt.contains("No policy-compliance exception"))
         XCTAssertTrue(prompt.contains("Provider authentication is not your approval to execute"))
         XCTAssertFalse(prompt.contains("Chat does not automatically call device tools"))
