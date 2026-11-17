@@ -67,7 +67,7 @@ final class ArchiveRestoreUITests: XCTestCase {
         let app = launchFresh()
         openRestore(app); selectFixtureZIP(app); assertReview(app)
         let inspect = app.buttons["archive.inspect-media"]
-        reveal(inspect, in: app.collectionViews.firstMatch); inspect.tap()
+        reveal(inspect, in: app.collectionViews.firstMatch, towardEnd: false); inspect.tap()
         let summary = app.staticTexts["archive.media-summary"]
         reveal(summary, in: app.collectionViews.firstMatch)
         XCTAssertTrue(summary.waitForExistence(timeout: 30))
@@ -151,13 +151,17 @@ final class ArchiveRestoreUITests: XCTestCase {
     }
     private func assertReview(_ app: XCUIApplication) {
         let confirm = app.buttons["archive.confirm"]
-        XCTAssertTrue(confirm.waitForExistence(timeout: 60), app.debugDescription)
         let counts = app.staticTexts["1 conversations · 2 messages"]
-        reveal(counts, in: app.collectionViews.firstMatch)
+        reveal(counts, in: app.collectionViews.firstMatch, towardEnd: false)
+        XCTAssertTrue(counts.waitForExistence(timeout: 60), app.debugDescription)
         XCTAssertTrue(counts.exists, app.debugDescription)
         let unresolved = app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "1 retained unlinked reference records")).firstMatch
         XCTAssertTrue(unresolved.exists, app.debugDescription)
         XCTAssertFalse(app.staticTexts["archive.error"].exists, app.debugDescription)
+        // Extra truthful disclosures can move the confirmation row below the
+        // lazy List viewport. Reveal it; do not equate offscreen with missing.
+        reveal(confirm, in: app.collectionViews.firstMatch)
+        XCTAssertTrue(confirm.waitForExistence(timeout: 10), app.debugDescription)
         screenshot(app, "Actual ZIP review before explicit commit")
     }
     private func commitPrepared(_ app: XCUIApplication) {
