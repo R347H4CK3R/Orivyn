@@ -1,4 +1,4 @@
-name: Verify build 21 retained-reference inventory (scroll-aware review acceptance)
+name: Verify build 21 retained-reference inventory (unobscured inventory acceptance)
 on:
   push:
     branches: [fix/build21-retained-inventory]

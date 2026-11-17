@@ -67,7 +67,8 @@ final class ArchiveRestoreUITests: XCTestCase {
         let app = launchFresh()
         openRestore(app); selectFixtureZIP(app); assertReview(app)
         let inspect = app.buttons["archive.inspect-media"]
-        reveal(inspect, in: app.collectionViews.firstMatch, towardEnd: false); inspect.tap()
+        tapUnobscured(inspect, in: app, towardEnd: false)
+        assertInventoryLoaded(app)
         let summary = app.staticTexts["archive.media-summary"]
         reveal(summary, in: app.collectionViews.firstMatch)
         XCTAssertTrue(summary.waitForExistence(timeout: 30))
@@ -77,14 +78,51 @@ final class ArchiveRestoreUITests: XCTestCase {
         XCTAssertTrue(app.buttons["archive.confirm"].exists, "Inventory must not commit history")
         commitPrepared(app); relaunch(app); openRestore(app)
         let refresh = app.buttons["archive.refresh-media"]
-        reveal(refresh, in: app.collectionViews.firstMatch); refresh.tap()
+        tapUnobscured(refresh, in: app)
         let retained = app.buttons.containing(NSPredicate(format: "label BEGINSWITH %@", "Inspect retained media")).firstMatch
         XCTAssertTrue(retained.waitForExistence(timeout: 30))
-        reveal(retained, in: app.collectionViews.firstMatch); retained.tap()
+        tapUnobscured(retained, in: app)
+        assertInventoryLoaded(app)
         reveal(summary, in: app.collectionViews.firstMatch)
         XCTAssertTrue(summary.waitForExistence(timeout: 30))
         XCTAssertFalse(app.buttons["archive.confirm"].exists, "Committed inventory must not become a restore proposal")
         screenshot(app, "Retained media inventory after relaunch")
+    }
+
+    /// XCTest can call a row under iOS's translucent navigation bar hittable.
+    /// Require its full frame inside the unobscured List viewport before tapping.
+    private func tapUnobscured(_ target: XCUIElement, in app: XCUIApplication,
+                               towardEnd: Bool = true) {
+        let list = app.collectionViews.firstMatch
+        XCTAssertTrue(list.waitForExistence(timeout: 5))
+        let navigation = app.navigationBars.firstMatch
+        for _ in 0..<12 {
+            let top = max(list.frame.minY, navigation.exists ? navigation.frame.maxY : list.frame.minY) + 12
+            let bottom = list.frame.maxY - 12
+            var down = towardEnd
+            if target.exists && !target.frame.isEmpty {
+                if target.frame.minY > top && target.frame.maxY < bottom && target.isHittable && target.isEnabled {
+                    attachHierarchy(app, "Unobscured inventory control before tap")
+                    screenshot(app, "Unobscured inventory control before tap")
+                    target.tap()
+                    return
+                }
+                if target.frame.minY <= top { down = false }
+                else if target.frame.maxY >= bottom { down = true }
+            }
+            let start = list.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: down ? 0.65 : 0.4))
+            let end = list.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: down ? 0.4 : 0.65))
+            start.press(forDuration: 0.05, thenDragTo: end)
+        }
+        XCTFail("Inventory control must be enabled and inside the unobscured viewport. " + app.debugDescription)
+    }
+    private func assertInventoryLoaded(_ app: XCUIApplication) {
+        let status = app.staticTexts["archive.status"]
+        reveal(status, in: app.collectionViews.firstMatch, towardEnd: false)
+        let loaded = NSPredicate(format: "label == %@", "Read-only inventory loaded. No media was linked or activated.")
+        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: loaded, object: status)], timeout: 30), .completed, app.debugDescription)
+        XCTAssertFalse(app.staticTexts["archive.error"].exists, app.debugDescription)
+        attachHierarchy(app, "Verified read-only inventory loaded")
     }
 
     private func launchFresh() -> XCUIApplication {
