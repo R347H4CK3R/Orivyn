@@ -87,6 +87,7 @@ struct ArchiveRestoreView: View {
                     .font(.footnote)
                 Button("Choose ZIP…") {
                     pickerLifecycle = lifecycle; choosing = true
+                    tracePicker("requested")
                     append("Presenting ZIP picker…")
                 }
                     .disabled(operation != nil)
@@ -168,6 +169,7 @@ struct ArchiveRestoreView: View {
         .navigationBarBackButtonHidden(operation != nil || choosing)
         .interactiveDismissDisabled(operation != nil || choosing)
         .fileImporter(isPresented: $choosing, allowedContentTypes: [.zip], allowsMultipleSelection: false) { result in
+            tracePicker("callback", callbackCurrent: renderedLifetime.isValid && renderedLifetime === lifetime && renderedLifecycle == lifecycle && pickerLifecycle == renderedLifecycle)
             guard active, renderedLifetime.isValid, renderedLifetime === lifetime,
                   renderedLifecycle == lifecycle, pickerLifecycle == renderedLifecycle else { return }
             pickerLifecycle = nil
@@ -177,6 +179,7 @@ struct ArchiveRestoreView: View {
             case .failure(let error): errorText = error.localizedDescription
             }
         }
+        .onChange(of: choosing) { _, _ in tracePicker("binding-changed") }
         .background(ArchiveRestoreLifetimeObserver(lifetime: renderedLifetime).frame(width: 0, height: 0))
         .onAppear { activateLifetime() }
         .onChange(of: scenePhase) { _, phase in
@@ -428,14 +431,23 @@ struct ArchiveRestoreView: View {
     @MainActor private func activateLifetime() {
         if !lifetime.isValid { lifetime = ArchiveRestoreLifetime(); lifecycle = UUID() }
         active = true
+        tracePicker("activated")
     }
     @MainActor private func invalidateLifetime(reason: String) {
+        tracePicker("invalidating")
         clearAttachmentSelection()
         lifetime.invalidate()
         active = false; lifecycle = UUID(); pickerLifecycle = nil; choosing = false
         append(reason + "; pending picker callbacks invalidated.")
         // A commit may already be durable and is not cancelled here.
         if !committing { requestCancellation() }
+    }
+
+    /// DEBUG diagnostics contain only fixed stage labels and boolean state, never URLs or archive content.
+    @MainActor private func tracePicker(_ stage: String, callbackCurrent: Bool = false) {
+        #if DEBUG
+        NSLog("OrivynArchivePicker stage=%@ active=%d choosing=%d lifetimeValid=%d callbackCurrent=%d", stage, active ? 1 : 0, choosing ? 1 : 0, lifetime.isValid ? 1 : 0, callbackCurrent ? 1 : 0)
+        #endif
     }
 
     @MainActor private func append(_ text: String) {

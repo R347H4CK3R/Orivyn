@@ -1,4 +1,4 @@
-name: Diagnose Files selection after measured cold service launch
+name: Diagnose host callback after confirmed Files URL selection
 on:
   push:
     branches: [fix/build23-format-report]
