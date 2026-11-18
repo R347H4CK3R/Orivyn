@@ -1,4 +1,4 @@
-name: Diagnose cold-start Files ZIP selection only
+name: Diagnose Files selection after measured cold service launch
 on:
   push:
     branches: [fix/build23-format-report]

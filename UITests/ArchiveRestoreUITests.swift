@@ -236,7 +236,10 @@ final class ArchiveRestoreUITests: XCTestCase {
         reveal(choose, in: app.collectionViews.firstMatch, towardEnd: false)
         XCTAssertTrue(choose.isEnabled)
         choose.tap()
-        XCTAssertTrue(app.navigationBars["FullDocumentManagerViewControllerNavigationBar"].waitForExistence(timeout: 10), app.debugDescription)
+        // Cold hosted simulators can launch DocumentManager after more than 10s
+        // (00:47:11 request -> 00:47:26 service launch in run 44208590792).
+        // Wait for the actual picker; never warm it up or replay Choose ZIP.
+        XCTAssertTrue(app.navigationBars["FullDocumentManagerViewControllerNavigationBar"].waitForExistence(timeout: 60), app.debugDescription)
     }
     private func selectFixtureZIP(_ app: XCUIApplication) {
         chooseZIP(app)
