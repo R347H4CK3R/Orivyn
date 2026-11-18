@@ -1,4 +1,4 @@
-name: Verify build 23 after blocked accessibility snapshot recovery
+name: Verify build 23 after successful focused cold-start ZIP diagnostic
 on:
   push:
     branches: [fix/build23-format-report]
