@@ -1,0 +1,301 @@
+name: Verify Orivyn Auto Web and package unsigned candidate
+on:
+  push:
+    branches: [verification/orivyn-auto-web-ios]
+    paths: ['.github/workflows/orivyn-auto-web-native.yml']
+permissions:
+  contents: read
+concurrency:
+  group: orivyn-free-native-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  native-auto-web:
+    if: >-
+      github.event.repository.private == false &&
+      github.repository == 'R347H4CK3R/Orivyn' &&
+      github.ref == 'refs/heads/verification/orivyn-auto-web-ios' &&
+      github.event_name == 'push' &&
+      github.run_attempt == '1'
+    runs-on: macos-15
+    timeout-minutes: 105
+    env:
+      ORIVYN_CANDIDATE_SHA: 1ee33ac127d26783a3e034b55c689848bcb1118f
+      ORIVYN_CANDIDATE_TREE_SHA: d13bb4824842532bdf59b71062dd560750ee9b49
+      DEVELOPER_DIR: /Applications/Xcode_26.1.app/Contents/Developer
+      ORIVYN_FREE_UNIT_SUITES: >-
+        OpenRouterFreeProviderTests FreeOnlineChatStateTests AppModelTests
+        AutomaticModelRouterTests AutomaticPreparationTests
+        WebSearchDestinationTests WebBookmarkTests WebBrowserExtrasTests PassageExplanationTests
+        NativeToolDraftsTests LocalHeavyWorkTests VoiceAppModelTests
+      ORIVYN_EXPECTED_MARKETING_VERSION: '0.1.8'
+      ORIVYN_EXPECTED_BUILD: '24'
+      ORIVYN_FREE_UI_CASES: >-
+        ModelCatalogUITests/testHomeShowsChooseAIAndQuickPromptOnlyFillsDraft
+        ModelCatalogUITests/testPrecisionVariantsRemainAvailableBehindDetails
+        ModelCatalogUITests/testOnlineEntryStartsWithDisclosureAndNoConnectionOrPrompt
+        ModelCatalogUITests/testFilteringDoesNotHideActiveDownloadCancellation
+        AutomaticModelUITests/testFreshChatShowsAutoWithoutEnablingDownloads
+        AutomaticModelUITests/testAutomaticModeAndSeparateCellularChoiceSurviveRelaunch
+        AutomaticModelUITests/testDirectToolRequestOpensRealReviewWithoutSendingOrReplacingDraft
+        NativeToolsUITests/testVisibleWebEntrySearchReviewDoesNotSendAndReturnsToSameDraft
+        NativeToolsUITests/testWebPassageStartsBlankAndKeepsConversationDraftSeparate
+        NativeToolsUITests/testBookmarkFillAndRemoveAreIndependentAndNeverOpenSafari
+        NativeToolsUITests/testCleanLinkRequiresExplicitCopyAndLeavesOriginalAddressUnchanged
+        NativeToolsUITests/testBrowserRejectsUnsafeSchemeThenOpensActualSafariAndReturns
+      ORIVYN_FREE_UNIT_COUNT: '219'
+      ORIVYN_FREE_UI_COUNT: '12'
+      ORIVYN_NATIVE_FEATURES: 'ORIVYN_NATIVE_VISION ORIVYN_NATIVE_TOOLS ORIVYN_NATIVE_TRANSCRIPT'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          ref: ${{ env.ORIVYN_CANDIDATE_SHA }}
+      - name: Check exact candidate, hosted runner and test selection
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REPOSITORY" = R347H4CK3R/Orivyn
+          test "$GITHUB_REF" = refs/heads/verification/orivyn-auto-web-ios
+          test "$GITHUB_EVENT_NAME" = push
+          test "$GITHUB_RUN_ATTEMPT" = 1
+          test "$RUNNER_ENVIRONMENT" = github-hosted
+          test "$RUNNER_ARCH" = ARM64
+          [[ "$ORIVYN_CANDIDATE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          test "$(git rev-parse HEAD)" = "$ORIVYN_CANDIDATE_SHA"
+          test "$(git rev-parse 'HEAD^{tree}')" = "$ORIVYN_CANDIDATE_TREE_SHA"
+          read -r -a app_cases <<< "$ORIVYN_FREE_UNIT_SUITES"
+          read -r -a ui_cases <<< "$ORIVYN_FREE_UI_CASES"
+          test "${#app_cases[@]}" -gt 0 && test "${#ui_cases[@]}" -gt 0
+          for test_case in "${app_cases[@]}"; do [[ "$test_case" =~ ^[A-Za-z_][A-Za-z0-9_]*Tests$ ]]; done
+          for test_case in "${ui_cases[@]}"; do [[ "$test_case" =~ ^[A-Za-z_][A-Za-z0-9_]*Tests/test[A-Za-z0-9_]+$ ]]; done
+          [[ "$ORIVYN_FREE_UNIT_COUNT" =~ ^[1-9][0-9]*$ ]]
+          [[ "$ORIVYN_FREE_UI_COUNT" =~ ^[1-9][0-9]*$ ]]
+          mkdir -p artifacts/free-native
+          git rev-parse HEAD > artifacts/free-native/source-commit.txt
+          git rev-parse 'HEAD^{tree}' > artifacts/free-native/source-tree.txt
+          printf '%s\n' 'Synthetic test fixtures only; no account, device, or live-provider acceptance. Unsigned IPA stays on this ephemeral runner only; no IPA upload, release or sharing.' > artifacts/free-native/SCOPE.txt
+          printf '%s\n' "$GITHUB_SHA" > artifacts/free-native/harness-commit.txt
+      - name: Require exact final version metadata before expensive work
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PYFOUNDATION'
+          import json, os, sys
+          from pathlib import Path
+          sys.path.insert(0, 'scripts')
+          from release_version_guard import project_versions, build_number
+          version,build=project_versions('project.yml')
+          assert version==os.environ['ORIVYN_EXPECTED_MARKETING_VERSION']
+          assert build==os.environ['ORIVYN_EXPECTED_BUILD'] and build_number(build)>build_number('23')
+          PYFOUNDATION
+          curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' \
+            https://raw.githubusercontent.com/R347H4CK3R/Orivyn-Distribution/main/source.json \
+            -o artifacts/free-native/published-source-preflight.json
+          python3 scripts/release_version_guard.py --project project.yml --source artifacts/free-native/published-source-preflight.json
+      - name: Test release metadata enforcement
+        run: |
+          python3 -m unittest discover -s scripts/tests -p test_release_version_guard.py -v
+          python3 -m unittest discover -s scripts/tests -p test_release_info.py -v
+      - name: Select Xcode 26.1
+        id: xcode
+        run: |
+          test -d "$DEVELOPER_DIR"
+          xcodebuild -version | tee artifacts/free-native/xcode.txt
+          grep -Fx 'Xcode 26.1.1' artifacts/free-native/xcode.txt
+          grep -Fx 'Build version 17B100' artifacts/free-native/xcode.txt
+          echo "identity=$(xcodebuild -version | shasum -a 256 | awk '{print $1}')" >> "$GITHUB_OUTPUT"
+      - name: Check preinstalled build tools and stage exact XcodeGen 2.46.0
+        shell: bash
+        run: |
+          set -euo pipefail
+          command -v cmake
+          cmake --version | tee artifacts/free-native/cmake.txt
+          mkdir -p "$RUNNER_TEMP/orivyn-pinned-xcodegen"
+          XG="$RUNNER_TEMP/orivyn-pinned-xcodegen.zip"
+          curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' --retry 2 \
+            https://github.com/yonaskolb/XcodeGen/releases/download/2.46.0/xcodegen.zip -o "$XG"
+          printf '%s  %s\n' 4d9e34b62172d645eed6457cac13fc222569974098ef4ee9c3368bedf0196806 "$XG" | shasum -a 256 -c -
+          ditto -x -k "$XG" "$RUNNER_TEMP/orivyn-pinned-xcodegen"
+          XG_ROOT="$RUNNER_TEMP/orivyn-pinned-xcodegen/xcodegen"
+          XG_BIN="$XG_ROOT/bin/xcodegen"
+          test -x "$XG_BIN"
+          PRESETS="$XG_ROOT/share/xcodegen/SettingPresets"
+          test -s "$PRESETS/base.yml"
+          test -s "$PRESETS/Platforms/iOS.yml"
+          test -s "$PRESETS/Products/bundle.unit-test.yml"
+          test -s "$PRESETS/Products/bundle.ui-testing.yml"
+          "$XG_BIN" --version | tee artifacts/free-native/xcodegen.txt
+          grep -F '2.46.0' artifacts/free-native/xcodegen.txt
+          printf '%s\n' "$XG_ROOT/bin" >> "$GITHUB_PATH"
+      - uses: actions/cache/restore@v4
+        id: combined-cache
+        with:
+          path: .cache/orivyn-combined
+          key: combined-v1-${{ runner.os }}-${{ runner.arch }}-${{ steps.xcode.outputs.identity }}-${{ hashFiles('Diagnostics/CombinedRuntime/prepare_build.py', 'Diagnostics/CombinedRuntime/simulator-slices.sh', 'Diagnostics/CombinedRuntime/build-ios-combined.sh', 'Diagnostics/CombinedRuntime/native-bridges.cmake', 'Diagnostics/VisionRuntime/prepare_build.py', 'Diagnostics/VisionRuntime/source/build-xcframework.sh', 'Diagnostics/NativeTools/*.cpp', 'Diagnostics/NativeTools/*.h', 'Diagnostics/VisionProof/Bridge/*.cpp', 'Diagnostics/VisionProof/Bridge/*.h', 'scripts/verify_combined_runtime.py', 'scripts/ci_combined_runtime.sh') }}
+      - name: Build and verify combined runtime
+        run: bash scripts/ci_combined_runtime.sh
+      - name: Compile simulator app and run targeted native units first, then archive and targeted UI
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Stage the overlay only in runner temp. The approved historical script and all
+          # its assertions remain unchanged in the checkout and byte-preserved here.
+          cat > "$RUNNER_TEMP/orivyn-candidate-tests.sh" <<'CANDIDATE_TESTS'
+          #!/bin/bash
+          set -euo pipefail
+          MODE=$1
+          SIM=$2
+          A="$PWD/artifacts/free-native/$MODE"
+          mkdir -p "$A"
+          if [[ "$MODE" == unit ]]; then
+            count=$ORIVYN_FREE_UNIT_COUNT
+            selectors=()
+            read -r -a methods <<< "$ORIVYN_FREE_UNIT_SUITES"
+            for method in "${methods[@]}"; do selectors+=("JarvisEVOTests/$method"); done
+          else
+            test "$MODE" = ui
+            count=$ORIVYN_FREE_UI_COUNT
+            selectors=()
+            read -r -a methods <<< "$ORIVYN_FREE_UI_CASES"
+            for method in "${methods[@]}"; do selectors+=("JarvisEVOUITests/$method"); done
+          fi
+          args=()
+          for selector in "${selectors[@]}"; do args+=("-only-testing:$selector"); done
+          printf '%s\n' "${selectors[@]}" > "$A/selectors.txt"
+          bundle="$RUNNER_TEMP/orivyn-free-$MODE.xcresult"
+          status=0
+          xcodebuild test -project JarvisEVO.xcodeproj -scheme JarvisEVO \
+            -derivedDataPath "$RUNNER_TEMP/orivyn-archive-restore-derived" \
+            -destination "platform=iOS Simulator,id=$SIM" -destination-timeout 120 \
+            -parallel-testing-enabled NO -test-timeouts-enabled YES \
+            -default-test-execution-time-allowance 194 -maximum-test-execution-time-allowance 750 \
+            "${args[@]}" -resultBundlePath "$bundle" CODE_SIGNING_ALLOWED=NO \
+            > "$A/xcodebuild-tests.log" 2>&1 || status=$?
+          if test -d "$bundle"; then
+            xcrun xcresulttool get test-results summary --path "$bundle" > "$A/summary.json"
+            xcrun xcresulttool get test-results tests --path "$bundle" > "$A/tests.json"
+            xcrun xcresulttool export attachments --path "$bundle" --output-path "$A/attachments"
+          fi
+          test "$status" = 0
+          python3 - "$A" "$count" <<'PYTEST'
+          import json, pathlib, sys
+          a, n = pathlib.Path(sys.argv[1]), int(sys.argv[2])
+          summary = json.loads((a / 'summary.json').read_text())
+          counts = dict(totalTestCount=n, passedTests=n, failedTests=0, skippedTests=0)
+          assert all(type(summary.get(k)) is int and summary[k] == v for k, v in counts.items()), summary
+          def cases(x, lineage=()):
+              if isinstance(x, list):
+                  for item in x:
+                      yield from cases(item, lineage)
+              elif isinstance(x, dict):
+                  label = str(x.get('name','')).removesuffix('()')
+                  if 'test case' in str(x.get('nodeType','')).lower():
+                      yield lineage, label
+                  for child in x.get('children', []):
+                      yield from cases(child, (*lineage, label))
+                  if 'testNodes' in x:
+                      yield from cases(x['testNodes'], lineage)
+          seen = list(cases(json.loads((a / 'tests.json').read_text())))
+          selectors = (a / 'selectors.txt').read_text().splitlines()
+          assert len(set(selectors)) == len(selectors)
+          for selector in selectors:
+              _, suite, *method = selector.split('/')
+              assert any(suite in parents and (not method or method[0] == name)
+                         for parents, name in seen), selector
+          PYTEST
+          CANDIDATE_TESTS
+          python3 - "$RUNNER_TEMP/orivyn-archive-overlay.sh" <<'PYOVERLAY'
+          import hashlib, pathlib, sys
+          source = pathlib.Path('scripts/ci_archive_restore.sh').read_bytes()
+          assert hashlib.sha256(source).hexdigest() == '91edb8232042057fd657117c13855f4037fa69c4a2e2ce661b3e9e81adfc810f', 'archive script changed; re-review exact gate before updating pin'
+          marker = b'ARCHIVE_RESTORE_SIMULATOR="$SIM" bash'
+          assert source.count(marker) == 1
+          out = source.replace(marker, b'bash "$RUNNER_TEMP/orivyn-candidate-tests.sh" unit "$SIM"\n' + marker)
+          out += b'\nbash "$RUNNER_TEMP/orivyn-candidate-tests.sh" ui "$SIM"\n'
+          pathlib.Path(sys.argv[1]).write_bytes(out)
+          PYOVERLAY
+          bash -n "$RUNNER_TEMP/orivyn-candidate-tests.sh"
+          bash -n "$RUNNER_TEMP/orivyn-archive-overlay.sh"
+          bash -c "$(cat "$RUNNER_TEMP/orivyn-archive-overlay.sh")" "$PWD/scripts/ci_archive_restore.sh"
+      - name: Verify bounded archive resource usage in fresh native processes
+        run: |
+          set +e
+          python3 scripts/run_preservation_resource_probe.py --swiftc "$(xcrun -f swiftc)" --output "$RUNNER_TEMP/preservation-resource"
+          PRESERVE=$?
+          python3 scripts/run_import_resource_probe.py --swiftc "$(xcrun -f swiftc)" --output "$RUNNER_TEMP/import-resource"
+          PARSE=$?
+          python3 - <<'PYEVIDENCE'
+          import os,pathlib,shutil
+          for label in ['preservation-resource','import-resource']:
+              source=pathlib.Path(os.environ['RUNNER_TEMP'])/label
+              target=pathlib.Path('artifacts')/label;target.mkdir(parents=True,exist_ok=True)
+              for path in source.glob('*'):
+                  if path.is_file() and (path.suffix in ['.log','.swift','.txt'] or path.name in ['RESULT.json','SOURCE-MANIFEST.json','COMMAND.json','FIXTURES.json']): shutil.copy2(path,target/path.name)
+          PYEVIDENCE
+          EVIDENCE=$?
+          test "$PRESERVE" = 0 && test "$PARSE" = 0 && test "$EVIDENCE" = 0
+      - name: Verify exact manual-selection service and preservation tests
+        run: |
+          mkdir -p artifacts/inventory-service
+          set +e
+          python3 Diagnostics/ArchivePreservation/run.py "$(xcrun -f swift)" "$RUNNER_TEMP/inventory-service" "$PWD/Packages/ArchiveExtraction" > artifacts/inventory-service/tests.log 2>&1
+          STATUS=$?
+          cp "$RUNNER_TEMP/inventory-service/"{SOURCE-MANIFEST,COMMAND,RESULT}.json artifacts/inventory-service/
+          MANIFEST=$?
+          test "$STATUS" = 0 && test "$MANIFEST" = 0 || exit 1
+          python3 - <<'PYINVENTORY'
+          import pathlib,re
+          log=pathlib.Path('artifacts/inventory-service/tests.log').read_text()
+          assert re.search(r'Executed 45 tests, with 0 failures',log)
+          assert not re.search(r"Test Case .* skipped",log)
+          PYINVENTORY
+      - name: Package unsigned candidate only after every preceding gate succeeds
+        shell: bash
+        run: |
+          set -euo pipefail
+          : "${ORIVYN_COMBINED_RUNTIME_ARCHIVE:?verified combined runtime required}"
+          test "$(git rev-parse HEAD)" = "$ORIVYN_CANDIDATE_SHA"
+          test "$(git rev-parse 'HEAD^{tree}')" = "$ORIVYN_CANDIDATE_TREE_SHA"
+          test -z "$(git status --porcelain)"
+          command -v xcodegen
+          printf '%s  %s\n' d18ba0755f62a7acd87d1d63620531b17a693c0efcf38e5b53ae791f76633ec6 scripts/ci_package_only.sh | shasum -a 256 -c -
+          bash scripts/ci_package_only.sh
+          APP=build/Build/Products/Release-iphoneos/JarvisEVO.app
+          EXE=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$APP/Info.plist")
+          test "$(xcrun lipo -archs "$APP/$EXE")" = arm64
+          xcrun vtool -show-build "$APP/$EXE" | tee artifacts/free-native/device-platform.txt
+          grep -Eq 'platform[[:space:]]+IOS$' artifacts/free-native/device-platform.txt
+          python3 - <<'PYIPA'
+          import json, os, pathlib
+          root=pathlib.Path('artifacts/package-only')
+          ipa=list(root.glob('*.ipa')); assert len(ipa)==1
+          assert (root/'source-commit.txt').read_text().strip()==os.environ['ORIVYN_CANDIDATE_SHA']
+          # Package script itself verifies ZIP resources, device Mach-O architecture,
+          # exact metadata and SHA256. Its SCOPE correctly says tests were not run
+          # by that script; the preceding workflow steps supply separate evidence.
+          pathlib.Path('artifacts/free-native/PACKAGE-SCOPE.json').write_text(json.dumps({
+              'candidate':os.environ['ORIVYN_CANDIDATE_SHA'], 'tree':os.environ['ORIVYN_CANDIDATE_TREE_SHA'],
+              'ipa':ipa[0].name, 'packaged_after_native_gates':True,
+              'physical_device_acceptance':'not_run', 'uploaded_ipa':False, 'release_published':False},indent=2))
+          PYIPA
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Orivyn-auto-web-native-evidence
+          path: |
+            artifacts/free-native
+            artifacts/package-only/*.json
+            artifacts/package-only/*.txt
+            artifacts/package-only/*.log
+            artifacts/package-only/SHA256SUMS
+            artifacts/archive-restore/source-commit.txt
+            artifacts/archive-restore/SCOPE.txt
+            artifacts/archive-restore/*.[lj]*
+            artifacts/archive-restore/attachments
+            artifacts/inventory-service
+            artifacts/preservation-resource
+            artifacts/import-resource
+            !**/*.ipa
+            !**/*.app/**
+          retention-days: 7
+          if-no-files-found: error
