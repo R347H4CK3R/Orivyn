@@ -571,7 +571,7 @@ final class VoiceAppModelTests: XCTestCase {
         let attachments = try AttachmentService(directory: directory.appendingPathComponent("Attachments"))
         let models = try LocalModelStore(root: directory.appendingPathComponent("Models"))
         let source = VoiceTokenSource()
-        let model = AppModel(store: store, attachmentService: attachments, modelStore: models, defaults: defaults, attachmentImporter: importer)
+        let model = AppModel(offlineAutoSelection: false, store: store, attachmentService: attachments, modelStore: models, defaults: defaults, attachmentImporter: importer)
         model.replaceProviders([ProviderOption(id: "voice-test", title: "Test", detail: "Test only", provider: VoiceControlledProvider(source: source))])
         return (model, store, source)
     }

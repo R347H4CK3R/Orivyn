@@ -380,7 +380,7 @@ final class ImageAttachmentAppFlowTests: XCTestCase {
         let store = try SQLiteConversationStore(url: root.appendingPathComponent("test.sqlite"))
         let attachments = try AttachmentService(directory: root.appendingPathComponent("Attachments"))
         let models = try LocalModelStore(root: root.appendingPathComponent("Models"))
-        let model = AppModel(store: store, attachmentService: attachments, modelStore: models, defaults: defaults, attachmentImporter: importer)
+        let model = AppModel(offlineAutoSelection: false, store: store, attachmentService: attachments, modelStore: models, defaults: defaults, attachmentImporter: importer)
         return (model, store)
     }
 

@@ -1,4 +1,5 @@
 import Foundation
+import Observation
 
 /// Validated values only. Constructing one never sends mail, saves an event or visits a website.
 struct MailDraft: Identifiable, Equatable, Sendable {
@@ -85,5 +86,129 @@ enum NativeToolDraftError: LocalizedError, Equatable {
         case .browserAddress: "Enter a complete HTTPS address with a host, no username, password, spaces or control characters, and no port other than 443. Encode spaces in paths as %20."
         case .browserAddressTooLong: "Keep the full encoded address within 4,096 UTF-8 bytes. It has not been shortened."
         }
+    }
+}
+
+
+/// Pure URL construction. No request is performed until the explicit Safari action.
+enum WebSearchDestination {
+    static func validated(_ terms: String) throws -> BrowserDestination {
+        guard terms.utf8.count <= 1024,
+              terms.rangeOfCharacter(from: CharacterSet.controlCharacters.union(.newlines)) == nil else { throw WebInputError.search }
+        let query = terms.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { throw WebInputError.search }
+        var parts = URLComponents()
+        parts.scheme = "https"
+        parts.host = "duckduckgo.com"
+        parts.path = "/"
+        parts.queryItems = [URLQueryItem(name: "q", value: query)]
+        // Form-style search servers may decode a literal + as a space.
+        parts.percentEncodedQuery = parts.percentEncodedQuery?.replacingOccurrences(of: "+", with: "%2B")
+        guard let url = parts.url else { throw WebInputError.search }
+        return try BrowserDestination.validated(url.absoluteString)
+    }
+}
+
+struct WebNavigationDraft {
+    let destination: BrowserDestination
+    let isWebsite: Bool
+    var actionTitle: String { isWebsite ? "Open website" : "Search DuckDuckGo" }
+
+    static func validated(_ text: String) throws -> Self {
+        guard text.utf8.count <= 4096 else { throw NativeToolDraftError.browserAddressTooLong }
+        let input = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        // Classify trimmed input so leading whitespace cannot send a URL/token to search.
+        // Scheme-like input must pass website validation, never silently become a search.
+        if input.range(of: #"^[A-Za-z][A-Za-z0-9+.-]*:"#, options: .regularExpression) != nil {
+            return Self(destination: try BrowserDestination.validated(input), isWebsite: true)
+        }
+        return Self(destination: try WebSearchDestination.validated(input), isWebsite: false)
+    }
+}
+
+@MainActor @Observable
+final class WebBookmarkStore {
+    private(set) var bookmarks: [String]
+    private let defaults: UserDefaults
+    private static let key = "orivyn.web.explicitBookmarks.v1"
+
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+        var seen = Set<String>()
+        bookmarks = (defaults.stringArray(forKey: Self.key) ?? []).compactMap { value in
+            guard let checked = try? Self.bookmarkAddress(value), seen.insert(checked).inserted else { return nil }
+            return checked
+        }
+    }
+
+    static func bookmarkAddress(_ text: String) throws -> String {
+        let destination = try BrowserDestination.validated(text.trimmingCharacters(in: .whitespacesAndNewlines))
+        guard var parts = URLComponents(url: destination.url, resolvingAgainstBaseURL: false) else { throw WebInputError.search }
+        parts.query = nil
+        parts.fragment = nil
+        guard let url = parts.url else { throw WebInputError.search }
+        return try BrowserDestination.validated(url.absoluteString).url.absoluteString
+    }
+
+    /// Only called after the user taps Save bookmark. Never an automatic visit history.
+    func saveWebsite(_ text: String) throws {
+        let address = try Self.bookmarkAddress(text)
+        guard !bookmarks.contains(address) else { return }
+        bookmarks.append(address)
+        defaults.set(bookmarks, forKey: Self.key)
+    }
+
+    func remove(_ address: String) {
+        bookmarks.removeAll { $0 == address }
+        defaults.set(bookmarks, forKey: Self.key)
+    }
+}
+
+enum WebInputError: LocalizedError {
+    case search
+    var errorDescription: String? { "Enter search words on one line, within 1,024 UTF-8 bytes. Nothing has been sent or shortened." }
+}
+
+
+/// Immutable per-presentation choice. Search and ordinary navigation default to normal Safari.
+struct BrowserPresentation: Identifiable {
+    let destination: BrowserDestination
+    let prefersReader: Bool
+    var id: UUID { destination.id }
+
+    static func validated(_ text: String, reader: Bool = false) throws -> Self {
+        let draft = try WebNavigationDraft.validated(text)
+        guard !reader || draft.isWebsite else { throw NativeToolDraftError.browserAddress }
+        return Self(destination: draft.destination, prefersReader: reader)
+    }
+}
+
+/// Removes only named tracking query fields. All other URL bytes remain as entered.
+/// This is not a privacy sanitizer: functional parameters, tokens and fragments may remain.
+enum WebCleanLink {
+    private static let trackingKeys: Set<String> = [
+        "utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content", "utm_id",
+        "utm_source_platform", "utm_creative_format", "utm_marketing_tactic",
+        "gclid", "dclid", "fbclid", "msclkid", "mc_cid", "mc_eid"
+    ]
+
+    static func validated(_ text: String) throws -> String {
+        let original = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        _ = try BrowserDestination.validated(original)
+        let fragmentStart = original.firstIndex(of: "#") ?? original.endIndex
+        let beforeFragment = original[..<fragmentStart]
+        guard let queryStart = beforeFragment.firstIndex(of: "?") else { return original }
+        let fields = beforeFragment[beforeFragment.index(after: queryStart)...]
+            .split(separator: "&", omittingEmptySubsequences: false)
+        let kept = fields.filter { field in
+            let rawKey = field.split(separator: "=", maxSplits: 1, omittingEmptySubsequences: false).first ?? ""
+            guard let key = String(rawKey).removingPercentEncoding else { return true }
+            return !trackingKeys.contains(key.lowercased())
+        }
+        if kept.count == fields.count { return original }
+        let query = kept.isEmpty ? "" : "?" + kept.joined(separator: "&")
+        let cleaned = String(original[..<queryStart]) + query + String(original[fragmentStart...])
+        _ = try BrowserDestination.validated(cleaned)
+        return cleaned
     }
 }

@@ -89,7 +89,7 @@ final class ProductionReviewedReadPlanTests: XCTestCase {
         let message = String(repeating: "Synthetic background. ", count: 10) + "Stored verification marker: \(marker)."
         let conversation = Conversation(title: "Cedar journal", messages: [ChatMessage(role: .user, content: message)])
         try await store.save(conversation)
-        let model = AppModel(store: store,
+        let model = AppModel(offlineAutoSelection: false, store: store,
             attachmentService: try AttachmentService(directory: root.appendingPathComponent("Attachments")),
             modelStore: try LocalModelStore(root: directory), defaults: defaults)
         await model.bootstrap()

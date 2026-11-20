@@ -140,7 +140,7 @@ final class VoiceConversationSessionTests: XCTestCase {
         let store = try SQLiteConversationStore(url: root.appendingPathComponent("test.sqlite"))
         let attachments = try AttachmentService(directory: root.appendingPathComponent("Attachments"))
         let models = try LocalModelStore(root: root.appendingPathComponent("Models"))
-        let model = AppModel(store: store, attachmentService: attachments, modelStore: models, defaults: defaults)
+        let model = AppModel(offlineAutoSelection: false, store: store, attachmentService: attachments, modelStore: models, defaults: defaults)
         let source = SessionTokens()
         model.replaceProviders(provider ? [ProviderOption(id: "session-test", title: "Test boundary", detail: "Not real inference", provider: SessionProvider(source: source))] : [])
         return (model, store, source)

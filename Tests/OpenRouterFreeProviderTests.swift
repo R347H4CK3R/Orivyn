@@ -5,6 +5,99 @@ import FoundationNetworking
 #endif
 
 final class OpenRouterFreeProviderTests: XCTestCase {
+    func testAutoClassifiesLocallyAndSelectsStableVerifiedTaskFit() throws {
+        let rows = try models([row("particle-ai/particle-1:free"), row("inclusionai/ling-3.2-flash:free"), row("dots-studio/dots-3-note-preview:free")])
+        let cases: [(String, OpenRouterFreeModel.SuggestedUse, String)] = [
+            ("Fix this Swift code", .coding, "particle-ai/particle-1:free"),
+            ("Prove this theorem step by step", .hardProblems, "inclusionai/ling-3.2-flash:free"),
+            ("Rewrite my email", .writing, "dots-studio/dots-3-note-preview:free"),
+            ("Hello there", .everyday, "dots-studio/dots-3-note-preview:free")]
+        for (text, task, id) in cases {
+            XCTAssertEqual(FreeOnlineAutoRouter.classify(text), task)
+            XCTAssertEqual(try FreeOnlineAutoRouter.select(text: text, verifiedModels: rows).id, id)
+            XCTAssertEqual(try FreeOnlineAutoRouter.select(text: text, verifiedModels: Array(rows.reversed())).id, id)
+        }
+        XCTAssertEqual(FreeOnlineAutoRouter.classify("decoding a painting"), .everyday)
+        XCTAssertEqual(FreeOnlineAutoRouter.classify(String(repeating: "a", count: 4097) + " code"), .everyday)
+        XCTAssertThrowsError(try FreeOnlineAutoRouter.select(text: "code", verifiedModels: []))
+        XCTAssertEqual(try FreeOnlineAutoRouter.select(text: "code", verifiedModels: [rows[0]]).id, rows[0].id)
+    }
+
+    func testAutoUsesFreshCatalogNotPreviewAndPostsOnlyExactSingleTurn() async throws {
+        let freshID = "particle-ai/particle-1:free"
+        let answer = try JSONSerialization.data(withJSONObject: ["model": freshID, "choices": [["finish_reason": "stop", "message": ["role": "assistant", "content": "Hello"]]]])
+        let mock = MockTransport(responses: [try catalog([row()]), try catalog([row(freshID)]), answer])
+        let provider = OpenRouterFreeProvider(transport: mock.send)
+        _ = try await provider.fetchCatalog()
+        let result = try await provider.completeAutomatically(newlyAuthoredText: "Fix my code", apiKey: "test-key")
+        XCTAssertEqual(result.model.id, freshID)
+        XCTAssertEqual(result.text, "Hello")
+        let requests = await mock.requests
+        XCTAssertEqual(requests.map(\.httpMethod), ["GET", "GET", "POST"])
+        let body = try XCTUnwrap(JSONSerialization.jsonObject(with: requests[2].httpBody!) as? [String: Any])
+        XCTAssertEqual(body["model"] as? String, freshID)
+        XCTAssertEqual(body["messages"] as? [[String: String]], [["role": "user", "content": "Fix my code"]])
+        XCTAssertEqual(Set(body.keys), Set(["model", "messages", "stream", "max_tokens", "provider"]))
+        let policy = try XCTUnwrap(body["provider"] as? [String: Any])
+        XCTAssertEqual(policy["max_price"] as? [String: Int], ["prompt": 0, "completion": 0, "request": 0])
+        XCTAssertEqual(policy["allow_fallbacks"] as? Bool, false)
+    }
+
+    func testAutoCancellationAfterFreshCatalogNeverPosts() async throws {
+        let mock = MockTransport(responses: [try catalog([row()])])
+        let provider = OpenRouterFreeProvider(transport: { request, limit in
+            let result = try await mock.send(request, limit)
+            withUnsafeCurrentTask { $0?.cancel() }
+            return result
+        })
+        let task = Task { try await provider.completeAutomatically(newlyAuthoredText: "code", apiKey: "test-key") }
+        do { _ = try await task.value; XCTFail() } catch { XCTAssertTrue(error is CancellationError) }
+        let requests = await mock.requests
+        XCTAssertEqual(requests.map(\.httpMethod), ["GET"])
+    }
+
+    func testAutoEmptyOrPaidCatalogNeverPosts() async throws {
+        for rows in [[], [row("particle-ai/particle-1:free", pricing: ["prompt": "1", "completion": "0"])]] {
+            let mock = MockTransport(responses: [try catalog(rows)])
+            do { _ = try await OpenRouterFreeProvider(transport: mock.send).completeAutomatically(newlyAuthoredText: "code", apiKey: "test-key"); XCTFail() } catch {}
+            let requests = await mock.requests
+            XCTAssertEqual(requests.map(\.httpMethod), ["GET"])
+        }
+    }
+
+    func testReviewedProfilesIncludeCodingNamesWithoutCoderSlugs() {
+        for id in ["particle-ai/particle-1:free", "recursive/flint-v1.0:free"] {
+            let model = OpenRouterFreeModel(id: id, name: "Display name")
+            XCTAssertEqual(model.suggestedUses.first, .coding)
+            XCTAssertTrue(model.shortDescription.contains("code"))
+            XCTAssertTrue(model.matchesSearch("coding"))
+            XCTAssertTrue(model.matchesSearch(id))
+        }
+    }
+
+    func testAllReviewedProfilesAreDistinctAndTextOnlyWithHonestUnknownFallback() throws {
+        let ids = ["baidu/ernie-5.5-flash-preview:free", "dots-studio/dots-3-note-preview:free", "google/gemma-4-26b-a4b-it:free", "google/gemma-4-31b-it:free", "inclusionai/ling-3.2-flash:free", "liquid/lfm-3-1.7b:free", "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free", "nvidia/nemotron-3-ultra-550b-a55b:free", "nvidia/nemotron-3.5-lightning:free", "nvidia/nemotron-3.5-super-vl:free", "particle-ai/particle-1:free", "recursive/flint-v1.0:free"]
+        let descriptions = ids.map { OpenRouterFreeModel(id: $0, name: $0).shortDescription }
+        XCTAssertEqual(Set(descriptions).count, 12)
+        XCTAssertTrue(descriptions.allSatisfy { $0.contains("Text only here") && $0.contains("free usage limits") })
+        let unknown = OpenRouterFreeModel(id: "new-maker/future-model:free", name: "Future Choice")
+        XCTAssertTrue(unknown.shortDescription.contains("not reviewed"))
+        XCTAssertTrue(unknown.matchesSearch("future"))
+        XCTAssertTrue(unknown.matchesSearch(""))
+        XCTAssertFalse(unknown.matchesSearch("unrelated"))
+        XCTAssertEqual(try models([row(unknown.id)]).map(\.id), [unknown.id])
+        XCTAssertTrue(try models([row("particle-ai/particle-1:free", pricing: ["prompt": "1", "completion": "0"])]).isEmpty)
+    }
+
+    func testReasoningAndPrivacyNotesAreVisibleAndSearchable() {
+        for id in ["inclusionai/ling-3.2-flash:free", "nvidia/nemotron-3-ultra-550b-a55b:free", "google/gemma-4-31b-it:free"] {
+            XCTAssertTrue(OpenRouterFreeModel(id: id, name: id).suggestedUses.contains(.hardProblems))
+        }
+        let liquid = OpenRouterFreeModel(id: "liquid/lfm-3-1.7b:free", name: "Liquid")
+        XCTAssertTrue(liquid.shortDescription.contains("may retain"))
+        XCTAssertTrue(liquid.matchesSearch("structured"))
+    }
+
     // Compact fixture captured from the public official models schema, 2026-11-20.
     private func row(_ id: String = "example/chat:free", pricing: [String: Any] = ["prompt": "0", "completion": "0"]) -> [String: Any] {
         ["id": id, "name": "Example Chat", "pricing": pricing,

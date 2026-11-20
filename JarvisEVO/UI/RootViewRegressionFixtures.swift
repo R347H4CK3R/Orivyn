@@ -157,7 +157,7 @@ private final class RootViewRegressionFixture {
         let short = Conversation(title: "Controlled short fixture", updatedAt: Date(timeIntervalSince1970: 1),
                                  messages: [ChatMessage(role: .assistant, content: "FIXTURE SHORT TRANSCRIPT")])
         if mode == "history-scroll" || mode == "chat-local-tasks" || mode == "plugin-suggestion" { for conversation in [a, b, short] { try await store.save(conversation) } }
-        let model = AppModel(store: store, attachmentService: attachments, modelStore: models, defaults: defaults)
+        let model = AppModel(offlineAutoSelection: false, store: store, attachmentService: attachments, modelStore: models, defaults: defaults)
         await model.bootstrap()
         if mode == "model-download" { model.beginControlledModelDownloadFixture() }
         let tokens = RootViewFixtureTokens()

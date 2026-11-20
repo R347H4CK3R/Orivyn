@@ -172,7 +172,7 @@ final class AutomaticPreparationTests: XCTestCase {
         let attachments = try AttachmentService(directory: root.appendingPathComponent("LocalAttachments"))
         let models = try LocalModelStore(root: root.appendingPathComponent("LocalModels"))
         let prep = ControlledAutomaticPreparer()
-        let model = AppModel(store: store, attachmentService: attachments, modelStore: models,
+        let model = AppModel(offlineAutoSelection: false, store: store, attachmentService: attachments, modelStore: models,
             defaults: defaults, automaticPreparer: prep)
         model.automaticModelsEnabled = true
         model.draft = "Help me choose what is available"
@@ -206,7 +206,7 @@ final class AutomaticPreparationTests: XCTestCase {
         let attachments = try AttachmentService(directory: root.appendingPathComponent("Attachments"))
         let models = try LocalModelStore(root: root.appendingPathComponent("Models"))
         let prep = ControlledAutomaticPreparer(), source = AutoReplySource()
-        let model = AppModel(store: store, attachmentService: attachments, modelStore: models, defaults: defaults, automaticPreparer: prep, automaticProviderFactory: { AutoReplyProvider(id: $0.id, source: source) })
+        let model = AppModel(offlineAutoSelection: false, store: store, attachmentService: attachments, modelStore: models, defaults: defaults, automaticPreparer: prep, automaticProviderFactory: { AutoReplyProvider(id: $0.id, source: source) })
         model.replaceProviders([
             ProviderOption(id: "manual-test", title: "Manual", detail: "Test only", provider: AutoReplyProvider(id: "manual-test", source: source)),
             ProviderOption(id: LocalModelCatalog.defaultModel.id, title: "Automatic", detail: "Test only", provider: AutoReplyProvider(id: LocalModelCatalog.defaultModel.id, source: source))

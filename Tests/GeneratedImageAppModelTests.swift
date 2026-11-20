@@ -36,7 +36,7 @@ final class GeneratedImageAppModelTests: XCTestCase {
         let image = try XCTUnwrap(result.messages.last?.attachments.first)
         XCTAssertNotNil(model.attachmentService.url(for: image)); XCTAssertNotNil(model.attachmentService.previewURL(for: image))
         XCTAssertFalse(FileManager.default.fileExists(atPath: owned.path))
-        let reopened = AppModel(store: store, attachmentService: model.attachmentService,
+        let reopened = AppModel(offlineAutoSelection: false, store: store, attachmentService: model.attachmentService,
             modelStore: try LocalModelStore(root: root.appendingPathComponent("Models")), defaults: defaults)
         await reopened.bootstrap()
         XCTAssertTrue(reopened.conversations.contains { $0.id == result.id })
@@ -158,7 +158,7 @@ final class GeneratedImageAppModelTests: XCTestCase {
         let store = try SQLiteConversationStore(url: root.appendingPathComponent("test.sqlite"))
         let service = try AttachmentService(directory: root.appendingPathComponent("Attachments"))
         let importer = GeneratedImageHoldingImporter(service: service, hold: held)
-        let model = AppModel(store: store, attachmentService: service, modelStore: try LocalModelStore(root: root.appendingPathComponent("Models")), defaults: defaults, attachmentImporter: importer)
+        let model = AppModel(offlineAutoSelection: false, store: store, attachmentService: service, modelStore: try LocalModelStore(root: root.appendingPathComponent("Models")), defaults: defaults, attachmentImporter: importer)
         return (model, store, importer)
     }
     private func staging() throws -> GeneratedImageStaging { try .init(directory: root.appendingPathComponent("Staging")) }

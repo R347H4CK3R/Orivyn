@@ -19,7 +19,7 @@ final class ConversationBranchTests: XCTestCase {
         let store = try SQLiteConversationStore(url: root.appendingPathComponent("history.sqlite"))
         let original = Conversation(title: "Original", messages: [ChatMessage(role: .user, content: "First question"), ChatMessage(role: .assistant, content: "First answer"), ChatMessage(role: .user, content: "Later question"), ChatMessage(role: .assistant, content: "Later answer")])
         try await store.save(original)
-        let model = AppModel(store: store, attachmentService: try AttachmentService(directory: root.appendingPathComponent("Attachments")), modelStore: try LocalModelStore(root: root.appendingPathComponent("Models")), defaults: defaults)
+        let model = AppModel(offlineAutoSelection: false, store: store, attachmentService: try AttachmentService(directory: root.appendingPathComponent("Attachments")), modelStore: try LocalModelStore(root: root.appendingPathComponent("Models")), defaults: defaults)
         await model.bootstrap()
         let provider = BranchProvider()
         model.replaceProviders([ProviderOption(id: provider.id, title: "Fixture", detail: "Controlled test", provider: provider)])

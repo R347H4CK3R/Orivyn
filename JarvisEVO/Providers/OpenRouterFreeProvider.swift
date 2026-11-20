@@ -24,7 +24,16 @@ struct OpenRouterFreeProvider: Sendable {
     }
 
     func complete(modelID: String, newlyAuthoredText: String, apiKey: String) async throws -> String {
-        guard Self.isConcreteFreeID(modelID) else { throw OpenRouterFreeError.modelUnavailable }
+        let result = try await completeTurn(manualModelID: modelID, newlyAuthoredText: newlyAuthoredText, apiKey: apiKey)
+        return result.text
+    }
+
+    func completeAutomatically(newlyAuthoredText: String, apiKey: String) async throws -> FreeOnlineCompletion {
+        try await completeTurn(manualModelID: nil, newlyAuthoredText: newlyAuthoredText, apiKey: apiKey)
+    }
+
+    private func completeTurn(manualModelID: String?, newlyAuthoredText: String, apiKey: String) async throws -> FreeOnlineCompletion {
+        if let manualModelID, !Self.isConcreteFreeID(manualModelID) { throw OpenRouterFreeError.modelUnavailable }
         guard !apiKey.isEmpty, apiKey.utf8.count <= 512,
               apiKey.unicodeScalars.allSatisfy({ (33...126).contains($0.value) }) else { throw OpenRouterFreeError.keyRequired }
         guard !newlyAuthoredText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
@@ -32,7 +41,14 @@ struct OpenRouterFreeProvider: Sendable {
         try Task.checkCancellation()
         // Selection previews never authorize a request: verify the live price each time.
         let models = try await fetchCatalog()
-        guard models.contains(where: { $0.id == modelID }) else { throw OpenRouterFreeError.modelUnavailable }
+        let model: OpenRouterFreeModel
+        if let manualModelID {
+            guard let selected = models.first(where: { $0.id == manualModelID }) else { throw OpenRouterFreeError.modelUnavailable }
+            model = selected
+        } else {
+            model = try FreeOnlineAutoRouter.select(text: newlyAuthoredText, verifiedModels: models)
+        }
+        let modelID = model.id
         try Task.checkCancellation()
         var request = URLRequest(url: Self.completionURL, cachePolicy: .reloadIgnoringLocalAndRemoteCacheData, timeoutInterval: 60)
         request.httpMethod = "POST"
@@ -58,7 +74,7 @@ struct OpenRouterFreeProvider: Sendable {
               message["function_call"] == nil || message["function_call"] is NSNull,
               let answer = message["content"] as? String,
               !answer.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { throw OpenRouterFreeError.invalidResponse }
-        return answer
+        return FreeOnlineCompletion(model: model, text: answer)
     }
 
     private func send(_ request: URLRequest, limit: Int) async throws -> Data {
@@ -122,22 +138,93 @@ struct OpenRouterFreeProvider: Sendable {
     }
 }
 
+struct FreeOnlineCompletion: Sendable {
+    let model: OpenRouterFreeModel
+    let text: String
+}
+
+/// Bounded on-device keyword heuristic, not a quality benchmark or another API call.
+/// Input here is the current newly authored turn only. Unknown tasks use stable general fit.
+enum FreeOnlineAutoRouter {
+    static func classify(_ text: String) -> OpenRouterFreeModel.SuggestedUse {
+        let prefix = String(text.prefix(4096)).lowercased()
+        let words = Set(prefix.split { !$0.isLetter && !$0.isNumber }.map(String.init))
+        if !words.isDisjoint(with: ["code", "coding", "debug", "bug", "swift", "python", "javascript", "typescript", "sql", "function", "compiler"]) || prefix.contains("```") { return .coding }
+        if !words.isDisjoint(with: ["prove", "theorem", "equation", "math", "mathematics", "reasoning", "logic"]) || prefix.contains("step by step") { return .hardProblems }
+        if !words.isDisjoint(with: ["write", "rewrite", "draft", "email", "letter", "poem", "story", "summarize", "reword", "proofread"]) { return .writing }
+        return .everyday
+    }
+
+    /// Only called with freshly parsed eligible catalog rows, never a saved preview.
+    static func select(text: String, verifiedModels: [OpenRouterFreeModel]) throws -> OpenRouterFreeModel {
+        let task = classify(text)
+        let ordered = verifiedModels.sorted { lhs, rhs in
+            func rank(_ model: OpenRouterFreeModel) -> Int {
+                if model.suggestedUses.first == task { return 0 }
+                if model.suggestedUses.contains(task) { return 1 }
+                if model.suggestedUses.first == .everyday { return 2 }
+                return 3
+            }
+            let a = rank(lhs), b = rank(rhs)
+            return a == b ? lhs.id < rhs.id : a < b
+        }
+        guard let model = ordered.first else { throw OpenRouterFreeError.modelUnavailable }
+        return model
+    }
+}
+
 struct OpenRouterFreeModel: Identifiable, Equatable, Sendable {
     enum SuggestedUse: String, CaseIterable, Sendable { case everyday = "Everyday", writing = "Writing", coding = "Coding", hardProblems = "Hard problems" }
     let id: String
     let name: String
-    var suggestedUses: [SuggestedUse] {
-        if id.contains("coder") || id.contains("code") { return [.coding, .everyday] }
-        if id.contains("reason") || id.contains("-r1") || id.contains("r1-") { return [.hardProblems, .everyday] }
-        return [.everyday, .writing]
+    // Controlled editorial suggestions from the official catalog snapshot, 2026-11-20.
+    // Profiles describe possible uses, not measured quality, speed or app capabilities.
+    // This table never admits a model: live free-price validation remains independent.
+    private struct Profile {
+        let uses: [SuggestedUse]
+        let note: String
     }
-    var shortDescription: String {
-        switch suggestedUses.first {
-        case .coding: return "Try for coding questions. Needs internet; free usage limits apply."
-        case .hardProblems: return "Try for step-by-step problems. Needs internet; free usage limits apply."
-        default: return "Try for everyday questions and writing. Needs internet; free usage limits apply."
+    private var profile: Profile {
+        switch id {
+        case "baidu/ernie-5.5-flash-preview:free":
+            return Profile(uses: [.coding, .writing, .everyday], note: "ERNIE preview: try code explanations or drafting work notes. This chat cannot browse or do research for you.")
+        case "dots-studio/dots-3-note-preview:free":
+            return Profile(uses: [.everyday, .writing], note: "Dots Note preview: try everyday questions or rewriting a short note. A lighter model in its family; quality here has not been measured.")
+        case "google/gemma-4-26b-a4b-it:free":
+            return Profile(uses: [.everyday, .writing], note: "Gemma 26B: try following writing instructions, rewording a paragraph or explaining an idea. Its larger-model features are not all available here.")
+        case "google/gemma-4-31b-it:free":
+            return Profile(uses: [.hardProblems, .everyday, .writing], note: "Gemma 31B: try explaining a tricky question or comparing written options. The catalog lists reasoning support; this app does not expose a thinking-mode control.")
+        case "inclusionai/ling-3.2-flash:free":
+            return Profile(uses: [.hardProblems, .everyday], note: "Ling Flash: try breaking a problem into steps. It is described as a reasoning model; answers still need checking.")
+        case "liquid/lfm-3-1.7b:free":
+            return Profile(uses: [.hardProblems, .writing, .everyday], note: "Liquid LFM3: try a structured list or a step-by-step explanation. The catalog warns the provider may retain prompts and replies; avoid private information.")
+        case "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free":
+            return Profile(uses: [.hardProblems, .everyday], note: "Nemotron Nano Omni: try explaining a situation you describe in words. Its image, audio and video abilities are not enabled in this chat.")
+        case "nvidia/nemotron-3-ultra-550b-a55b:free":
+            return Profile(uses: [.hardProblems, .everyday], note: "Nemotron Ultra: try comparing approaches to a complicated problem. It is described as a reasoning model, not a guarantee of correct answers.")
+        case "nvidia/nemotron-3.5-lightning:free":
+            return Profile(uses: [.everyday, .writing], note: "Nemotron Lightning: try a focused question or a short written task. Its agent-workflow focus does not give this chat tools or device control.")
+        case "nvidia/nemotron-3.5-super-vl:free":
+            return Profile(uses: [.everyday, .writing], note: "Nemotron Super VL: try a question or explanation using typed text. Despite its visual-model name, photos, documents and video cannot be attached here.")
+        case "particle-ai/particle-1:free":
+            return Profile(uses: [.coding, .everyday], note: "Particle: try understanding code, drafting a function or discussing a bug. Its coding-agent focus does not let this chat run commands or edit your files.")
+        case "recursive/flint-v1.0:free":
+            return Profile(uses: [.coding, .everyday], note: "Flint: try code suggestions or explaining an error message. Built for coding-agent use, but here it only replies with text and cannot test or run code.")
+        default:
+            return Profile(uses: [.everyday, .writing], note: "Try a general question or writing draft. This model's individual strengths have not been reviewed.")
         }
     }
+    var suggestedUses: [SuggestedUse] { profile.uses }
+    var shortDescription: String {
+        profile.note + " Text only here; needs internet; free usage limits apply."
+    }
+    /// Search remains open to new catalog entries and includes descriptions, not only labels.
+    func matchesSearch(_ query: String) -> Bool {
+        let query = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        return query.isEmpty || ([id, name, shortDescription] + suggestedUses.map(\.rawValue))
+            .contains { $0.localizedCaseInsensitiveContains(query) }
+    }
+
 }
 
 enum OpenRouterFreeError: Error, LocalizedError, Equatable {

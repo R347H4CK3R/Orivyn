@@ -35,7 +35,7 @@ final class ProductionNormalChatLocalAgentTests: XCTestCase {
         defaults.set(false, forKey: "remoteEnabled")
         defaults.set(false, forKey: "orivyn.automaticModels")
         let store = try SQLiteConversationStore(url: root.appendingPathComponent("synthetic.sqlite"))
-        let model = AppModel(store: store,
+        let model = AppModel(offlineAutoSelection: false, store: store,
             attachmentService: try AttachmentService(directory: root.appendingPathComponent("Attachments")),
             modelStore: try LocalModelStore(root: root.appendingPathComponent("NoUserModels")), defaults: defaults)
         let marker = "cedar-" + UUID().uuidString.lowercased()
@@ -305,7 +305,7 @@ final class ProductionNormalChatLocalAgentTests: XCTestCase {
         defaults.set(true, forKey: "orivyn.automaticModels")
         defaults.set(false, forKey: "remoteEnabled")
         let store = try SQLiteConversationStore(url: root.appendingPathComponent("synthetic.sqlite"))
-        let model = AppModel(store: store,
+        let model = AppModel(offlineAutoSelection: false, store: store,
             attachmentService: try AttachmentService(directory: root.appendingPathComponent("Attachments")),
             modelStore: try LocalModelStore(root: directory), defaults: defaults)
         // No preparation/factory/decision injection: actual router, verifier and engine.

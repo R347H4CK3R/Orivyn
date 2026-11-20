@@ -10,7 +10,7 @@ final class LocalMemoryToolTests: XCTestCase {
         let defaults = UserDefaults(suiteName: suite)!
         defer { defaults.removePersistentDomain(forName: suite) }
         let store = try SQLiteConversationStore(url: root.appendingPathComponent("history.sqlite"))
-        let model = AppModel(store: store,
+        let model = AppModel(offlineAutoSelection: false, store: store,
             attachmentService: try AttachmentService(directory: root.appendingPathComponent("Attachments")),
             modelStore: try LocalModelStore(root: root.appendingPathComponent("Models")), defaults: defaults)
         let saved = await model.saveMemory(content: "Preferred café is on Main Street")
@@ -39,7 +39,7 @@ final class LocalMemoryToolTests: XCTestCase {
         defer { defaults.removePersistentDomain(forName: suite) }
         let store = try SQLiteConversationStore(url: root.appendingPathComponent("history.sqlite"))
         try await store.save(Conversation(title: "Record", messages: [ChatMessage(role: .user, content: String(repeating: "x", count: 5000) + " café closes at nine")]))
-        let model = AppModel(store: store, attachmentService: try AttachmentService(directory: root.appendingPathComponent("Attachments")), modelStore: try LocalModelStore(root: root.appendingPathComponent("Models")), defaults: defaults)
+        let model = AppModel(offlineAutoSelection: false, store: store, attachmentService: try AttachmentService(directory: root.appendingPathComponent("Attachments")), modelStore: try LocalModelStore(root: root.appendingPathComponent("Models")), defaults: defaults)
         await model.bootstrap()
         let saved = await model.saveMemory(content: String(repeating: "x", count: 3000) + " café opens at seven")
         XCTAssertTrue(saved)

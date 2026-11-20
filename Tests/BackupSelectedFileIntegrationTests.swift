@@ -40,7 +40,7 @@ final class BackupSelectedFileIntegrationTests: XCTestCase {
         let bytes = try await source.exportData()
         let file = root.appendingPathComponent("controlled-backup.json")
         try bytes.write(to: file, options: .atomic)
-        let model = AppModel(store: store,
+        let model = AppModel(offlineAutoSelection: false, store: store,
             attachmentService: try AttachmentService(directory: root.appendingPathComponent("Attachments")),
             modelStore: try LocalModelStore(root: root.appendingPathComponent("Models")), defaults: defaults)
         model.draft = "Unsent controlled draft"

@@ -20,6 +20,66 @@ final class AppModelTests: XCTestCase {
         try? FileManager.default.removeItem(at: root)
     }
 
+    func testInstalledOnlyAutoDoesNotAdvertiseNormalChatLocalReads() async throws {
+        let (model, _, _) = try await fixture()
+        let local = LocalAIProvider(store: try LocalModelStore(root: root.appendingPathComponent("ScopeModels")))
+        model.replaceProviders([ProviderOption(id: local.id, title: "Local", detail: "Test", provider: local)])
+        model.draft = "Help me organize my work"
+        XCTAssertTrue(model.automaticLocalChatReadsAvailable, "Explicit manual local behavior is preserved")
+        model.offlineAutoEnabled = true
+        XCTAssertFalse(model.automaticLocalChatReadsAvailable, "Installed-only Auto is inference-only, not a local-read grant")
+        model.automaticModelsEnabled = true
+        XCTAssertTrue(model.automaticLocalChatReadsAvailable, "Existing explicit download-auto behavior is preserved")
+    }
+
+    func testOfflineAutoDefaultAndPersistedManualMigration() {
+        XCTAssertTrue(AppModel.initialOfflineAuto(defaults: defaults))
+        defaults.set("remote", forKey: "selectedProviderID")
+        XCTAssertFalse(AppModel.initialOfflineAuto(defaults: defaults))
+        defaults.set(true, forKey: "orivyn.automaticModels")
+        XCTAssertTrue(AppModel.initialOfflineAuto(defaults: defaults))
+        defaults.set(false, forKey: "orivyn.offlineAuto")
+        XCTAssertFalse(AppModel.initialOfflineAuto(defaults: defaults))
+    }
+
+    func testFreshAutoPersistsWithoutEnablingDownloadsAndManualChoiceOverrides() async throws {
+        let (model, _, _) = try await fixture(offlineAutoSelection: nil)
+        XCTAssertTrue(model.offlineAutoEnabled)
+        XCTAssertFalse(model.automaticModelsEnabled)
+        XCTAssertFalse(model.automaticAllowsCellular)
+        XCTAssertTrue(defaults.bool(forKey: "orivyn.offlineAuto"))
+        model.selectManualProvider("controlled-test")
+        XCTAssertFalse(model.offlineAutoEnabled)
+        XCTAssertFalse(AppModel.initialOfflineAuto(defaults: defaults))
+    }
+
+    func testInstalledAutoUsesReadyAppleWithoutCallingDownloadPreparer() async throws {
+        let (model, _, source) = try await fixture()
+        let controlled = try XCTUnwrap(model.selectedProvider?.provider)
+        model.replaceProviders([ProviderOption(id: "apple-system", title: "Synthetic Apple", detail: "Test", provider: controlled)])
+        model.offlineAutoEnabled = true
+        model.draft = "Help me write a note"
+        model.send()
+        try await waitFor { await source.hasSubscriber }
+        XCTAssertFalse(model.isPreparingAutomaticModel)
+        XCTAssertNil(model.downloadingModelID)
+        XCTAssertTrue(model.statusMessage?.contains("Apple") ?? false)
+        await source.emit("Synthetic reply"); await source.finish()
+        try await waitFor { !model.isGenerating }
+    }
+
+    func testInstalledAutoWithNoReadyLocalChoicePreservesDraft() async throws {
+        let (model, _, _) = try await fixture()
+        model.offlineAutoEnabled = true
+        model.draft = "Keep this text"
+        model.send()
+        XCTAssertFalse(model.isGenerating)
+        XCTAssertFalse(model.isPreparingAutomaticModel)
+        XCTAssertNil(model.downloadingModelID)
+        XCTAssertEqual(model.draft, "Keep this text")
+        XCTAssertNotNil(model.errorMessage)
+    }
+
     func testFreeOnlineTurnNeverUsesOrChangesOfflineHistoryComposerOrAttachments() async throws {
         var captured = ""
         let online = FreeOnlineChatState(fetchCatalog: { [.init(id: "example/chat:free", name: "Example")] },
@@ -755,13 +815,13 @@ final class AppModelTests: XCTestCase {
         XCTAssertEqual(model.pendingAttachments, attachments)
     }
 
-    private func fixture(freeOnlineChat: FreeOnlineChatState? = nil) async throws -> (AppModel, SQLiteConversationStore, ControlledTokenSource) {
+    private func fixture(offlineAutoSelection: Bool? = false, freeOnlineChat: FreeOnlineChatState? = nil) async throws -> (AppModel, SQLiteConversationStore, ControlledTokenSource) {
         let store = try SQLiteConversationStore(url: root.appendingPathComponent("test.sqlite"))
         let attachmentService = try AttachmentService(directory: root.appendingPathComponent("Attachments"))
         let modelStore = try LocalModelStore(root: root.appendingPathComponent("Models"))
         let source = ControlledTokenSource()
         let provider = ControlledProvider(source: source)
-        let model = AppModel(store: store, attachmentService: attachmentService, modelStore: modelStore, defaults: defaults, freeOnlineChat: freeOnlineChat)
+        let model = AppModel(offlineAutoSelection: offlineAutoSelection, store: store, attachmentService: attachmentService, modelStore: modelStore, defaults: defaults, freeOnlineChat: freeOnlineChat)
         model.replaceProviders([ProviderOption(id: "controlled-test", title: "Test provider", detail: "Test only", provider: provider)])
         return (model, store, source)
     }

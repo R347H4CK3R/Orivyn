@@ -23,7 +23,7 @@ final class ArchiveAttachmentCoordinatorTests: XCTestCase {
     private func fixture(zip: String = "manual-attachments", path: String = "assets/reviewed-note.txt") async throws -> (AppModel, SQLiteConversationStore, ArchiveRestoreView.Review, ArchiveRestoreService.AttachmentCandidate) {
         let source = try XCTUnwrap(Bundle(for: Self.self).url(forResource: zip, withExtension: "zip"))
         let store = try SQLiteConversationStore(url: root.appendingPathComponent("history.sqlite"))
-        let model = AppModel(store: store,
+        let model = AppModel(offlineAutoSelection: false, store: store,
             attachmentService: try AttachmentService(directory: root.appendingPathComponent("Attachments")),
             modelStore: try LocalModelStore(root: root.appendingPathComponent("Models")), defaults: defaults)
         model.configureLocalWork(directory: root)

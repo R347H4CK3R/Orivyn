@@ -17,7 +17,7 @@ final class FolderMemoryNativeIntegrationTests: XCTestCase {
         let store = try SQLiteConversationStore(url: root.appendingPathComponent("data.sqlite"))
         let original = MemoryNote(content: "Keep original")
         try await store.saveMemory(original)
-        let model = AppModel(store: store,
+        let model = AppModel(offlineAutoSelection: false, store: store,
             attachmentService: try AttachmentService(directory: root.appendingPathComponent("Attachments")),
             modelStore: try LocalModelStore(root: root.appendingPathComponent("Models")), defaults: defaults)
         model.draft = "Keep my unsent draft"

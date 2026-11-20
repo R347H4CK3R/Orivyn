@@ -76,7 +76,7 @@ final class ProductionCompletionContractTests: XCTestCase {
         let query = "Cedar acceptance"
         let note = MemoryNote(content: "Cedar acceptance marker: \(marker).")
         try await store.saveMemory(note)
-        let model = AppModel(store: store,
+        let model = AppModel(offlineAutoSelection: false, store: store,
             attachmentService: try AttachmentService(directory: root.appendingPathComponent("Attachments")),
             modelStore: try LocalModelStore(root: directory), defaults: defaults)
         await model.bootstrap()

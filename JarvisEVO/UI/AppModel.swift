@@ -86,6 +86,25 @@ final class AppModel {
             if oldValue != selectedProviderID { providerRevision = UUID(); cancelActiveVoiceTurn(); cancelAutomaticPreparation() }
         }
     }
+    /// Default routing permission is separate from the legacy explicit download opt-in.
+    var offlineAutoEnabled: Bool {
+        didSet {
+            defaults.set(offlineAutoEnabled, forKey: "orivyn.offlineAuto")
+            if oldValue != offlineAutoEnabled { providerRevision = UUID(); cancelActiveVoiceTurn(); cancelAutomaticPreparation() }
+        }
+    }
+    func selectManualProvider(_ id: String) {
+        guard providers.contains(where: { $0.id == id && $0.isAvailable }) else { return }
+        automaticModelsEnabled = false
+        offlineAutoEnabled = false
+        selectedProviderID = id
+    }
+    static func initialOfflineAuto(defaults: UserDefaults) -> Bool {
+        if defaults.object(forKey: "orivyn.offlineAuto") != nil { return defaults.bool(forKey: "orivyn.offlineAuto") }
+        if defaults.object(forKey: "orivyn.automaticModels") != nil { return defaults.bool(forKey: "orivyn.automaticModels") }
+        return (defaults.string(forKey: "selectedProviderID") ?? "").isEmpty
+    }
+
     var automaticModelsEnabled: Bool {
         didSet {
             defaults.set(automaticModelsEnabled, forKey: "orivyn.automaticModels")
@@ -175,7 +194,7 @@ final class AppModel {
     private(set) var isSavingGeneratedImageRecord = false
     var isSavingGeneratedImage: Bool { generatedImageTask != nil }
 
-    init(store: SQLiteConversationStore, attachmentService: AttachmentService, modelStore: LocalModelStore,
+    init(offlineAutoSelection: Bool? = nil, store: SQLiteConversationStore, attachmentService: AttachmentService, modelStore: LocalModelStore,
          providers: [ProviderOption] = [], defaults: UserDefaults = .standard,
          attachmentImporter: (any AttachmentImporting)? = nil,
          automaticPreparer: (any AutomaticModelPreparing)? = nil,
@@ -194,6 +213,7 @@ final class AppModel {
         workspace = WorkspaceStore(defaults: defaults)
         self.attachmentImporter = attachmentImporter ?? LocalAttachmentImporter(service: attachmentService)
         conciseQwen3 = defaults.bool(forKey: "orivyn.conciseQwen3")
+        offlineAutoEnabled = offlineAutoSelection ?? Self.initialOfflineAuto(defaults: defaults)
         automaticModelsEnabled = defaults.bool(forKey: "orivyn.automaticModels")
         automaticAllowsCellular = defaults.bool(forKey: "orivyn.automaticCellular")
         selectedProviderID = defaults.string(forKey: "selectedProviderID") ?? ""
@@ -202,6 +222,7 @@ final class AppModel {
         remoteEnabled = defaults.bool(forKey: "remoteEnabled")
         self.automaticPreparer = automaticPreparer ?? LocalAutomaticModelPreparer(store: modelStore, network: network)
         self.automaticProviderFactory = automaticProviderFactory
+        if offlineAutoSelection == nil { defaults.set(offlineAutoEnabled, forKey: "orivyn.offlineAuto") }
         network.onAutomaticPathChange = { [weak self] path in self?.automaticNetworkChanged(to: path) }
     }
 
@@ -266,6 +287,51 @@ final class AppModel {
         revokeHeavyWork(id: id)
         await resourceReleaser.unload()
         endHeavyWork(id: id)
+    }
+
+    /// A transient explanation never enters the conversation send/persistence path.
+    func explainPassage(_ input: PassageExplanationInput) async throws -> String {
+        guard let local = selectedLocalAgentProvider else { throw PassageExplanationError.noLocalModel }
+        let id = UUID()
+        let revision = providerRevision
+        func checkLease() throws {
+            try Task.checkCancellation()
+            guard heavyWorkLease?.id == id, heavyWorkLease?.kind == .passageExplanation,
+                  heavyWorkLease?.phase == .ready, providerRevision == revision,
+                  selectedLocalAgentProvider?.model == local.model else { throw CancellationError() }
+        }
+
+        let outcome: Result<String, Error>
+        do {
+            try await beginHeavyWork(id: id, kind: .passageExplanation)
+            try checkLease()
+            let modelURL = try await local.store.verifiedURL(for: local.model)
+            try checkLease()
+            let stream = try await local.engine.stream(input.request(), modelURL: modelURL)
+            var response = ""
+            for try await piece in stream {
+                try checkLease()
+                guard response.utf8.count + piece.utf8.count <= PassageExplanationInput.maximumOutputBytes else {
+                    throw PassageExplanationError.outputTooLarge
+                }
+                response += piece
+            }
+            try checkLease()
+            let explanation = response.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !explanation.isEmpty else { throw PassageExplanationError.emptyResponse }
+            outcome = .success(explanation)
+        } catch {
+            outcome = .failure(error)
+        }
+        // Hold the exact lease until the actual shared engine is fully unwound.
+        if heavyWorkLease?.id == id {
+            revokeHeavyWork(id: id)
+            await resourceReleaser.unload()
+            endHeavyWork(id: id)
+        }
+        try Task.checkCancellation()
+        guard providerRevision == revision else { throw CancellationError() }
+        return try outcome.get()
     }
 
     func revokeHeavyWork(id: UUID? = nil) {
@@ -596,6 +662,9 @@ final class AppModel {
     var automaticLocalChatReadsAvailable: Bool {
         guard normalChatTurnForDraft != nil else { return false }
         if automaticModelsEnabled { return automaticProviderFactory == nil }
+        // Default installed-only Auto grants inference, not model-driven local reads.
+        // Its chosen provider can differ from the manual provider shown before Send.
+        if offlineAutoEnabled { return false }
         return selectedProvider?.provider is LocalAIProvider
     }
 
@@ -657,12 +726,13 @@ final class AppModel {
                 provider: provider, providerID: provider.id)
             return
         }
-        if !automaticModelsEnabled, let local = selectedProvider?.provider as? LocalAIProvider,
+        if !automaticModelsEnabled && !offlineAutoEnabled, let local = selectedProvider?.provider as? LocalAIProvider,
            let turn = normalChatTurnForDraft {
             submitNormalLocalChat(turn: turn, local: local)
             return
         }
         if automaticModelsEnabled { prepareAutomaticSend(); return }
+        if offlineAutoEnabled { sendInstalledAutomatic(); return }
         if selectedProviderID == "remote" && network.isOnline == false {
             guard let local = providers.first(where: { $0.id != "remote" && $0.isAvailable }) else {
                 errorMessage = "You’re offline and no local model is ready. Your draft is saved in the composer. Install a local model when connected to chat offline."
@@ -748,7 +818,25 @@ final class AppModel {
         statusMessage = "Connected-tool proposal prepared, not executed."
     }
 
-    private func prepareAutomaticSend() {
+    private func sendInstalledAutomatic() {
+        let apple = providers.first { $0.id == "apple-system" && $0.isAvailable }
+        let environment = AutomaticRouteEnvironment(physicalMemory: ProcessInfo.processInfo.physicalMemory,
+            freeStorageBytes: nil, network: .offline, allowsCellular: false)
+        switch AutomaticModelRouter.installedRoute(text: draft, installed: installedModels,
+            environment: environment, appleAvailable: apple != nil) {
+        case .local(let decision): prepareAutomaticSend(installedDecision: decision)
+        case .apple:
+            guard let provider = apple?.provider else { return }
+            automaticDecision = nil
+            statusMessage = "Auto: Apple on-device model · no download or online request"
+            submit(text: draft, attachments: pendingAttachments, conversationID: selectedConversationID ?? UUID(),
+                provider: provider, providerID: "apple-system")
+        case .unavailable:
+            errorMessage = "No compatible installed AI is ready for Auto, or this message exceeds 32,768 UTF-8 bytes. Choose a model manually, enable Apple Intelligence if available, or opt in to model downloads. Your draft is unchanged; nothing was downloaded or sent online."
+        }
+    }
+
+    private func prepareAutomaticSend(installedDecision: AutomaticModelDecision? = nil) {
         guard downloadTask == nil, let preparer = automaticPreparer else {
             errorMessage = "A model download is already running. Your draft is unchanged; finish or cancel it before Automatic can prepare this request."
             return
@@ -762,13 +850,20 @@ final class AppModel {
         automaticTask = Task { [weak self] in
             guard let self else { return }
             do {
-                let decision = try await preparer.prepare(text: ticket.draft, allowsCellular: self.automaticAllowsCellular) { [weak self] decision, fraction in
-                    guard let self, self.ownsAutomatic(ticket) else { return }
-                    self.automaticDecision = decision
-                    if decision.needsDownload {
-                        self.automaticDownloadOwner = ticket.id
-                        self.downloadingModelID = decision.model.id
-                        self.downloadProgress = fraction
+                let decision: AutomaticModelDecision
+                if let installedDecision {
+                    guard !installedDecision.needsDownload else { throw AutomaticRoutingError.catalogUnavailable }
+                    _ = try await self.modelStore.verifiedURL(for: installedDecision.model)
+                    decision = installedDecision
+                } else {
+                    decision = try await preparer.prepare(text: ticket.draft, allowsCellular: self.automaticAllowsCellular) { [weak self] decision, fraction in
+                        guard let self, self.ownsAutomatic(ticket) else { return }
+                        self.automaticDecision = decision
+                        if decision.needsDownload {
+                            self.automaticDownloadOwner = ticket.id
+                            self.downloadingModelID = decision.model.id
+                            self.downloadProgress = fraction
+                        }
                     }
                 }
                 try Task.checkCancellation()
@@ -791,7 +886,9 @@ final class AppModel {
                 self.clearAutomaticOwnership(ticket.id)
                 self.automaticDecision = decision
                 self.statusMessage = "Automatic: \(decision.model.name) · \(decision.purpose) · on this iPhone"
-                if let local = provider as? LocalAIProvider, let turn = self.normalChatTurnForDraft {
+                // Only the prior explicit download-auto path retains normal-chat reads.
+                // Installed-only Auto has no provider-bound read disclosure before Send.
+                if installedDecision == nil, let local = provider as? LocalAIProvider, let turn = self.normalChatTurnForDraft {
                     self.submitNormalLocalChat(turn: turn, local: local)
                 } else {
                     self.submit(text: self.draft, attachments: self.pendingAttachments,
@@ -808,7 +905,7 @@ final class AppModel {
     }
 
     private func ownsAutomatic(_ ticket: AutomaticPreparationTicket) -> Bool {
-        automaticTicket?.id == ticket.id && automaticModelsEnabled
+        automaticTicket?.id == ticket.id && (automaticModelsEnabled || offlineAutoEnabled)
             && ticket.conversationID == selectedConversationID && ticket.conversationRevision == conversationRevision
             && ticket.providerRevision == providerRevision && ticket.composerRevision == composerRevision
             && ticket.draft == draft && ticket.attachments == pendingAttachments.map(\.id)
@@ -1242,6 +1339,7 @@ final class AppModel {
             case .vision: state.heavyWork = "Vision"
             case .virtualDesktop: state.heavyWork = "Virtual desktop"
             case .localAgent: state.heavyWork = "Local agent"
+            case .passageExplanation: state.heavyWork = "Explain a passage"
             }
             switch lease.phase {
             case .preparing: state.heavyPhase = "Preparing"
@@ -1641,7 +1739,7 @@ final class AppModel {
                 // Installation may already be committed when Cancel arrives during
                 // refresh. Keep those bytes/catalog, but skip the explicit selection.
                 try Task.checkCancellation()
-                self.selectedProviderID = descriptor.id
+                self.selectManualProvider(descriptor.id)
             } catch { if !Task.isCancelled { self.report(error) } }
             guard self.manualDownloadOwner == owner else { return }
             self.manualDownloadOwner = nil
@@ -1681,7 +1779,7 @@ final class AppModel {
         do {
             let descriptor = try await modelStore.importModel(from: url)
             try await reloadProviders()
-            selectedProviderID = descriptor.id
+            selectManualProvider(descriptor.id)
         } catch { report(error) }
     }
 
@@ -1908,7 +2006,9 @@ final class FreeOnlineChatState {
 
     private(set) var models: [OpenRouterFreeModel] = []
     private(set) var selectedModelID: String?
-    var hasConsented: Bool { selectedModelID != nil }
+    private(set) var hasConsented = false
+    private(set) var usesAutomaticSelection = true
+    private(set) var lastResponseModelName: String?
     var draft = "" {
         didSet { if oldValue != draft, isSending { cancel() } }
     }
@@ -1921,7 +2021,8 @@ final class FreeOnlineChatState {
     private(set) var errorMessage: String?
     private let fetchCatalog: @MainActor () async throws -> [OpenRouterFreeModel]
     private let complete: @MainActor (String, String, String) async throws -> String
-    private var sendTask: Task<String, Error>?
+    private let completeAutomatically: @MainActor (String, String) async throws -> FreeOnlineCompletion
+    private var sendTask: Task<FreeOnlineCompletion, Error>?
     private var sendID: UUID?
     private var catalogID: UUID?
 
@@ -1929,16 +2030,19 @@ final class FreeOnlineChatState {
         try await OpenRouterFreeProvider().fetchCatalog()
     }, complete: @escaping @MainActor (String, String, String) async throws -> String = { model, text, key in
         try await OpenRouterFreeProvider().complete(modelID: model, newlyAuthoredText: text, apiKey: key)
+    }, completeAutomatically: @escaping @MainActor (String, String) async throws -> FreeOnlineCompletion = { text, key in
+        try await OpenRouterFreeProvider().completeAutomatically(newlyAuthoredText: text, apiKey: key)
     }) {
         self.fetchCatalog = fetchCatalog
         self.complete = complete
+        self.completeAutomatically = completeAutomatically
     }
 
     func refreshCatalog() async {
         cancel()
         let id = UUID()
         catalogID = id
-        selectedModelID = nil
+        hasConsented = false
         models = []
         isLoadingCatalog = true
         errorMessage = nil
@@ -1960,23 +2064,38 @@ final class FreeOnlineChatState {
     /// Neither catalog loading nor existing remote credentials grant this consent.
     func useFreeOnline(modelID: String) {
         cancel()
-        selectedModelID = nil
+        hasConsented = false
         response = nil
+        lastResponseModelName = nil
         guard !isLoadingCatalog, models.contains(where: { $0.id == modelID }) else {
             errorMessage = "Choose an available free model first."
             return
         }
         selectedModelID = modelID
+        usesAutomaticSelection = false
+        hasConsented = true
+        errorMessage = nil
+    }
+
+    /// Explicit consent for locally selected per-turn models, not implied by Auto's default.
+    func useFreeOnlineAuto() {
+        cancel()
+        selectedModelID = nil
+        usesAutomaticSelection = true
+        hasConsented = true
+        response = nil
+        lastResponseModelName = nil
         errorMessage = nil
     }
 
     func returnToOffline() {
         cancel()
-        selectedModelID = nil
+        hasConsented = false
         catalogID = nil
         isLoadingCatalog = false
         apiKey = ""
         response = nil
+        lastResponseModelName = nil
         errorMessage = nil
     }
 
@@ -1984,9 +2103,14 @@ final class FreeOnlineChatState {
     /// The provider rechecks live pricing before each request and never falls back.
     func send() async {
         guard !isSending else { return }
-        guard let model = selectedModelID,
-              models.contains(where: { $0.id == model }) else {
+        guard hasConsented, !isLoadingCatalog else {
             errorMessage = "Read the privacy notice and choose Use Free Online first."
+            return
+        }
+        let automatic = usesAutomaticSelection
+        let selected = models.first(where: { $0.id == selectedModelID })
+        guard automatic || selected != nil else {
+            errorMessage = "Your manual model is no longer available. Refresh or choose Auto."
             return
         }
         let text = draft
@@ -2000,7 +2124,13 @@ final class FreeOnlineChatState {
         isSending = true
         response = nil
         errorMessage = nil
-        let task = Task { try await complete(model, text, key) }
+        lastResponseModelName = nil
+        let task = Task {
+            if automatic { return try await completeAutomatically(text, key) }
+            guard let selected else { throw OpenRouterFreeError.modelUnavailable }
+            let answer = try await complete(selected.id, text, key)
+            return FreeOnlineCompletion(model: selected, text: answer)
+        }
         sendTask = task
         do {
             let result = try await withTaskCancellationHandler {
@@ -2011,7 +2141,8 @@ final class FreeOnlineChatState {
             isSending = false
             sendID = nil
             sendTask = nil
-            response = result
+            response = result.text
+            lastResponseModelName = result.model.name
             draft = ""
         } catch {
             guard sendID == id else { return }

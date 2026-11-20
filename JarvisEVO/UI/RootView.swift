@@ -263,6 +263,14 @@ struct RootView: View {
     private var conversation: some View {
         NavigationStack {
             VStack(spacing: 0) {
+                HStack {
+                    Spacer()
+                    Button("Web", systemImage: "globe") { prepareNavigation(); reviewingTool = .browser }
+                        .font(.subheadline.weight(.semibold)).tint(.teal)
+                        .frame(minWidth: 44, minHeight: 44)
+                        .accessibilityHint("Search or open a website in Safari. Nothing is sent until you choose Go.")
+                        .accessibilityIdentifier("chat.web")
+                }.padding(.horizontal, 16)
                 if model.activeConversation?.messages.isEmpty != false { welcome }
                 else { transcript }
                 ChatPluginSuggestionView(model: model)
@@ -281,11 +289,11 @@ struct RootView: View {
                 ToolbarItem(placement: .principal) {
                     Button { prepareNavigation(); showModels = true } label: {
                         HStack(spacing: 5) {
-                            Text("Choose an AI").font(.headline).lineLimit(2)
+                            Text(model.offlineAutoEnabled || model.automaticModelsEnabled ? "Auto · on this iPhone" : "Choose an AI").font(.headline).lineLimit(2)
                             Image(systemName: "chevron.down").font(.system(size: 10, weight: .semibold)).foregroundStyle(.secondary)
                         }
                     }
-                    .buttonStyle(.plain).accessibilityLabel("Choose an AI").accessibilityIdentifier("model.choose")
+                    .buttonStyle(.plain).accessibilityLabel(model.offlineAutoEnabled || model.automaticModelsEnabled ? "Auto on this iPhone. Choose an AI" : "Choose an AI").accessibilityIdentifier("model.choose")
                 }
                 ToolbarItemGroup(placement: .topBarTrailing) {
                     Button { prepareNavigation(); Task { await model.newConversation() } } label: { Image(systemName: "square.and.pencil") }
@@ -437,7 +445,7 @@ struct RootView: View {
         switch tool {
         case .email: MailDraftView()
         case .calendar: CalendarDraftView()
-        case .browser: BrowserToolView()
+        case .browser: BrowserToolView(passageExplanation: PassageExplanationView(model: model))
         case .location: LocationToolView()
         case .reminder: ScheduledRemindersView()
         case .sourceInspection: RepositoryInspectionView()

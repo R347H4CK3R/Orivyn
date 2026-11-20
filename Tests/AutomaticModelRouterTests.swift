@@ -2,6 +2,28 @@ import XCTest
 @testable import JarvisEVO
 
 final class AutomaticModelRouterTests: XCTestCase {
+    func testInstalledAutoNeverDownloadsAndUsesAppleBeforeGeneralFallback() throws {
+        let env = environment(storage: 0, network: .offline)
+        XCTAssertEqual(AutomaticModelRouter.installedRoute(text: "Hello", installed: [], environment: env, appleAvailable: true), .apple)
+        XCTAssertEqual(AutomaticModelRouter.installedRoute(text: "Hello", installed: [], environment: env, appleAvailable: false), .unavailable)
+        let general = try descriptor(generalID)
+        XCTAssertEqual(AutomaticModelRouter.installedRoute(text: "Debug this JavaScript", installed: [general], environment: env, appleAvailable: true), .apple)
+        guard case .local(let fallback) = AutomaticModelRouter.installedRoute(text: "Debug this JavaScript", installed: [general], environment: env, appleAvailable: false) else { return XCTFail("Expected vetted general fallback") }
+        XCTAssertEqual(fallback.model.id, generalID)
+        XCTAssertFalse(fallback.needsDownload)
+        let coder = try descriptor(coderID)
+        guard case .local(let specialist) = AutomaticModelRouter.installedRoute(text: "Write code", installed: [general, coder], environment: env, appleAvailable: true) else { return XCTFail("Expected installed specialist") }
+        XCTAssertEqual(specialist.model.id, coderID)
+        XCTAssertFalse(specialist.needsDownload)
+    }
+
+    func testInstalledAutoRejectsOversizeAndUnknownImports() {
+        let env = environment()
+        XCTAssertEqual(AutomaticModelRouter.installedRoute(text: String(repeating: "x", count: 32_769), installed: [], environment: env, appleAvailable: true), .unavailable)
+        let imported = LocalModelDescriptor(id: "imported-user-choice", name: "Imported", fileName: "import.gguf", downloadURL: nil, sha256: String(repeating: "a", count: 64), byteCount: 100, license: "Unknown", sourceURL: nil)
+        XCTAssertEqual(AutomaticModelRouter.installedRoute(text: "Hello", installed: [imported], environment: env, appleAvailable: false), .unavailable)
+    }
+
     private let generalID = "qwen2.5-0.5b-instruct-q4_k_m"
     private let coderID = "qwen2.5-coder-1.5b-instruct-q4_k_m"
     private let excludedCoderID = "qwen2.5-coder-0.5b-instruct-q4_k_m"

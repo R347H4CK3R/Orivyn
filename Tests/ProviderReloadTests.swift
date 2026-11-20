@@ -15,7 +15,7 @@ import XCTest
         let models = try LocalModelStore(root: modelsRoot)
         let store = try SQLiteConversationStore(url: root.appendingPathComponent("history.sqlite"))
         let attachments = try AttachmentService(directory: root.appendingPathComponent("Attachments"))
-        let app = AppModel(store: store, attachmentService: attachments, modelStore: models, defaults: defaults)
+        let app = AppModel(offlineAutoSelection: false, store: store, attachmentService: attachments, modelStore: models, defaults: defaults)
         let first = LocalModelDescriptor(id: "test", name: "Old", fileName: "test.gguf",
             downloadURL: nil, sha256: String(repeating: "a", count: 64), byteCount: 24,
             license: "Test fixture", sourceURL: nil)

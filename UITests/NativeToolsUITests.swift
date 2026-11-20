@@ -11,6 +11,97 @@ final class NativeToolsUITests: XCTestCase {
         XCTAssertTrue(draft.waitForExistence(timeout: 10)); draft.tap(); draft.typeText("Keep this conversation draft")
     }
 
+    func testVisibleWebEntrySearchReviewDoesNotSendAndReturnsToSameDraft() {
+        let web = app.buttons["chat.web"]
+        XCTAssertTrue(web.waitForExistence(timeout: 5))
+        XCTAssertGreaterThanOrEqual(web.frame.height, 44)
+        web.tap()
+        let address = app.textFields["browser.url"]
+        XCTAssertTrue(address.waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["browser.open"].isEnabled)
+        address.tap(); address.typeText("plumbing a & b")
+        XCTAssertTrue(app.staticTexts["browser.destination"].exists)
+        XCTAssertEqual(app.buttons["browser.open"].label, "Search DuckDuckGo")
+        // Deliberately do not tap Go: editing must not open Safari or send a query.
+        XCTAssertTrue(app.buttons["tool.review.done"].exists)
+        XCTAssertFalse(app.buttons["browser.bookmark.save"].exists)
+        app.buttons["tool.review.done"].tap()
+        XCTAssertEqual(app.textViews["composer.input"].value as? String, "Keep this conversation draft")
+    }
+
+    func testWebPassageStartsBlankAndKeepsConversationDraftSeparate() {
+        let web = app.buttons["chat.web"]
+        XCTAssertTrue(web.waitForExistence(timeout: 5))
+        web.tap()
+        let explain = app.descendants(matching: .any).matching(identifier: "browser.explain").firstMatch
+        XCTAssertTrue(explain.waitForExistence(timeout: 5))
+        explain.tap()
+        let passage = app.textViews["passage.text"]
+        XCTAssertTrue(passage.waitForExistence(timeout: 5))
+        XCTAssertNotEqual(passage.value as? String, "Keep this conversation draft")
+        XCTAssertFalse(app.buttons["passage.explain"].isEnabled)
+        passage.tap()
+        passage.typeText("Only the text I deliberately choose")
+        XCTAssertTrue(app.buttons["passage.explain"].isEnabled)
+        app.navigationBars.buttons["Web"].firstMatch.tap()
+        app.buttons["tool.review.done"].tap()
+        XCTAssertEqual(app.textViews["composer.input"].value as? String, "Keep this conversation draft")
+    }
+
+    func testBookmarkFillAndRemoveAreIndependentAndNeverOpenSafari() {
+        app.buttons["chat.web"].tap()
+        let address = app.textFields["browser.url"]
+        XCTAssertTrue(address.waitForExistence(timeout: 5))
+        let saved = "https://example.com/" + UUID().uuidString
+        let entered = saved + "?token=synthetic#section"
+        address.tap(); address.typeText(entered)
+        let list = app.collectionViews.firstMatch
+        let save = app.buttons["browser.bookmark.save"]
+        reveal(save, in: list); save.tap()
+        let fill = app.buttons["browser.bookmark.fill." + saved]
+        let remove = app.buttons["browser.bookmark.remove." + saved]
+        reveal(fill, in: list)
+        XCTAssertTrue(fill.isHittable); XCTAssertTrue(remove.exists)
+        fill.tap()
+        XCTAssertTrue(remove.exists, "Fill must not activate the adjacent Remove button")
+        reveal(address, in: list, towardEnd: false)
+        XCTAssertEqual(address.value as? String, saved)
+        address.tap(); address.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: saved.count))
+        address.typeText("Keep this search")
+        reveal(remove, in: list); remove.tap()
+        XCTAssertFalse(fill.exists)
+        reveal(address, in: list, towardEnd: false)
+        XCTAssertEqual(address.value as? String, "Keep this search", "Remove must not fill the address or navigate")
+        XCTAssertTrue(app.buttons["tool.review.done"].exists)
+        app.buttons["tool.review.done"].tap()
+        XCTAssertEqual(app.textViews["composer.input"].value as? String, "Keep this conversation draft")
+    }
+
+    func testCleanLinkRequiresExplicitCopyAndLeavesOriginalAddressUnchanged() {
+        app.buttons["chat.web"].tap()
+        let address = app.textFields["browser.url"]
+        XCTAssertTrue(address.waitForExistence(timeout: 5))
+        let original = "https://example.com/article?utm_source=synthetic#section"
+        address.tap(); address.typeText(original)
+        let list = app.collectionViews.firstMatch
+        let reader = app.buttons["browser.reader"]
+        reveal(reader, in: list)
+        XCTAssertGreaterThanOrEqual(reader.frame.height, 44)
+        let preview = app.staticTexts["browser.cleanLink.preview"]
+        reveal(preview, in: list)
+        XCTAssertEqual(preview.label, "https://example.com/article#section")
+        XCTAssertFalse(app.staticTexts["browser.cleanLink.copied"].exists)
+        let copy = app.buttons["browser.cleanLink.copy"]
+        reveal(copy, in: list); copy.tap()
+        XCTAssertTrue(app.staticTexts["browser.cleanLink.copied"].waitForExistence(timeout: 5))
+        // This synthetic test intentionally writes only the clean example URL, never reads the clipboard.
+        reveal(address, in: list, towardEnd: false)
+        XCTAssertEqual(address.value as? String, original)
+        XCTAssertTrue(app.buttons["tool.review.done"].exists)
+        app.buttons["tool.review.done"].tap()
+        XCTAssertEqual(app.textViews["composer.input"].value as? String, "Keep this conversation draft")
+    }
+
     func testMailDraftIsEditableWithoutSilentSendAndBackPreservesChat() {
         openTool("Email")
         let subject = app.textFields["mail.subject"]

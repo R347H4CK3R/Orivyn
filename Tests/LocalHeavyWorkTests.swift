@@ -360,7 +360,7 @@ final class LocalHeavyWorkTests: XCTestCase {
 
     private func fixture() throws -> (AppModel, ControlledResourceRelease, HeavyReplySource) {
         let release = ControlledResourceRelease(); let source = HeavyReplySource()
-        let model = AppModel(store: try SQLiteConversationStore(url: root.appendingPathComponent("test.sqlite")),
+        let model = AppModel(offlineAutoSelection: false, store: try SQLiteConversationStore(url: root.appendingPathComponent("test.sqlite")),
             attachmentService: try AttachmentService(directory: root.appendingPathComponent("Attachments")),
             modelStore: try LocalModelStore(root: root.appendingPathComponent("Models")), defaults: defaults,
             resourceReleaser: release)

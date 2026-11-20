@@ -33,6 +33,16 @@ struct ModelManagerView: View {
         NavigationStack {
             List {
                 Section {
+                    Toggle("Auto · choose on this iPhone", isOn: Binding(
+                        get: { model.offlineAutoEnabled || model.automaticModelsEnabled },
+                        set: { enabled in
+                            model.offlineAutoEnabled = enabled
+                            if !enabled { model.automaticModelsEnabled = false }
+                        }))
+                        .accessibilityIdentifier("model.auto.installed")
+                        .disabled(model.isGenerating || model.isPreparingAutomaticModel)
+                    Text("Chooses an installed task-matching AI, then Apple or an installed general model. Never downloads or sends your text online by itself. Voice keeps your manual choice.")
+                        .font(.subheadline).foregroundStyle(.secondary)
                     ForEach(model.providers.filter { $0.id != "remote" }) { option in
                         providerRow(option)
                     }
@@ -96,7 +106,7 @@ struct ModelManagerView: View {
                     Text("Models and precision variants are all free. Downloads use internet; local inference does not. RAM guidance is an estimate, not a guarantee. iOS memory pressure and thermals vary. One local model is loaded at a time with a 2,048-token context. Automatic downloads occur only after you enable Automatic and send a request.")
                 }
                 Section {
-                    Toggle("Automatic local model", isOn: $model.automaticModelsEnabled)
+                    Toggle("Allow automatic model downloads", isOn: $model.automaticModelsEnabled)
                         .accessibilityIdentifier("model.automatic")
                     if model.automaticModelsEnabled {
                         Toggle("Allow cellular downloads", isOn: $model.automaticAllowsCellular)
@@ -108,7 +118,7 @@ struct ModelManagerView: View {
                         Text("\(decision.model.name) · \(decision.reason)").font(.caption)
                     }
                 } header: { Text("Model routing") } footer: {
-                    Text("Opt in to choose a compatible local model for each typed request. No remote endpoint is selected automatically. Turning this off restores your manual choice. Voice uses the manual model.")
+                    Text("Separate opt-in: allows Auto to download the pinned general or coding model when needed. Turning downloads off keeps installed-only Auto available. No remote endpoint is selected automatically. Voice uses the manual model.")
                 }
                 Section("Qwen 3 response mode") {
                     Toggle("Concise Qwen 3 answers", isOn: $model.conciseQwen3)
@@ -166,8 +176,7 @@ struct ModelManagerView: View {
     }
     private func providerRow(_ option: ProviderOption) -> some View {
                         Button {
-                            model.automaticModelsEnabled = false
-                            model.selectedProviderID = option.id
+                            model.selectManualProvider(option.id)
                             dismiss()
                         } label: {
                             HStack(spacing: 12) {

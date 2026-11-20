@@ -26,7 +26,7 @@ final class LocalCompletionSessionTests: XCTestCase {
         defaults.set(descriptor.id,forKey:"selectedProviderID")
         let modelStore=try LocalModelStore(root:modelRoot)
         _ = try await modelStore.verifiedURL(for:descriptor)
-        let model=AppModel(store:try SQLiteConversationStore(url:root.appendingPathComponent("history.sqlite")),attachmentService:try AttachmentService(directory:root.appendingPathComponent("attachments")),modelStore:modelStore,defaults:defaults)
+        let model=AppModel(offlineAutoSelection: false, store:try SQLiteConversationStore(url:root.appendingPathComponent("history.sqlite")),attachmentService:try AttachmentService(directory:root.appendingPathComponent("attachments")),modelStore:modelStore,defaults:defaults)
         await model.bootstrap()
         _ = try XCTUnwrap(model.selectedLocalAgentProvider)
         let session=try LocalAgentSession(model:model,directory:root.appendingPathComponent("tasks"),decisionStream:{ request,_ in try await script.stream(request) })

@@ -10,6 +10,18 @@ final class AutomaticModelUITests: XCTestCase {
         XCTAssertTrue(app.textViews["composer.input"].waitForExistence(timeout: 10))
     }
 
+    func testFreshChatShowsAutoWithoutEnablingDownloads() {
+        XCTAssertTrue(app.buttons["model.choose"].label.contains("Auto"))
+        app.buttons["model.choose"].tap()
+        let auto = app.switches["model.auto.installed"]
+        XCTAssertTrue(auto.waitForExistence(timeout: 5))
+        XCTAssertEqual(auto.value as? String, "1")
+        let downloads = app.switches["model.automatic"]
+        reveal(downloads, in: app.descendants(matching: .any).matching(identifier: "model.list").firstMatch)
+        XCTAssertEqual(downloads.value as? String, "0")
+        XCTAssertFalse(app.buttons["model.download.cancel"].exists)
+    }
+
     func testAutomaticModeAndSeparateCellularChoiceSurviveRelaunch() {
         app.buttons["model.choose"].tap()
         let automatic = app.switches["model.automatic"]

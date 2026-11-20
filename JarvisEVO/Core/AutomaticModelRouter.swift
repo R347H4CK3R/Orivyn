@@ -23,6 +23,24 @@ struct AutomaticModelDecision: Sendable, Equatable {
 /// Local, deterministic preparation advice. This does not install, load, select,
 /// submit, or grant permission. The coordinator must recheck ownership after awaits.
 enum AutomaticModelRouter {
+    enum InstalledRoute: Equatable { case local(AutomaticModelDecision), apple, unavailable }
+
+    /// Advice only. Force an offline environment so this path can never authorize a download.
+    static func installedRoute(text: String, installed: [LocalModelDescriptor], environment: AutomaticRouteEnvironment, appleAvailable: Bool) -> InstalledRoute {
+        guard text.utf8.count <= textByteLimit else { return .unavailable }
+        let offline = AutomaticRouteEnvironment(physicalMemory: environment.physicalMemory,
+            freeStorageBytes: nil, network: .offline, allowsCellular: false)
+        if let match = try? route(text: text, installed: installed, environment: offline), !match.needsDownload {
+            return .local(match)
+        }
+        if appleAvailable { return .apple }
+        if let general = try? route(text: "", installed: installed, environment: offline), !general.needsDownload {
+            return .local(AutomaticModelDecision(model: general.model, needsDownload: false,
+                reason: "No installed specialist is ready; using a verified installed general model.", purpose: "General fallback"))
+        }
+        return .unavailable
+    }
+
     static let textByteLimit = 32_768
     static let maximumDownloadBytes: Int64 = 1_200_000_000
     private static let minimumCodingBytes: Int64 = 1_117_320_768

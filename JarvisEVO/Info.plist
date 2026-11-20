@@ -7,11 +7,11 @@
 	<key>OrivynFeedbackRepositoryURL</key>
 	<string>https://github.com/R347H4CK3R/Orivyn</string>
 	<key>CFBundleShortVersionString</key>
-	<string>0.1.7</string>
+	<string>0.1.8</string>
 	<key>CFBundleVersion</key>
-	<string>23</string>
+	<string>24</string>
 	<key>OrivynReleaseNotes</key>
-	<string>Unsigned SideStore preview, version 0.1.7 build 23: adds a read-only local archive format report showing fixed metadata-presence categories and file counts, not raw names or conversation contents. Presence is not schema validation or automatic attachment mapping. The manual reviewed file/message association flow now accepts potentially supported DAT files up to 10 MiB; only the selected verified bytes are classified and then validated by the existing image, PDF or UTF-8 text importer. Unknown and malformed content is rejected without changing original files or history. Receipts retain the original archive path and hash, with existing edit and replay protections. No filename inference or automatic media restoration is added. Connected-tool proposals for a single explicitly quoted exact phrase use a model-selected field reference and deterministic literal copying, followed by original schema validation and mandatory user review. This narrow mode does not supply mixed or nonliteral argument values; it does not authorize or execute calls. Mixed imports preserving existing conversations remain ineligible. Original ZIPs and unresolved records stay preserved. Physical-device and full private-archive acceptance remain unverified. Preserve app data and signing identity when updating.</string>
+	<string>Unsigned SideStore preview, version 0.1.8 build 24. Adds a redesigned chat screen, default on-device Auto model choice and optional manual selection. Free Online is separate and opt-in: a verified free model may receive only the new message typed there; model availability and free limits can change. Offline Auto does not send prompts online or install a model without separate permission. Open Web for native Safari website visits or search, intentional bookmarks saved on this iPhone, and an optional locally processed passage you paste yourself. Orivyn does not read Safari history or page content. Models may download separately. Not physical-device verified. Preserve app data and signing identity when updating.</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>

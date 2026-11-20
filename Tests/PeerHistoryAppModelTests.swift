@@ -84,7 +84,7 @@ final class PeerHistoryAppModelTests: XCTestCase {
 
     private func fixture() async throws -> (AppModel, SQLiteConversationStore) {
         let store = try SQLiteConversationStore(url: root.appendingPathComponent("history.sqlite"))
-        let model = AppModel(store: store,
+        let model = AppModel(offlineAutoSelection: false, store: store,
             attachmentService: try AttachmentService(directory: root.appendingPathComponent("Attachments")),
             modelStore: try LocalModelStore(root: root.appendingPathComponent("Models")), defaults: defaults)
         await model.bootstrap()

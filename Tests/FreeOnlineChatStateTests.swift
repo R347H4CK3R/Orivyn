@@ -5,6 +5,79 @@ import XCTest
 final class FreeOnlineChatStateTests: XCTestCase {
     private let choice = OpenRouterFreeModel(id: "example/chat:free", name: "Example")
 
+    func testAutoIsDefaultButNeedsExplicitConsentAndReportsActualModel() async {
+        var calls = 0
+        var textSeen = ""
+        let state = FreeOnlineChatState(fetchCatalog: { [self.choice] }, complete: { _, _, _ in
+            XCTFail("Auto must not use manual transport"); return ""
+        }, completeAutomatically: { text, _ in
+            calls += 1; textSeen = text
+            return FreeOnlineCompletion(model: self.choice, text: "Auto answer")
+        })
+        XCTAssertTrue(state.usesAutomaticSelection)
+        XCTAssertFalse(state.hasConsented)
+        state.apiKey = "synthetic-test-only"
+        state.draft = "New coding question"
+        await state.refreshCatalog()
+        await state.send()
+        XCTAssertEqual(calls, 0)
+        state.useFreeOnlineAuto()
+        await state.send()
+        XCTAssertEqual(calls, 1)
+        XCTAssertEqual(textSeen, "New coding question")
+        XCTAssertEqual(state.lastResponseModelName, choice.name)
+        XCTAssertEqual(state.response, "Auto answer")
+        state.returnToOffline()
+        XCTAssertFalse(state.hasConsented)
+        XCTAssertEqual(state.apiKey, "")
+    }
+
+    func testAutoCancellationAndRateLimitKeepNewDraftWithoutFallback() async {
+        var continuation: CheckedContinuation<FreeOnlineCompletion, Error>?
+        var calls = 0
+        let state = FreeOnlineChatState(fetchCatalog: { [self.choice] }, complete: { _, _, _ in
+            XCTFail("No manual fallback"); return ""
+        }, completeAutomatically: { _, _ in
+            calls += 1
+            if calls == 2 { throw OpenRouterFreeError.rateLimited }
+            return try await withCheckedThrowingContinuation { continuation = $0 }
+        })
+        state.useFreeOnlineAuto()
+        state.apiKey = "synthetic-test-only"
+        state.draft = "New text"
+        let first = Task { await state.send() }
+        for _ in 0..<100 { if continuation != nil { break }; await Task.yield() }
+        XCTAssertNotNil(continuation)
+        await state.send()
+        XCTAssertEqual(calls, 1)
+        state.cancel()
+        continuation?.resume(returning: .init(model: choice, text: "Late"))
+        await first.value
+        XCTAssertNil(state.response)
+        XCTAssertNil(state.lastResponseModelName)
+        XCTAssertEqual(state.draft, "New text")
+        await state.send()
+        XCTAssertEqual(calls, 2)
+        XCTAssertEqual(state.draft, "New text")
+        XCTAssertTrue(state.errorMessage?.contains("offline") ?? false)
+    }
+
+    func testManualPreferenceIsNotResetToAutoByRefreshOrClosing() async {
+        let state = FreeOnlineChatState(fetchCatalog: { [self.choice] }, complete: { _, _, _ in "Manual" })
+        await state.refreshCatalog()
+        state.useFreeOnline(modelID: choice.id)
+        XCTAssertFalse(state.usesAutomaticSelection)
+        state.returnToOffline()
+        XCTAssertFalse(state.hasConsented)
+        XCTAssertFalse(state.usesAutomaticSelection)
+        XCTAssertEqual(state.selectedModelID, choice.id)
+        await state.refreshCatalog()
+        XCTAssertFalse(state.usesAutomaticSelection)
+        XCTAssertFalse(state.hasConsented)
+        state.useFreeOnlineAuto()
+        XCTAssertTrue(state.usesAutomaticSelection)
+    }
+
     func testDefaultAndMissingConsentOrKeyNeverCallTransport() async {
         var calls = 0
         let state = FreeOnlineChatState(fetchCatalog: { [self.choice] }, complete: { _, _, _ in calls += 1; return "answer" })

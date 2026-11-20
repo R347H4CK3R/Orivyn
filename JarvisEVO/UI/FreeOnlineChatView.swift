@@ -9,13 +9,13 @@ struct FreeOnlineChatView: View {
     @State private var purpose = "All"
     @State private var proposedModel: OpenRouterFreeModel?
     @State private var didRefresh = false
+    @State private var proposedAuto = false
 
     private var matches: [OpenRouterFreeModel] {
         let text = query.trimmingCharacters(in: .whitespacesAndNewlines)
         return state.models.filter { model in
             (purpose == "All" || model.suggestedUses.contains { $0.rawValue == purpose }) &&
-            (text.isEmpty || model.name.localizedCaseInsensitiveContains(text) ||
-             model.suggestedUses.contains { $0.rawValue.localizedCaseInsensitiveContains(text) })
+            model.matchesSearch(text)
         }
     }
     private var canSend: Bool {
@@ -37,7 +37,23 @@ struct FreeOnlineChatView: View {
                     Text("One message at a time. This temporary reply is not added to your saved chats. Each send starts fresh, without earlier questions or replies.")
                         .font(.subheadline).foregroundStyle(.secondary)
                 }
-                Section("Find a free online AI") {
+                Section("Choose how to chat") {
+                    Button { proposedAuto = true } label: {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Label("Auto · Recommended", systemImage: "sparkles").font(.headline)
+                            Text("Chooses a currently free AI for the new text you type. The choice is made on your iPhone, not by another online service.")
+                                .font(.subheadline).foregroundStyle(.primary)
+                            Text(state.usesAutomaticSelection ? "Your default choice" : "Switch back to Auto")
+                                .font(.subheadline.weight(.semibold))
+                        }.frame(maxWidth: .infinity, minHeight: 44, alignment: .leading).padding(.vertical, 8)
+                    }
+                    .tint(.teal)
+                    .disabled(state.isSending || state.isLoadingCatalog)
+                    .accessibilityIdentifier("freeOnline.auto")
+                    Text("Auto is a simple task-fit suggestion, not a guarantee of the best answer. Manual choice is optional below.")
+                        .font(.subheadline).foregroundStyle(.secondary)
+                }
+                Section("Manual choice · Optional") {
                     Button {
                         didRefresh = true
                         proposedModel = nil
@@ -86,6 +102,8 @@ struct FreeOnlineChatView: View {
                             .frame(minHeight: 44)
                     }
                     Section("New online message") {
+                        Text(state.usesAutomaticSelection ? "Auto chooses a verified free model when you send." : "Manual choice: " + (state.models.first(where: { $0.id == state.selectedModelID })?.name ?? "Refresh choices"))
+                            .font(.subheadline.weight(.semibold))
                         Text("Only what you type below will be sent. Your offline draft stays separate.")
                             .font(.subheadline)
                         TextEditor(text: $state.draft)
@@ -111,6 +129,10 @@ struct FreeOnlineChatView: View {
                 }
                 if let response = state.response {
                     Section("Online reply") {
+                        if let name = state.lastResponseModelName {
+                            Text("Answered by " + name).font(.subheadline.weight(.semibold))
+                                .accessibilityIdentifier("freeOnline.actualModel")
+                        }
                         Text(response).textSelection(.enabled).accessibilityIdentifier("freeOnline.response")
                         Text("Copy anything you want to keep before leaving. AI answers can be wrong.")
                             .font(.subheadline).foregroundStyle(.secondary)
@@ -124,6 +146,12 @@ struct FreeOnlineChatView: View {
                         .accessibilityIdentifier("freeOnline.close")
                 }
             }
+            .confirmationDialog("Use Auto online?", isPresented: $proposedAuto, titleVisibility: .visible) {
+                Button("Use Free Online") { state.useFreeOnlineAuto(); proposedAuto = false }
+                Button("Cancel", role: .cancel) { proposedAuto = false }
+            } message: {
+                Text("Auto chooses one currently verified free model for each new message.\n\n" + FreeOnlineChatState.disclosure)
+            }
             .confirmationDialog("Use this AI online?", isPresented: Binding(get: { proposedModel != nil }, set: { if !$0 { proposedModel = nil } }), titleVisibility: .visible, presenting: proposedModel) { choice in
                 Button("Use Free Online") {
                     state.useFreeOnline(modelID: choice.id)
@@ -136,7 +164,7 @@ struct FreeOnlineChatView: View {
         }
         .onDisappear { state.returnToOffline() }
         .onChange(of: scenePhase) { _, phase in
-            if phase == .background { proposedModel = nil; didRefresh = false; state.returnToOffline() }
+            if phase == .background { proposedAuto = false; proposedModel = nil; didRefresh = false; state.returnToOffline() }
         }
     }
 }

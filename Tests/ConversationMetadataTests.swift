@@ -20,7 +20,7 @@ final class ConversationMetadataTests: XCTestCase {
     }
     private func fixture() throws -> (AppModel, SQLiteConversationStore, MetadataTokenSource) {
         let store = try SQLiteConversationStore(url: root.appendingPathComponent("history.sqlite"))
-        let model = AppModel(store: store,
+        let model = AppModel(offlineAutoSelection: false, store: store,
             attachmentService: try AttachmentService(directory: root.appendingPathComponent("Attachments")),
             modelStore: try LocalModelStore(root: root.appendingPathComponent("Models")), defaults: defaults)
         let source = MetadataTokenSource()
