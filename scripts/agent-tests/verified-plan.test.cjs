@@ -74,3 +74,22 @@ test('legacy plans gain report references without mutation or authenticity claim
  assert.match(report.limitations.join(' '),/not external citations/);
 });
 test('full-library memory read retains counts beyond500',()=>{const s=A().next(A().create(JSON.stringify({appInfo:false,installedModels:false,searchQuery:null,memoryQuery:'late'}),id));const value={memories:[],searchedMemories:10000,searchLimited:false,totalMatchesInWindow:0,resultsLimited:false};const done=record(s,value);assert.equal(obj(done).status,'complete');assert.equal(A().recover(done),done);});
+test('app info retains prerequisite details and budget omissions in saved reports',()=>{
+ const pending=A().next(create({appInfo:true,installedModels:false,searchQuery:null}));
+ for(const value of [
+  {...fixtures.get_app_info,capabilities:[{id:'plugin',status:'conditional',detail:'Requires exact-call review; never automatic execution.'}]},
+  {...fixtures.get_app_info,capabilities:[{id:'plugin',status:'conditional',detail:'Requires exact-call review; never automatic execution.'}],resultTruncated:true,omittedItems:2},
+  fixtures.get_app_info
+ ]) {
+  const done=record(pending,value);assert.equal(obj(done).status,'complete');
+  assert.deepEqual(obj(A().report(done)).evidence[0].result,value);
+  assert.equal(A().recover(done),done);
+ }
+});
+test('app info rejects malformed details and inconsistent omission metadata',()=>{
+ const pending=A().next(create({appInfo:true,installedModels:false,searchQuery:null}));
+ const value={...fixtures.get_app_info,capabilities:[{id:'plugin',status:'conditional',detail:'Needs review'}]};
+ for(const detail of ['',null,1,'x'.repeat(1025),'bad\u0000detail'])assert.throws(()=>record(pending,{...value,capabilities:[{...value.capabilities[0],detail}]}));
+ for(const fields of [{resultTruncated:true},{omittedItems:1},{resultTruncated:false,omittedItems:1},{resultTruncated:true,omittedItems:0},{resultTruncated:true,omittedItems:24},{resultTruncated:true,omittedItems:1.5},{approved:true}])assert.throws(()=>record(pending,{...value,...fields}));
+ assert.throws(()=>record(pending,{...value,capabilities:[{...value.capabilities[0],approved:true}]}));
+});

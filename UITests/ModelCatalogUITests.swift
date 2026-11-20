@@ -29,8 +29,21 @@ final class ModelCatalogUITests: XCTestCase {
         let list = app.collectionViews.firstMatch
         let options = app.descendants(matching: .any).matching(identifier: "model.variants.qwen2.5-0.5b-instruct-q4_k_m").firstMatch
         reveal(options, in: list)
+        // The native failure recording shows Q5 rendered after expansion; the nested
+        // name Text identifier was not reachable. Assert the actual Q5 action instead.
+        let variant = app.buttons["model.download.qwen2.5-0.5b-instruct-q5_k_m"]
+        let precision = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Q5_K_M")).firstMatch
+        XCTAssertFalse(variant.exists, "Collapsed variants must not expose a download action")
         options.tap()
-        let variant = app.staticTexts["model.catalog.name.qwen2.5-0.5b-instruct-q5_k_m"]
+        reveal(variant, in: list)
+        XCTAssertTrue(variant.isHittable)
+        reveal(precision, in: list, towardEnd: false)
+        XCTAssertTrue(precision.isHittable)
+        // Collapse/reopen verifies disclosure state, not just a coincidental visible name.
+        reveal(options, in: list, towardEnd: false)
+        options.tap()
+        XCTAssertTrue(variant.waitForNonExistence(timeout: 5))
+        options.tap()
         reveal(variant, in: list)
         XCTAssertTrue(variant.isHittable)
         XCTAssertTrue(app.buttons["model.done"].isHittable)

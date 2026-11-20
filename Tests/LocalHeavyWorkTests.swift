@@ -73,6 +73,26 @@ final class LocalHeavyWorkTests: XCTestCase {
         XCTAssertEqual(try LocalAgentStore(directory: directory).records().total, 0)
         XCTAssertEqual(try LocalAgentStore(directory: directory).archivedRecords().total, 1)
     }
+    func testVerifiedPlanAcceptsActualBundledAppInfoWithDetailsAndBudgetMetadata() throws {
+        let (model, _, _) = try fixture()
+        let result = try LocalReadTools.execute(name: "get_app_info", arguments: .object([:]), model: model)
+        let payload = try MCPJSONValue.parse(Data(result.utf8), maximumBytes: 4096)
+        let capabilities = try XCTUnwrap(payload.objectValue?["capabilities"]?.arrayValue)
+        XCTAssertFalse(capabilities.isEmpty, "Exercise actual bundled facts, not an empty synthetic payload")
+        XCTAssertTrue(capabilities.allSatisfy { $0.objectValue?["detail"]?.stringValue?.isEmpty == false })
+        let core = try VerifiedLocalPlanCore()
+        let state = try core.call("create", [#"{"appInfo":true,"installedModels":false,"searchQuery":null}"#, UUID().uuidString])
+        let pending = try core.call("next", [state])
+        let operation = try XCTUnwrap(try core.snapshot(pending).pending?.operationID)
+        let envelope = try MCPJSONValue.object(["operationID": .string(operation), "resultJSON": .string(result)]).encoded(maximumBytes: 32_768)
+        let done = try core.call("record", [pending, String(decoding: envelope, as: UTF8.self)])
+        XCTAssertEqual(try core.snapshot(done).status, "complete")
+        XCTAssertEqual(try core.call("recover", [done]), done)
+        let report = try MCPJSONValue.parse(Data(core.call("report", [done]).utf8), maximumBytes: 65_536)
+        let evidence = try XCTUnwrap(report.objectValue?["evidence"]?.arrayValue?.first?.objectValue?["result"])
+        XCTAssertEqual(evidence, payload, "Prerequisites and source omission facts must survive exactly")
+    }
+
     func testVerifiedReadsUseActualLocalStateWithoutLoadingAnInferenceModel() async throws {
         let (model, release, _) = try fixture()
         model.draft = "Preserve this draft"
@@ -80,7 +100,7 @@ final class LocalHeavyWorkTests: XCTestCase {
         session.create(appInfo: true, installedModels: true, searchQuery: nil)
         session.run()
         try await waitFor { await MainActor.run { !session.isRunning } }
-        XCTAssertEqual(session.snapshot?.status, "complete")
+        XCTAssertEqual(session.snapshot?.status, "complete", session.error ?? session.report)
         XCTAssertEqual(session.snapshot?.completed, 2)
         XCTAssertEqual(session.records.first(where: { $0.id == session.snapshot?.id })?.completed, 2)
         XCTAssertTrue(session.report.contains("Orivyn"))

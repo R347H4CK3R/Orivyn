@@ -211,7 +211,7 @@ struct OpenRouterFreeModel: Identifiable, Equatable, Sendable {
         case "recursive/flint-v1.0:free":
             return Profile(uses: [.coding, .everyday], note: "Flint: try code suggestions or explaining an error message. Built for coding-agent use, but here it only replies with text and cannot test or run code.")
         default:
-            return Profile(uses: [.everyday, .writing], note: "Try a general question or writing draft. This model's individual strengths have not been reviewed.")
+            return Profile(uses: [.everyday, .writing], note: "Try a general question or writing draft. Individual strengths: not reviewed.")
         }
     }
     var suggestedUses: [SuggestedUse] { profile.uses }

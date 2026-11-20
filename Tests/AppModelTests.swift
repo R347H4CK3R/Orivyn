@@ -291,15 +291,16 @@ final class AppModelTests: XCTestCase {
         model.draft = "Test preferences"; model.send()
         try await waitFor { await source.hasSubscriber }
         let request = await source.lastRequest
-        XCTAssertTrue(request?.systemPrompt.contains("You are Jarvis in Orivyn") == true)
+        XCTAssertTrue(request?.systemPrompt.hasPrefix(ChatResponsePolicy.instructions) == true)
+        XCTAssertTrue(request?.systemPrompt.contains("Jarvis, Orivyn's general-purpose assistant") == true)
         XCTAssertTrue(request?.systemPrompt.contains("Bundled capability knowledge schema 1") == true)
         XCTAssertTrue(request?.systemPrompt.contains("self-repair [notAvailable]") == true)
         XCTAssertTrue(request?.systemPrompt.contains("https://github.com/R347H4CK3R/Orivyn") == true)
         XCTAssertTrue(request?.systemPrompt.contains("Use concise explanations.") == true)
         XCTAssertTrue(request?.systemPrompt.contains("Style: Efficient") == true)
         XCTAssertTrue(request?.systemPrompt.contains("Do not invent tools") == true)
-        XCTAssertTrue(request?.systemPrompt.contains("do the useful part first") == true)
-        XCTAssertTrue(request?.systemPrompt.contains("without a recorded result") == true)
+        XCTAssertTrue(request?.systemPrompt.contains("write Python/code and useful text directly") == true)
+        XCTAssertTrue(request?.systemPrompt.contains("claim actions without recorded results") == true)
         model.stop(); try await waitFor { !model.isGenerating }
     }
 
