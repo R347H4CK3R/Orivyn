@@ -14,6 +14,11 @@ class WebContract(unittest.TestCase):
    self.assertIn(required,s)
   for forbidden in ['URLSession', 'AppModel', 'model.draft', 'activeConversation', '.onSubmit', '.task {', '.onChange(of: searchTerms']:
    self.assertNotIn(forbidden,s)
+ def test_web_keyboard_dismiss_is_explicit_and_does_not_navigate(self):
+  s=(ROOT/'JarvisEVO/UI/BrowserToolView.swift').read_text()
+  self.assertIn('.scrollDismissesKeyboard(.interactively)',s)
+  self.assertIn('Button("Done typing") { addressFocused = false }',s)
+  self.assertIn('accessibilityIdentifier("browser.finishEditing")',s)
  def test_root_visible_web_only_opens_review(self):
   s=(ROOT/'JarvisEVO/UI/RootView.swift').read_text()
   action='Button { prepareNavigation(); reviewingTool = .browser } label: {'

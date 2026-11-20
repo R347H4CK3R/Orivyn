@@ -12,7 +12,7 @@ class WebExtras(unittest.TestCase):
   self.assertIn('prefersReader: opened.prefersReader',view)
  def test_copy_only_explicit_local_write_with_preview(self):
   view=(ROOT/'JarvisEVO/UI/BrowserToolView.swift').read_text()
-  self.assertIn('Button("Copy Clean Link"',view)
+  self.assertIn('Label("Copy Clean Link"',view)
   self.assertIn('Text(cleanLink)',view)
   self.assertEqual(view.count('UIPasteboard.general'),1)
   self.assertIn('.localOnly: true',view)

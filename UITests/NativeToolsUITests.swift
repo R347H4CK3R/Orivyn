@@ -76,11 +76,21 @@ final class NativeToolsUITests: XCTestCase {
         XCTAssertEqual(address.value as? String, saved)
         reveal(remove, in: list)
         XCTAssertTrue(remove.isHittable, "Fill must preserve the bookmark and its independent Remove action")
-        reveal(address, in: list, towardEnd: false)
-        address.tap(); address.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: saved.count))
-        address.typeText("Keep this search")
-        reveal(remove, in: list); remove.tap()
+        // Reopening starts with a real empty field while retaining saved bookmarks.
+        // Do not guess the insertion point in a partially visible long URL.
+        app.buttons["tool.review.done"].tap()
+        XCTAssertEqual(app.textViews["composer.input"].value as? String, "Keep this conversation draft")
+        app.buttons["chat.web"].tap()
+        XCTAssertTrue(address.waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["browser.open"].isEnabled)
+        address.tap(); address.typeText("Keep this search")
+        XCTAssertEqual(address.value as? String, "Keep this search", "Establish the exact address before Remove")
+        finishWebEditing()
+        revealWebControl(remove, in: list)
+        XCTAssertTrue(fill.isHittable)
+        remove.tap()
         XCTAssertFalse(fill.exists)
+        XCTAssertTrue(app.staticTexts["No bookmarks yet."].waitForExistence(timeout: 5))
         reveal(address, in: list, towardEnd: false)
         XCTAssertEqual(address.value as? String, "Keep this search", "Remove must not fill the address or navigate")
         XCTAssertTrue(app.buttons["tool.review.done"].exists)
@@ -94,23 +104,50 @@ final class NativeToolsUITests: XCTestCase {
         XCTAssertTrue(address.waitForExistence(timeout: 5))
         let original = "https://example.com/article?utm_source=synthetic#section"
         address.tap(); address.typeText(original)
+        XCTAssertEqual(address.value as? String, original)
+        finishWebEditing()
         let list = app.collectionViews.firstMatch
         let reader = app.buttons["browser.reader"]
-        reveal(reader, in: list)
+        revealWebControl(reader, in: list)
         XCTAssertGreaterThanOrEqual(reader.frame.height, 44)
         let preview = app.staticTexts["browser.cleanLink.preview"]
-        reveal(preview, in: list)
+        revealWebControl(preview, in: list)
         XCTAssertEqual(preview.label, "https://example.com/article#section")
         XCTAssertFalse(app.staticTexts["browser.cleanLink.copied"].exists)
         let copy = app.buttons["browser.cleanLink.copy"]
-        reveal(copy, in: list); copy.tap()
-        XCTAssertTrue(app.staticTexts["browser.cleanLink.copied"].waitForExistence(timeout: 5))
+        revealWebControl(copy, in: list)
+        XCTAssertGreaterThanOrEqual(copy.frame.height, 44)
+        copy.tap()
+        revealWebControl(app.staticTexts["browser.cleanLink.copied"], in: list)
         // This synthetic test intentionally writes only the clean example URL, never reads the clipboard.
         reveal(address, in: list, towardEnd: false)
         XCTAssertEqual(address.value as? String, original)
         XCTAssertTrue(app.buttons["tool.review.done"].exists)
         app.buttons["tool.review.done"].tap()
         XCTAssertEqual(app.textViews["composer.input"].value as? String, "Keep this conversation draft")
+    }
+
+    private func finishWebEditing() {
+        let done = app.buttons["browser.finishEditing"]
+        XCTAssertTrue(done.waitForExistence(timeout: 5))
+        done.tap()
+        let keyboardHidden = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: app.keyboards.firstMatch)
+        XCTAssertEqual(XCTWaiter.wait(for: [keyboardHidden], timeout: 5), .completed)
+        XCTAssertTrue(app.navigationBars["Web"].exists, "Dismiss only the keyboard, not Web")
+    }
+
+    private func revealWebControl(_ target: XCUIElement, in list: XCUIElement) {
+        XCTAssertTrue(list.waitForExistence(timeout: 5))
+        for _ in 0..<12 {
+            if target.exists && target.isHittable { return }
+            // A full swipe can jump over a lazily realized Form row entirely.
+            let reverse = target.exists && !target.frame.isEmpty && target.frame.maxY <= list.frame.minY + 12
+            let lower = list.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.72))
+            let upper = list.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.48))
+            if reverse { upper.press(forDuration: 0.1, thenDragTo: lower) }
+            else { lower.press(forDuration: 0.1, thenDragTo: upper) }
+        }
+        XCTAssertTrue(target.exists && target.isHittable, "Expected Web control to be reachable through bounded scrolling")
     }
 
     func testMailDraftIsEditableWithoutSilentSendAndBackPreservesChat() {

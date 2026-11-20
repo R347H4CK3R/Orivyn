@@ -26,6 +26,11 @@ struct BrowserToolView: View {
                 TextField("Search or enter https://…", text: $address).keyboardType(.webSearch)
                     .textInputAutocapitalization(.never).autocorrectionDisabled().focused($addressFocused)
                     .accessibilityLabel("Search words or HTTPS website address").accessibilityIdentifier("browser.url")
+                if addressFocused {
+                    Button("Done typing") { addressFocused = false }
+                        .buttonStyle(.borderless)
+                        .accessibilityIdentifier("browser.finishEditing")
+                }
                 Text("Search words go to DuckDuckGo only when you tap Search DuckDuckGo. Your chats and drafts are never included. Do not search for passwords or private tokens.")
                     .font(.footnote).foregroundStyle(.secondary)
                 if let draft = try? WebNavigationDraft.validated(address) {
@@ -37,9 +42,7 @@ struct BrowserToolView: View {
             }
             if let cleanLink = try? WebCleanLink.validated(address) {
                 Section("Web tools") {
-                    Text("Reader asks Safari for a simpler reading view when the website supports it. Otherwise Safari opens the normal page.")
-                        .font(.footnote).foregroundStyle(.secondary)
-                    Button("Open in Reader", systemImage: "doc.text") {
+                    Button {
                         guard destination == nil, scenePhase == .active else { return }
                         do {
                             let checked = try BrowserPresentation.validated(address, reader: true)
@@ -47,20 +50,28 @@ struct BrowserToolView: View {
                             error = nil
                             destination = checked
                         } catch { self.error = error.localizedDescription }
-                    }.buttonStyle(.borderless).frame(minHeight: 44)
+                    } label: {
+                        Label("Open in Reader", systemImage: "doc.text")
+                            .frame(minHeight: 44).contentShape(Rectangle())
+                    }.buttonStyle(.borderless)
                         .disabled(destination != nil || scenePhase != .active)
                         .accessibilityIdentifier("browser.reader")
+                    Text("Reader asks Safari for a simpler reading view when the website supports it. Otherwise Safari opens the normal page.")
+                        .font(.footnote).foregroundStyle(.secondary)
                     Text("Clean link removes known tracking tags only. Functional parameters and page sections stay intact. This URL may still contain private information, including tokens. Review exactly what will be copied:")
                         .font(.footnote).foregroundStyle(.secondary)
                     Text(cleanLink).font(.caption).textSelection(.enabled)
                         .accessibilityIdentifier("browser.cleanLink.preview")
-                    Button("Copy Clean Link", systemImage: "doc.on.doc") {
+                    Button {
                         guard destination == nil, scenePhase == .active else { return }
                         // Explicit local-only write. No clipboard read or automatic copy.
                         UIPasteboard.general.setItems([["public.utf8-plain-text": cleanLink]],
                             options: [.localOnly: true, .expirationDate: Date().addingTimeInterval(300)])
                         copiedCleanLink = cleanLink
-                    }.buttonStyle(.borderless).frame(minHeight: 44)
+                    } label: {
+                        Label("Copy Clean Link", systemImage: "doc.on.doc")
+                            .frame(minHeight: 44).contentShape(Rectangle())
+                    }.buttonStyle(.borderless)
                         .disabled(destination != nil || scenePhase != .active)
                         .accessibilityIdentifier("browser.cleanLink.copy")
                     if copiedCleanLink == cleanLink {
@@ -129,6 +140,7 @@ struct BrowserToolView: View {
                 Text("Done returns to this unchanged address and your conversation draft. This is a browser view, not an autonomous browsing agent or an account connection.")
             }.font(.footnote).foregroundStyle(.secondary)
         }
+        .scrollDismissesKeyboard(.interactively)
         .navigationTitle("Web").navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
