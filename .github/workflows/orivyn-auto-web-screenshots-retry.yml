@@ -1,0 +1,180 @@
+name: Capture genuine Orivyn simulator screenshots
+on:
+  push:
+    branches: [verification/orivyn-auto-web-screenshots-retry]
+    paths: ['.github/workflows/orivyn-auto-web-screenshots-retry.yml']
+permissions:
+  contents: read
+concurrency:
+  group: orivyn-auto-web-screenshots-retry-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  screenshots:
+    if: >-
+      github.event.repository.private == false &&
+      github.repository == 'R347H4CK3R/Orivyn' &&
+      github.ref == 'refs/heads/verification/orivyn-auto-web-screenshots-retry' &&
+      github.event_name == 'push' &&
+      github.run_attempt == '1'
+    runs-on: macos-15
+    timeout-minutes: 80
+    env:
+      ORIVYN_CANDIDATE_SHA: 5c3e91a706cd6d63c1d3065e343f33a00e6590b8
+      ORIVYN_CANDIDATE_TREE_SHA: 14b86b225c41c9998e791da9f2e704cdfba228fd
+      ORIVYN_EXPECTED_MARKETING_VERSION: '0.1.8'
+      ORIVYN_EXPECTED_BUILD: '24'
+      DEVELOPER_DIR: /Applications/Xcode_26.1.app/Contents/Developer
+      ORIVYN_NATIVE_FEATURES: 'ORIVYN_NATIVE_VISION ORIVYN_NATIVE_TOOLS ORIVYN_NATIVE_TRANSCRIPT'
+      ORIVYN_SCREENSHOT_CAPTURE_SHA256: b6ea75c0436f914bacfff55decf7f76e31ef2440f8c1afc06487879ffb8defe3
+      ORIVYN_SCREENSHOT_CAPTURE_BASE64: IyEvYmluL2Jhc2gKIyBSdW4gb25seSBhZnRlciBleGFjdCBjYW5kaWRhdGUgcnVudGltZS9wcm9qZWN0IHByZXBhcmF0aW9uIG9uIGEgZGlzcG9zYWJsZSBzaW11bGF0b3IuCnNldCAtZXVvIHBpcGVmYWlsCjogIiR7U0lNOj9Cb290ZWQgZGlzcG9zYWJsZSBpUGhvbmUgMTYgUGx1cyBzaW11bGF0b3IgVVVJRCByZXF1aXJlZH0iCjogIiR7UlVOTkVSX1RFTVA6P30iCjogIiR7T1JJVllOX1NDUkVFTlNIT1RfQkFTRTo/RXhhY3Qgc291cmNlIGNvbW1pdCB3aG9zZSBwcm9kdWN0IGNvbnRlbnQgaXMgcHJlc2VydmVkfSIKZ2l0IGRpZmYgLS1leGl0LWNvZGUgIiRPUklWWU5fU0NSRUVOU0hPVF9CQVNFIiAtLSBKYXJ2aXNFVk8gUGFja2FnZXMgRGlhZ25vc3RpY3MgcHJvamVjdC55bWwgc2NyaXB0cwpBPSIkUFdEL2FydGlmYWN0cy9jYXRhbG9nLXNjcmVlbnNob3RzIgpta2RpciAtcCAiJEEiCnhjcnVuIHNpbWN0bCBsaXN0IGRldmljZXMgYXZhaWxhYmxlIC0tanNvbiA+ICIkQS9kZXZpY2VzLmpzb24iCnB5dGhvbjMgLSAiJFNJTSIgIiRBL2RldmljZXMuanNvbiIgPDwnUFlERVZJQ0UnCmltcG9ydCBqc29uLHN5cwpyb3dzPVtkIGZvciBncm91cCBpbiBqc29uLmxvYWQob3BlbihzeXMuYXJndlsyXSkpWydkZXZpY2VzJ10udmFsdWVzKCkgZm9yIGQgaW4gZ3JvdXBdCmQ9bmV4dCh4IGZvciB4IGluIHJvd3MgaWYgeFsndWRpZCddPT1zeXMuYXJndlsxXSkKYXNzZXJ0IGRbJ25hbWUnXT09J2lQaG9uZSAxNiBQbHVzJyBhbmQgZFsnc3RhdGUnXT09J0Jvb3RlZCcsZApQWURFVklDRQpCPSIkUlVOTkVSX1RFTVAvb3JpdnluLWNhdGFsb2ctc2NyZWVuc2hvdHMueGNyZXN1bHQiCnRlc3QgISAtZSAiJEIiCnN0YXR1cz0wCnhjb2RlYnVpbGQgdGVzdCAtcHJvamVjdCBKYXJ2aXNFVk8ueGNvZGVwcm9qIC1zY2hlbWUgSmFydmlzRVZPIFwKIC1kZXJpdmVkRGF0YVBhdGggIiRSVU5ORVJfVEVNUC9vcml2eW4tYXJjaGl2ZS1yZXN0b3JlLWRlcml2ZWQiIFwKIC1kZXN0aW5hdGlvbiAicGxhdGZvcm09aU9TIFNpbXVsYXRvcixpZD0kU0lNIiAtZGVzdGluYXRpb24tdGltZW91dCAxMjAgXAogLXBhcmFsbGVsLXRlc3RpbmctZW5hYmxlZCBOTyAtdGVzdC10aW1lb3V0cy1lbmFibGVkIFlFUyBcCiAtZGVmYXVsdC10ZXN0LWV4ZWN1dGlvbi10aW1lLWFsbG93YW5jZSAxMjAgLW1heGltdW0tdGVzdC1leGVjdXRpb24tdGltZS1hbGxvd2FuY2UgMTgwIFwKIC1vbmx5LXRlc3Rpbmc6SmFydmlzRVZPVUlUZXN0cy9DYXRhbG9nU2NyZWVuc2hvdFVJVGVzdHMgXAogLXJlc3VsdEJ1bmRsZVBhdGggIiRCIiBDT0RFX1NJR05JTkdfQUxMT1dFRD1OTyA+ICIkQS94Y29kZWJ1aWxkLmxvZyIgMj4mMSB8fCBzdGF0dXM9JD8KaWYgdGVzdCAtZCAiJEIiOyB0aGVuCiB4Y3J1biB4Y3Jlc3VsdHRvb2wgZ2V0IHRlc3QtcmVzdWx0cyBzdW1tYXJ5IC0tcGF0aCAiJEIiID4gIiRBL3N1bW1hcnkuanNvbiIKIHhjcnVuIHhjcmVzdWx0dG9vbCBnZXQgdGVzdC1yZXN1bHRzIHRlc3RzIC0tcGF0aCAiJEIiID4gIiRBL3Rlc3RzLmpzb24iCiB4Y3J1biB4Y3Jlc3VsdHRvb2wgZXhwb3J0IGF0dGFjaG1lbnRzIC0tcGF0aCAiJEIiIC0tb3V0cHV0LXBhdGggIiRBL2F0dGFjaG1lbnRzIgpmaQppZiBbWyAiJHN0YXR1cyIgIT0gMCBdXTsgdGhlbgogIHByaW50ZiAnU2NyZWVuc2hvdCBYQ1Rlc3QgZXhpdGVkICVzLiBTZWUgYm91bmRlZCB0ZXN0IGRpYWdub3N0aWNzLlxuJyAiJHN0YXR1cyIgPiYyCiAgZ3JlcCAtRSAnQ2F0YWxvZ1NjcmVlbnNob3RVSVRlc3RzLnN3aWZ0OlswLTldKzogZXJyb3I6fFRlc3QgQ2FzZSAuKiAoZmFpbGVkfHBhc3NlZCl8RXhlY3V0ZWQgWzAtOV0rIHRlc3RzJyAiJEEveGNvZGVidWlsZC5sb2ciIHwgdGFpbCAtMjUgfCBjdXQgLWMxLTUwMCA+JjIgfHwgdHJ1ZQogIGV4aXQgIiRzdGF0dXMiCmZpCnB5dGhvbjMgLSAiJEEiIDw8J1BZRVhQT1JUJwppbXBvcnQganNvbixwYXRobGliLHNodXRpbCxzeXMKcm9vdD1wYXRobGliLlBhdGgoc3lzLmFyZ3ZbMV0pO3N1bW1hcnk9anNvbi5sb2Fkcygocm9vdC8nc3VtbWFyeS5qc29uJykucmVhZF90ZXh0KCkpCmZvciBrLHYgaW4gZGljdCh0b3RhbFRlc3RDb3VudD00LHBhc3NlZFRlc3RzPTQsZmFpbGVkVGVzdHM9MCxza2lwcGVkVGVzdHM9MCkuaXRlbXMoKToKIGFzc2VydCB0eXBlKHN1bW1hcnkuZ2V0KGspKSBpcyBpbnQgYW5kIHN1bW1hcnlba109PXYsc3VtbWFyeQpjYXNlcz1bJ3Rlc3RDYXB0dXJlMDFFbXB0eUNoYXRBdXRvJywndGVzdENhcHR1cmUwMk1vZGVsUGlja2VyJywndGVzdENhcHR1cmUwM0ZyZWVPbmxpbmVQcml2YWN5JywndGVzdENhcHR1cmUwNFdlYkxhbmRpbmcnXQp0ZXN0cz0ocm9vdC8ndGVzdHMuanNvbicpLnJlYWRfdGV4dCgpCmZvciBjYXNlIGluIGNhc2VzOmFzc2VydCBjYXNlIGluIHRlc3RzLGNhc2UKbmFtZXM9WydPcml2eW4tQ2F0YWxvZy0wMS1DaGF0LUF1dG8nLCdPcml2eW4tQ2F0YWxvZy0wMi1DaG9vc2UtQUknLCdPcml2eW4tQ2F0YWxvZy0wMy1GcmVlLU9ubGluZS1Qcml2YWN5JywnT3JpdnluLUNhdGFsb2ctMDQtV2ViJ10KbWFuaWZlc3Q9anNvbi5sb2Fkcygocm9vdC8nYXR0YWNobWVudHMvbWFuaWZlc3QuanNvbicpLnJlYWRfdGV4dCgpKTtmb3VuZD17fQpmb3IgZ3JvdXAgaW4gbWFuaWZlc3Q6CiBmb3IgaXRlbSBpbiBncm91cC5nZXQoJ2F0dGFjaG1lbnRzJyxbXSk6CiAgbGFiZWw9aXRlbS5nZXQoJ3N1Z2dlc3RlZEh1bWFuUmVhZGFibGVOYW1lJywnJykKICBmb3IgbmFtZSBpbiBuYW1lczoKICAgaWYgbGFiZWw9PW5hbWUgb3IgbGFiZWwuc3RhcnRzd2l0aChuYW1lKycuJyk6CiAgICBhc3NlcnQgbmFtZSBub3QgaW4gZm91bmQsKG5hbWUsJ2R1cGxpY2F0ZSBzY3JlZW5zaG90JykKICAgIGFzc2VydCBpdGVtLmdldCgnZGV2aWNlTmFtZScpPT0naVBob25lIDE2IFBsdXMnIGFuZCBub3QgaXRlbS5nZXQoJ2lzQXNzb2NpYXRlZFdpdGhGYWlsdXJlJyxGYWxzZSksaXRlbQogICAgZmlsZW5hbWU9aXRlbVsnZXhwb3J0ZWRGaWxlTmFtZSddO2Fzc2VydCBwYXRobGliLlBhdGgoZmlsZW5hbWUpLm5hbWU9PWZpbGVuYW1lCiAgICBzcmM9cm9vdC8nYXR0YWNobWVudHMnL2ZpbGVuYW1lO2Fzc2VydCBzcmMucmVhZF9ieXRlcygpLnN0YXJ0c3dpdGgoYidceDg5UE5HXHJcblx4MWFcbicpLGZpbGVuYW1lCiAgICBmb3VuZFtuYW1lXT1zcmMKYXNzZXJ0IHNldChmb3VuZCk9PXNldChuYW1lcyksbGlzdChmb3VuZCkKb3V0cHV0PXJvb3QvJ2NhdGFsb2cnO291dHB1dC5ta2RpcigpCmZvciBuYW1lLHNyYyBpbiBmb3VuZC5pdGVtcygpOnNodXRpbC5jb3B5ZmlsZShzcmMsb3V0cHV0LyhuYW1lKycucG5nJykpCihvdXRwdXQvJ1BST1ZFTkFOQ0UuanNvbicpLndyaXRlX3RleHQoanNvbi5kdW1wcyh7J3NvdXJjZSc6J1hDVGVzdCBhcHAuc2NyZWVuc2hvdCwgdW5lZGl0ZWQgZnVsbCBmcmFtZScsJ2RldmljZSc6J2lQaG9uZSAxNiBQbHVzIHNpbXVsYXRvcicsJ3Rlc3RzX3Bhc3NlZCc6NCwnc2NyZWVuc2hvdHMnOm5hbWVzLCdsaXZlX3JlcXVlc3RzJzpGYWxzZSwndXNlcl9jb250ZW50JzpGYWxzZX0saW5kZW50PTIpKQpQWUVYUE9SVAooY2QgIiRBL2NhdGFsb2ciICYmIHNoYXN1bSAtYSAyNTYgKi5wbmcgPiBTSEEyNTZTVU1TKQo=
+      ORIVYN_SCREENSHOT_XCTEST_SHA256: a416af6d8a9a70552ab325ce3c7bc6616fd40bd1ec04232402895326cd01a53e
+      ORIVYN_SCREENSHOT_XCTEST_BASE64: aW1wb3J0IFhDVGVzdAoKLy8vIFJlYWwgVUksIGZyZXNoIGlzb2xhdGVkIHRlc3Qgc3RvcmFnZSwgbm8gc3ludGhldGljIHByb3ZpZGVyIG9yIGZpeHR1cmUgYmFubmVyLgovLy8gTmV2ZXIgZW50ZXJzIHRleHQsIGNoZWNrcyBhIGxpdmUgY2F0YWxvZywgb3BlbnMgU2FmYXJpIG9yIHN1Ym1pdHMgYW55IHJlcXVlc3QuCkBNYWluQWN0b3IKZmluYWwgY2xhc3MgQ2F0YWxvZ1NjcmVlbnNob3RVSVRlc3RzOiBYQ1Rlc3RDYXNlIHsKICAgIHByaXZhdGUgdmFyIGFwcDogWENVSUFwcGxpY2F0aW9uIQoKICAgIG92ZXJyaWRlIGZ1bmMgc2V0VXAoKSBhc3luYyB0aHJvd3MgewogICAgICAgIGNvbnRpbnVlQWZ0ZXJGYWlsdXJlID0gZmFsc2UKICAgICAgICBYQ1VJRGV2aWNlLnNoYXJlZC5vcmllbnRhdGlvbiA9IC5wb3J0cmFpdAogICAgICAgIGFwcCA9IFhDVUlBcHBsaWNhdGlvbigpCiAgICAgICAgYXBwLmxhdW5jaEFyZ3VtZW50cyA9IFsiLS11aXRlc3RpbmciLCAiLS1yZXNldC10ZXN0LXN0b3JhZ2UiXQogICAgICAgIGFwcC5sYXVuY2goKQogICAgICAgIFhDVEFzc2VydFRydWUoYXBwLnRleHRWaWV3c1siY29tcG9zZXIuaW5wdXQiXS53YWl0Rm9yRXhpc3RlbmNlKHRpbWVvdXQ6IDE1KSwgIkV4cGVjdGVkIHRoZSByZWFsIGNvbnZlcnNhdGlvbiBjb21wb3Nlci4iKQogICAgICAgIFhDVEFzc2VydFRydWUoYXBwLnN0YXRpY1RleHRzWyJ3ZWxjb21lLnRpdGxlIl0ud2FpdEZvckV4aXN0ZW5jZSh0aW1lb3V0OiAxMCksICJFeHBlY3RlZCB0aGUgZnJlc2ggZW1wdHkgY29udmVyc2F0aW9uIHdlbGNvbWUuIikKICAgICAgICBsZXQgY29tcG9zZXIgPSBhcHAudGV4dFZpZXdzWyJjb21wb3Nlci5pbnB1dCJdCiAgICAgICAgbGV0IHZhbHVlID0gY29tcG9zZXIudmFsdWUKICAgICAgICBsZXQgcmVwb3J0ZWRWYWx1ZSA9IHZhbHVlIGFzPyBTdHJpbmcKICAgICAgICBYQ1RBc3NlcnRUcnVlKHZhbHVlID09IG5pbCB8fCByZXBvcnRlZFZhbHVlID09ICIiIHx8IChyZXBvcnRlZFZhbHVlICE9IG5pbCAmJiByZXBvcnRlZFZhbHVlID09IGNvbXBvc2VyLnBsYWNlaG9sZGVyVmFsdWUpLAogICAgICAgICAgICAgICAgICAgICAgIkZyZXNoIGNvbXBvc2VyIG11c3QgYmUgZW1wdHkgb3IgZXhwb3NlIG9ubHkgaXRzIHN5c3RlbSBwbGFjZWhvbGRlci4iKQogICAgICAgIFhDVEFzc2VydFRydWUoYXBwLmJ1dHRvbnNbIm1vZGVsLmNob29zZSJdLmxhYmVsLmNvbnRhaW5zKCJBdXRvIiksICJGcmVzaCBkZWZhdWx0IG11c3QgYmUgb24tZGV2aWNlIEF1dG8uIikKICAgICAgICBYQ1RBc3NlcnRGYWxzZShhcHAuc3RhdGljVGV4dHNbImZpeHR1cmUubm90aWNlIl0uZXhpc3RzLCAiU3ludGhldGljIGZpeHR1cmUgYmFubmVyIG11c3Qgbm90IGJlIHNob3duLiIpCiAgICAgICAgWENUQXNzZXJ0RmFsc2UoYXBwLmFsZXJ0cy5maXJzdE1hdGNoLmV4aXN0cykKICAgIH0KCiAgICBmdW5jIHRlc3RDYXB0dXJlMDFFbXB0eUNoYXRBdXRvKCkgewogICAgICAgIFhDVEFzc2VydFRydWUoYXBwLmJ1dHRvbnNbIndlbGNvbWUuY2hvb3NlQUkiXS5pc0hpdHRhYmxlKQogICAgICAgIFhDVEFzc2VydFRydWUoYXBwLmJ1dHRvbnNbImNoYXQud2ViIl0uaXNIaXR0YWJsZSkKICAgICAgICBjYXB0dXJlKCJPcml2eW4tQ2F0YWxvZy0wMS1DaGF0LUF1dG8iKQogICAgfQoKICAgIGZ1bmMgdGVzdENhcHR1cmUwMk1vZGVsUGlja2VyKCkgewogICAgICAgIGFwcC5idXR0b25zWyJtb2RlbC5jaG9vc2UiXS50YXAoKQogICAgICAgIGxldCBhdXRvID0gYXBwLnN3aXRjaGVzWyJtb2RlbC5hdXRvLmluc3RhbGxlZCJdCiAgICAgICAgWENUQXNzZXJ0VHJ1ZShhdXRvLndhaXRGb3JFeGlzdGVuY2UodGltZW91dDogNSkpCiAgICAgICAgWENUQXNzZXJ0RXF1YWwoYXV0by52YWx1ZSBhcz8gU3RyaW5nLCAiMSIpCiAgICAgICAgWENUQXNzZXJ0VHJ1ZShhcHAubmF2aWdhdGlvbkJhcnNbIkNob29zZSBhbiBBSSJdLmV4aXN0cykKICAgICAgICBYQ1RBc3NlcnRGYWxzZShhcHAuYnV0dG9uc1sibW9kZWwuZG93bmxvYWQuY2FuY2VsIl0uZXhpc3RzKQogICAgICAgIGNhcHR1cmUoIk9yaXZ5bi1DYXRhbG9nLTAyLUNob29zZS1BSSIpCiAgICB9CgogICAgZnVuYyB0ZXN0Q2FwdHVyZTAzRnJlZU9ubGluZVByaXZhY3koKSB7CiAgICAgICAgYXBwLmJ1dHRvbnNbIm1vZGVsLmNob29zZSJdLnRhcCgpCiAgICAgICAgbGV0IG9ubGluZSA9IGFwcC5idXR0b25zWyJmcmVlT25saW5lLm9wZW4iXQogICAgICAgIGxldCBjYXRhbG9nID0gYXBwLmRlc2NlbmRhbnRzKG1hdGNoaW5nOiAuYW55KS5tYXRjaGluZyhpZGVudGlmaWVyOiAibW9kZWwubGlzdCIpLmZpcnN0TWF0Y2gKICAgICAgICBYQ1RBc3NlcnRUcnVlKGNhdGFsb2cud2FpdEZvckV4aXN0ZW5jZSh0aW1lb3V0OiA1KSwgIlRoZSBhY3R1YWwgZGlyZWN0b3J5IGxpc3QgbXVzdCBiZSByZWFjaGFibGUuIikKICAgICAgICByZXZlYWwob25saW5lLCBpbjogY2F0YWxvZykKICAgICAgICBYQ1RBc3NlcnRUcnVlKG9ubGluZS5pc0hpdHRhYmxlKQogICAgICAgIG9ubGluZS50YXAoKQogICAgICAgIFhDVEFzc2VydFRydWUoYXBwLnN0YXRpY1RleHRzWyJmcmVlT25saW5lLmRpc2Nsb3N1cmUiXS53YWl0Rm9yRXhpc3RlbmNlKHRpbWVvdXQ6IDUpKQogICAgICAgIFhDVEFzc2VydFRydWUoYXBwLmJ1dHRvbnNbImZyZWVPbmxpbmUucmVmcmVzaCJdLmV4aXN0cykKICAgICAgICBYQ1RBc3NlcnRGYWxzZShhcHAuc2VjdXJlVGV4dEZpZWxkc1siZnJlZU9ubGluZS5rZXkiXS5leGlzdHMpCiAgICAgICAgWENUQXNzZXJ0RmFsc2UoYXBwLnRleHRWaWV3c1siZnJlZU9ubGluZS5pbnB1dCJdLmV4aXN0cykKICAgICAgICBYQ1RBc3NlcnRGYWxzZShhcHAuYnV0dG9uc1siZnJlZU9ubGluZS5zZW5kIl0uZXhpc3RzKQogICAgICAgIGNhcHR1cmUoIk9yaXZ5bi1DYXRhbG9nLTAzLUZyZWUtT25saW5lLVByaXZhY3kiKQogICAgfQoKICAgIGZ1bmMgdGVzdENhcHR1cmUwNFdlYkxhbmRpbmcoKSB7CiAgICAgICAgYXBwLmJ1dHRvbnNbImNoYXQud2ViIl0udGFwKCkKICAgICAgICBYQ1RBc3NlcnRUcnVlKGFwcC50ZXh0RmllbGRzWyJicm93c2VyLnVybCJdLndhaXRGb3JFeGlzdGVuY2UodGltZW91dDogNSkpCiAgICAgICAgWENUQXNzZXJ0RmFsc2UoYXBwLmJ1dHRvbnNbImJyb3dzZXIub3BlbiJdLmlzRW5hYmxlZCkKICAgICAgICBYQ1RBc3NlcnRUcnVlKGFwcC5idXR0b25zWyJ0b29sLnJldmlldy5kb25lIl0uZXhpc3RzKQogICAgICAgIFhDVEFzc2VydEZhbHNlKGFwcC5rZXlib2FyZHMuZmlyc3RNYXRjaC5leGlzdHMpCiAgICAgICAgY2FwdHVyZSgiT3JpdnluLUNhdGFsb2ctMDQtV2ViIikKICAgIH0KCiAgICBwcml2YXRlIGZ1bmMgY2FwdHVyZShfIG5hbWU6IFN0cmluZykgewogICAgICAgIFhDVEFzc2VydEZhbHNlKGFwcC5hbGVydHMuZmlyc3RNYXRjaC5leGlzdHMpCiAgICAgICAgWENUQXNzZXJ0RmFsc2UoYXBwLmtleWJvYXJkcy5maXJzdE1hdGNoLmV4aXN0cykKICAgICAgICBsZXQgYXR0YWNobWVudCA9IFhDVEF0dGFjaG1lbnQoc2NyZWVuc2hvdDogYXBwLnNjcmVlbnNob3QoKSkKICAgICAgICBhdHRhY2htZW50Lm5hbWUgPSBuYW1lCiAgICAgICAgYXR0YWNobWVudC5saWZldGltZSA9IC5rZWVwQWx3YXlzCiAgICAgICAgYWRkKGF0dGFjaG1lbnQpCiAgICB9Cn0K
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          ref: ${{ env.ORIVYN_CANDIDATE_SHA }}
+      - name: Require exact hosted attempt and clean source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REPOSITORY" = R347H4CK3R/Orivyn
+          test "$GITHUB_REF" = refs/heads/verification/orivyn-auto-web-screenshots-retry
+          test "$GITHUB_EVENT_NAME" = push
+          test "$GITHUB_RUN_ATTEMPT" = 1
+          test "$RUNNER_ENVIRONMENT" = github-hosted
+          test "$RUNNER_ARCH" = ARM64
+          test "$(git rev-parse HEAD)" = "$ORIVYN_CANDIDATE_SHA"
+          test "$(git rev-parse 'HEAD^{tree}')" = "$ORIVYN_CANDIDATE_TREE_SHA"
+          test -z "$(git status --porcelain)"
+          mkdir -p artifacts/handoff-diagnostics
+      - name: Select Xcode 26.1
+        id: xcode
+        run: |
+          test -d "$DEVELOPER_DIR"
+          xcodebuild -version | tee artifacts/handoff-diagnostics/xcode.txt
+          grep -Fx 'Xcode 26.1.1' artifacts/handoff-diagnostics/xcode.txt
+          grep -Fx 'Build version 17B100' artifacts/handoff-diagnostics/xcode.txt
+          echo "identity=$(xcodebuild -version | shasum -a 256 | awk '{print $1}')" >> "$GITHUB_OUTPUT"
+      - name: Check preinstalled build tools and stage exact XcodeGen 2.46.0
+        shell: bash
+        run: |
+          set -euo pipefail
+          command -v cmake
+          cmake --version | tee artifacts/handoff-diagnostics/cmake.txt
+          mkdir -p "$RUNNER_TEMP/orivyn-pinned-xcodegen"
+          XG="$RUNNER_TEMP/orivyn-pinned-xcodegen.zip"
+          curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' --retry 2 \
+            https://github.com/yonaskolb/XcodeGen/releases/download/2.46.0/xcodegen.zip -o "$XG"
+          printf '%s  %s\n' 4d9e34b62172d645eed6457cac13fc222569974098ef4ee9c3368bedf0196806 "$XG" | shasum -a 256 -c -
+          ditto -x -k "$XG" "$RUNNER_TEMP/orivyn-pinned-xcodegen"
+          XG_ROOT="$RUNNER_TEMP/orivyn-pinned-xcodegen/xcodegen"
+          XG_BIN="$XG_ROOT/bin/xcodegen"
+          test -x "$XG_BIN"
+          PRESETS="$XG_ROOT/share/xcodegen/SettingPresets"
+          test -s "$PRESETS/base.yml"
+          test -s "$PRESETS/Platforms/iOS.yml"
+          test -s "$PRESETS/Products/bundle.unit-test.yml"
+          test -s "$PRESETS/Products/bundle.ui-testing.yml"
+          "$XG_BIN" --version | tee artifacts/handoff-diagnostics/xcodegen.txt
+          grep -F '2.46.0' artifacts/handoff-diagnostics/xcodegen.txt
+          printf '%s\n' "$XG_ROOT/bin" >> "$GITHUB_PATH"
+      - uses: actions/cache/restore@v4
+        id: combined-cache
+        with:
+          path: .cache/orivyn-combined
+          key: combined-v1-${{ runner.os }}-${{ runner.arch }}-${{ steps.xcode.outputs.identity }}-${{ hashFiles('Diagnostics/CombinedRuntime/prepare_build.py', 'Diagnostics/CombinedRuntime/simulator-slices.sh', 'Diagnostics/CombinedRuntime/build-ios-combined.sh', 'Diagnostics/CombinedRuntime/native-bridges.cmake', 'Diagnostics/VisionRuntime/prepare_build.py', 'Diagnostics/VisionRuntime/source/build-xcframework.sh', 'Diagnostics/NativeTools/*.cpp', 'Diagnostics/NativeTools/*.h', 'Diagnostics/VisionProof/Bridge/*.cpp', 'Diagnostics/VisionProof/Bridge/*.h', 'scripts/verify_combined_runtime.py', 'scripts/ci_combined_runtime.sh') }}
+      - name: Build and verify combined runtime
+        run: bash scripts/ci_combined_runtime.sh
+      - name: Install reviewed synthetic test overlay and prepare the native project
+        shell: bash
+        run: |
+          set -euo pipefail
+          test ! -e UITests/CatalogScreenshotUITests.swift
+          python3 - "$RUNNER_TEMP/orivyn-catalog-capture.sh" <<'PYOVERLAY'
+          import base64,hashlib,os,pathlib,sys
+          for key,path in [('CAPTURE',sys.argv[1]),('XCTEST','UITests/CatalogScreenshotUITests.swift')]:
+              prefix='ORIVYN_SCREENSHOT_'+key
+              raw=base64.b64decode(os.environ[prefix+'_BASE64'],validate=True)
+              assert 0<len(raw)<=32768 and hashlib.sha256(raw).hexdigest()==os.environ[prefix+'_SHA256']
+              with pathlib.Path(path).open('xb') as f:f.write(raw)
+          PYOVERLAY
+          bash -n "$RUNNER_TEMP/orivyn-catalog-capture.sh"
+          python3 scripts/materialize_guest.py Fixtures/maintained.img.gz JarvisEVO/Resources/VMAssets/maintained.img
+          bash scripts/bootstrap_llama.sh
+          python3 scripts/generate_project.py
+      - name: Run actual synthetic simulator tests and export four verified PNGs
+        shell: bash
+        run: |
+          set -euo pipefail
+          A="$PWD/artifacts/handoff-diagnostics"
+          xcrun simctl list devices available -j > "$A/simulators.json"
+          export SIM
+          SIM=$(python3 scripts/select_reviewed_runtime.py "$A/simulators.json")
+          python3 scripts/boot_ci_simulator.py --simulator "$SIM" --timeout 300 --evidence "$A/simulator-boot.json"
+          export ORIVYN_SCREENSHOT_BASE="$ORIVYN_CANDIDATE_SHA"
+          bash "$RUNNER_TEMP/orivyn-catalog-capture.sh"
+          OUT="$RUNNER_TEMP/orivyn-screenshot-handoff"
+          mkdir "$OUT"
+          cp artifacts/catalog-screenshots/catalog/{*.png,PROVENANCE.json,SHA256SUMS} "$OUT/"
+          cp artifacts/catalog-screenshots/{summary.json,tests.json} "$OUT/"
+          cp artifacts/catalog-screenshots/attachments/manifest.json "$OUT/xcresult-attachments-manifest.json"
+          cp "$A/simulator-boot.json" "$OUT/"
+          python3 - "$OUT" <<'PYOUTPUT'
+          import hashlib,json,os,pathlib,struct,sys
+          root=pathlib.Path(sys.argv[1]);env=os.environ
+          pictures=[]
+          for path in sorted(root.glob('*.png')):
+              data=path.read_bytes()
+              assert 32<len(data)<=8_000_000 and data[:16]==b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR'
+              w,h=struct.unpack('>II',data[16:24]);assert 600<=w<h<=5000
+              pictures.append(dict(file=path.name,width=w,height=h,sha256=hashlib.sha256(data).hexdigest()))
+          assert len(pictures)==4
+          (root/'SCREENSHOT-RECEIPT.json').write_text(json.dumps(dict(
+              sourceCommit=env['ORIVYN_CANDIDATE_SHA'],sourceTree=env['ORIVYN_CANDIDATE_TREE_SHA'],
+              harnessCommit=env['GITHUB_SHA'],workflowRun=int(env['GITHUB_RUN_ID']),
+              captureScriptSHA256=env['ORIVYN_SCREENSHOT_CAPTURE_SHA256'],captureTestsSHA256=env['ORIVYN_SCREENSHOT_XCTEST_SHA256'],
+              simulatorOnly=True,syntheticOnly=True,screenshots=pictures),indent=2)+'\n')
+          PYOUTPUT
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Orivyn-0.1.8-build24-synthetic-simulator-screenshots
+          path: ${{ runner.temp }}/orivyn-screenshot-handoff
+          retention-days: 1
+          if-no-files-found: error
+      - name: Stage bounded synthetic failure diagnostics
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT="$RUNNER_TEMP/orivyn-screenshot-diagnostics"
+          mkdir "$OUT"
+          python3 - "$OUT" <<'PYDIAG'
+          import json,pathlib,re,sys
+          d=pathlib.Path(sys.argv[1])
+          a=pathlib.Path('artifacts/catalog-screenshots')
+          result={}
+          summary=a/'summary.json'
+          if summary.is_file() and summary.stat().st_size<=512000:
+              s=json.loads(summary.read_text())
+              for k in ('totalTestCount','passedTests','failedTests','skippedTests'):
+                  if type(s.get(k)) is int:result[k]=s[k]
+              result['testFailures']=[
+                   {k:str(x[k])[:500] for k in ('testName','failureText') if k in x}
+                   for x in s.get('testFailures',[])[:16]
+              ]
+          (d/'summary.json').write_text(json.dumps(result,indent=2)+'\n')
+          log=a/'xcodebuild.log'
+          if log.is_file():
+              match=re.compile(r'CatalogScreenshotUITests.swift:[0-9]+: error:|Test Case .* (failed|passed)|Executed [0-9]+ tests')
+              with log.open(errors='replace') as f: lines=[line.rstrip()[:600] for line in f if match.search(line)]
+              (d/'xctest-status.log').write_text('\n'.join(lines[-50:])+'\n')
+          (d/'SCOPE.txt').write_text('Synthetic test status only. No images, input data, account data, or full logs.\n')
+          PYDIAG
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Orivyn-0.1.8-build24-screenshot-retry-diagnostics
+          path: ${{ runner.temp }}/orivyn-screenshot-diagnostics
+          retention-days: 1
+          if-no-files-found: error
