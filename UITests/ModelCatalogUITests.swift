@@ -29,8 +29,16 @@ final class ModelCatalogUITests: XCTestCase {
         let list = app.collectionViews.firstMatch
         let options = app.descendants(matching: .any).matching(identifier: "model.variants.qwen2.5-0.5b-instruct-q4_k_m").firstMatch
         reveal(options, in: list)
-        // The native failure recording shows Q5 rendered after expansion; the nested
-        // name Text identifier was not reachable. Assert the actual Q5 action instead.
+        // Assert a separately accessible action and visible precision, not only
+        // the disclosure label. Record the real hierarchy if either is missing.
+        defer {
+            if testRun?.hasSucceeded == false {
+                let hierarchy = XCTAttachment(string: app.debugDescription)
+                hierarchy.name = "Model picker accessibility hierarchy"
+                hierarchy.lifetime = .keepAlways
+                add(hierarchy)
+            }
+        }
         let variant = app.buttons["model.download.qwen2.5-0.5b-instruct-q5_k_m"]
         let precision = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Q5_K_M")).firstMatch
         XCTAssertFalse(variant.exists, "Collapsed variants must not expose a download action")
@@ -59,7 +67,13 @@ final class ModelCatalogUITests: XCTestCase {
         reveal(online, in: app.collectionViews.firstMatch)
         online.tap()
         XCTAssertTrue(app.staticTexts["freeOnline.disclosure"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.buttons["freeOnline.refresh"].exists)
+        let Catalog03FreeOnline = XCTAttachment(screenshot: app.screenshot())
+        Catalog03FreeOnline.name = "Catalog03FreeOnline"; Catalog03FreeOnline.lifetime = .keepAlways; add(Catalog03FreeOnline)
+        let refresh = app.buttons["freeOnline.refresh"]
+        // Form rows are lazy; Manual choice can start below the screen.
+        reveal(refresh, in: app.collectionViews.firstMatch)
+        XCTAssertTrue(refresh.exists)
+        XCTAssertTrue(refresh.isHittable)
         XCTAssertFalse(app.secureTextFields["freeOnline.key"].exists)
         XCTAssertFalse(app.textViews["freeOnline.input"].exists)
         XCTAssertFalse(app.buttons["freeOnline.send"].exists)

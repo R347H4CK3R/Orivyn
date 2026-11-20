@@ -93,12 +93,14 @@ struct ModelManagerView: View {
                         if let first = group.entries.first {
                             catalogCard(first)
                             if group.entries.count > 1 {
-                                DisclosureGroup("More download options") {
+                                DisclosureGroup {
                                     ForEach(Array(group.entries.dropFirst())) { entry in
                                         catalogCard(entry)
                                     }
+                                } label: {
+                                    Text("More download options")
+                                        .accessibilityIdentifier("model.variants.\(first.id)")
                                 }
-                                .accessibilityIdentifier("model.variants.\(first.id)")
                             }
                         }
                     }

@@ -16,7 +16,11 @@ class WebContract(unittest.TestCase):
    self.assertNotIn(forbidden,s)
  def test_root_visible_web_only_opens_review(self):
   s=(ROOT/'JarvisEVO/UI/RootView.swift').read_text()
-  self.assertIn('Button("Web", systemImage: "globe")',s)
+  action='Button { prepareNavigation(); reviewingTool = .browser } label: {'
+  self.assertIn(action,s)
+  label=s.split(action,1)[1].split('.buttonStyle(.plain)',1)[0]
+  for token in ['Label("Web", systemImage: "globe")', '.frame(minWidth: 44, minHeight: 44)', '.contentShape(Rectangle())']:
+   self.assertIn(token,label)
   self.assertIn('accessibilityIdentifier("chat.web")',s)
  def test_bookmark_save_is_explicit_and_strips_sensitive_components(self):
   s=(ROOT/'JarvisEVO/Core/NativeToolDrafts.swift').read_text()

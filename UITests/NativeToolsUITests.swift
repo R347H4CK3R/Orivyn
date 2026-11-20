@@ -15,10 +15,13 @@ final class NativeToolsUITests: XCTestCase {
         let web = app.buttons["chat.web"]
         XCTAssertTrue(web.waitForExistence(timeout: 5))
         XCTAssertGreaterThanOrEqual(web.frame.height, 44)
+        XCTAssertGreaterThanOrEqual(web.frame.width, 44)
         web.tap()
         let address = app.textFields["browser.url"]
         XCTAssertTrue(address.waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["browser.open"].isEnabled)
+        let capture = XCTAttachment(screenshot: app.screenshot())
+        capture.name = "Catalog04Web"; capture.lifetime = .keepAlways; add(capture)
         address.tap(); address.typeText("plumbing a & b")
         XCTAssertTrue(app.staticTexts["browser.destination"].exists)
         XCTAssertEqual(app.buttons["browser.open"].label, "Search DuckDuckGo")
@@ -62,10 +65,18 @@ final class NativeToolsUITests: XCTestCase {
         let remove = app.buttons["browser.bookmark.remove." + saved]
         reveal(fill, in: list)
         XCTAssertTrue(fill.isHittable); XCTAssertTrue(remove.exists)
+        XCTAssertGreaterThanOrEqual(fill.frame.height, 44)
+        XCTAssertGreaterThanOrEqual(remove.frame.height, 44)
+        XCTAssertGreaterThanOrEqual(remove.frame.width, 44)
+        XCTAssertFalse(fill.frame.intersects(remove.frame), "Bookmark action hit targets must not overlap")
         fill.tap()
-        XCTAssertTrue(remove.exists, "Fill must not activate the adjacent Remove button")
+        // A Form can scroll to its edited field and lazily unload the row.
+        // Verify the actual filled value, then re-reveal the persisted bookmark.
         reveal(address, in: list, towardEnd: false)
         XCTAssertEqual(address.value as? String, saved)
+        reveal(remove, in: list)
+        XCTAssertTrue(remove.isHittable, "Fill must preserve the bookmark and its independent Remove action")
+        reveal(address, in: list, towardEnd: false)
         address.tap(); address.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: saved.count))
         address.typeText("Keep this search")
         reveal(remove, in: list); remove.tap()

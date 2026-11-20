@@ -265,9 +265,13 @@ struct RootView: View {
             VStack(spacing: 0) {
                 HStack {
                     Spacer()
-                    Button("Web", systemImage: "globe") { prepareNavigation(); reviewingTool = .browser }
-                        .font(.subheadline.weight(.semibold)).tint(.teal)
-                        .frame(minWidth: 44, minHeight: 44)
+                    Button { prepareNavigation(); reviewingTool = .browser } label: {
+                        Label("Web", systemImage: "globe")
+                            .font(.subheadline.weight(.semibold)).foregroundStyle(.teal)
+                            .frame(minWidth: 44, minHeight: 44)
+                            .contentShape(Rectangle())
+                    }
+                        .buttonStyle(.plain)
                         .accessibilityHint("Search or open a website in Safari. Nothing is sent until you choose Go.")
                         .accessibilityIdentifier("chat.web")
                 }.padding(.horizontal, 16)

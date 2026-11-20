@@ -86,23 +86,39 @@ struct BrowserToolView: View {
                     .font(.footnote).foregroundStyle(.secondary)
                 if let savedAddress = try? WebBookmarkStore.bookmarkAddress(address) {
                     Text(savedAddress).font(.caption).textSelection(.enabled)
-                    Button("Save bookmark", systemImage: "bookmark") {
+                    Button {
+                        addressFocused = false
                         do { try bookmarks.saveWebsite(address); error = nil }
                         catch { self.error = error.localizedDescription }
-                    }.frame(minHeight: 44).accessibilityIdentifier("browser.bookmark.save")
+                    } label: {
+                        Label("Save bookmark", systemImage: "bookmark")
+                            .frame(minHeight: 44).contentShape(Rectangle())
+                    }.buttonStyle(.borderless).accessibilityIdentifier("browser.bookmark.save")
                 }
                 ForEach(bookmarks.bookmarks, id: \.self) { bookmark in
                     HStack {
-                        Button { address = bookmark; error = nil } label: {
-                            Text(bookmark).multilineTextAlignment(.leading).frame(minHeight: 44)
+                        Button {
+                            // End editing before changing the field so focus does not
+                            // scroll the bookmark actions out of the user's viewport.
+                            addressFocused = false
+                            address = bookmark; error = nil
+                        } label: {
+                            Text(bookmark).multilineTextAlignment(.leading)
+                                .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                                .contentShape(Rectangle())
                         }.buttonStyle(.borderless)
                             .accessibilityIdentifier("browser.bookmark.fill.\(bookmark)")
                             .accessibilityLabel("Fill address from bookmark " + bookmark)
                         Spacer()
-                        Button("Remove", systemImage: "trash") { bookmarks.remove(bookmark) }
+                        Button {
+                            addressFocused = false
+                            bookmarks.remove(bookmark)
+                        } label: {
+                            Label("Remove", systemImage: "trash").labelStyle(.iconOnly)
+                                .frame(minWidth: 44, minHeight: 44).contentShape(Rectangle())
+                        }
                             .buttonStyle(.borderless)
                             .accessibilityIdentifier("browser.bookmark.remove.\(bookmark)")
-                            .labelStyle(.iconOnly).frame(minWidth: 44, minHeight: 44)
                             .accessibilityLabel("Remove bookmark " + bookmark)
                     }
                 }

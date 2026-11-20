@@ -12,10 +12,14 @@ final class AutomaticModelUITests: XCTestCase {
 
     func testFreshChatShowsAutoWithoutEnablingDownloads() {
         XCTAssertTrue(app.buttons["model.choose"].label.contains("Auto"))
+        let Catalog01ChatAuto = XCTAttachment(screenshot: app.screenshot())
+        Catalog01ChatAuto.name = "Catalog01ChatAuto"; Catalog01ChatAuto.lifetime = .keepAlways; add(Catalog01ChatAuto)
         app.buttons["model.choose"].tap()
         let auto = app.switches["model.auto.installed"]
         XCTAssertTrue(auto.waitForExistence(timeout: 5))
         XCTAssertEqual(auto.value as? String, "1")
+        let Catalog02ChooseAI = XCTAttachment(screenshot: app.screenshot())
+        Catalog02ChooseAI.name = "Catalog02ChooseAI"; Catalog02ChooseAI.lifetime = .keepAlways; add(Catalog02ChooseAI)
         let downloads = app.switches["model.automatic"]
         reveal(downloads, in: app.descendants(matching: .any).matching(identifier: "model.list").firstMatch)
         XCTAssertEqual(downloads.value as? String, "0")
