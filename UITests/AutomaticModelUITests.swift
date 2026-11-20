@@ -13,6 +13,7 @@ final class AutomaticModelUITests: XCTestCase {
     func testAutomaticModeAndSeparateCellularChoiceSurviveRelaunch() {
         app.buttons["model.choose"].tap()
         let automatic = app.switches["model.automatic"]
+        reveal(automatic, in: app.descendants(matching: .any).matching(identifier: "model.list").firstMatch)
         XCTAssertTrue(automatic.waitForExistence(timeout: 5))
         XCTAssertEqual(automatic.value as? String, "0")
         // iOS 26 exposes a row-sized parent Switch and a nested UISwitch knob.
@@ -30,6 +31,7 @@ final class AutomaticModelUITests: XCTestCase {
         app.terminate(); app.launchArguments = ["--uitesting"]; app.launch()
         XCTAssertTrue(app.textViews["composer.input"].waitForExistence(timeout: 10))
         app.buttons["model.choose"].tap()
+        reveal(app.switches["model.automatic"], in: app.descendants(matching: .any).matching(identifier: "model.list").firstMatch)
         XCTAssertEqual(app.switches["model.automatic"].value as? String, "1")
         XCTAssertEqual(app.switches["model.automatic.cellular"].value as? String, "0")
     }

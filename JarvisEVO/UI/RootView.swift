@@ -281,11 +281,11 @@ struct RootView: View {
                 ToolbarItem(placement: .principal) {
                     Button { prepareNavigation(); showModels = true } label: {
                         HStack(spacing: 5) {
-                            Text("Orivyn").font(.system(.headline, design: .default)).lineLimit(1)
+                            Text("Choose an AI").font(.headline).lineLimit(2)
                             Image(systemName: "chevron.down").font(.system(size: 10, weight: .semibold)).foregroundStyle(.secondary)
                         }
                     }
-                    .buttonStyle(.plain).accessibilityLabel("Choose model").accessibilityIdentifier("model.choose")
+                    .buttonStyle(.plain).accessibilityLabel("Choose an AI").accessibilityIdentifier("model.choose")
                 }
                 ToolbarItemGroup(placement: .topBarTrailing) {
                     Button { prepareNavigation(); Task { await model.newConversation() } } label: { Image(systemName: "square.and.pencil") }
@@ -307,25 +307,47 @@ struct RootView: View {
     private var welcome: some View {
         GeometryReader { geometry in
             ScrollView {
-                VStack(spacing: 24) {
-                    Spacer(minLength: 30)
-                    Text("What can I help with?")
-                        .font(.system(.title2, design: .default, weight: .semibold))
-                        .multilineTextAlignment(.center)
-                        .accessibilityIdentifier("welcome.title")
+                VStack(spacing: 16) {
+                    Spacer(minLength: 8)
+                    VStack(spacing: 16) {
+                        Text("What can I help with?")
+                            .font(.title2.bold())
+                            .multilineTextAlignment(.center)
+                            .accessibilityIdentifier("welcome.title")
+                        Button { prepareNavigation(); showModels = true } label: {
+                            Label("Choose an AI", systemImage: "sparkles")
+                                .font(.headline).frame(maxWidth: .infinity, minHeight: 48)
+                                .padding(.horizontal, 12).padding(.vertical, 6)
+                                .foregroundStyle(FreeChatStyle.navy)
+                                .background(FreeChatStyle.teal, in: RoundedRectangle(cornerRadius: 18))
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("welcome.chooseAI")
+                        .accessibilityHint("Choose an available AI or download one for offline chat")
+                        Text("Your saved chats stay here when you choose another AI.")
+                            .font(.subheadline).multilineTextAlignment(.center)
+                    }
+                    .foregroundStyle(.white).padding(20)
+                    .frame(maxWidth: 600)
+                    .background(FreeChatStyle.navy, in: RoundedRectangle(cornerRadius: 28))
                     VStack(spacing: 10) {
-                        ViewThatFits(in: .horizontal) {
-                            HStack(spacing: 8) { planSuggestion; writeSuggestion }
+                        if dynamicTypeSize.isAccessibilitySize {
                             VStack(spacing: 10) { planSuggestion; writeSuggestion }
+                        } else {
+                            ViewThatFits(in: .horizontal) {
+                                HStack(spacing: 8) { planSuggestion; writeSuggestion }
+                                VStack(spacing: 10) { planSuggestion; writeSuggestion }
+                            }
                         }
                         suggestion("Explain something", icon: "lightbulb", prompt: "Explain this in simple terms: ", id: "suggestion.explain")
                     }
-                    Spacer(minLength: 30)
+                    Spacer(minLength: 8)
                 }
                 .frame(maxWidth: .infinity)
                 .frame(minHeight: geometry.size.height)
                 .padding(.horizontal, 20)
             }
+            .accessibilityIdentifier("welcome.scroll")
             .scrollDismissesKeyboard(.interactively)
         }
     }
@@ -346,11 +368,11 @@ struct RootView: View {
             composerFocused = true
         } label: {
             HStack(spacing: 7) {
-                Image(systemName: icon).font(.system(size: 14))
-                Text(title).font(.subheadline).lineLimit(1).fixedSize()
+                Image(systemName: icon).font(.body)
+                Text(title).font(.body).multilineTextAlignment(.leading)
             }
             .foregroundStyle(.secondary)
-            .padding(.horizontal, 14).padding(.vertical, 12)
+            .padding(.horizontal, 16).padding(.vertical, 12).frame(minHeight: 48)
             .background(Color(uiColor: .systemBackground), in: Capsule())
             .overlay(Capsule().strokeBorder(Color.primary.opacity(0.12), lineWidth: 1))
         }.buttonStyle(.plain).disabled(audioBusy).accessibilityIdentifier(id)
@@ -550,7 +572,7 @@ struct RootView: View {
                 .disabled(model.availableAttachmentSlots == 0 || attachmentsBusy || audioBusy)
                 ZStack(alignment: .topLeading) {
                     if model.draft.isEmpty {
-                        Text("Ask Orivyn").font(.body).foregroundStyle(.secondary)
+                        Text("Ask anything, or try a starter…").font(.body).foregroundStyle(.secondary)
                             .padding(.top, 8).padding(.leading, 5).accessibilityHidden(true)
                     }
                     TextEditor(text: $model.draft)
@@ -587,9 +609,9 @@ struct RootView: View {
             .buttonStyle(.plain)
             .padding(4)
             .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 28))
-            .overlay(RoundedRectangle(cornerRadius: 28).strokeBorder(Color.primary.opacity(0.06), lineWidth: 0.5))
+            .overlay(RoundedRectangle(cornerRadius: 28).strokeBorder(Color.evoAccent.opacity(0.4), lineWidth: 1))
             .shadow(color: Color.black.opacity(0.06), radius: 12, y: 3)
-            .padding(.horizontal, 30)
+            .padding(.horizontal, 16)
             if model.network.isOnline == false {
                 Text("Offline · on-device models work when installed")
                     .font(.caption2).foregroundStyle(.secondary)

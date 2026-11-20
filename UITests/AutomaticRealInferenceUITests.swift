@@ -14,6 +14,7 @@ final class AutomaticRealInferenceUITests: XCTestCase {
         XCTAssertTrue(input.waitForExistence(timeout: 10))
         app.buttons["model.choose"].tap()
         let automatic = app.switches["model.automatic"]
+        reveal(automatic, in: app.descendants(matching: .any).matching(identifier: "model.list").firstMatch)
         XCTAssertTrue(automatic.switches.firstMatch.exists)
         automatic.switches.firstMatch.tap()
         XCTAssertEqual(automatic.value as? String, "1")
@@ -38,10 +39,11 @@ final class AutomaticRealInferenceUITests: XCTestCase {
         app.terminate(); app.launchArguments = ["--uitesting"]; app.launch()
         XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "assistant.response").firstMatch.waitForExistence(timeout: 10))
         app.buttons["model.choose"].tap()
+        reveal(app.switches["model.automatic"], in: app.descendants(matching: .any).matching(identifier: "model.list").firstMatch)
         XCTAssertEqual(app.switches["model.automatic"].value as? String, "1")
         let list = app.descendants(matching: .any).matching(identifier: "model.list").firstMatch
         for id in ["qwen2.5-0.5b-instruct-q4_k_m", "qwen2.5-coder-1.5b-instruct-q4_k_m"] {
-            reveal(app.staticTexts["model.catalog.name.\(id)"], in: list)
+            reveal(app.staticTexts["model.catalog.name.\(id)"], in: list, towardEnd: false)
             XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "model.installed.\(id)").firstMatch.exists)
         }
         app.buttons["model.done"].tap()

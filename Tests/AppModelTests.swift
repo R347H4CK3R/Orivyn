@@ -20,6 +20,36 @@ final class AppModelTests: XCTestCase {
         try? FileManager.default.removeItem(at: root)
     }
 
+    func testFreeOnlineTurnNeverUsesOrChangesOfflineHistoryComposerOrAttachments() async throws {
+        var captured = ""
+        let online = FreeOnlineChatState(fetchCatalog: { [.init(id: "example/chat:free", name: "Example")] },
+            complete: { _, text, _ in captured = text; return "Separate answer" })
+        let (model, store, source) = try await fixture(freeOnlineChat: online)
+        model.draft = "Private offline history"
+        model.send()
+        try await waitFor { await source.hasSubscriber }
+        await source.emit("Private offline answer")
+        await source.finish()
+        try await waitFor { !model.isGenerating }
+        let id = try XCTUnwrap(model.selectedConversationID)
+        let before = try await store.load(id: id)
+        model.draft = "Unsent offline draft"
+        let attachments = model.pendingAttachments
+        await online.refreshCatalog()
+        online.useFreeOnline(modelID: "example/chat:free")
+        online.apiKey = "synthetic-test-only"
+        online.draft = "Explicit new cloud text"
+        await online.send()
+        XCTAssertEqual(captured, "Explicit new cloud text")
+        XCTAssertEqual(model.draft, "Unsent offline draft")
+        XCTAssertEqual(model.pendingAttachments, attachments)
+        XCTAssertEqual(model.selectedConversationID, id)
+        let after = try await store.load(id: id)
+        XCTAssertEqual(after?.messages.map(\.content), before?.messages.map(\.content))
+        online.returnToOffline()
+        XCTAssertEqual(model.draft, "Unsent offline draft")
+    }
+
     func testNoConnectedCatalogCannotExposeNormalChatPluginProposal() async throws {
         let (model, _, _) = try await fixture()
         model.draft = "Find a note"
@@ -725,13 +755,13 @@ final class AppModelTests: XCTestCase {
         XCTAssertEqual(model.pendingAttachments, attachments)
     }
 
-    private func fixture() async throws -> (AppModel, SQLiteConversationStore, ControlledTokenSource) {
+    private func fixture(freeOnlineChat: FreeOnlineChatState? = nil) async throws -> (AppModel, SQLiteConversationStore, ControlledTokenSource) {
         let store = try SQLiteConversationStore(url: root.appendingPathComponent("test.sqlite"))
         let attachmentService = try AttachmentService(directory: root.appendingPathComponent("Attachments"))
         let modelStore = try LocalModelStore(root: root.appendingPathComponent("Models"))
         let source = ControlledTokenSource()
         let provider = ControlledProvider(source: source)
-        let model = AppModel(store: store, attachmentService: attachmentService, modelStore: modelStore, defaults: defaults)
+        let model = AppModel(store: store, attachmentService: attachmentService, modelStore: modelStore, defaults: defaults, freeOnlineChat: freeOnlineChat)
         model.replaceProviders([ProviderOption(id: "controlled-test", title: "Test provider", detail: "Test only", provider: provider)])
         return (model, store, source)
     }

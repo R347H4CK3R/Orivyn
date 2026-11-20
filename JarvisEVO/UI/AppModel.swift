@@ -13,6 +13,9 @@ struct ProviderOption: Identifiable {
 
 @MainActor @Observable
 final class AppModel {
+    /// Separate, ephemeral online composer. Existing chats never become request context.
+    let freeOnlineChat: FreeOnlineChatState
+
     private(set) var conversations: [Conversation] = []
     var selectedConversationID: UUID? {
         didSet {
@@ -177,7 +180,9 @@ final class AppModel {
          attachmentImporter: (any AttachmentImporting)? = nil,
          automaticPreparer: (any AutomaticModelPreparing)? = nil,
          automaticProviderFactory: (@MainActor (LocalModelDescriptor) -> any AIProvider)? = nil,
-         resourceReleaser: (any LocalResourceReleasing)? = nil) {
+         resourceReleaser: (any LocalResourceReleasing)? = nil,
+         freeOnlineChat: FreeOnlineChatState? = nil) {
+        self.freeOnlineChat = freeOnlineChat ?? FreeOnlineChatState()
         let engine = LlamaEngine()
         self.localEngine = engine
         self.resourceReleaser = resourceReleaser ?? engine
@@ -1893,3 +1898,137 @@ extension AppModel {
     }
 }
 #endif
+
+
+/// An explicit single-turn cloud surface, deliberately independent of persisted chats,
+/// offline composer, memory, attachments, plugin output and generic remote settings.
+@MainActor @Observable
+final class FreeOnlineChatState {
+    static let disclosure = "Free Online sends only the new message you type here to OpenRouter and the selected model provider. Your other chats, memories and files are not included. This separate online turn is not saved to your chat history. Internet and your own OpenRouter key are required. Free models have limits and may be unavailable. Your key stays in memory for this session only."
+
+    private(set) var models: [OpenRouterFreeModel] = []
+    private(set) var selectedModelID: String?
+    var hasConsented: Bool { selectedModelID != nil }
+    var draft = "" {
+        didSet { if oldValue != draft, isSending { cancel() } }
+    }
+    var apiKey = "" {
+        didSet { if oldValue != apiKey, isSending { cancel() } }
+    }
+    private(set) var isLoadingCatalog = false
+    private(set) var isSending = false
+    private(set) var response: String?
+    private(set) var errorMessage: String?
+    private let fetchCatalog: @MainActor () async throws -> [OpenRouterFreeModel]
+    private let complete: @MainActor (String, String, String) async throws -> String
+    private var sendTask: Task<String, Error>?
+    private var sendID: UUID?
+    private var catalogID: UUID?
+
+    init(fetchCatalog: @escaping @MainActor () async throws -> [OpenRouterFreeModel] = {
+        try await OpenRouterFreeProvider().fetchCatalog()
+    }, complete: @escaping @MainActor (String, String, String) async throws -> String = { model, text, key in
+        try await OpenRouterFreeProvider().complete(modelID: model, newlyAuthoredText: text, apiKey: key)
+    }) {
+        self.fetchCatalog = fetchCatalog
+        self.complete = complete
+    }
+
+    func refreshCatalog() async {
+        cancel()
+        let id = UUID()
+        catalogID = id
+        selectedModelID = nil
+        models = []
+        isLoadingCatalog = true
+        errorMessage = nil
+        do {
+            let fetched = try await fetchCatalog()
+            try Task.checkCancellation()
+            guard catalogID == id else { return }
+            models = fetched
+        } catch {
+            guard catalogID == id else { return }
+            errorMessage = "Couldn’t check free online models. Try again or use an offline model."
+        }
+        guard catalogID == id else { return }
+        isLoadingCatalog = false
+        catalogID = nil
+    }
+
+    /// Call only from the explicit Use Free Online action after displaying disclosure.
+    /// Neither catalog loading nor existing remote credentials grant this consent.
+    func useFreeOnline(modelID: String) {
+        cancel()
+        selectedModelID = nil
+        response = nil
+        guard !isLoadingCatalog, models.contains(where: { $0.id == modelID }) else {
+            errorMessage = "Choose an available free model first."
+            return
+        }
+        selectedModelID = modelID
+        errorMessage = nil
+    }
+
+    func returnToOffline() {
+        cancel()
+        selectedModelID = nil
+        catalogID = nil
+        isLoadingCatalog = false
+        apiKey = ""
+        response = nil
+        errorMessage = nil
+    }
+
+    /// No arguments accept history or attachments; only this separate composer is read.
+    /// The provider rechecks live pricing before each request and never falls back.
+    func send() async {
+        guard !isSending else { return }
+        guard let model = selectedModelID,
+              models.contains(where: { $0.id == model }) else {
+            errorMessage = "Read the privacy notice and choose Use Free Online first."
+            return
+        }
+        let text = draft
+        let key = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, !key.isEmpty else {
+            errorMessage = "Type a new message and enter your OpenRouter key."
+            return
+        }
+        let id = UUID()
+        sendID = id
+        isSending = true
+        response = nil
+        errorMessage = nil
+        let task = Task { try await complete(model, text, key) }
+        sendTask = task
+        do {
+            let result = try await withTaskCancellationHandler {
+                try await task.value
+            } onCancel: { task.cancel() }
+            try Task.checkCancellation()
+            guard sendID == id else { return }
+            isSending = false
+            sendID = nil
+            sendTask = nil
+            response = result
+            draft = ""
+        } catch {
+            guard sendID == id else { return }
+            isSending = false
+            sendID = nil
+            sendTask = nil
+            // Never reflect arbitrary transport errors, URLs, keys, or server bodies.
+            errorMessage = error is CancellationError
+                ? "Cancelled. Your message is still here."
+                : ((error as? OpenRouterFreeError)?.errorDescription ?? "The free online request couldn’t finish. Your message is still here. Try again or use an offline model.")
+        }
+    }
+
+    func cancel() {
+        sendID = nil
+        sendTask?.cancel()
+        sendTask = nil
+        isSending = false
+    }
+}

@@ -4,6 +4,7 @@ import UniformTypeIdentifiers
 struct ModelManagerView: View {
     @Bindable var model: AppModel
     @Environment(\.dismiss) private var dismiss
+    @State private var showFreeOnline = false
     @State private var importing = false
     @State private var importingBusy = false
     @State private var removing: LocalModelDescriptor?
@@ -11,12 +12,89 @@ struct ModelManagerView: View {
     @State private var catalogPurpose = "All"
     @State private var smallestFirst = false
     private var catalogEntries: [LocalModelCatalogEntry] {
-        LocalModelCatalog.filtered(query: catalogQuery, purpose: catalogPurpose, smallestFirst: smallestFirst)
+        LocalModelCatalog.filtered(query: catalogQuery.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == "everyday" ? "General chat" : catalogQuery, purpose: catalogPurpose, smallestFirst: smallestFirst)
+    }
+
+    private struct CatalogGroup: Identifiable {
+        let id: String
+        let entries: [LocalModelCatalogEntry]
+    }
+    private var catalogGroups: [CatalogGroup] {
+        var order: [String] = []
+        var grouped: [String: [LocalModelCatalogEntry]] = [:]
+        for entry in catalogEntries {
+            if grouped[entry.baseModel] == nil { order.append(entry.baseModel) }
+            grouped[entry.baseModel, default: []].append(entry)
+        }
+        return order.map { CatalogGroup(id: $0, entries: grouped[$0] ?? []) }
     }
 
     var body: some View {
         NavigationStack {
             List {
+                Section {
+                    ForEach(model.providers.filter { $0.id != "remote" }) { option in
+                        providerRow(option)
+                    }
+                } header: { Text("Works offline") } footer: {
+                    Text("Free to chat on this iPhone. Choose an available AI below, or download one. No Orivyn account needed.")
+                }
+                Section {
+                    Button { showFreeOnline = true } label: {
+                        Label("Explore free online AI", systemImage: "network")
+                            .font(.headline).frame(minHeight: 48)
+                    }.accessibilityIdentifier("freeOnline.open")
+                } header: { Text("Free online · optional") } footer: {
+                    Text("Needs internet and your own OpenRouter key. Opens a separate message, never your saved chats. No paid fallback.")
+                }
+                // Keep the existing endpoint reachable without presenting it as a free route.
+                if model.providers.contains(where: { $0.id == "remote" }) {
+                    Section {
+                        ForEach(model.providers.filter { $0.id == "remote" }) { option in
+                            providerRow(option)
+                        }
+                    } header: { Text("Needs internet") } footer: {
+                        Text("Your configured connection. Not part of the free catalog; charges may apply. It receives your conversation, attachment text and saved memory.")
+                    }
+                }
+                if let downloadingID = model.downloadingModelID {
+                    Section("Active download") {
+                        Text(LocalModelCatalog.entries.first { $0.id == downloadingID }?.descriptor.name ?? "Model")
+                        ProgressView(value: model.downloadProgress ?? 0)
+                        Button("Cancel download") { model.cancelDownload() }
+                            .accessibilityIdentifier("model.download.cancel")
+                    }
+                }
+                Section {
+                    TextField("Find an AI or a task", text: $catalogQuery)
+                        .textInputAutocapitalization(.never).autocorrectionDisabled()
+                        .accessibilityIdentifier("model.catalog.search")
+                    Picker("Purpose", selection: $catalogPurpose) {
+                        ForEach(LocalModelCatalog.purposes, id: \.self) { Text($0 == "General chat" ? "Everyday" : $0).tag($0) }
+                    }.accessibilityIdentifier("model.catalog.purpose")
+                    Toggle("Smallest downloads first", isOn: $smallestFirst)
+                    Text("\(catalogEntries.count) downloads · all free · no account or API key")
+                        .font(.caption).foregroundStyle(.secondary)
+                    if catalogEntries.isEmpty {
+                        Text("No matching models. Try a different search or purpose.")
+                            .font(.subheadline).foregroundStyle(.secondary)
+                    }
+                    ForEach(catalogGroups) { group in
+                        if let first = group.entries.first {
+                            catalogCard(first)
+                            if group.entries.count > 1 {
+                                DisclosureGroup("More download options") {
+                                    ForEach(Array(group.entries.dropFirst())) { entry in
+                                        catalogCard(entry)
+                                    }
+                                }
+                                .accessibilityIdentifier("model.variants.\(first.id)")
+                            }
+                        }
+                    }
+                } header: { Text("Download for offline chat") } footer: {
+                    Text("Models and precision variants are all free. Downloads use internet; local inference does not. RAM guidance is an estimate, not a guarantee. iOS memory pressure and thermals vary. One local model is loaded at a time with a 2,048-token context. Automatic downloads occur only after you enable Automatic and send a request.")
+                }
                 Section {
                     Toggle("Automatic local model", isOn: $model.automaticModelsEnabled)
                         .accessibilityIdentifier("model.automatic")
@@ -38,96 +116,6 @@ struct ModelManagerView: View {
                         .disabled(model.isGenerating || model.isPreparingAutomaticModel)
                     Text("Optional non-thinking template mode for local Qwen 3 chat. Off preserves the model's default reasoning. This does not hide generated text, guarantee short answers, or change other model families or remote providers. Device behavior still needs verification.")
                         .font(.caption).foregroundStyle(.secondary)
-                }
-                Section {
-                    ForEach(model.providers) { option in
-                        Button {
-                            model.automaticModelsEnabled = false
-                            model.selectedProviderID = option.id
-                            dismiss()
-                        } label: {
-                            HStack(spacing: 12) {
-                                Image(systemName: option.id == "remote" ? "network" : "iphone").foregroundStyle(Color.evoAccent).frame(width: 24)
-                                VStack(alignment: .leading, spacing: 5) {
-                                    Text(option.title).font(.subheadline.weight(.medium)).foregroundStyle(.primary)
-                                    Text(option.detail).font(.caption).foregroundStyle(.secondary)
-                                }
-                                Spacer()
-                                if model.selectedProviderID == option.id { Image(systemName: "checkmark.circle.fill").foregroundStyle(Color.evoAccent) }
-                            }.padding(.vertical, 5)
-                        }
-                        .accessibilityIdentifier("model.provider.\(option.id)")
-                        .accessibilityValue(model.selectedProviderID == option.id ? "Selected" : "")
-                        .disabled(!option.isAvailable || model.isGenerating || model.isPreparingAutomaticModel)
-                    }
-                } header: { Text("Choose a model") } footer: {
-                    Text("Local models run on this iPhone. Remote models send your messages, attachment text, and saved memory to the endpoint you configure.")
-                }
-                if let downloadingID = model.downloadingModelID {
-                    Section("Active download") {
-                        Text(LocalModelCatalog.entries.first { $0.id == downloadingID }?.descriptor.name ?? "Model")
-                        ProgressView(value: model.downloadProgress ?? 0)
-                        Button("Cancel download") { model.cancelDownload() }
-                            .accessibilityIdentifier("model.download.cancel")
-                    }
-                }
-                Section {
-                    TextField("Search models or purpose", text: $catalogQuery)
-                        .textInputAutocapitalization(.never).autocorrectionDisabled()
-                        .accessibilityIdentifier("model.catalog.search")
-                    Picker("Purpose", selection: $catalogPurpose) {
-                        ForEach(LocalModelCatalog.purposes, id: \.self) { Text($0).tag($0) }
-                    }.accessibilityIdentifier("model.catalog.purpose")
-                    Toggle("Smallest downloads first", isOn: $smallestFirst)
-                    Text("\(catalogEntries.count) downloads · all free · no account or API key")
-                        .font(.caption).foregroundStyle(.secondary)
-                    if catalogEntries.isEmpty {
-                        Text("No matching models. Try a different search or purpose.")
-                            .font(.subheadline).foregroundStyle(.secondary)
-                    }
-                    ForEach(catalogEntries) { entry in
-                        let descriptor = entry.descriptor
-                        VStack(alignment: .leading, spacing: 10) {
-                            HStack(alignment: .top) {
-                                VStack(alignment: .leading, spacing: 5) {
-                                    Text(descriptor.name).font(.subheadline.weight(.semibold))
-                                        .accessibilityIdentifier("model.catalog.name.\(descriptor.id)")
-                                    Text("\(descriptor.formattedSize) · \(descriptor.license)").font(.caption).foregroundStyle(.secondary)
-                                }
-                                Spacer()
-                                if model.installedModels.contains(where: { $0.id == descriptor.id }) {
-                                    Label("Installed", systemImage: "checkmark.circle.fill").font(.caption).foregroundStyle(Color.evoAccent)
-                                        .accessibilityIdentifier("model.installed.\(descriptor.id)")
-                                }
-                            }
-                            Text("\(entry.purpose) · \(entry.recommendedRAMGB) GB device RAM recommended")
-                                .font(.caption).foregroundStyle(.secondary)
-                            Text(entry.notes).font(.caption).foregroundStyle(.secondary)
-                            Text("Allow \(entry.formattedFreeStorage) free storage during installation.")
-                                .font(.caption).foregroundStyle(.secondary)
-                            if !entry.meetsRAMGuidance(physicalMemory: ProcessInfo.processInfo.physicalMemory) {
-                                Label("This iPhone is below the suggested RAM. Prefer a smaller model.", systemImage: "exclamationmark.triangle")
-                                    .font(.caption).foregroundStyle(.orange)
-                            }
-                            Text("Physical iPhone performance validation pending.").font(.caption).foregroundStyle(.secondary)
-                            if model.downloadingModelID == descriptor.id {
-                                Text("Downloading and verifying…").font(.caption).foregroundStyle(.secondary)
-                            } else if !model.installedModels.contains(where: { $0.id == descriptor.id }) {
-                                Button { model.downloadModel(descriptor) } label: { Label("Download model", systemImage: "arrow.down.circle") }
-                                    .accessibilityIdentifier("model.download.\(descriptor.id)")
-                                    .disabled(model.downloadingModelID != nil || importingBusy || model.isPreparingAutomaticModel)
-                            }
-                            HStack {
-                                if let url = descriptor.sourceURL { Link("Publisher details", destination: url).font(.caption) }
-                                if let url = entry.licenseURL { Link("License", destination: url).font(.caption) }
-                            }
-                        }
-                        // Each control owns its tap; automatic List row actions can also open the link.
-                        .buttonStyle(.borderless)
-                        .padding(.vertical, 6)
-                    }
-                } header: { Text("Free model catalog") } footer: {
-                    Text("Models and precision variants are all free. Downloads use internet; local inference does not. RAM guidance is an estimate, not a guarantee. iOS memory pressure and thermals vary. One local model is loaded at a time with a 2,048-token context. Automatic downloads occur only after you enable Automatic and send a request.")
                 }
                 if !model.installedModels.isEmpty {
                     Section("On this iPhone") {
@@ -151,8 +139,9 @@ struct ModelManagerView: View {
                 } footer: { Text("Choose an instruction-tuned GGUF file up to 2 GB with an embedded chat template. Compatibility and available memory vary. Only import models you trust and have permission to use.") }
             }
             .accessibilityIdentifier("model.list")
-            .navigationTitle("Models").navigationBarTitleDisplayMode(.inline)
+            .navigationTitle("Choose an AI").navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() }.accessibilityIdentifier("model.done") } }
+            .sheet(isPresented: $showFreeOnline) { FreeOnlineChatView(state: model.freeOnlineChat) }
             .fileImporter(isPresented: $importing, allowedContentTypes: [.data], allowsMultipleSelection: false) { result in
                 switch result {
                 case .success(let urls):
@@ -175,4 +164,72 @@ struct ModelManagerView: View {
         }
         .interactiveDismissDisabled(importingBusy)
     }
+    private func providerRow(_ option: ProviderOption) -> some View {
+                        Button {
+                            model.automaticModelsEnabled = false
+                            model.selectedProviderID = option.id
+                            dismiss()
+                        } label: {
+                            HStack(spacing: 12) {
+                                Image(systemName: option.id == "remote" ? "network" : "iphone").foregroundStyle(Color.evoAccent).frame(width: 24)
+                                VStack(alignment: .leading, spacing: 5) {
+                                    Text(option.title).font(.subheadline.weight(.medium)).foregroundStyle(.primary)
+                                    Text(option.detail).font(.subheadline).foregroundStyle(.secondary)
+                                    Text(option.isAvailable ? "Ready" : "Unavailable")
+                                        .font(.subheadline.weight(.semibold)).foregroundStyle(.primary)
+                                }
+                                Spacer()
+                                if model.selectedProviderID == option.id { Image(systemName: "checkmark.circle.fill").foregroundStyle(Color.evoAccent) }
+                            }.padding(.vertical, 8).frame(minHeight: 48)
+                        }
+                        .accessibilityIdentifier("model.provider.\(option.id)")
+                        .accessibilityValue(model.selectedProviderID == option.id ? "Selected" : "")
+                        .disabled(!option.isAvailable || model.isGenerating || model.isPreparingAutomaticModel)
+    }
+
+    @ViewBuilder private func catalogCard(_ entry: LocalModelCatalogEntry) -> some View {
+                        let descriptor = entry.descriptor
+                        VStack(alignment: .leading, spacing: 10) {
+                            HStack(alignment: .top) {
+                                VStack(alignment: .leading, spacing: 5) {
+                                    Text(entry.baseModel).font(.headline)
+                                        .accessibilityIdentifier("model.catalog.name.\(descriptor.id)")
+                                    Text("\(descriptor.formattedSize) · \(entry.quantization) · Free").font(.caption).foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                                if model.installedModels.contains(where: { $0.id == descriptor.id }) {
+                                    Label("Installed", systemImage: "checkmark.circle.fill").font(.caption).foregroundStyle(Color.evoAccent)
+                                        .accessibilityIdentifier("model.installed.\(descriptor.id)")
+                                }
+                            }
+                            Text("\(entry.purpose) · \(entry.recommendedRAMGB) GB device RAM recommended")
+                                .font(.caption).foregroundStyle(.secondary)
+                            Text(entry.purpose == "Coding" ? "Help with code drafts and explanations." : entry.purpose == "Reasoning" ? "Explore harder questions, step by step." : "Everyday questions, writing and ideas.").font(.subheadline).foregroundStyle(.secondary)
+                            DisclosureGroup("Details · storage and compatibility") {
+                            Text(entry.notes).font(.subheadline).foregroundStyle(.secondary)
+                            Text("Allow \(entry.formattedFreeStorage) free storage during installation.")
+                                .font(.caption).foregroundStyle(.secondary)
+                            if !entry.meetsRAMGuidance(physicalMemory: ProcessInfo.processInfo.physicalMemory) {
+                                Label("This iPhone is below the suggested RAM. Prefer a smaller model.", systemImage: "exclamationmark.triangle")
+                                    .font(.caption).foregroundStyle(.orange)
+                            }
+                            Text("Physical iPhone performance validation pending.").font(.caption).foregroundStyle(.secondary)
+                            }.font(.subheadline)
+                            if model.downloadingModelID == descriptor.id {
+                                Text("Downloading and verifying…").font(.caption).foregroundStyle(.secondary)
+                            } else if !model.installedModels.contains(where: { $0.id == descriptor.id }) {
+                                Button { model.downloadModel(descriptor) } label: { Label("Download · \(descriptor.formattedSize)", systemImage: "arrow.down.circle").frame(minHeight: 44) }
+                                    .accessibilityIdentifier("model.download.\(descriptor.id)")
+                                    .disabled(model.downloadingModelID != nil || importingBusy || model.isPreparingAutomaticModel)
+                            }
+                            HStack {
+                                if let url = descriptor.sourceURL { Link("Publisher details", destination: url).font(.caption) }
+                                if let url = entry.licenseURL { Link("License", destination: url).font(.caption) }
+                            }
+                        }
+                        // Each control owns its tap; automatic List row actions can also open the link.
+                        .buttonStyle(.borderless)
+                        .padding(.vertical, 6)
+    }
+
 }
