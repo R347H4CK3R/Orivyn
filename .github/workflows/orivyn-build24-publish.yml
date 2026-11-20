@@ -1,0 +1,255 @@
+name: Publish verified Orivyn build 24 shared preview
+on:
+  push:
+    branches: [publication/orivyn-build24-shared-preview]
+    paths: ['.github/workflows/orivyn-build24-publish.yml']
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: orivyn-build24-shared-preview
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: >-
+      github.repository == 'R347H4CK3R/Orivyn' &&
+      github.event.repository.private == false &&
+      github.ref == 'refs/heads/publication/orivyn-build24-shared-preview' &&
+      github.event_name == 'push' && github.run_attempt == '1'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      GH_REPO: R347H4CK3R/Orivyn
+      SOURCE: c6ab6306f8db407b0da131befe1d62bac7ee5443
+      SOURCE_TREE: 740ac31b77a93931dfee1bbf47bbe9622b8020ba
+      GATE_HARNESS: 4997c7307e8617837002552fd4837cc67009f3a1
+      GATE_RUN: '44697888500'
+      GATE_JOB: '136158927582'
+      TAG: orivyn-v0.1.8-build24-shared-preview
+      NATIVE_ID: '14615289350'
+      NATIVE_SHA256: 922e6b07f43963a521af34ab23f70f970a2a93e307f7215f873cb915ea80f5d0
+      PACKAGE_ID: '14616091699'
+      PACKAGE_SHA256: b06a9f6069eb311d5253e60d5d135d9b31b85c714ae424744bfbd04c47c648bb
+      SCREEN_ID: '14615976968'
+      SCREEN_SHA256: e5cc1afd9060848d5923119ed65de48dcd35867080421d8f0a72b25e7845d27f
+      IPA_SHA256: f6263390bd9e5626d7d4f66f47590a291b76889861b51eb2fa6a095ceda6e9c5
+      IPA_BYTES: '38434379'
+      APPROVED_SCREEN_RECEIPT_SHA256: 95d74b658a22c16c560a251aac9aa559a5ec32c5f109a078af930071627f82bd
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.SOURCE }}
+          persist-credentials: false
+      - name: Verify exact green job and artifact pins
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REPOSITORY" = "$GH_REPO"
+          test "$GITHUB_REF" = refs/heads/publication/orivyn-build24-shared-preview
+          test "$GITHUB_EVENT_NAME/$GITHUB_RUN_ATTEMPT" = push/1
+          test "$RUNNER_ENVIRONMENT/$RUNNER_OS" = github-hosted/Linux
+          test "$(git rev-parse HEAD)" = "$SOURCE"
+          test "$(git rev-parse 'HEAD^{tree}')" = "$SOURCE_TREE"
+          test -z "$(git status --porcelain)"
+          [[ "$IPA_BYTES" =~ ^[1-9][0-9]*$ && "$IPA_SHA256" =~ ^[a-f0-9]{64}$ && "$APPROVED_SCREEN_RECEIPT_SHA256" =~ ^[a-f0-9]{64}$ ]]
+          A="$RUNNER_TEMP/orivyn-release"
+          mkdir "$A"
+          API="repos/$GH_REPO"
+          gh api "$API/actions/runs/$GATE_RUN" > "$A/run.json"
+          gh api "$API/actions/runs/$GATE_RUN/jobs" > "$A/jobs.json"
+          for k in NATIVE PACKAGE SCREEN; do
+            a="${k}_ID"; h="${k}_SHA256"; [[ "${!a}" =~ ^[1-9][0-9]*$ && "${!h}" =~ ^[a-f0-9]{64}$ ]]
+            gh api "$API/actions/artifacts/${!a}" > "$A/$k.json"
+          done
+          python3 - "$A" <<'PYGATE'
+          import json,os,pathlib,sys
+          a=pathlib.Path(sys.argv[1]);e=os.environ
+          def load(name):return json.loads((a/(name+'.json')).read_text())
+          r=load('run');j=load('jobs')['jobs']
+          assert (r['id'],r['head_sha'],r['head_branch'],r['path'])==(int(e['GATE_RUN']),e['GATE_HARNESS'],'verification/orivyn-build24-web-reach','.github/workflows/orivyn-auto-web-native.yml')
+          assert (r['event'],r['run_attempt'],r['status'],r['conclusion'])==('push',1,'completed','success')
+          assert r['head_repository']['full_name']==e['GH_REPO'] and r['head_repository']['private'] is False
+          assert len(j)==1 and j[0]['id']==int(e['GATE_JOB']) and j[0]['conclusion']=='success'
+          required=('Check exact candidate, hosted runner and test selection','Require exact final version metadata before expensive work','Build and verify combined runtime','Compile simulator app and run targeted UI first, then native units and archive','Verify bounded archive resource usage in fresh native processes','Verify exact manual-selection service and preservation tests','Package unsigned candidate only after every preceding gate succeeds','Collect exactly four genuine synthetic simulator screenshots')
+          for name in required:assert [s['conclusion'] for s in j[0]['steps'] if s['name']==name]==['success'],name
+          assert sum(s['name']=='Run actions/upload-artifact@v4' and s['conclusion']=='success' for s in j[0]['steps'])==3
+          names={'NATIVE':'Orivyn-auto-web-native-evidence','PACKAGE':'Orivyn-0.1.8-build24-verified-IPA','SCREEN':'Orivyn-0.1.8-build24-verified-screenshots'}
+          assert len({int(e[k+'_ID']) for k in names})==3
+          for kind,name in names.items():
+              x=load(kind)
+              assert (x['id'],x['name'],x['expired'],x['digest'])==(int(e[kind+'_ID']),name,False,'sha256:'+e[kind+'_SHA256'])
+              assert 0<x['size_in_bytes']<=250_000_000
+              assert (x['workflow_run']['id'],x['workflow_run']['head_sha'],x['workflow_run']['head_branch'])==(r['id'],r['head_sha'],r['head_branch'])
+          PYGATE
+          for k in NATIVE PACKAGE SCREEN; do
+            a="${k}_ID"; h="${k}_SHA256"
+            gh api "$API/actions/artifacts/${!a}/zip" > "$A/$k.zip"
+            printf '%s  %s\n' "${!h}" "$A/$k.zip" | sha256sum -c -
+          done
+      - name: Independently verify archive, IPA and four approved pictures
+        shell: bash
+        run: |
+          set -euo pipefail
+          A="$RUNNER_TEMP/orivyn-release"
+          python3 - "$A" <<'PYFILES'
+          import hashlib,json,os,pathlib,re,shutil,struct,sys,zipfile
+          a=pathlib.Path(sys.argv[1]);e=os.environ;out=a/'assets';out.mkdir()
+          ipa='Orivyn-0.1.8-build24-unsigned.ipa'
+          digest=lambda b:hashlib.sha256(b).hexdigest()
+          def read(z,n,cap=2_000_000):
+              assert 0<z.getinfo(n).file_size<=cap,n
+              return z.read(n)
+          def record(z,n):return json.loads(read(z,n))
+          def plain(z,n):return read(z,n).decode().strip()
+          def count(z,n,total):
+              x=record(z,n)
+              assert all(type(x.get(k)) is int and x[k]==v for k,v in dict(totalTestCount=total,passedTests=total,failedTests=0,skippedTests=0).items()),n
+          files=['01-chat-auto.png','02-choose-ai.png','03-free-online.png','04-web.png']
+          labels=['Catalog01ChatAuto','Catalog02ChooseAI','Catalog03FreeOnline','Catalog04Web']
+          auto='AutomaticModelUITests/testFreshChatShowsAutoWithoutEnablingDownloads()'
+          owners=[auto,auto,'ModelCatalogUITests/testOnlineEntryStartsWithDisclosureAndNoConnectionOrPrompt()','NativeToolsUITests/testVisibleWebEntrySearchReviewDoesNotSendAndReturnsToSameDraft()']
+          with zipfile.ZipFile(a/'NATIVE.zip') as n,zipfile.ZipFile(a/'PACKAGE.zip') as p,zipfile.ZipFile(a/'SCREEN.zip') as s:
+              for z in (n,p,s):assert len(z.namelist())==len(set(z.namelist()))
+              assert not any(x.endswith('.ipa') for x in n.namelist())
+              assert plain(n,'free-native/source-commit.txt')==e['SOURCE']
+              assert plain(n,'free-native/source-tree.txt')==e['SOURCE_TREE']
+              assert plain(n,'free-native/harness-commit.txt')==e['GATE_HARNESS']
+              assert plain(n,'archive-restore/source-commit.txt')==e['SOURCE']
+              for name,total in [('free-native/unit/summary.json',220),('archive-restore/summary.json',319),('free-native/ui/summary.json',12)]:count(n,name,total)
+              for label in ('preservation-resource','import-resource'):
+                  d=record(n,label+'/RESULT.json');assert d['compileExit']==0 and d['cases'] and all(v==0 for v in d['cases'].values())
+              host=record(n,'inventory-service/RESULT.json')
+              assert host['exit']==0 and host['iPhoneVerified'] is False
+              log=plain(n,'inventory-service/tests.log')
+              assert re.search(r'Executed 45 tests, with 0 failures',log) and not re.search(r'Test Case .* skipped',log)
+              assert record(n,'free-native/PACKAGE-SCOPE.json')==dict(candidate=e['SOURCE'],tree=e['SOURCE_TREE'],ipa=ipa,packaged_after_native_gates=True,physical_device_acceptance='not_run',ipa_upload_requested=True,release_published=False)
+              assert set(p.namelist())=={ipa,'SHA256SUMS','ipa-verification.json','source-commit.txt'}
+              assert plain(p,'source-commit.txt')==e['SOURCE']==plain(n,'package-only/source-commit.txt')
+              assert plain(p,'SHA256SUMS')==e['IPA_SHA256']+'  '+ipa==plain(n,'package-only/SHA256SUMS')
+              proof=record(p,'ipa-verification.json')
+              assert proof==record(n,'package-only/ipa-verification.json')
+              assert (proof['bundle_identifier'],str(proof['version']),str(proof['build']),proof['sha256'],proof['size'])==('app.jarvisevo.ios','0.1.8','24',e['IPA_SHA256'],int(e['IPA_BYTES']))
+              assert p.getinfo(ipa).file_size==int(e['IPA_BYTES'])<=250_000_000
+              with p.open(ipa) as f,(out/ipa).open('xb') as o:shutil.copyfileobj(f,o)
+              with (out/ipa).open('rb') as f:assert hashlib.file_digest(f,'sha256').hexdigest()==e['IPA_SHA256']
+              (a/'proof.json').write_text(json.dumps(proof))
+              (out/'SHA256SUMS').write_bytes(read(p,'SHA256SUMS'))
+              assert set(s.namelist())==set(files)|{'SCREENSHOT-RECEIPT.json'}
+              raw=read(s,'SCREENSHOT-RECEIPT.json');assert digest(raw)==e['APPROVED_SCREEN_RECEIPT_SHA256']
+              receipt=json.loads(raw)
+              assert (receipt['sourceCommit'],receipt['sourceTree'],receipt['harnessCommit'],receipt['workflowRun'],receipt['simulator'])==(e['SOURCE'],e['SOURCE_TREE'],e['GATE_HARNESS'],int(e['GATE_RUN']),'iPhone 16 Plus')
+              assert receipt['simulatorOnly'] is True and receipt['syntheticOnly'] is True
+              pics=receipt['screenshots'];assert len(pics)==4 and {x['file'] for x in pics}==set(files)
+              by_name={x['file']:x for x in pics};base='free-native/ui/attachments/'
+              manifest=record(n,base+'manifest.json')
+              for file,label,owner in zip(files,labels,owners):
+                  image=read(s,file,8_000_000)
+                  assert image[:16]==b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR'
+                  w,h=struct.unpack('>II',image[16:24])
+                  assert 600<=w<h<=5000 and by_name[file]==dict(file=file,width=w,height=h,sha256=digest(image),test=owner)
+                  matches=[x for group in manifest if group['testIdentifier']==owner for x in group['attachments'] if x['suggestedHumanReadableName']==label+'.png' or x['suggestedHumanReadableName'].startswith(label+'_')]
+                  assert len(matches)==1
+                  x=matches[0];f=x['exportedFileName'];assert re.fullmatch(r'[a-fA-F0-9-]+\.png',f)
+                  assert x['deviceName']=='iPhone 16 Plus' and x['isAssociatedWithFailure'] is False and read(n,base+f,8_000_000)==image
+                  (out/file).write_bytes(image)
+              (out/'SCREENSHOTS-SHA256SUMS').write_text(''.join(by_name[f]['sha256']+'  '+f+'\n' for f in files))
+          PYFILES
+          python3 scripts/verify_ipa.py "$A/assets/Orivyn-0.1.8-build24-unsigned.ipa" --output "$A/assets/verified-ipa.json"
+          python3 - "$A" <<'PYCMP'
+          import json,pathlib,sys
+          a=pathlib.Path(sys.argv[1])
+          assert json.loads((a/'proof.json').read_text())==json.loads((a/'assets/verified-ipa.json').read_text())
+          PYCMP
+      - name: Stage unique draft, verify hosted assets, then promote preview
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          A="$RUNNER_TEMP/orivyn-release"
+          API="repos/$GH_REPO"
+          PREVIOUS=orivyn-v0.1.6-build22
+          gh api "$API/releases/tags/$PREVIOUS" > "$A/old.json"
+          gh api --paginate --slurp "$API/releases?per_page=100" > "$A/releases.json"
+          gh api "$API/git/matching-refs/tags/$TAG" > "$A/tag.json"
+          python3 - "$A" <<'PYUNIQUE'
+          import json,os,pathlib,sys
+          a=pathlib.Path(sys.argv[1]);tag=os.environ['TAG']
+          assert not any(r['tag_name']==tag for page in json.loads((a/'releases.json').read_text()) for r in page)
+          assert not any(r['ref']=='refs/tags/'+tag for r in json.loads((a/'tag.json').read_text()))
+          assert json.loads((a/'old.json').read_text())['draft'] is False
+          PYUNIQUE
+          cat > "$A/notes.md" <<NOTES
+          Orivyn 0.1.8 build 24 is an unsigned iOS 26+ preview. Choose an on-device AI or opt into free online models separately. Free online requires an OpenRouter key, internet and available free capacity; there is no paid fallback in that route. Web uses Safari for manual browsing, with local bookmarks and optional on-device explanations of pasted passages.
+
+          The four pictures are unedited captures from a synthetic iPhone 16 Plus simulator session. No physical iPhone installation, live online-provider availability or private archive was verified. Sign with a compatible installer and preserve the existing app identity and data when updating.
+
+          Exact native, package and simulator capture evidence: https://github.com/R347H4CK3R/Orivyn/actions/runs/$GATE_RUN
+          Source: https://github.com/R347H4CK3R/Orivyn/commit/$SOURCE
+          IPA size: $IPA_BYTES bytes
+          IPA SHA-256: $IPA_SHA256
+          NOTES
+          gh release create "$TAG" --repo "$GH_REPO" --draft --prerelease --latest=false --target "$SOURCE" \
+            --title 'Orivyn 0.1.8 build 24 · unsigned shared preview' --notes-file "$A/notes.md"
+          gh api --paginate --slurp "$API/releases?per_page=100" > "$A/drafts.json"
+          ID=$(python3 - "$A/drafts.json" <<'PYDRAFT'
+          import json,os,sys
+          d=[r for p in json.load(open(sys.argv[1])) for r in p if r['tag_name']==os.environ['TAG']]
+          assert len(d)==1 and d[0]['draft'] is True and d[0]['prerelease'] is True and not d[0]['assets']
+          assert d[0]['target_commitish']==os.environ['SOURCE']
+          print(d[0]['id'])
+          PYDRAFT
+          )
+          gh release upload "$TAG" "$A/assets/"* --repo "$GH_REPO"
+          gh api "$API/releases/$ID" > "$A/uploaded.json"
+          python3 - "$A" <<'PYUP'
+          import hashlib,json,os,pathlib,sys
+          a=pathlib.Path(sys.argv[1]);d=json.loads((a/'uploaded.json').read_text())
+          assert d['draft'] is True and d['prerelease'] is True and d['tag_name']==os.environ['TAG'] and d['target_commitish']==os.environ['SOURCE']
+          local={p.name:p for p in (a/'assets').iterdir()}
+          assert len(local)==len(d['assets'])==8 and set(local)=={x['name'] for x in d['assets']}
+          for x in d['assets']:
+              p=local[x['name']]
+              with p.open('rb') as f:h=hashlib.file_digest(f,'sha256').hexdigest()
+              assert x['state']=='uploaded' and (x['size'],x['digest'])==(p.stat().st_size,'sha256:'+h),x['name']
+          PYUP
+          gh api "$API/git/matching-refs/tags/$TAG" > "$A/tag-after-draft.json"
+          PRESENT=$(python3 - "$A/tag-after-draft.json" <<'PYTAG'
+          import json,os,sys
+          t=[x for x in json.load(open(sys.argv[1])) if x['ref']=='refs/tags/'+os.environ['TAG']]
+          if t:assert len(t)==1 and t[0]['object']['type']=='commit' and t[0]['object']['sha']==os.environ['SOURCE']
+          print('yes' if t else 'no')
+          PYTAG
+          )
+          if [[ "$PRESENT" == no ]]; then
+            gh api --method POST "$API/git/refs" -f ref="refs/tags/$TAG" -f sha="$SOURCE" > "$A/new-tag.json"
+          fi
+          gh api "$API/git/ref/tags/$TAG" --jq .object.sha | grep -Fx "$SOURCE"
+          gh api --method PATCH "$API/releases/$ID" -F draft=false -F prerelease=true -f make_latest=false > "$A/promoted.json"
+          gh api "$API/releases/tags/$PREVIOUS" > "$A/old-after.json"
+          python3 - "$A" <<'PYPUBLIC'
+          import json,os,pathlib,sys,time
+          from urllib.request import Request,urlopen
+          from urllib.error import HTTPError
+          a=pathlib.Path(sys.argv[1]);e=os.environ
+          def load(n):return json.loads((a/(n+'.json')).read_text())
+          def assets(r):return sorted((x['id'],x['name'],x['size'],x.get('digest')) for x in r['assets'])
+          old,new=load('old'),load('old-after')
+          assert new['id']==old['id'] and assets(new)==assets(old)
+          d,p=load('uploaded'),load('promoted')
+          assert p['id']==d['id'] and p['draft'] is False and p['prerelease'] is True and assets(p)==assets(d)
+          u='https://api.github.com/repos/'+e['GH_REPO']+'/releases/tags/'+e['TAG']
+          for attempt in range(3):
+              try:
+                  with urlopen(Request(u,headers={'User-Agent':'orivyn-release-check','Cache-Control':'no-cache'}),timeout=30) as r:public=json.load(r)
+                  break
+              except HTTPError as ex:
+                  if ex.code!=404 or attempt==2:raise
+                  time.sleep(4)
+          assert public['id']==p['id'] and public['draft'] is False and assets(public)==assets(p)
+          with open(e['GITHUB_STEP_SUMMARY'],'a') as o:
+              o.write(f"Exact public prerelease: {public['html_url']}\n\n")
+              for x in public['assets']:o.write(f"- {x['name']} ({x['size']} bytes): {x['digest']}\n")
+          PYPUBLIC
